@@ -7,6 +7,9 @@ const Header = ({ onOpenBooking, cartCount = 2, wishlistCount = 2 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownTimeoutRef = useRef(null);
 
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userTimeoutRef = useRef(null);
+
   const categories = [
     {
       title: 'Váy Cưới Haute Couture',
@@ -30,6 +33,24 @@ const Header = ({ onOpenBooking, cartCount = 2, wishlistCount = 2 }) => {
     },
   ];
 
+  const userAccountItems = [
+    {
+      title: 'Trang cá nhân',
+      subtitle: 'Quản lý thông tin & lịch hẹn thử váy',
+      href: '#profile',
+    },
+    {
+      title: 'Đăng nhập',
+      subtitle: 'Truy cập tài khoản thành viên UniBridal',
+      href: '#login',
+    },
+    {
+      title: 'Đăng xuất',
+      subtitle: 'Rời khỏi phiên đăng nhập hiện tại',
+      href: '#logout',
+    },
+  ];
+
   const handleMouseEnter = () => {
     if (dropdownTimeoutRef.current) clearTimeout(dropdownTimeoutRef.current);
     setIsDropdownOpen(true);
@@ -41,12 +62,23 @@ const Header = ({ onOpenBooking, cartCount = 2, wishlistCount = 2 }) => {
     }, 150);
   };
 
+  const handleUserMouseEnter = () => {
+    if (userTimeoutRef.current) clearTimeout(userTimeoutRef.current);
+    setIsUserMenuOpen(true);
+  };
+
+  const handleUserMouseLeave = () => {
+    userTimeoutRef.current = setTimeout(() => {
+      setIsUserMenuOpen(false);
+    }, 150);
+  };
+
   return (
     <header className="sticky top-0 left-0 right-0 z-50 bg-white border-b border-[#E6DAC8]/40 shadow-[0px_1px_6px_rgba(201,138,144,0.05)]">
       <div className="max-w-[1320px] mx-auto h-[68px] px-5 sm:px-8 flex items-center justify-between">
         
         {/* Brand / Logo */}
-        <a href="/" className="flex items-center gap-2.5 no-underline group select-none">
+        <a href="#" className="flex items-center gap-2.5 no-underline group select-none">
           <img
             src={logoImg}
             alt="UniBridal Emblem"
@@ -60,7 +92,7 @@ const Header = ({ onOpenBooking, cartCount = 2, wishlistCount = 2 }) => {
         {/* Navigation Desktop */}
         <nav className="hidden lg:flex items-center gap-8 xl:gap-10">
           <a
-            href="/"
+            href="#home"
             className="font-jakarta text-[15.5px] font-medium text-[#2C2523] no-underline hover:text-[#B8737D] transition-colors"
           >
             Trang chủ
@@ -89,7 +121,7 @@ const Header = ({ onOpenBooking, cartCount = 2, wishlistCount = 2 }) => {
               />
             </button>
 
-            {/* Dropdown Menu Box */}
+            {/* Dropdown Menu Box - shows on group-hover or when isDropdownOpen */}
             <div
               className={`absolute top-full -left-6 pt-1 z-50 transition-all duration-150 ${
                 isDropdownOpen
@@ -164,14 +196,58 @@ const Header = ({ onOpenBooking, cartCount = 2, wishlistCount = 2 }) => {
             </span>
           </button>
 
-          {/* User Profile */}
-          <a
-            href="/login"
-            className="p-1.5 flex items-center justify-center text-[#2C2523] hover:text-[#B8737D] transition-colors border-0 bg-transparent cursor-pointer no-underline"
-            title="Tài khoản"
+          {/* User Profile Dropdown */}
+          <div
+            className="relative group py-4"
+            onMouseEnter={handleUserMouseEnter}
+            onMouseLeave={handleUserMouseLeave}
           >
-            <User className="w-[19px] h-[19px] stroke-[1.8]" />
-          </a>
+            <button
+              id="user-profile-button"
+              type="button"
+              onClick={() => setIsUserMenuOpen((prev) => !prev)}
+              className={`p-1.5 flex items-center justify-center transition-colors border-0 bg-transparent cursor-pointer ${
+                isUserMenuOpen ? 'text-[#B8737D]' : 'text-[#2C2523] group-hover:text-[#B8737D]'
+              }`}
+              title="Tài khoản"
+            >
+              <User className="w-[19px] h-[19px] stroke-[1.8]" />
+            </button>
+
+            {/* Dropdown Menu Box - matching 'Bộ Sưu Tập' design */}
+            <div
+              id="user-dropdown-menu"
+              className={`absolute top-full right-0 pt-1 z-50 transition-all duration-150 ${
+                isUserMenuOpen
+                  ? 'block opacity-100 pointer-events-auto'
+                  : 'hidden group-hover:block group-hover:opacity-100 group-hover:pointer-events-auto'
+              }`}
+            >
+              <div className="w-[280px] bg-white rounded-2xl shadow-[0_18px_45px_rgba(44,37,35,0.12)] border border-[#F0E6E8] p-4 text-left">
+                <div className="text-[11px] font-bold tracking-wider text-[#B8737D] uppercase mb-2.5 px-2">
+                  TÀI KHOẢN
+                </div>
+
+                <div className="space-y-1">
+                  {userAccountItems.map((item, idx) => (
+                    <a
+                      key={idx}
+                      href={item.href}
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="block p-2.5 rounded-xl hover:bg-[#FAF5F6] transition-colors no-underline group/useritem cursor-pointer"
+                    >
+                      <div className="font-jakarta font-bold text-[14.5px] text-[#2C2523] group-hover/useritem:text-[#B8737D] transition-colors leading-snug">
+                        {item.title}
+                      </div>
+                      <div className="font-jakarta text-[12px] text-[#78716C] mt-0.5 leading-normal font-normal">
+                        {item.subtitle}
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Đặt Lịch Thử Váy CTA Button */}
           <button
@@ -198,7 +274,7 @@ const Header = ({ onOpenBooking, cartCount = 2, wishlistCount = 2 }) => {
       {mobileMenuOpen && (
         <div className="lg:hidden bg-white border-t border-[#E6DAC8]/50 px-6 py-5 space-y-4 shadow-xl">
           <a
-            href="/"
+            href="#home"
             onClick={() => setMobileMenuOpen(false)}
             className="block font-jakarta text-[16px] font-semibold text-[#2C2523] no-underline hover:text-[#B8737D]"
           >
@@ -243,6 +319,29 @@ const Header = ({ onOpenBooking, cartCount = 2, wishlistCount = 2 }) => {
           >
             Về chúng tôi
           </a>
+
+          <div>
+            <div className="text-[11px] font-bold tracking-wider text-[#B8737D] uppercase mb-2">
+              TÀI KHOẢN
+            </div>
+            <div className="pl-3 border-l-2 border-[#B8737D]/30 space-y-2.5">
+              {userAccountItems.map((item, idx) => (
+                <a
+                  key={idx}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block no-underline"
+                >
+                  <div className="text-[14px] font-semibold text-[#2C2523]">
+                    {item.title}
+                  </div>
+                  <div className="text-[12px] text-[#78716C]">
+                    {item.subtitle}
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
 
           <div className="pt-2">
             <button
