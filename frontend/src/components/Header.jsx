@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { Bell, MessageSquare, ShoppingBag, Heart, User, Menu, X } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 import logoImg from '../assets/logo.png';
 
-const Header = ({ onOpenBooking, cartCount = 2 }) => {
+const Header = ({ onOpenBooking, cartCount = 0 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+  const currentPath = location.pathname;
 
   return (
     <header className="sticky top-0 left-0 right-0 z-50 bg-white border-b border-[#E6DAC8]/40 shadow-[0px_1px_6px_rgba(201,138,144,0.05)]">
       <div className="max-w-[1280px] mx-auto h-[66px] px-6 sm:px-8 flex items-center justify-between">
         
         {/* Brand / Logo */}
-        <a href="#" className="flex items-center gap-2.5 no-underline group select-none">
+        <Link to="/" className="flex items-center gap-2.5 no-underline group select-none">
           <img
             src={logoImg}
             alt="UniBridal Emblem"
@@ -19,25 +22,29 @@ const Header = ({ onOpenBooking, cartCount = 2 }) => {
           <span className="font-playfair text-[24px] font-bold tracking-[0.2px] text-[#2C2523] leading-none">
             UniBridal
           </span>
-        </a>
+        </Link>
 
-        {/* Navigation Desktop: Exactly matching font-size 18px, bold/semi-bold & gap-12 from Image 1 */}
+        {/* Navigation Desktop */}
         <nav className="hidden md:flex items-center gap-12">
-          <a
-            href="#home"
-            className="font-jakarta text-[18px] font-semibold text-[#B8737D] no-underline hover:text-[#a6626c] transition-colors"
+          <Link
+            to="/"
+            className={`font-jakarta text-[16px] font-medium transition-colors no-underline ${
+              currentPath === '/' ? 'text-[#B8737D] font-semibold' : 'text-[#2C2523] hover:text-[#B8737D]'
+            }`}
           >
             Trang chủ
-          </a>
-          <a
-            href="#collection"
-            className="font-jakarta text-[18px] font-semibold text-[#2C2523] no-underline hover:text-[#B8737D] transition-colors"
+          </Link>
+          <Link
+            to="/collection"
+            className={`font-jakarta text-[16px] font-medium transition-colors no-underline ${
+              currentPath === '/collection' || currentPath === '/bo-suu-tap' ? 'text-[#B8737D] font-semibold' : 'text-[#2C2523] hover:text-[#B8737D]'
+            }`}
           >
             Bộ Sưu Tập
-          </a>
+          </Link>
           <a
-            href="#brides"
-            className="font-jakarta text-[18px] font-semibold text-[#2C2523] no-underline hover:text-[#B8737D] transition-colors"
+            href="/#brides"
+            className="font-jakarta text-[16px] font-medium text-[#2C2523] no-underline hover:text-[#B8737D] transition-colors"
           >
             Về chúng tôi
           </a>
@@ -109,24 +116,28 @@ const Header = ({ onOpenBooking, cartCount = 2 }) => {
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-t border-[#E6DAC8]/50 px-6 py-5 space-y-3.5 shadow-xl">
-          <a
-            href="#home"
+          <Link
+            to="/"
             onClick={() => setMobileMenuOpen(false)}
-            className="block font-jakarta text-[17px] font-semibold text-[#B8737D] no-underline"
+            className={`block font-jakarta text-[17px] no-underline ${
+              currentPath === '/' ? 'text-[#B8737D] font-bold' : 'text-[#2C2523] font-medium'
+            }`}
           >
             Trang chủ
-          </a>
-          <a
-            href="#collection"
+          </Link>
+          <Link
+            to="/collection"
             onClick={() => setMobileMenuOpen(false)}
-            className="block font-jakarta text-[17px] font-semibold text-[#2C2523] no-underline"
+            className={`block font-jakarta text-[17px] no-underline ${
+              currentPath === '/collection' || currentPath === '/bo-suu-tap' ? 'text-[#B8737D] font-bold' : 'text-[#2C2523] font-medium'
+            }`}
           >
             Bộ Sưu Tập
-          </a>
+          </Link>
           <a
-            href="#brides"
+            href="/#brides"
             onClick={() => setMobileMenuOpen(false)}
-            className="block font-jakarta text-[17px] font-semibold text-[#2C2523] no-underline"
+            className="block font-jakarta text-[17px] font-medium text-[#2C2523] no-underline"
           >
             Về chúng tôi
           </a>
