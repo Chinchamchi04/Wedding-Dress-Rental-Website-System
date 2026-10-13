@@ -4,6 +4,7 @@ import card1Img from '../assets/card1_elysian.jpg';
 import card2Img from '../assets/card2_celeste.jpg';
 import card3Img from '../assets/card3_lumiere.jpg';
 import card4Img from '../assets/card4_monet.jpg';
+import logoEmblemImg from '../assets/logo_emblem.png';
 
 const products = [
   {
@@ -108,13 +109,26 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds = [
                       e.stopPropagation();
                       onToggleWishlist && onToggleWishlist(item.id);
                     }}
-                    className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-[#514344] hover:text-[#B8737D] border border-[#E6DAC8]/40 shadow-xs cursor-pointer z-10 transition-transform active:scale-90 p-0"
+                    className="absolute top-3.5 right-3.5 w-[34px] h-[34px] rounded-[8px] bg-white flex items-center justify-center text-[#4A3E3F] hover:text-[#B8737D] border border-[#EEDECF] shadow-[0px_2px_8px_rgba(0,0,0,0.06)] cursor-pointer z-10 transition-transform active:scale-90 p-0"
+                    style={{ borderRadius: '8px' }}
                     title="Yêu thích"
                   >
                     <Heart
-                      className={`w-3.5 h-3.5 ${isWishlisted ? 'fill-[#B8737D] text-[#B8737D]' : 'text-[#514344]'}`}
+                      className={`w-4 h-4 ${isWishlisted ? 'fill-[#B8737D] text-[#B8737D]' : 'text-[#4A3E3F]'}`}
                     />
                   </button>
+
+                  {/* Logo UniBridal cắt phông (transparent watermark) ở góc ảnh */}
+                  <div 
+                    className="absolute bottom-3 right-3.5 z-10 pointer-events-none select-none transition-transform duration-300 hover:scale-110"
+                    title="UniBridal Haute Couture"
+                  >
+                    <img
+                      src={logoEmblemImg}
+                      alt="UniBridal Emblem"
+                      className="w-[42px] h-[42px] object-contain drop-shadow-[0px_2px_6px_rgba(0,0,0,0.35)]"
+                    />
+                  </div>
                 </div>
 
                 {/* Details Bottom */}
