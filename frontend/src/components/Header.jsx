@@ -37,17 +37,17 @@ const Header = ({ onOpenBooking, cartCount = 2, wishlistCount = 2 }) => {
     {
       title: 'Trang cá nhân',
       subtitle: 'Quản lý thông tin & lịch hẹn thử váy',
-      href: '#profile',
+      href: '/profile',
     },
     {
       title: 'Đăng nhập',
       subtitle: 'Truy cập tài khoản thành viên UniBridal',
-      href: '#login',
+      href: '/login',
     },
     {
       title: 'Đăng xuất',
       subtitle: 'Rời khỏi phiên đăng nhập hiện tại',
-      href: '#logout',
+      href: '/login',
     },
   ];
 
