@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { ClipboardPenLine, History, LogOut, ReceiptText } from 'lucide-react';
 import ProfileHeader from './ProfileHeader';
-import Footer from '../Footer';
+import Footer from './Footer';
 import { clearProfile } from '../../services/profileService';
 import '../../pages/customer/ProfilePage.css';
 

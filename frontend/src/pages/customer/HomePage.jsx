@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import Header from '../../components/Header';
+import Header from '../../components/layout/Header';
 import HeroSection from '../../components/HeroSection';
 import SilhouetteShowcase from '../../components/SilhouetteShowcase';
 import TrendingCollection from '../../components/TrendingCollection';
 import RealBridesGallery from '../../components/RealBridesGallery';
-import Footer from '../../components/Footer';
-import BookingModal from '../../components/BookingModal';
+import Footer from '../../components/layout/Footer';
+import BookingModal from '../../components/common/BookingModal';
 
 export default function HomePage() {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
