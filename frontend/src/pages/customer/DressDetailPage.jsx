@@ -330,8 +330,8 @@ export default function DressDetailPage() {
                     type="button"
                     onClick={() => setSelectedImageIndex(idx)}
                     className={`relative aspect-square rounded-[14px] overflow-hidden border-2 transition-all cursor-pointer p-0 bg-[#F6ECE8] group/thumb ${isActive
-                        ? 'border-[#B26B74] ring-2 ring-[#B26B74]/20 shadow-md scale-[1.02]'
-                        : 'border-[#EAE0DC] hover:border-[#CFA5AC] opacity-80 hover:opacity-100'
+                      ? 'border-[#B26B74] ring-2 ring-[#B26B74]/20 shadow-md scale-[1.02]'
+                      : 'border-[#EAE0DC] hover:border-[#CFA5AC] opacity-80 hover:opacity-100'
                       }`}
                   >
                     <img
@@ -418,8 +418,8 @@ export default function DressDetailPage() {
                       onClick={() => setSelectedColor(col)}
                       title={col.name}
                       className={`group flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all cursor-pointer ${isColorActive
-                          ? 'border-[#B26B74] bg-[#FFF5F3] shadow-xs'
-                          : 'border-[#EAE0DC] bg-white hover:border-[#C4A5AA]'
+                        ? 'border-[#B26B74] bg-[#FFF5F3] shadow-xs'
+                        : 'border-[#EAE0DC] bg-white hover:border-[#C4A5AA]'
                         }`}
                     >
                       <span
@@ -460,8 +460,8 @@ export default function DressDetailPage() {
                       type="button"
                       onClick={() => setSelectedSize(sz.id)}
                       className={`py-2.5 px-3 rounded-[12px] border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${isSizeActive
-                          ? 'border-[#B26B74] bg-[#B26B74] text-white shadow-xs'
-                          : 'border-[#EAE0DC] bg-white text-[#231A19] hover:border-[#B26B74]'
+                        ? 'border-[#B26B74] bg-[#B26B74] text-white shadow-xs'
+                        : 'border-[#EAE0DC] bg-white text-[#231A19] hover:border-[#B26B74]'
                         }`}
                     >
                       <span className="font-semibold text-[13.5px] leading-tight">{sz.label}</span>
@@ -572,8 +572,8 @@ export default function DressDetailPage() {
                   type="button"
                   onClick={() => setIsWishlisted(!isWishlisted)}
                   className={`w-[48px] h-[48px] rounded-[4px] border flex items-center justify-center transition-colors cursor-pointer ${isWishlisted
-                      ? 'bg-[#FFF2F0] border-[#70484E] text-[#70484E]'
-                      : 'bg-white border-[#D6C7C3] text-[#70484E] hover:border-[#70484E]'
+                    ? 'bg-[#FFF2F0] border-[#70484E] text-[#70484E]'
+                    : 'bg-white border-[#D6C7C3] text-[#70484E] hover:border-[#70484E]'
                     }`}
                   title={isWishlisted ? 'Đã yêu thích' : 'Lưu vào danh sách yêu thích'}
                 >
@@ -715,7 +715,7 @@ export default function DressDetailPage() {
                 }}
                 className="text-[13px] font-medium text-[#B26B74] hover:underline flex items-center gap-1 cursor-pointer bg-transparent border-0"
               >
-                {showAllFeedbacks ? 'Thu gọn (Hiện 3 feedback) ←' : `Xem tất cả (${allFeedbacks.length}) →`}
+                {showAllFeedbacks ? 'Thu gọn ←' : `Xem tất cả (${allFeedbacks.length}) →`}
               </button>
             </div>
 
@@ -759,11 +759,10 @@ export default function DressDetailPage() {
                     setFeedbackPage((prev) => Math.max(prev - 1, 1));
                     document.getElementById('feedback-section')?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className={`w-9 h-9 rounded-[8px] flex items-center justify-center border transition-colors ${
-                    feedbackPage === 1
+                  className={`w-9 h-9 rounded-[8px] flex items-center justify-center border transition-colors ${feedbackPage === 1
                       ? 'border-[#EAE0DC] text-[#C4B4B0] cursor-not-allowed bg-transparent'
                       : 'border-[#EAE0DC] bg-white text-[#70484E] hover:border-[#70484E] cursor-pointer'
-                  }`}
+                    }`}
                   aria-label="Trang trước"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -790,11 +789,10 @@ export default function DressDetailPage() {
                         setFeedbackPage(pNum);
                         document.getElementById('feedback-section')?.scrollIntoView({ behavior: 'smooth' });
                       }}
-                      className={`w-9 h-9 rounded-[8px] flex items-center justify-center font-jakarta text-[13px] font-medium transition-colors cursor-pointer ${
-                        isActive
+                      className={`w-9 h-9 rounded-[8px] flex items-center justify-center font-jakarta text-[13px] font-medium transition-colors cursor-pointer ${isActive
                           ? 'bg-[#70484E] text-white shadow-xs'
                           : 'bg-white border border-[#EAE0DC] text-[#5A4848] hover:border-[#70484E] hover:text-[#70484E]'
-                      }`}
+                        }`}
                     >
                       {pNum}
                     </button>
@@ -808,11 +806,10 @@ export default function DressDetailPage() {
                     setFeedbackPage((prev) => Math.min(prev + 1, totalFeedbackPages));
                     document.getElementById('feedback-section')?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className={`w-9 h-9 rounded-[8px] flex items-center justify-center border transition-colors ${
-                    feedbackPage === totalFeedbackPages
+                  className={`w-9 h-9 rounded-[8px] flex items-center justify-center border transition-colors ${feedbackPage === totalFeedbackPages
                       ? 'border-[#EAE0DC] text-[#C4B4B0] cursor-not-allowed bg-transparent'
                       : 'border-[#EAE0DC] bg-white text-[#70484E] hover:border-[#70484E] cursor-pointer'
-                  }`}
+                    }`}
                   aria-label="Trang kế tiếp"
                 >
                   <ChevronRight className="w-4 h-4" />
