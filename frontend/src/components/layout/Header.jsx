@@ -207,6 +207,13 @@ const Header = ({ onOpenBooking, cartCount = 2, wishlistCount = 2 }) => {
                     </button>
                   ))}
                 </div>
+                <Link
+                  to="/collection"
+                  onClick={() => setIsDropdownOpen(false)}
+                  className="mt-3 block border-t border-[#F0E6E8] px-2 pt-3 font-jakarta text-[13px] font-semibold text-[#B8737D] hover:text-[#9d5a65]"
+                >
+                  Xem toàn bộ Bộ Sưu Tập →
+                </Link>
               </div>
             </div>
           </div>
@@ -389,6 +396,13 @@ const Header = ({ onOpenBooking, cartCount = 2, wishlistCount = 2 }) => {
                   </div>
                 </button>
               ))}
+              <Link
+                to="/collection"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block font-jakarta text-[14px] font-semibold text-[#B8737D]"
+              >
+                Xem toàn bộ Bộ Sưu Tập →
+              </Link>
             </div>
           </div>
 

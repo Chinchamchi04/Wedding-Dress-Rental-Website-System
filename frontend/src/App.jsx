@@ -5,6 +5,7 @@ import ProfilePage from './pages/customer/ProfilePage';
 import OrderHistoryPage from './pages/customer/OrderHistoryPage';
 import OrderDetailPage from './pages/customer/OrderDetailPage';
 import ChangePasswordPage from './pages/customer/ChangePasswordPage';
+import CollectionPage from './pages/customer/CollectionPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
@@ -21,6 +22,8 @@ export default function App() {
         <Route path="/profile/orders" element={<OrderHistoryPage />} />
         <Route path="/profile/orders/:orderId" element={<OrderDetailPage />} />
         <Route path="/profile/password" element={<ChangePasswordPage />} />
+        <Route path="/collection" element={<CollectionPage />} />
+        <Route path="/bo-suu-tap" element={<CollectionPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
