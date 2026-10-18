@@ -5,21 +5,6 @@
 .profile-page button, .profile-page a, .profile-page input { -webkit-tap-highlight-color: transparent; }
 .profile-page button { cursor: pointer; }
 .profile-page :is(button, a, input):focus-visible { outline: 2px solid #874e57; outline-offset: 4px; }
-.profile-header { box-shadow: 0 3px 15px #874e5707; }
-.profile-header nav a { font-size: 16px; font-weight: 500; transition: color .15s; }
-.profile-header nav a:hover { color: #874e57; }
-.profile-icon-button { width: 40px; height: 44px; align-items: center; justify-content: center; border-radius: 12px; transition: background .15s; }
-.profile-icon-button:hover { background: #fff1ed; }
-.profile-account-button { width: 48px; height: 48px; border: 1px solid #b8737d; background: #fff1ed; box-shadow: 0 2px 12px #b8737d25; }
-.profile-account-menu { width: min(290px, calc(100vw - 64px)); padding: 6px; font-family: 'Plus Jakarta Sans', sans-serif; }
-.profile-account-popover .profile-account-surface { border-radius: 24px; border: 1px solid #f0e0df; box-shadow: 0 12px 32px #674b4b12; padding: 14px; }
-.profile-account-menu p { margin: 0; color: #a9626c; padding: 4px 12px 10px; font-size: 12px; font-weight: 600; }
-.profile-account-menu button { background: transparent; font-family: inherit; border: 0; }
-.profile-account-menu a, .profile-account-menu button { display: block; text-align: left; width: 100%; border-radius: 15px; padding: 14px 12px; cursor: pointer; }
-.profile-account-menu strong { display: block; font-size: 16px; margin-bottom: 4px; }
-.profile-account-menu span { display: block; font-size: 13px; line-height: 1.7; color: #776965; }
-.profile-account-menu a:hover, .profile-account-menu button:hover, .profile-account-active { background: #faf5f6; }
-.profile-account-active strong { color: #b8737d; }
 .profile-form .ant-form-item { margin-bottom: 16px; }
 .profile-form .ant-form-item-label { padding-bottom: 4px; }
 .profile-form .ant-form-item-label > label { font-size: 11px; height: auto; color: #514344; }
@@ -38,11 +23,6 @@
 }
 @media (max-width: 1023px) { .profile-main { min-height: auto; } }
 @media (max-width: 479px) {
-  .profile-header > div { gap: 8px; padding-left: 16px; padding-right: 12px; }
-  .profile-header img { height: 32px; }
-  .profile-header span { font-size: 20px; }
-  .profile-icon-button { width: 30px; height: 38px; }
-  .profile-account-button { width: 38px; }
   .profile-cancel { min-width: 95px; }
   .profile-card { padding-left: 18px; padding-right: 18px; }
 }

@@ -10,6 +10,7 @@ import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import BookingModal from '../../components/common/BookingModal';
 import { getDressById, getRelatedDresses, formatCurrencyVND } from '../../services/dressService';
+import { addToCart } from '../../services/cartService';
 
 // Import local photos for feedbacks
 import card1 from '../../assets/card1_elysian.jpg';
@@ -247,8 +248,9 @@ export default function DressDetailPage() {
   }, [allFeedbacks, showAllFeedbacks, feedbackPage, feedbacksPerPage]);
 
   const handleOnlineRent = () => {
+    const added = addToCart(dress);
     setRentNotification(
-      `Đã thêm "${dress?.name}" vào giỏ thuê thành công! (Gói ${rentalDays} ngày từ ${startDate} đến ${endDate})`
+      added ? `Đã thêm "${dress?.name}" vào giỏ thuê váy! Xem giỏ hàng để tiếp tục.` : `"${dress?.name}" đã có trong giỏ thuê váy.`
     );
     setTimeout(() => {
       setRentNotification('');

@@ -1,10 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingBag, Heart, User, Calendar, ChevronDown, Menu, X, LogOut } from 'lucide-react';
 import logoImg from '../../assets/logo.png';
 import { clearProfile } from '../../services/profileService';
+import { CART_EVENT, getCart } from '../../services/cartService';
 
-const Header = ({ onOpenBooking, cartCount = 2, wishlistCount = 2 }) => {
+const Header = ({ onOpenBooking, onLogout, wishlistCount = 2 }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -14,6 +15,17 @@ const Header = ({ onOpenBooking, cartCount = 2, wishlistCount = 2 }) => {
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userTimeoutRef = useRef(null);
+  const [cartCount, setCartCount] = useState(() => getCart().length);
+
+  useEffect(() => {
+    const refreshCart = () => setCartCount(getCart().length);
+    window.addEventListener(CART_EVENT, refreshCart);
+    window.addEventListener('storage', refreshCart);
+    return () => {
+      window.removeEventListener(CART_EVENT, refreshCart);
+      window.removeEventListener('storage', refreshCart);
+    };
+  }, []);
 
   const categories = [
     {
@@ -95,6 +107,10 @@ const Header = ({ onOpenBooking, cartCount = 2, wishlistCount = 2 }) => {
   const handleLogout = () => {
     setIsUserMenuOpen(false);
     setMobileMenuOpen(false);
+    if (onLogout) {
+      onLogout();
+      return;
+    }
     clearProfile();
     navigate('/login');
   };
@@ -257,9 +273,9 @@ const Header = ({ onOpenBooking, cartCount = 2, wishlistCount = 2 }) => {
 
           {/* Shopping Bag with badge */}
           <Link
-            to="/profile/orders"
+            to="/cart"
             className="relative p-1.5 flex items-center justify-center text-[#2C2523] hover:text-[#B8737D] transition-colors border-0 bg-transparent cursor-pointer no-underline"
-            title="Giỏ thuê váy & Lịch sử đơn hàng"
+            title="Giỏ thuê váy"
           >
             <ShoppingBag className="w-[19px] h-[19px] stroke-[1.8]" />
             <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-0.5 rounded-full bg-[#B8737D] text-white font-jakarta text-[9.5px] font-bold flex items-center justify-center leading-none">
