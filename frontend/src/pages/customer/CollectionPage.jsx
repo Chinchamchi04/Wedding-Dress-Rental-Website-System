@@ -7,6 +7,7 @@ import {
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import BookingModal from '../../components/common/BookingModal';
+import { addToCart } from '../../services/cartService';
 
 // Import images
 import card1Img from '../../assets/card1_elysian.jpg';
@@ -1381,7 +1382,6 @@ export default function CollectionPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   // State tương tác: Giỏ hàng, Wishlist, Modal Thuê Váy, Toast Thông Báo
-  const [cartItems, setCartItems] = useState([]);
   const [wishlistIds, setWishlistIds] = useState([]);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -1407,8 +1407,8 @@ export default function CollectionPage() {
 
   // Thêm vào giỏ thuê
   const handleAddToCart = (dress) => {
-    setCartItems((prev) => [...prev, dress]);
-    showToast(`Đã thêm "${dress.name}" vào giỏ thuê váy!`);
+    const added = addToCart(dress);
+    showToast(added ? `Đã thêm "${dress.name}" vào giỏ thuê váy!` : `"${dress.name}" đã có trong giỏ thuê váy.`);
   };
 
   // Mở modal Thuê Ngay
@@ -1517,7 +1517,6 @@ export default function CollectionPage() {
 
       {/* 1. Header Navigation */}
       <Header
-        cartCount={cartItems.length}
         onOpenBooking={() => setIsBookingOpen(true)}
       />
 
