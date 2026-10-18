@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import dressRoutes from './routes/dress.routes.js';
 
 const app = express();
 
@@ -15,5 +16,8 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Wedding Dress Rental API is running' });
 });
+
+// API Routes
+app.use('/api/dresses', dressRoutes);
 
 export default app;
