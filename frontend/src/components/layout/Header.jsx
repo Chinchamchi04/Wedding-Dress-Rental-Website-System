@@ -17,9 +17,14 @@ const Header = ({ onOpenBooking, cartCount = 2, wishlistCount = 2 }) => {
 
   const categories = [
     {
+      title: 'Tất Cả Thiết Kế Bộ Sưu Tập',
+      subtitle: 'Khám phá hơn 70+ mẫu trang phục cưới cao cấp',
+      href: '/collection',
+    },
+    {
       title: 'Váy Cưới Haute Couture',
       subtitle: 'Độc bản may đo & ren Pháp cao cấp',
-      href: '#collection',
+      href: '/collection',
     },
     {
       title: 'Phom Dáng Corsetry',
@@ -29,12 +34,12 @@ const Header = ({ onOpenBooking, cartCount = 2, wishlistCount = 2 }) => {
     {
       title: 'Vest Cưới & Tuxedo',
       subtitle: 'Phong cách quý ông Châu Âu thanh lịch',
-      href: '#collection',
+      href: '/collection',
     },
     {
       title: 'Áo Dài Cưới Truyền Thống',
       subtitle: 'Gấm thêu tay hoàng gia cao cấp',
-      href: '#collection',
+      href: '/collection',
     },
   ];
 
@@ -75,6 +80,11 @@ const Header = ({ onOpenBooking, cartCount = 2, wishlistCount = 2 }) => {
   const handleNavClick = (hash = '') => {
     setIsDropdownOpen(false);
     setMobileMenuOpen(false);
+
+    if (hash && hash.startsWith('/')) {
+      navigate(hash);
+      return;
+    }
 
     if (location.pathname === '/') {
       if (hash) {

@@ -6,6 +6,7 @@ import card1Img from '../assets/card1_elysian.jpg';
 import card2Img from '../assets/card2_celeste.jpg';
 import card3Img from '../assets/card3_lumiere.jpg';
 import card4Img from '../assets/card4_monet.jpg';
+import logoEmblemImg from '../assets/logo_emblem.png';
 
 const products = [
   {
@@ -113,7 +114,7 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds = [
   return (
     <section id="collection" className="py-16 sm:py-20 bg-[#FAF7F5]">
       <div className="max-w-[1280px] mx-auto px-5 sm:px-8">
-        
+
         {/* Section Header */}
         <div className="max-w-[700px] mb-10 sm:mb-12 text-left">
           <span className="font-jakarta font-semibold text-[11px] sm:text-[11.5px] tracking-[0.2em] uppercase text-[#B8737D] block mb-0.5 leading-none">
@@ -171,6 +172,18 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds = [
                       strokeWidth={1.65}
                     />
                   </button>
+
+                  {/* Logo UniBridal cắt phông (transparent watermark) ở góc ảnh */}
+                  <div
+                    className="absolute bottom-3 right-3.5 z-10 pointer-events-none select-none transition-transform duration-300 hover:scale-110"
+                    title="UniBridal Haute Couture"
+                  >
+                    <img
+                      src={logoEmblemImg}
+                      alt="UniBridal Emblem"
+                      className="w-[42px] h-[42px] object-contain drop-shadow-[0px_2px_6px_rgba(0,0,0,0.35)]"
+                    />
+                  </div>
                 </div>
 
                 {/* Details Bottom - Compact and hugging button closely at the bottom */}
