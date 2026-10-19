@@ -12,6 +12,7 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import DressDetailPage from './pages/customer/DressDetailPage';
 import CartPage from './pages/customer/CartPage';
 import CheckoutPage from './pages/customer/CheckoutPage';
+import AppointmentPage from './pages/customer/AppointmentPage';
 
 export default function App() {
   return (
@@ -25,6 +26,9 @@ export default function App() {
         <Route path="/dat-coc" element={<CheckoutPage />} />
         <Route path="/thanh-toan" element={<CheckoutPage />} />
         <Route path="/ky-hop-dong" element={<CheckoutPage />} />
+        <Route path="/dat-lich" element={<AppointmentPage />} />
+        <Route path="/appointment" element={<AppointmentPage />} />
+        <Route path="/booking" element={<AppointmentPage />} />
         <Route path="/dresses/:id" element={<DressDetailPage />} />
         <Route path="/dress/:id" element={<DressDetailPage />} />
         <Route path="/profile" element={<ProfilePage />} />
