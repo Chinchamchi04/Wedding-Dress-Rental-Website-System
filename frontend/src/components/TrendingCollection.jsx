@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Heart } from 'lucide-react';
+import { getAllDresses } from '../services/dressService';
 import card1Img from '../assets/card1_elysian.jpg';
 import card2Img from '../assets/card2_celeste.jpg';
 import card3Img from '../assets/card3_lumiere.jpg';
@@ -75,6 +77,39 @@ const renderDepositWithDong = (amountStr) => {
 };
 
 const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds = [1] }) => {
+  const navigate = useNavigate();
+  const [items, setItems] = useState(products);
+
+  useEffect(() => {
+    let isMounted = true;
+    getAllDresses().then((res) => {
+      if (isMounted && res?.success && res.data?.length > 0) {
+        const mapped = res.data.slice(0, 4).map((d, index) => ({
+          id: d._id || d.id || index + 1,
+          slug: d.slug,
+          name: d.name,
+          badgeMain: d.collectionTag?.split(' ')?.[0] || 'HAUTE COUTURE',
+          badgeSub: d.silhouette ? `Dáng ${d.silhouette}` : 'Có sẵn',
+          rating: String(d.rating || '5.0'),
+          rentCount: `${d.rentCount || 0} lượt thuê`,
+          size: d.sizes?.length ? `Size: ${d.sizes.map((s) => (typeof s === 'string' ? s : s.id)).join(' - ')}` : 'Size: S - M',
+          price: typeof d.price === 'number' ? `${new Intl.NumberFormat('vi-VN').format(d.price)}₫` : d.price,
+          depositAmount: typeof d.depositAmount === 'number' ? `${new Intl.NumberFormat('vi-VN').format(d.depositAmount)}₫` : d.depositAmount,
+          image: d.images?.[0] || products[index]?.image || card1Img,
+        }));
+        setItems(mapped);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleCardClick = (target) => {
+    navigate(`/dresses/${target}`);
+  };
+
   return (
     <section id="collection" className="py-16 sm:py-20 bg-[#FAF7F5]">
       <div className="max-w-[1280px] mx-auto px-5 sm:px-8">
@@ -94,12 +129,13 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds = [
 
         {/* 4-Column Product Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
-          {products.map((item) => {
+          {items.map((item) => {
             const isWishlisted = wishlistedIds.includes(item.id);
             return (
               <div
                 key={item.id}
-                className="bg-white border border-[#EFE5E2] rounded-[24px] overflow-hidden shadow-[0px_4px_20px_rgba(44,37,35,0.03)] hover:shadow-[0px_12px_32px_rgba(44,37,35,0.07)] transition-all duration-300 flex flex-col group"
+                onClick={() => handleCardClick(item.slug || item.id)}
+                className="bg-white border border-[#EFE5E2] rounded-[24px] overflow-hidden shadow-[0px_4px_20px_rgba(44,37,35,0.03)] hover:shadow-[0px_12px_32px_rgba(44,37,35,0.07)] transition-all duration-300 flex flex-col group cursor-pointer"
               >
                 {/* Image & Badges */}
                 <div className="relative w-full h-[370px] sm:h-[390px] bg-[#FCEEE9] overflow-hidden rounded-t-[23px]">
@@ -184,7 +220,10 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds = [
                     {/* Thuê Ngay Button */}
                     <button
                       type="button"
-                      onClick={() => onBookProduct && onBookProduct(item)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onBookProduct && onBookProduct(item);
+                      }}
                       className="w-full py-3 rounded-[13px] bg-[#B26B74] hover:bg-[#a05a63] text-white font-jakarta text-[14px] font-medium tracking-[0.8px] transition-colors cursor-pointer border-0 shadow-xs flex items-center justify-center active:scale-[0.99]"
                     >
                       Thuê Ngay

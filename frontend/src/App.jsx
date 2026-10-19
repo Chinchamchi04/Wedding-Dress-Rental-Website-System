@@ -8,12 +8,15 @@ import ChangePasswordPage from './pages/customer/ChangePasswordPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import DressDetailPage from './pages/customer/DressDetailPage';
 
 export default function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/dresses/:id" element={<DressDetailPage />} />
+        <Route path="/dress/:id" element={<DressDetailPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/profile/orders" element={<OrderHistoryPage />} />
         <Route path="/profile/orders/:orderId" element={<OrderDetailPage />} />
