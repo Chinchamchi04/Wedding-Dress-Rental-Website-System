@@ -193,6 +193,13 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
             Bộ Sưu Tập
           </Link>
 
+          {/* Form Đặt Thuê & Lịch Thử Cho Guest */}
+          <Link
+            to="/thue-nhanh"
+            className="font-jakarta text-[15.5px] font-medium text-[#2C2523] no-underline hover:text-[#B8737D] transition-colors cursor-pointer"
+          >
+            Thuê & Đặt Lịch
+          </Link>
 
           <a
             href="/#brides"
@@ -309,7 +316,7 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
           {/* Đặt Lịch Thử Váy CTA Button */}
           <button
             type="button"
-            onClick={onOpenBooking || (() => handleNavClick('#home'))}
+            onClick={onOpenBooking || (() => navigate('/thue-nhanh'))}
             className="hidden sm:inline-flex items-center gap-2 bg-[#B8737D] hover:bg-[#a6626c] text-white font-jakarta text-[13.5px] font-semibold px-4 py-2 sm:px-4.5 sm:py-2.5 rounded-xl sm:rounded-2xl transition-all shadow-sm hover:shadow-md cursor-pointer border-0 select-none ml-1 active:scale-95"
           >
             <Calendar className="w-4 h-4 stroke-[2]" />
@@ -347,6 +354,14 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
             className="block font-jakarta text-[16px] font-semibold text-[#2C2523] no-underline hover:text-[#B8737D]"
           >
             Bộ Sưu Tập
+          </Link>
+
+          <Link
+            to="/thue-nhanh"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block font-jakarta text-[16px] font-semibold text-[#2C2523] no-underline hover:text-[#B8737D]"
+          >
+            Thuê & Đặt Lịch (Guest)
           </Link>
 
 
