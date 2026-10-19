@@ -185,66 +185,13 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
             Trang chủ
           </Link>
 
-          {/* Dropdown: Bộ Sưu Tập */}
-          <div
-            className="relative group py-4"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
+          {/* Bộ Sưu Tập - 1 Nút bấm trực tiếp */}
+          <Link
+            to="/collection"
+            className="font-jakarta text-[15.5px] font-medium text-[#2C2523] no-underline hover:text-[#B8737D] transition-colors cursor-pointer"
           >
-            <button
-              type="button"
-              onClick={() => setIsDropdownOpen((prev) => !prev)}
-              className={`font-jakarta text-[15.5px] font-medium flex items-center gap-1.5 no-underline transition-colors bg-transparent border-0 cursor-pointer p-0 ${isDropdownOpen ? 'text-[#B8737D]' : 'text-[#2C2523] group-hover:text-[#B8737D]'
-                }`}
-            >
-              <span>Bộ Sưu Tập</span>
-              <ChevronDown
-                className={`w-4 h-4 transition-transform duration-200 stroke-[2.2] ${isDropdownOpen
-                  ? 'rotate-180 text-[#B8737D]'
-                  : 'text-[#2C2523] group-hover:rotate-180 group-hover:text-[#B8737D]'
-                  }`}
-              />
-            </button>
-
-            {/* Dropdown Menu Box */}
-            <div
-              className={`absolute top-full -left-6 pt-1 z-50 transition-all duration-150 ${isDropdownOpen
-                ? 'block opacity-100 pointer-events-auto'
-                : 'hidden group-hover:block group-hover:opacity-100 group-hover:pointer-events-auto'
-                }`}
-            >
-              <div className="w-[330px] bg-white rounded-2xl shadow-[0_18px_45px_rgba(44,37,35,0.12)] border border-[#F0E6E8] p-4 text-left">
-                <div className="text-[11px] font-bold tracking-wider text-[#B8737D] uppercase mb-2.5 px-2">
-                  DANH MỤC TRANG PHỤC CƯỚI
-                </div>
-
-                <div className="space-y-1">
-                  {categories.map((cat, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => handleNavClick(cat.href)}
-                      className="w-full text-left block p-2.5 rounded-xl hover:bg-[#FAF5F6] transition-colors no-underline group/item cursor-pointer border-0 bg-transparent"
-                    >
-                      <div className="font-jakarta font-bold text-[14.5px] text-[#2C2523] group-hover/item:text-[#B8737D] transition-colors leading-snug">
-                        {cat.title}
-                      </div>
-                      <div className="font-jakarta text-[12px] text-[#78716C] mt-0.5 leading-normal font-normal">
-                        {cat.subtitle}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-                <Link
-                  to="/collection"
-                  onClick={() => setIsDropdownOpen(false)}
-                  className="mt-3 block border-t border-[#F0E6E8] px-2 pt-3 font-jakarta text-[13px] font-semibold text-[#B8737D] hover:text-[#9d5a65]"
-                >
-                  Xem toàn bộ Bộ Sưu Tập →
-                </Link>
-              </div>
-            </div>
-          </div>
+            Bộ Sưu Tập
+          </Link>
 
 
           <a
@@ -394,35 +341,13 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
             Trang chủ
           </Link>
 
-          <div>
-            <div className="text-[11px] font-bold tracking-wider text-[#B8737D] uppercase mb-2">
-              DANH MỤC TRANG PHỤC CƯỚI
-            </div>
-            <div className="pl-3 border-l-2 border-[#B8737D]/30 space-y-2.5">
-              {categories.map((cat, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handleNavClick(cat.href)}
-                  className="w-full text-left block no-underline border-0 bg-transparent p-0 cursor-pointer"
-                >
-                  <div className="text-[14px] font-semibold text-[#2C2523] hover:text-[#B8737D]">
-                    {cat.title}
-                  </div>
-                  <div className="text-[12px] text-[#78716C]">
-                    {cat.subtitle}
-                  </div>
-                </button>
-              ))}
-              <Link
-                to="/collection"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block font-jakarta text-[14px] font-semibold text-[#B8737D]"
-              >
-                Xem toàn bộ Bộ Sưu Tập →
-              </Link>
-            </div>
-          </div>
+          <Link
+            to="/collection"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block font-jakarta text-[16px] font-semibold text-[#2C2523] no-underline hover:text-[#B8737D]"
+          >
+            Bộ Sưu Tập
+          </Link>
 
 
           <a
