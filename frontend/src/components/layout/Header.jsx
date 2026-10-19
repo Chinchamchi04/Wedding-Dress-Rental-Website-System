@@ -69,6 +69,11 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
       href: '/profile/orders',
     },
     {
+      title: 'Quản lý đơn thuê (Staff)',
+      subtitle: 'Bàn giao, kiểm định & định danh số đo',
+      href: '/admin/don-thue',
+    },
+    {
       title: 'Đổi mật khẩu',
       subtitle: 'Bảo mật tài khoản',
       href: '/profile/password',
