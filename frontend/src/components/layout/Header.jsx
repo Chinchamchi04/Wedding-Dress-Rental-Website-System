@@ -267,6 +267,14 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
           >
             Về chúng tôi
           </a>
+
+          <Link
+            to="/dat-lich"
+            className="font-jakarta text-[14.5px] font-bold text-[#733F49] hover:text-[#5F323B] transition-colors no-underline px-3.5 py-1.5 rounded-full bg-[#FAF0EC] border border-[#F2D8D4] hover:bg-[#FCE5DE] flex items-center gap-1.5"
+          >
+            <Calendar className="w-3.5 h-3.5 text-[#B8737D]" />
+            <span>Đặt Lịch Thử Váy</span>
+          </Link>
         </nav>
 
         {/* Action Elements Right */}
@@ -455,6 +463,14 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
           >
             Về chúng tôi
           </a>
+
+          <Link
+            to="/dat-lich"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block font-jakarta text-[16px] font-bold text-[#733F49] no-underline"
+          >
+            📅 Đặt Lịch Thử Váy Private Suite
+          </Link>
 
           <div>
             <div className="text-[11px] font-bold tracking-wider text-[#B8737D] uppercase mb-2">
