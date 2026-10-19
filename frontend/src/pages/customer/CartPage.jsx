@@ -122,9 +122,13 @@ export default function CartPage() {
               <div className="cart-summary-line"><span>Vải bảo hộ & Giao nhận tận nơi</span><strong className="cart-rose">0đ</strong></div>
               <div className="cart-summary-subtotal"><span>Thành tiền thuê lễ phục:</span><strong>{money(rentalFee)}</strong></div>
               <div className="cart-deposit"><div><ShieldCheck size={15} /><strong>Tiền cọc bảo lãnh hoàn lại:</strong><b>{money(deposit)}</b></div><p>UniBridal cam kết hoàn tiền 100% vào tài khoản cô dâu trong 2 giờ sau khi kiểm tra tình trạng váy lúc hoàn trả.</p></div>
-              <div className="cart-grand-total"><span>Tổng giá trị đơn hàng:</span><strong>{money(rentalFee + deposit)}</strong></div>
-              <button type="button" className="cart-checkout" disabled={!items.length} onClick={() => { setSelectedProduct(null); setIsConsultationOpen(true); }}>LIÊN HỆ ĐẶT THUÊ <ArrowRight size={16} /></button>
-              <p className="cart-checkout-note">Liên hệ atelier để xác nhận lịch; chưa phát sinh thanh toán.</p>
+              <Link
+                to="/checkout"
+                className={`cart-checkout ${!items.length ? 'opacity-50 pointer-events-none' : ''}`}
+              >
+                TIẾN HÀNH ĐẶT THUÊ & KÝ HỢP ĐỒNG <ArrowRight size={16} />
+              </Link>
+              <p className="cart-checkout-note">Xác thực số đo, chính sách đặt cọc và hợp đồng bảo chứng số.</p>
               <Link className="cart-continue" to="/collection">TIẾP TỤC KHÁM PHÁ BỘ SƯU TẬP</Link>
             </div>
             <div className="cart-promises"><h2><ShieldCheck size={19} /> CAM KẾT ĐỘC QUYỀN</h2><ul><li><strong>Hoàn cọc từ 100%</strong><span>Giải ngân tự động qua ngân hàng trong vòng 2 giờ sau khi kiểm tra lễ phục.</span></li><li><strong>Hợp đồng điện tử ký số</strong><span>Minh bạch điều khoản, bảo vệ toàn diện quyền lợi và số đo của cô dâu.</span></li><li><strong>Bảo hiểm lỗi sợi & hạt đính</strong><span>Miễn trừ trách nhiệm với các vết dơ thông thường và hạt rơi nhẹ khi khiêu vũ.</span></li><li><strong>Đổi dáng váy miễn phí</strong><span>Được chuyển đổi mẫu váy khác cùng phân khúc trước ngày cưới 15 ngày.</span></li></ul><p>Cần hỗ trợ lựa chọn? <a href="tel:18008998"><Phone size={13} /> Hotline 1800 8998 (24/7)</a></p></div>
