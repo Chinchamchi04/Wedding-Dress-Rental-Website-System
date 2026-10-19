@@ -10,6 +10,7 @@ export const SHOWROOM_BRANCHES = [
     hours: '09:00 — 21:30 (Thứ 2 — Chủ Nhật)',
     features: ['Private Suite 1:1', 'Sân khấu Catwalk ánh sáng chuẩn', 'Atelier may đo tại chỗ'],
     image: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80',
+    mapUrl: 'https://maps.google.com/?q=88+Nam+Ky+Khoi+Nghia+Quan+1+TP+Ho+Chi+Minh',
   },
   {
     id: 'hn-hoankiem',
@@ -19,6 +20,7 @@ export const SHOWROOM_BRANCHES = [
     hours: '09:00 — 21:00 (Thứ 2 — Chủ Nhật)',
     features: ['Kiến trúc Pháp cổ điển', 'Phòng thử váy VIP Hoàng Gia', 'Bộ sưu tập Haute Couture mới nhất'],
     image: 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=600&q=80',
+    mapUrl: 'https://maps.google.com/?q=26+Ly+Thuong+Kiet+Hoan+Kiem+Ha+Noi',
   },
   {
     id: 'dn-haichau',
@@ -28,6 +30,7 @@ export const SHOWROOM_BRANCHES = [
     hours: '09:00 — 21:00 (Thứ 2 — Chủ Nhật)',
     features: ['View sông Hàn thơ mộng', 'Bộ sưu tập váy cưới ngoài trời & bãi biển', 'Stylist riêng tận tình'],
     image: 'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?auto=format&fit=crop&w=600&q=80',
+    mapUrl: 'https://maps.google.com/?q=152+Bach+Dang+Hai+Chau+Da+Nang',
   },
 ];
 
@@ -80,12 +83,14 @@ const INITIAL_APPOINTMENTS = [
     email: 'thaomy.bride@gmail.com',
     branchId: 'hcm-q1',
     branchName: 'UniBridal Flagship Atelier — Quận 1, TP. HCM',
+    branchAddress: '88 Nam Kỳ Khởi Nghĩa, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh',
+    branchPhone: '028 3822 8998',
     date: '2026-10-25',
     timeSlot: '13:30 — 15:00',
     guestsCount: 2,
     selectedDresses: [
-      { id: '1', name: 'Elysian Rose Ballgown', code: 'BGW-2026' },
-      { id: '2', name: 'Celeste Royal Mermaid', code: 'MMD-2026' },
+      { id: 1, name: 'Elysian Rose Ballgown', code: 'BGW-2026' },
+      { id: 2, name: 'Celeste Royal Mermaid', code: 'MMD-2026' },
     ],
     vipServices: ['tea', 'stylist', 'polaroid'],
     notes: 'Cô dâu muốn thử thêm voan dài đính ren đồng bộ và kiểm tra corset siết eo.',
