@@ -222,7 +222,7 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds = [
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onBookProduct && onBookProduct(item);
+                        navigate(`/checkout?dressId=${item.id}`);
                       }}
                       className="w-full py-3 rounded-[13px] bg-[#B26B74] hover:bg-[#a05a63] text-white font-jakarta text-[14px] font-medium tracking-[0.8px] transition-colors cursor-pointer border-0 shadow-xs flex items-center justify-center active:scale-[0.99]"
                     >
