@@ -670,73 +670,80 @@ export default function OrderRentalManagement() {
       {/* Quick Details Modal */}
       {selectedDress && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-[#EFE5E1]">
-            <div className="relative h-64 bg-[#FAF5F2]">
+          <div className="bg-white rounded-3xl max-w-2xl lg:max-w-3xl w-full overflow-hidden shadow-2xl border border-[#EFE5E1] flex flex-col sm:flex-row relative">
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setSelectedDress(null)}
+              className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-[#FAF2EE] text-[#7A6B6C] hover:bg-[#F2E3DC] hover:text-[#733F49] flex items-center justify-center transition-colors z-20 border-0 cursor-pointer shadow-2xs"
+              title="Đóng cửa sổ"
+            >
+              <X size={16} />
+            </button>
+
+            {/* Left: Image Panel */}
+            <div className="w-full sm:w-[42%] lg:w-[45%] relative bg-[#FAF5F2] shrink-0 overflow-hidden min-h-[260px] sm:min-h-[380px]">
               <img
                 src={selectedDress.image}
                 alt={selectedDress.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover absolute inset-0"
               />
-              <button
-                type="button"
-                onClick={() => setSelectedDress(null)}
-                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60 transition-colors"
-              >
-                <X size={16} />
-              </button>
-              <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg bg-[#733F49] text-white text-xs font-mono font-bold tracking-wider">
+              <div className="absolute bottom-3.5 left-3.5 px-2.5 py-1 rounded-lg bg-[#733F49]/90 backdrop-blur-xs text-white text-[11px] font-mono font-bold tracking-wider shadow-xs">
                 {selectedDress.code}
               </div>
             </div>
 
-            <div className="p-6">
-              <h3 className="font-playfair text-2xl font-bold text-[#68353E] mb-1">
-                {selectedDress.name}
-              </h3>
-              <p className="text-xs text-[#8A797A] mb-4">
-                {selectedDress.material}
-              </p>
+            {/* Right: Information Panel */}
+            <div className="flex-1 p-6 flex flex-col justify-between">
+              <div>
+                <h3 className="font-serif text-[22px] sm:text-[24px] font-bold text-[#68353E] mb-1 pr-6 leading-tight">
+                  {selectedDress.name}
+                </h3>
+                <p className="text-xs text-[#8A797A] mb-4">
+                  {selectedDress.material}
+                </p>
 
-              <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
-                <div className="p-3 rounded-xl bg-[#FAF5F2] border border-[#F0E6E2]">
-                  <span className="text-[#8C7D7E] block mb-1">Số đo định danh:</span>
-                  <div className="font-semibold text-[#2C2523] space-y-0.5">
-                    <div>Ngực (V1): {selectedDress.v1}</div>
-                    <div>Eo (V2): {selectedDress.v2}</div>
-                    <div>Mông (V3): {selectedDress.v3}</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 text-xs">
+                  <div className="p-3 rounded-xl bg-[#FAF5F2] border border-[#F0E6E2]">
+                    <span className="text-[#8C7D7E] block mb-1">Số đo định danh:</span>
+                    <div className="font-semibold text-[#2C2523] space-y-0.5">
+                      <div>Ngực (V1): {selectedDress.v1}</div>
+                      <div>Eo (V2): {selectedDress.v2}</div>
+                      <div>Mông (V3): {selectedDress.v3}</div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-[#FAF5F2] border border-[#F0E6E2]">
+                    <span className="text-[#8C7D7E] block mb-1">Tài chính đơn thuê:</span>
+                    <div className="font-bold text-[#863E4B] text-[14px]">
+                      {selectedDress.totalPrice}
+                    </div>
+                    <div className="text-[10.5px] text-[#8C7D7E] mt-0.5 leading-tight">
+                      {selectedDress.priceDetail && selectedDress.priceDetail.includes('+') ? (
+                        <>
+                          <div>{selectedDress.priceDetail.split('+')[0].trim()} +</div>
+                          <div>{selectedDress.priceDetail.split('+')[1].trim()}</div>
+                        </>
+                      ) : (
+                        selectedDress.priceDetail
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-[#FAF5F2] border border-[#F0E6E2]">
-                  <span className="text-[#8C7D7E] block mb-1">Tài chính đơn thuê:</span>
-                  <div className="font-bold text-[#863E4B] text-[14px]">
-                    {selectedDress.totalPrice}
+                <div className="p-3 rounded-xl bg-[#FAF5F2] border border-[#F0E6E2] mb-5 text-xs flex items-center justify-between">
+                  <div>
+                    <span className="text-[#8C7D7E] block">Kế hoạch sử dụng:</span>
+                    <span className="font-semibold text-[#2C2523]">
+                      {selectedDress.scheduleTitle}
+                    </span>
                   </div>
-                  <div className="text-[10.5px] text-[#8C7D7E] mt-0.5 leading-tight">
-                    {selectedDress.priceDetail && selectedDress.priceDetail.includes('+') ? (
-                      <>
-                        <div>{selectedDress.priceDetail.split('+')[0].trim()} +</div>
-                        <div>{selectedDress.priceDetail.split('+')[1].trim()}</div>
-                      </>
-                    ) : (
-                      selectedDress.priceDetail
-                    )}
+                  <div className="text-right">
+                    <span className="text-[#8C7D7E] block">Hạn trả dự kiến:</span>
+                    <span className="font-semibold text-[#2C2523]">
+                      {selectedDress.returnDate}
+                    </span>
                   </div>
-                </div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-[#FAF5F2] border border-[#F0E6E2] mb-5 text-xs flex items-center justify-between">
-                <div>
-                  <span className="text-[#8C7D7E] block">Kế hoạch sử dụng:</span>
-                  <span className="font-semibold text-[#2C2523]">
-                    {selectedDress.scheduleTitle}
-                  </span>
-                </div>
-                <div className="text-right">
-                  <span className="text-[#8C7D7E] block">Hạn trả dự kiến:</span>
-                  <span className="font-semibold text-[#2C2523]">
-                    {selectedDress.returnDate}
-                  </span>
                 </div>
               </div>
 
@@ -744,7 +751,7 @@ export default function OrderRentalManagement() {
                 <button
                   type="button"
                   onClick={() => setSelectedDress(null)}
-                  className="flex-1 py-2.5 rounded-xl border border-[#EFE5E1] text-xs font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors"
+                  className="flex-1 py-2.5 rounded-xl border border-[#EFE5E1] text-xs font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
                 >
                   Đóng
                 </button>
@@ -754,7 +761,7 @@ export default function OrderRentalManagement() {
                     alert(`Đã cập nhật yêu cầu điều phối cho ${selectedDress.name}!`);
                     setSelectedDress(null);
                   }}
-                  className="flex-1 py-2.5 rounded-xl bg-[#733F49] text-xs font-bold text-white hover:bg-[#5C3038] shadow-xs transition-colors"
+                  className="flex-1 py-2.5 rounded-xl bg-[#733F49] text-xs font-bold text-white hover:bg-[#5C3038] shadow-xs transition-colors border-0 cursor-pointer"
                 >
                   Cập Nhật Tiến Độ
                 </button>
