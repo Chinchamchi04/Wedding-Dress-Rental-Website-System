@@ -6,7 +6,6 @@ import card1Img from '../assets/card1_elysian.jpg';
 import card2Img from '../assets/card2_celeste.jpg';
 import card3Img from '../assets/card3_lumiere.jpg';
 import card4Img from '../assets/card4_monet.jpg';
-import logoEmblemImg from '../assets/logo_emblem.png';
 
 const products = [
   {
@@ -172,18 +171,6 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds = [
                       strokeWidth={1.65}
                     />
                   </button>
-
-                  {/* Logo UniBridal cắt phông (transparent watermark) ở góc ảnh */}
-                  <div
-                    className="absolute bottom-3 right-3.5 z-10 pointer-events-none select-none transition-transform duration-300 hover:scale-110"
-                    title="UniBridal Haute Couture"
-                  >
-                    <img
-                      src={logoEmblemImg}
-                      alt="UniBridal Emblem"
-                      className="w-[42px] h-[42px] object-contain drop-shadow-[0px_2px_6px_rgba(0,0,0,0.35)]"
-                    />
-                  </div>
                 </div>
 
                 {/* Details Bottom - Compact and hugging button closely at the bottom */}
