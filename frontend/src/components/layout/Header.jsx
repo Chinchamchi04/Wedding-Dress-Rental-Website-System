@@ -246,16 +246,6 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
             </div>
           </div>
 
-          <a
-            href="/#collection"
-            onClick={(e) => {
-              e.preventDefault();
-              handleNavClick('#collection');
-            }}
-            className="font-jakarta text-[15.5px] font-medium text-[#2C2523] no-underline hover:text-[#B8737D] transition-colors cursor-pointer"
-          >
-            Bảng Giá & Gói Thuê
-          </a>
 
           <a
             href="/#brides"
@@ -434,16 +424,6 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
             </div>
           </div>
 
-          <a
-            href="/#collection"
-            onClick={(e) => {
-              e.preventDefault();
-              handleNavClick('#collection');
-            }}
-            className="block font-jakarta text-[16px] font-semibold text-[#2C2523] no-underline hover:text-[#B8737D] cursor-pointer"
-          >
-            Bảng Giá & Gói Thuê
-          </a>
 
           <a
             href="/#brides"
