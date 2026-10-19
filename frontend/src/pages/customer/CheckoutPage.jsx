@@ -855,140 +855,92 @@ export default function CheckoutPage() {
                   </div>
                 </section>
 
-                {/* 2. CHỌN CỔNG THANH TOÁN */}
+                {/* 2. THANH TOÁN BẰNG QUÉT MÃ VIETQR */}
                 <section className="bg-white rounded-2xl border border-[#F0E5DC] shadow-[0_4px_24px_rgba(44,37,35,0.03)] p-6 sm:p-7">
-                  <div className="flex items-center gap-3 pb-4 border-b border-[#F5EDE8] mb-5">
+                  <div className="flex items-center gap-3 pb-4 border-b border-[#F5EDE8] mb-6">
                     <div className="w-10 h-10 rounded-xl bg-[#FAF0EC] flex items-center justify-center text-[#B8737D]">
-                      <CreditCard className="w-5 h-5" />
+                      <QrCode className="w-5 h-5" />
                     </div>
                     <div>
                       <h2 className="font-playfair text-[19px] sm:text-[21px] font-semibold text-[#2C2523] m-0">
-                        Cổng Thanh Toán Bảo Mật
+                        Thanh Toán Đặt Cọc Bằng Quét Mã VietQR
                       </h2>
                       <p className="text-[12px] text-[#847374] m-0 mt-0.5">
-                        Hỗ trợ quét mã VietQR ngân hàng 24/7 và thẻ quốc tế Visa / Mastercard
+                        Chuyển khoản 24/7 tức thì qua mã VietQR liên ngân hàng, tự động xác nhận đơn cọc
                       </p>
                     </div>
                   </div>
 
-                  {/* Payment Gateway Options Tabs */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-                    {[
-                      { id: 'vietqr', title: 'Quét Mã VietQR', sub: 'Chuyển khoản 24/7 tức thì' },
-                      { id: 'card', title: 'Thẻ Quốc Tế', sub: 'Visa, Mastercard, JCB' },
-                      { id: 'offline', title: 'Tại Showroom', sub: 'Thanh toán trực tiếp' },
-                    ].map((gw) => (
-                      <div
-                        key={gw.id}
-                        onClick={() => setPaymentGateway(gw.id)}
-                        className={`p-3.5 rounded-xl border cursor-pointer text-center transition-all ${
-                          paymentGateway === gw.id
-                            ? 'border-[#733F49] bg-[#FAF3F0] ring-1 ring-[#733F49] shadow-2xs'
-                            : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white'
-                        }`}
-                      >
-                        <div className="font-bold text-[13px] text-[#2C2523] mb-0.5">{gw.title}</div>
-                        <div className="text-[10.5px] text-[#847374]">{gw.sub}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Active Gateway Content */}
-                  {paymentGateway === 'vietqr' && (
-                    <div className="p-5 rounded-2xl bg-[#FCF9F6] border border-[#EEDECF] flex flex-col sm:flex-row items-center gap-6">
-                      <div className="w-44 h-44 bg-white p-2.5 rounded-2xl border border-[#EEDECF] shadow-sm flex flex-col items-center justify-center shrink-0">
-                        <QrCode className="w-32 h-32 text-[#2C2523]" />
-                        <span className="text-[10px] font-mono text-[#733F49] font-bold mt-1">VIETQR 24/7 PRO</span>
-                      </div>
-
-                      <div className="space-y-2.5 text-[12.5px] flex-1">
-                        <div>
-                          <span className="text-[10.5px] font-bold uppercase text-[#847374] block">NGÂN HÀNG THỤ HƯỞNG</span>
-                          <strong className="text-[#2C2523] text-[14px]">Techcombank — Chi nhánh TP. Hồ Chí Minh</strong>
-                        </div>
-                        <div className="flex items-center justify-between bg-white p-2 rounded-xl border border-[#EEDECF]">
-                          <div>
-                            <span className="text-[10px] text-[#847374] block">SỐ TÀI KHOẢN:</span>
-                            <strong className="font-mono text-[15px] text-[#733F49]">1903 8899 2200 88</strong>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => copyToClipboard('19038899220088')}
-                            className="px-2.5 py-1 text-[11px] font-bold text-[#733F49] bg-[#FAF0EC] rounded-lg border border-[#F2D8D4] hover:bg-[#F2DDD9] cursor-pointer"
-                          >
-                            Sao chép
-                          </button>
-                        </div>
-                        <div className="flex items-center justify-between bg-white p-2 rounded-xl border border-[#EEDECF]">
-                          <div>
-                            <span className="text-[10px] text-[#847374] block">SỐ TIỀN CỌC HÔM NAY:</span>
-                            <strong className="font-mono text-[15px] text-[#2E7D32]">{amountToPayToday.toLocaleString('vi-VN')}₫</strong>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => copyToClipboard(String(amountToPayToday))}
-                            className="px-2.5 py-1 text-[11px] font-bold text-[#733F49] bg-[#FAF0EC] rounded-lg border border-[#F2D8D4] hover:bg-[#F2DDD9] cursor-pointer"
-                          >
-                            Sao chép
-                          </button>
-                        </div>
-                        <div className="flex items-center justify-between bg-white p-2 rounded-xl border border-[#EEDECF]">
-                          <div>
-                            <span className="text-[10px] text-[#847374] block">NỘI DUNG CHUYỂN KHOẢN:</span>
-                            <strong className="font-mono text-[13px] text-[#733F49]">UB COC 8992 {phone.replace(/\s/g, '')}</strong>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => copyToClipboard(`UB COC 8992 ${phone.replace(/\s/g, '')}`)}
-                            className="px-2.5 py-1 text-[11px] font-bold text-[#733F49] bg-[#FAF0EC] rounded-lg border border-[#F2D8D4] hover:bg-[#F2DDD9] cursor-pointer"
-                          >
-                            Sao chép
-                          </button>
-                        </div>
-                      </div>
+                  {/* VietQR Payment Details Box */}
+                  <div className="p-5 sm:p-6 rounded-2xl bg-[#FCF9F6] border border-[#EEDECF] flex flex-col md:flex-row items-center gap-6">
+                    {/* QR Box */}
+                    <div className="w-48 h-52 bg-white p-3 rounded-2xl border border-[#EEDECF] shadow-sm flex flex-col items-center justify-center shrink-0">
+                      <QrCode className="w-36 h-36 text-[#2C2523]" />
+                      <span className="text-[10.5px] font-mono text-[#733F49] font-bold mt-1.5 tracking-wider">
+                        VIETQR 24/7 PRO
+                      </span>
                     </div>
-                  )}
 
-                  {paymentGateway === 'card' && (
-                    <div className="p-5 rounded-2xl bg-[#FCF9F6] border border-[#EEDECF] space-y-3.5">
+                    {/* Bank Transfer Details */}
+                    <div className="space-y-3 text-[13px] flex-1 w-full">
                       <div>
-                        <label className="text-[11px] font-bold uppercase text-[#733F49] block mb-1">SỐ THẺ QUỐC TẾ</label>
-                        <input
-                          type="text"
-                          placeholder="4111 2222 3333 4444"
-                          className="w-full bg-white border border-[#EEDECF] rounded-xl px-3.5 py-2 text-[13.5px] font-mono focus:outline-none focus:border-[#733F49]"
-                        />
+                        <span className="text-[10.5px] font-bold uppercase tracking-wider text-[#847374] block mb-0.5">
+                          NGÂN HÀNG THỤ HƯỞNG
+                        </span>
+                        <strong className="text-[#2C2523] text-[15px]">
+                          Techcombank — Chi nhánh TP. Hồ Chí Minh
+                        </strong>
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-[11px] font-bold uppercase text-[#733F49] block mb-1">HẠN DÙNG (MM/YY)</label>
-                          <input
-                            type="text"
-                            placeholder="12/28"
-                            className="w-full bg-white border border-[#EEDECF] rounded-xl px-3.5 py-2 text-[13.5px] font-mono focus:outline-none focus:border-[#733F49]"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-bold uppercase text-[#733F49] block mb-1">MÃ CVV</label>
-                          <input
-                            type="password"
-                            maxLength={3}
-                            placeholder="•••"
-                            className="w-full bg-white border border-[#EEDECF] rounded-xl px-3.5 py-2 text-[13.5px] font-mono focus:outline-none focus:border-[#733F49]"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
-                  {paymentGateway === 'offline' && (
-                    <div className="p-5 rounded-2xl bg-[#FAF0EC] border border-[#F2D8D4] text-[13px] text-[#733F49] leading-relaxed">
-                      <strong>Thanh toán trực tiếp tại quầy Concierge Showroom UniBridal:</strong>
-                      <p className="m-0 mt-1 text-[#6B5C5D]">
-                        Nàng có thể ghé trực tiếp Showroom tại 88 Nam Kỳ Khởi Nghĩa, Q.1 để quẹt thẻ POS hoặc nộp tiền mặt. Lịch hẹn thử và giữ váy sẽ được bảo lưu trong vòng 24 giờ.
-                      </p>
+                      <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-[#EEDECF]">
+                        <div>
+                          <span className="text-[10px] text-[#847374] block uppercase font-bold">SỐ TÀI KHOẢN:</span>
+                          <strong className="font-mono text-[16px] text-[#733F49] tracking-wider">
+                            1903 8899 2200 88
+                          </strong>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard('19038899220088')}
+                          className="px-3 py-1.5 text-[11.5px] font-bold text-[#733F49] bg-[#FAF0EC] rounded-lg border border-[#F2D8D4] hover:bg-[#F2DDD9] cursor-pointer transition-colors"
+                        >
+                          Sao chép
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-[#EEDECF]">
+                        <div>
+                          <span className="text-[10px] text-[#847374] block uppercase font-bold">SỐ TIỀN CỌC HÔM NAY:</span>
+                          <strong className="font-mono text-[16px] text-[#2E7D32]">
+                            {amountToPayToday.toLocaleString('vi-VN')}₫
+                          </strong>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(String(amountToPayToday))}
+                          className="px-3 py-1.5 text-[11.5px] font-bold text-[#733F49] bg-[#FAF0EC] rounded-lg border border-[#F2D8D4] hover:bg-[#F2DDD9] cursor-pointer transition-colors"
+                        >
+                          Sao chép
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-[#EEDECF]">
+                        <div>
+                          <span className="text-[10px] text-[#847374] block uppercase font-bold">NỘI DUNG CHUYỂN KHOẢN:</span>
+                          <strong className="font-mono text-[14px] text-[#733F49]">
+                            UB COC 8992 {phone.replace(/\s/g, '')}
+                          </strong>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(`UB COC 8992 ${phone.replace(/\s/g, '')}`)}
+                          className="px-3 py-1.5 text-[11.5px] font-bold text-[#733F49] bg-[#FAF0EC] rounded-lg border border-[#F2D8D4] hover:bg-[#F2DDD9] cursor-pointer transition-colors"
+                        >
+                          Sao chép
+                        </button>
+                      </div>
                     </div>
-                  )}
+                  </div>
                 </section>
 
                 {/* Confirm Final Payment Button */}
