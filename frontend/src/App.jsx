@@ -10,6 +10,7 @@ import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import DressDetailPage from './pages/customer/DressDetailPage';
+import CartPage from './pages/customer/CartPage';
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/collection" element={<CollectionPage />} />
         <Route path="/bo-suu-tap" element={<CollectionPage />} />
+        <Route path="/cart" element={<CartPage />} />
         <Route path="/dresses/:id" element={<DressDetailPage />} />
         <Route path="/dress/:id" element={<DressDetailPage />} />
         <Route path="/profile" element={<ProfilePage />} />

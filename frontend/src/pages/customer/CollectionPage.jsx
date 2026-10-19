@@ -1,12 +1,13 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { 
-  Search, SlidersHorizontal, Heart, 
+import {
+  Search, SlidersHorizontal, Heart,
   Sparkles, Scissors, ShieldCheck, ChevronLeft, ChevronRight,
   Check, X
 } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import BookingModal from '../../components/common/BookingModal';
+import { addToCart } from '../../services/cartService';
 
 // Import images
 import card1Img from '../../assets/card1_elysian.jpg';
@@ -1381,7 +1382,6 @@ export default function CollectionPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   // State tương tác: Giỏ hàng, Wishlist, Modal Thuê Váy, Toast Thông Báo
-  const [cartItems, setCartItems] = useState([]);
   const [wishlistIds, setWishlistIds] = useState([]);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -1407,8 +1407,8 @@ export default function CollectionPage() {
 
   // Thêm vào giỏ thuê
   const handleAddToCart = (dress) => {
-    setCartItems((prev) => [...prev, dress]);
-    showToast(`Đã thêm "${dress.name}" vào giỏ thuê váy!`);
+    const added = addToCart(dress);
+    showToast(added ? `Đã thêm "${dress.name}" vào giỏ thuê váy!` : `"${dress.name}" đã có trong giỏ thuê váy.`);
   };
 
   // Mở modal Thuê Ngay
@@ -1514,10 +1514,9 @@ export default function CollectionPage() {
 
   return (
     <div className="relative min-h-screen bg-[#FDFBF7] text-[#2C2523] flex flex-col font-jakarta selection:bg-[#FCEEE9] selection:text-[#B8737D]">
-      
+
       {/* 1. Header Navigation */}
       <Header
-        cartCount={cartItems.length}
         onOpenBooking={() => setIsBookingOpen(true)}
       />
 
@@ -1526,8 +1525,8 @@ export default function CollectionPage() {
         <div className="fixed bottom-6 right-6 z-50 bg-[#2C2523] text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-[#E6DAC8]/40 animate-bounce text-[13px] font-medium">
           <Sparkles className="w-4 h-4 text-[#B8737D]" />
           <span>{toastMessage}</span>
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={() => setToastMessage(null)}
             className="text-white/60 hover:text-white ml-2 bg-transparent border-0 cursor-pointer p-0"
           >
@@ -1542,7 +1541,7 @@ export default function CollectionPage() {
         {/* HERO SECTION / BANNER GIỚI THIỆU */}
         <section className="pt-10 pb-8 px-6 sm:px-8 bg-gradient-to-b from-[#FFF5F2] via-[#FDF9F6] to-[#FDFBF7] border-b border-[#E6DAC8]/40">
           <div className="max-w-[960px] mx-auto text-center">
-            
+
             {/* Pill Tag */}
             <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white border border-[#F3D8D8] shadow-xs mb-4">
               <span className="w-1.5 h-1.5 rounded-full bg-[#B8737D]"></span>
@@ -1587,7 +1586,7 @@ export default function CollectionPage() {
 
           {/* SEARCH BAR */}
           <div className="mb-8">
-            <form 
+            <form
               onSubmit={handleSearchSubmit}
               className="w-full bg-white rounded-2xl border border-[#E6DAC8] shadow-[0px_4px_20px_rgba(201,138,144,0.08)] p-2 sm:p-2.5 flex items-center gap-3 transition-all focus-within:border-[#B8737D] focus-within:shadow-[0px_4px_24px_rgba(201,138,144,0.16)]"
             >
@@ -1631,7 +1630,7 @@ export default function CollectionPage() {
 
             {/* SIDEBAR BỘ LỌC TUYỂN CHỌN */}
             <aside className="lg:col-span-3.5 xl:col-span-3 bg-white rounded-[28px] border border-[#EEDECF] p-6 shadow-[0px_4px_24px_rgba(201,138,144,0.08)] sticky top-24">
-              
+
               {/* Header Sidebar */}
               <div className="flex items-center justify-between pb-4 border-b border-[#E6DAC8]/60 mb-6">
                 <div className="flex items-center gap-2">
@@ -1782,7 +1781,7 @@ export default function CollectionPage() {
 
             {/* CỘT CHÍNH: LƯỚI SẢN PHẨM & THANH SẮP XẾP */}
             <div ref={gridTopRef} className="lg:col-span-8.5 xl:col-span-9 flex flex-col scroll-mt-6">
-              
+
               {/* TOP BAR: SỐ LƯỢNG + SORT SELECT */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-6 border-b border-[#E6DAC8]/60">
                 <div className="font-jakarta text-[13px] text-[#514344]">
@@ -1879,7 +1878,7 @@ export default function CollectionPage() {
                           </button>
 
                           {/* Logo UniBridal cắt phông (transparent watermark) ở góc ảnh */}
-                          <div 
+                          <div
                             className="absolute bottom-3 right-3.5 z-10 pointer-events-none select-none transition-transform duration-300 group-hover:scale-110"
                             title="UniBridal Haute Couture"
                           >
