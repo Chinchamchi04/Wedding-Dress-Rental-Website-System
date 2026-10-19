@@ -14,6 +14,9 @@ import CartPage from './pages/customer/CartPage';
 import CheckoutPage from './pages/customer/CheckoutPage';
 import AppointmentPage from './pages/customer/AppointmentPage';
 import GuestBookingPage from './pages/customer/GuestBookingPage';
+import OrderRentalManagement from './pages/admin/OrderRentalManagement';
+import InventoryManagement from './pages/admin/InventoryManagement';
+import CustomerCareManagement from './pages/admin/CustomerCareManagement';
 
 export default function App() {
   return (
@@ -41,6 +44,26 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        
+        {/* Admin & Staff Management */}
+        <Route path="/admin" element={<Navigate to="/admin/don-thue" replace />} />
+        <Route path="/admin/don-thue" element={<OrderRentalManagement />} />
+        <Route path="/admin/orders" element={<OrderRentalManagement />} />
+        <Route path="/admin/kho-hang" element={<InventoryManagement />} />
+        <Route path="/admin/inventory" element={<InventoryManagement />} />
+        <Route path="/staff" element={<Navigate to="/staff/don-thue" replace />} />
+        <Route path="/staff/don-thue" element={<OrderRentalManagement />} />
+        <Route path="/staff/orders" element={<OrderRentalManagement />} />
+        <Route path="/staff/kho-hang" element={<InventoryManagement />} />
+        <Route path="/staff/inventory" element={<InventoryManagement />} />
+        <Route path="/quan-ly-don-thue" element={<OrderRentalManagement />} />
+        <Route path="/quan-ly-kho-hang" element={<InventoryManagement />} />
+        <Route path="/admin/cham-soc-khach-hang" element={<CustomerCareManagement />} />
+        <Route path="/admin/customer-care" element={<CustomerCareManagement />} />
+        <Route path="/staff/cham-soc-khach-hang" element={<CustomerCareManagement />} />
+        <Route path="/staff/customer-care" element={<CustomerCareManagement />} />
+        <Route path="/cham-soc-khach-hang" element={<CustomerCareManagement />} />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
