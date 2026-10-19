@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Search, SlidersHorizontal, Heart,
   Sparkles, Scissors, ShieldCheck, ChevronLeft, ChevronRight,
@@ -1369,6 +1370,7 @@ const PRICE_RANGE_OPTIONS = [
 const ITEMS_PER_PAGE = 9;
 
 export default function CollectionPage() {
+  const navigate = useNavigate();
   const gridTopRef = useRef(null);
 
   // State Bộ lọc
@@ -1411,10 +1413,10 @@ export default function CollectionPage() {
     showToast(added ? `Đã thêm "${dress.name}" vào giỏ thuê váy!` : `"${dress.name}" đã có trong giỏ thuê váy.`);
   };
 
-  // Mở modal Thuê Ngay
+  // Thuê Ngay: Thêm vào đơn và chuyển thẳng tới trang Ký Hợp Đồng & Thanh Toán
   const handleRentNow = (dress) => {
-    setSelectedProduct(dress);
-    setIsBookingOpen(true);
+    addToCart(dress);
+    navigate(`/checkout?dressId=${dress.id}`);
   };
 
   // Xóa toàn bộ bộ lọc

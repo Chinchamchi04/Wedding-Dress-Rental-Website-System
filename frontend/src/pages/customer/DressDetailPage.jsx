@@ -247,6 +247,17 @@ export default function DressDetailPage() {
     return allFeedbacks.slice(startIndex, startIndex + feedbacksPerPage);
   }, [allFeedbacks, showAllFeedbacks, feedbackPage, feedbacksPerPage]);
 
+  const handleDirectRent = () => {
+    addToCart({
+      ...dress,
+      size: selectedSize,
+      rentalDays: rentalDays,
+      startDate: startDate,
+      endDate: endDate,
+    });
+    navigate(`/checkout?dressId=${dress.id}&size=${selectedSize}&startDate=${startDate}&endDate=${endDate}&days=${rentalDays}`);
+  };
+
   const handleOnlineRent = () => {
     const added = addToCart(dress);
     setRentNotification(
@@ -561,7 +572,7 @@ export default function DressDetailPage() {
               <div className="flex items-center gap-2.5">
                 <button
                   type="button"
-                  onClick={() => setIsBookingOpen(true)}
+                  onClick={handleDirectRent}
                   className="flex-1 h-[48px] px-5 rounded-[4px] bg-[#70484E] hover:bg-[#5E3B40] text-white font-jakarta text-[13.5px] font-medium tracking-[1.2px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer border-0 active:scale-[0.99]"
                 >
                   <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -569,7 +580,7 @@ export default function DressDetailPage() {
                     <path d="M8 10 5 21h14l-3-11" />
                     <path d="M9 14h6" />
                   </svg>
-                  ĐẶT THUÊ NGAY
+                  ĐẶT THUÊ NGAY (KÝ HỢP ĐỒNG & CỌC)
                 </button>
 
                 <button
@@ -585,28 +596,21 @@ export default function DressDetailPage() {
                 </button>
               </div>
 
-              {/* Row 2: ĐẶT MUA */}
+              {/* Row 2: ĐẶT LỊCH THỬ VÁY TẠI SHOWROOM */}
               <button
                 type="button"
-                onClick={() => {
-                  setRentNotification(`Đã ghi nhận yêu cầu đặt mua may đo "${dress.name}". Chuyên viên UniBridal sẽ liên hệ tư vấn trong 15 phút!`);
-                  setTimeout(() => setRentNotification(''), 4500);
-                }}
-                className="w-full h-[48px] px-5 rounded-[4px] bg-[#B67E86] hover:bg-[#A66E76] text-white font-jakarta text-[13.5px] font-medium tracking-[1.2px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer border-0 active:scale-[0.99]"
+                onClick={() => navigate(`/dat-lich?dressId=${dress.id}`)}
+                className="w-full h-[48px] px-5 rounded-[4px] bg-[#FAF4EE] hover:bg-[#F2E8DF] border border-[#E0D0C4] text-[#70484E] font-jakarta text-[13px] font-semibold tracking-[0.8px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
               >
-                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 3a2 2 0 0 0-2 2c0 .7.4 1.3 1 1.7L8 10h8l-3-3.3c.6-.4 1-1 1-1.7a2 2 0 0 0-2-2Z" />
-                  <path d="M8 10 5 21h14l-3-11" />
-                  <path d="M9 14h6" />
-                </svg>
-                ĐẶT MUA
+                <Calendar className="w-4 h-4 text-[#70484E]" />
+                ĐẶT LỊCH THỬ VÁY PRIVATE SUITE (MIỄN PHÍ)
               </button>
 
               {/* Row 3: THÊM VÀO GIỎ HÀNG */}
               <button
                 type="button"
                 onClick={handleOnlineRent}
-                className="w-full h-[48px] px-5 rounded-[4px] bg-white hover:bg-[#FAF4F3] border border-[#70484E] text-[#70484E] font-jakarta text-[13.5px] font-medium tracking-[1.2px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+                className="w-full h-[48px] px-5 rounded-[4px] bg-white hover:bg-[#FAF4F3] border border-[#70484E] text-[#70484E] font-jakarta text-[13px] font-semibold tracking-[0.8px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
               >
                 <ShoppingBag className="w-4 h-4" strokeWidth={1.8} />
                 THÊM VÀO GIỎ HÀNG
@@ -615,10 +619,10 @@ export default function DressDetailPage() {
               {/* Row 4: LIÊN HỆ VỚI NGƯỜI BÁN */}
               <a
                 href="tel:19008888"
-                className="w-full h-[48px] px-5 rounded-[4px] bg-[#FDF6F4] hover:bg-[#F9ECE8] border border-[#F2DDD9] text-[#332225] font-jakarta text-[13.5px] font-medium tracking-[1.2px] uppercase transition-colors flex items-center justify-center gap-2 no-underline active:scale-[0.99]"
+                className="w-full h-[46px] px-5 rounded-[4px] bg-[#FDF6F4] hover:bg-[#F9ECE8] border border-[#F2DDD9] text-[#553C40] font-jakarta text-[12.5px] font-medium tracking-[0.5px] uppercase transition-colors flex items-center justify-center gap-2 no-underline active:scale-[0.99]"
               >
                 <Headphones className="w-4 h-4 text-[#70484E]" strokeWidth={1.8} />
-                LIÊN HỆ VỚI NGƯỜI BÁN
+                TƯ VẤN TRỰC TIẾP VỚI CHUYÊN VIÊN ATELIER
               </a>
             </div>
 
