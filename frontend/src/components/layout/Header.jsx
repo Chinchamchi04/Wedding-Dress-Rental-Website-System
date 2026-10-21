@@ -253,14 +253,21 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
             </span>
           </Link>
 
-          {/* Wishlist Heart (Hiệu ứng active hình vuông bo góc viền hồng pastel chuẩn 100% theo mẫu) */}
+          {/* Wishlist Heart (Hiệu ứng active hình vuông bo góc viền hồng + bóng đổ hồng tỏa sáng chuẩn 100% theo mẫu) */}
           <Link
             to="/wishlist"
-            className={`relative w-[36px] h-[36px] sm:w-[38px] sm:h-[38px] flex items-center justify-center rounded-[12px] transition-all cursor-pointer no-underline active:scale-95 ${
+            className={`relative w-[36px] h-[36px] sm:w-[38px] sm:h-[38px] flex items-center justify-center rounded-[12px] transition-all duration-300 cursor-pointer no-underline active:scale-95 ${
               isWishlistPage
-                ? 'bg-[#FFF2F0] border border-[#D498A0] text-[#2C2523] shadow-[0px_1px_4px_rgba(212,152,160,0.12)]'
-                : 'text-[#2C2523] hover:text-[#B8737D] hover:bg-[#FFF5F3] hover:border hover:border-[#D498A0]/40 border border-transparent'
+                ? 'bg-[#FFF2F0] border border-[#D498A0] text-[#2C2523] shadow-[0_0_14px_rgba(218,142,150,0.55)]'
+                : 'text-[#2C2523] hover:text-[#B8737D] hover:bg-[#FFF5F3] hover:border hover:border-[#D498A0]/50 hover:shadow-[0_0_10px_rgba(218,142,150,0.35)] border border-transparent'
             }`}
+            style={
+              isWishlistPage
+                ? {
+                    boxShadow: '0 0 14px rgba(218, 142, 150, 0.55), 0 1px 6px rgba(186, 122, 131, 0.25)',
+                  }
+                : undefined
+            }
             title="Tủ đồ trong mơ (Danh sách yêu thích)"
           >
             <Heart className="w-[18px] h-[18px] stroke-[1.8] text-[#2C2523]" />
