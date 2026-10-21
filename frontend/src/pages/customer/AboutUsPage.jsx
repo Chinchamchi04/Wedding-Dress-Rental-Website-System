@@ -34,7 +34,7 @@ export default function AboutUsPage() {
 
       {/* 2. Main Content */}
       <main className="flex-1 w-full pb-20">
-        
+
         {/* ========================================================================= */}
         {/* SECTION 1: HERO - TRIẾT LÝ NGHỆ THUẬT & DI SẢN UNIBRIDAL                */}
         {/* ========================================================================= */}
@@ -48,7 +48,7 @@ export default function AboutUsPage() {
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-[#F3D8D8] shadow-xs mb-5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#B8737D]"></span>
               <span className="font-jakarta font-bold text-[10.5px] uppercase tracking-[1.6px] text-[#B8737D]">
-                DI SẢN & NGHỆ THUẬT
+                Wedding Dress Rental
               </span>
             </div>
 
@@ -62,7 +62,8 @@ export default function AboutUsPage() {
 
             {/* Subtitle */}
             <p className="font-jakarta text-[14px] sm:text-[15.5px] leading-[26px] text-[#514344] max-w-[720px] mx-auto mb-10 sm:mb-12">
-              Hành trình kiến tạo những giấc mơ lụa là, nơi chuẩn mực Haute Couture hòa quyện cùng câu chuyện tình yêu vĩnh cửu của người phụ nữ Á Đông.
+              Nơi mỗi thiết kế váy cưới là một tác phẩm điêu khắc tôn vinh vẻ đẹp thuần khiết và
+              khoảnh khắc thiêng liêng nhất của người phụ nữ trong ngày trọng đại.
             </p>
 
             {/* Large Atelier Banner Photo Card */}
@@ -121,7 +122,7 @@ export default function AboutUsPage() {
         <section className="py-16 sm:py-24 px-6 sm:px-8 border-t border-[#EAE0DC]/60">
           <div className="max-w-[1240px] mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
-              
+
               {/* Left Column: Founder Photo with floating badge */}
               <div className="lg:col-span-5 relative">
                 <div className="relative rounded-[28px] overflow-hidden shadow-[0px_16px_40px_rgba(44,37,35,0.08)] border border-[#EEDECF]">
@@ -190,7 +191,7 @@ export default function AboutUsPage() {
                   </div>
                   <span className="text-[#A49394] text-[13px]">•</span>
                   <span className="font-jakarta text-[12.5px] text-[#695C4E]">
-                    Paris & Sài Gòn Atelier
+                    Paris & Hà Nội Atelier
                   </span>
                 </div>
               </div>
@@ -217,7 +218,7 @@ export default function AboutUsPage() {
               Bốn Trụ Cột Cốt Lõi Tạo Nên Tuyệt Tác
             </h2>
             <p className="font-jakarta text-[14px] sm:text-[15px] text-[#514344] max-w-[620px] mx-auto m-0 mb-12">
-              Chuẩn mực tạo nên sự khác biệt và đẳng cấp độc bản của UniBridal
+              Sự chỉn chu đến từng milimet là lời cam kết của UniBridal đối với niềm tin của từng cô dâu.
             </p>
 
             {/* 4 Cards Grid */}
@@ -280,85 +281,133 @@ export default function AboutUsPage() {
         </section>
 
         {/* ========================================================================= */}
-        {/* SECTION 4: DÒNG THỜI GIAN (NHỮNG DẤU ẤN KHÔNG THỂ QUÊN)                  */}
+        {/* SECTION 4: HÀNH TRÌNH TỎA SÁNG (NHỮNG DẤU ẤN KHÔNG THỂ QUÊN)              */}
         {/* ========================================================================= */}
         <section className="py-20 sm:py-28 px-6 sm:px-8">
-          <div className="max-w-[1080px] mx-auto">
+          <div className="max-w-[1100px] mx-auto">
             {/* Tag & Title */}
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white border border-[#F3D8D8] shadow-xs mb-3.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#B8737D]"></span>
-                <span className="font-jakarta font-bold text-[10.5px] uppercase tracking-[1.4px] text-[#B8737D]">
-                  HÀNH TRÌNH PHÁT TRIỂN
-                </span>
-              </div>
-              <h2 className="font-playfair text-[34px] sm:text-[42px] font-normal text-[#2C2523] m-0 tracking-tight">
+            <div className="text-center mb-16 sm:mb-20">
+              <span className="font-jakarta text-[11px] sm:text-[11.5px] font-bold text-[#BA7A83] uppercase tracking-[0.24em] block mb-3">
+                HÀNH TRÌNH TỎA SÁNG
+              </span>
+              <h2 className="font-playfair text-[34px] sm:text-[44px] font-normal text-[#2C2523] m-0 tracking-tight">
                 Những Dấu Ấn Không Thể Quên
               </h2>
+              {/* Small horizontal accent line */}
+              <div className="w-12 h-[2px] bg-[#BA7A83] mx-auto mt-4" />
             </div>
 
-            {/* Alternating Timeline */}
+            {/* Alternating Editorial Timeline */}
             <div className="relative">
               {/* Central Spine Line */}
-              <div className="absolute left-1/2 top-4 bottom-4 w-[2px] bg-gradient-to-b from-[#D498A0]/30 via-[#804E55]/60 to-[#D498A0]/30 -translate-x-1/2 hidden md:block" />
+              <div className="absolute left-1/2 top-3 bottom-3 w-[1.5px] bg-[#E6DAC8] -translate-x-1/2 hidden md:block" />
 
-              <div className="space-y-12 md:space-y-16">
+              <div className="space-y-16 sm:space-y-20">
                 {[
                   {
-                    year: '2014',
-                    side: 'left',
-                    title: 'Khởi Nguồn Tại Paris',
-                    desc: 'Những bản vẽ phác thảo đầu tiên và xưởng may đo thủ công nhỏ ra đời tại Paris, phục vụ các khách hàng cá nhân yêu thích phong cách Haute Couture tinh xảo.',
-                  },
-                  {
                     year: '2018',
-                    side: 'right',
-                    title: 'Ra Mắt Showroom Flagship Đầu Tiên',
-                    desc: 'Chính thức ra mắt không gian thử váy riêng tư chuẩn hoàng gia tại TP. Hồ Chí Minh với bộ sưu tập hơn 100 thiết kế váy cưới độc bản may đo thủ công.',
+                    side: 'left',
+                    title: 'Khởi Nguồn Từ Paris',
+                    desc: 'UniBridal được thành lập tại xưởng may nhỏ số 7 quận Marais, Paris. Khởi đầu bằng những đơn đặt hàng may đo theo yêu cầu của các cô dâu kiều bào và phụ nữ Pháp.',
+                    tag: 'ATELIER MARAIS, FRANCE',
+                    isActive: false,
                   },
                   {
-                    year: '2022',
+                    year: '2021',
+                    side: 'right',
+                    title: 'Ra Mắt Flagship Atelier Tại Việt Nam',
+                    desc: 'Khai trương hai không gian Private Suite độc bản tại Tràng Tiền (Hà Nội) và Nam Kỳ Khởi Nghĩa (TP.HCM), mang chuẩn dịch vụ may đo váy cưới châu Âu đến gần hơn với khách hàng.',
+                    tag: 'FLAGSHIP HANOI & SAIGON',
+                    isActive: false,
+                  },
+                  {
+                    year: '2023',
                     side: 'left',
-                    title: 'Mở Rộng Dịch Vụ Thuê Cao Cấp',
-                    desc: 'Tiên phong chuẩn hóa quy trình giặt hấp sinh học và bảo quản váy cưới công nghệ cao, đưa trải nghiệm váy cưới cao cấp đến gần hơn với mọi cô dâu.',
+                    title: 'Hơn 5.000 Nàng Dâu Đồng Hành',
+                    desc: 'Trở thành biểu tượng tin cậy được các hoa hậu, nữ doanh nhân và người nổi tiếng lựa chọn cho ngày trọng đại. Ra mắt chính sách cọc minh bạch và hoàn cọc 100% độc quyền.',
+                    tag: '5.000+ HAPPY BRIDES',
+                    isActive: false,
                   },
                   {
                     year: '2026',
                     side: 'right',
-                    title: 'Kỷ Nguyên Số Cùng UniBridal',
-                    desc: 'Ra mắt nền tảng thử váy và đặt thuê trực tuyến đồng bộ, kết hợp dịch vụ tư vấn 1-1 chuyên nghiệp cùng chuyên gia tạo mẫu tại salon.',
+                    title: 'Kỷ Nguyên Haute Couture Mới',
+                    desc: 'Ra mắt dòng sản phẩm Bespoke độc bản kết hợp ren dệt ánh kim và kỹ thuật đính kết đá quý phong thủy, định hình chuẩn mực thời trang cưới đương đại.',
+                    tag: 'HAUTE COUTURE 2026',
+                    isActive: true,
                   },
-                ].map((milestone, idx) => {
-                  const isLeft = milestone.side === 'left';
+                ].map((item, idx) => {
+                  const isLeft = item.side === 'left';
                   return (
                     <div
                       key={idx}
                       className="relative flex flex-col md:flex-row items-center justify-between"
                     >
-                      {/* Left Block */}
-                      <div className={`w-full md:w-[44%] ${isLeft ? 'md:text-right' : 'md:order-2 md:text-left'}`}>
-                        <div className="bg-white rounded-[22px] border border-[#EEDECF] p-6 sm:p-7 shadow-[0px_4px_20px_rgba(201,138,144,0.06)] hover:shadow-md transition-shadow">
-                          <span className="font-playfair text-[24px] font-bold text-[#804E55] block mb-1">
-                            {milestone.year}
-                          </span>
-                          <h3 className="font-playfair text-[20px] font-semibold text-[#2C2523] mb-2">
-                            {milestone.title}
-                          </h3>
-                          <p className="font-jakarta text-[13.5px] leading-[22px] text-[#695C4E] m-0">
-                            {milestone.desc}
-                          </p>
-                        </div>
+                      {/* Left Side */}
+                      <div className="w-full md:w-[44%] text-left md:text-right">
+                        {isLeft ? (
+                          <div>
+                            <span className="font-playfair text-[24px] sm:text-[26px] font-bold text-[#BA7A83] block mb-1">
+                              {item.year}
+                            </span>
+                            <h3 className="font-playfair text-[20px] sm:text-[22px] font-bold text-[#2C2523] mb-2 leading-tight">
+                              {item.title}
+                            </h3>
+                            <p className="font-jakarta text-[13px] sm:text-[13.5px] leading-[23px] text-[#695C4E] m-0 max-w-[430px] md:ml-auto">
+                              {item.desc}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="hidden md:flex items-center justify-end h-full">
+                            <span className="font-jakarta text-[11px] sm:text-[11.5px] font-bold text-[#847374] tracking-[0.16em] uppercase">
+                              {item.tag}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
-                      {/* Central Node */}
-                      <div className="my-4 md:my-0 z-10">
-                        <div className="w-12 h-12 rounded-full bg-white border-2 border-[#804E55] shadow-[0_0_14px_rgba(218,142,150,0.5)] flex items-center justify-center text-[#804E55] font-playfair font-bold text-[13px]">
-                          {milestone.year.slice(-2)}
-                        </div>
+                      {/* Center Node */}
+                      <div className="my-5 md:my-0 z-10 shrink-0">
+                        {item.isActive ? (
+                          <div className="w-[34px] h-[34px] sm:w-[36px] sm:h-[36px] rounded-[10px] bg-[#BA7A83] border-2 border-[#BA7A83] flex items-center justify-center shadow-[0_4px_14px_rgba(186,122,131,0.38)]">
+                            <span className="w-2 h-2 rounded-full bg-white" />
+                          </div>
+                        ) : (
+                          <div className="w-[34px] h-[34px] sm:w-[36px] sm:h-[36px] rounded-[10px] bg-white border-2 border-[#BA7A83] flex items-center justify-center shadow-xs">
+                            <span className="w-2 h-2 rounded-full bg-[#BA7A83]" />
+                          </div>
+                        )}
                       </div>
 
-                      {/* Empty Placeholder for symmetrical grid */}
-                      <div className={`hidden md:block w-full md:w-[44%] ${isLeft ? 'md:order-2' : ''}`} />
+                      {/* Right Side */}
+                      <div className="w-full md:w-[44%] text-left">
+                        {isLeft ? (
+                          <div className="hidden md:flex items-center justify-start h-full">
+                            <span className="font-jakarta text-[11px] sm:text-[11.5px] font-bold text-[#847374] tracking-[0.16em] uppercase">
+                              {item.tag}
+                            </span>
+                          </div>
+                        ) : (
+                          <div>
+                            <span className="font-playfair text-[24px] sm:text-[26px] font-bold text-[#BA7A83] block mb-1">
+                              {item.year}
+                            </span>
+                            <h3 className="font-playfair text-[20px] sm:text-[22px] font-bold text-[#2C2523] mb-2 leading-tight">
+                              {item.title}
+                            </h3>
+                            <p className="font-jakarta text-[13px] sm:text-[13.5px] leading-[23px] text-[#695C4E] m-0 max-w-[430px]">
+                              {item.desc}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Mobile tag helper (visible only on small screens) */}
+                      <div className="md:hidden mt-2 text-center w-full">
+                        <span className="font-jakarta text-[10.5px] font-bold text-[#847374] tracking-[0.14em] uppercase">
+                          {item.tag}
+                        </span>
+                      </div>
                     </div>
                   );
                 })}
