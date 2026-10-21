@@ -17,6 +17,9 @@ import GuestBookingPage from './pages/customer/GuestBookingPage';
 import OrderRentalManagement from './pages/admin/OrderRentalManagement';
 import InventoryManagement from './pages/admin/InventoryManagement';
 import CustomerCareManagement from './pages/admin/CustomerCareManagement';
+import ProductManagement from './pages/admin/ProductManagement';
+import CategoryManagement from './pages/admin/CategoryManagement';
+import AccountManagement from './pages/admin/AccountManagement';
 
 export default function App() {
   return (
@@ -46,16 +49,31 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         
         {/* Admin & Staff Management */}
-        <Route path="/admin" element={<Navigate to="/admin/don-thue" replace />} />
+        <Route path="/admin" element={<Navigate to="/admin/tai-khoan" replace />} />
+        <Route path="/admin/tai-khoan" element={<AccountManagement />} />
+        <Route path="/admin/accounts" element={<AccountManagement />} />
+        <Route path="/admin/san-pham" element={<ProductManagement />} />
+        <Route path="/admin/products" element={<ProductManagement />} />
+        <Route path="/admin/danh-muc" element={<CategoryManagement />} />
+        <Route path="/admin/categories" element={<CategoryManagement />} />
         <Route path="/admin/don-thue" element={<OrderRentalManagement />} />
         <Route path="/admin/orders" element={<OrderRentalManagement />} />
         <Route path="/admin/kho-hang" element={<InventoryManagement />} />
         <Route path="/admin/inventory" element={<InventoryManagement />} />
-        <Route path="/staff" element={<Navigate to="/staff/don-thue" replace />} />
+        <Route path="/staff" element={<Navigate to="/staff/san-pham" replace />} />
+        <Route path="/staff/tai-khoan" element={<AccountManagement />} />
+        <Route path="/staff/accounts" element={<AccountManagement />} />
+        <Route path="/staff/san-pham" element={<ProductManagement />} />
+        <Route path="/staff/products" element={<ProductManagement />} />
+        <Route path="/staff/danh-muc" element={<CategoryManagement />} />
+        <Route path="/staff/categories" element={<CategoryManagement />} />
         <Route path="/staff/don-thue" element={<OrderRentalManagement />} />
         <Route path="/staff/orders" element={<OrderRentalManagement />} />
         <Route path="/staff/kho-hang" element={<InventoryManagement />} />
         <Route path="/staff/inventory" element={<InventoryManagement />} />
+        <Route path="/quan-ly-tai-khoan" element={<AccountManagement />} />
+        <Route path="/quan-ly-san-pham" element={<ProductManagement />} />
+        <Route path="/quan-ly-danh-muc" element={<CategoryManagement />} />
         <Route path="/quan-ly-don-thue" element={<OrderRentalManagement />} />
         <Route path="/quan-ly-kho-hang" element={<InventoryManagement />} />
         <Route path="/admin/cham-soc-khach-hang" element={<CustomerCareManagement />} />

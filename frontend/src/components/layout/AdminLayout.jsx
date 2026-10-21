@@ -11,25 +11,29 @@ import {
   Store,
   LogOut,
   Menu,
-  X
+  X,
+  Users,
+  TrendingUp
 } from 'lucide-react';
 import logoImg from '../../assets/logo.png';
 import emblemImg from '../../assets/images/unibridal-emblem-transparent.png';
 import heroBride from '../../assets/hero_bride.jpg';
 import HangerIcon from '../common/HangerIcon';
 
-export default function AdminLayout({ children, activeMenu = 'don-thue' }) {
+export default function AdminLayout({ children, activeMenu = 'don-thue', mode = 'ADMIN MODE' }) {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const menuItems = [
     { key: 'dashboard', label: 'Tổng Quan', icon: LayoutDashboard, to: '/admin/don-thue' },
-    { key: 'products', label: 'Quản Lý Sản Phẩm', icon: HangerIcon, to: '/admin/kho-hang' },
-    { key: 'categories', label: 'Quản Lý Danh Mục', icon: Layers, to: '/admin/kho-hang' },
+    { key: 'accounts', label: 'Quản Lý Tài Khoản', icon: Users, to: '/admin/tai-khoan' },
+    { key: 'products', label: 'Quản Lý Sản Phẩm', icon: HangerIcon, to: '/admin/san-pham' },
+    { key: 'categories', label: 'Quản Lý Danh Mục', icon: Layers, to: '/admin/danh-muc' },
     { key: 'don-thue', label: 'Quản Lý Đơn Thuê', icon: CalendarCheck, to: '/admin/don-thue' },
     { key: 'inventory', label: 'Quản Lý Kho Hàng', icon: Package, to: '/admin/kho-hang' },
     { key: 'contracts', label: 'Quản Lý Hợp Đồng', icon: FileSignature, to: '/admin/kho-hang' },
     { key: 'customer-care', label: 'Chăm sóc khách hàng', icon: Headphones, to: '/admin/cham-soc-khach-hang' },
+    { key: 'revenue', label: 'Báo Cáo Doanh Thu', icon: TrendingUp, to: '/admin/don-thue' },
   ];
 
   return (
@@ -153,7 +157,7 @@ export default function AdminLayout({ children, activeMenu = 'don-thue' }) {
                   Trần Bích Ngọc
                 </div>
                 <div className="inline-block mt-0.5 px-2 py-0.5 rounded-sm bg-[#FDECEE] text-[#B8737D] text-[9.5px] font-bold tracking-wider uppercase">
-                  STAFF MODE
+                  {mode}
                 </div>
               </div>
               <div className="relative">
