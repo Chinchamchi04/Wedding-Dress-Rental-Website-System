@@ -42,6 +42,7 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
   const cartCount = propCartCount !== undefined ? propCartCount : internalCartCount;
   const wishlistCount = propWishlistCount !== undefined ? propWishlistCount : internalWishlistCount;
   const isWishlistPage = location.pathname === '/wishlist' || location.pathname === '/yeu-thich';
+  const isMessagesPage = location.pathname === '/tin-nhan' || location.pathname === '/messages' || location.pathname === '/chat';
   const isAboutPage = location.pathname === '/about' || location.pathname === '/ve-chung-toi';
   const isCollectionPage = location.pathname === '/collection' || location.pathname === '/bo-suu-tap';
   const isHomePage = location.pathname === '/';
@@ -239,14 +240,24 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
           </button>
 
           {/* Chat / Support */}
-          <button
-            type="button"
-            className="p-1.5 flex items-center justify-center text-[#2C2523] hover:text-[#B8737D] transition-colors border-0 bg-transparent cursor-pointer"
-            title="Tư vấn trực tuyến"
-            onClick={() => onOpenBooking ? onOpenBooking() : navigate('/dat-lich')}
+          <Link
+            to="/tin-nhan"
+            className={`relative w-[36px] h-[36px] sm:w-[38px] sm:h-[38px] flex items-center justify-center rounded-[12px] transition-all duration-300 cursor-pointer no-underline active:scale-95 ${
+              isMessagesPage
+                ? 'bg-[#FFF2F0] border border-[#D498A0] text-[#2C2523] shadow-[0_0_14px_rgba(218,142,150,0.55)]'
+                : 'text-[#2C2523] hover:text-[#B8737D] hover:bg-[#FFF5F3] hover:border hover:border-[#D498A0]/50 hover:shadow-[0_0_10px_rgba(218,142,150,0.35)] border border-transparent'
+            }`}
+            style={
+              isMessagesPage
+                ? {
+                    boxShadow: '0 0 14px rgba(218, 142, 150, 0.55), 0 1px 6px rgba(186, 122, 131, 0.25)',
+                  }
+                : undefined
+            }
+            title="Trò chuyện cùng chuyên viên"
           >
-            <MessageSquare className="w-[19px] h-[19px] stroke-[1.8]" />
-          </button>
+            <MessageSquare className="w-[18px] h-[18px] stroke-[1.8] text-[#2C2523]" />
+          </Link>
 
           {/* Shopping Bag with badge */}
           <Link

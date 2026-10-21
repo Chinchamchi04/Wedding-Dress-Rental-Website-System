@@ -16,6 +16,7 @@ import CartPage from './pages/customer/CartPage';
 import CheckoutPage from './pages/customer/CheckoutPage';
 import AppointmentPage from './pages/customer/AppointmentPage';
 import GuestBookingPage from './pages/customer/GuestBookingPage';
+import MessagesPage from './pages/customer/MessagesPage';
 
 export default function App() {
   return (
@@ -38,6 +39,9 @@ export default function App() {
         <Route path="/booking" element={<AppointmentPage />} />
         <Route path="/thue-nhanh" element={<GuestBookingPage />} />
         <Route path="/guest-booking" element={<GuestBookingPage />} />
+        <Route path="/tin-nhan" element={<MessagesPage />} />
+        <Route path="/messages" element={<MessagesPage />} />
+        <Route path="/chat" element={<MessagesPage />} />
         <Route path="/dresses/:id" element={<DressDetailPage />} />
         <Route path="/dress/:id" element={<DressDetailPage />} />
         <Route path="/profile" element={<ProfilePage />} />
