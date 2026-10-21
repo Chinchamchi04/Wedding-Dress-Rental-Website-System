@@ -253,20 +253,17 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
             </span>
           </Link>
 
-          {/* Wishlist Heart with badge (Active Pill style when on Wishlist page) */}
+          {/* Wishlist Heart (Hiệu ứng active hình vuông bo góc viền hồng pastel chuẩn 100% theo mẫu) */}
           <Link
             to="/wishlist"
-            className={`relative p-1.5 flex items-center justify-center transition-all cursor-pointer no-underline rounded-full ${
+            className={`relative w-[36px] h-[36px] sm:w-[38px] sm:h-[38px] flex items-center justify-center rounded-[12px] transition-all cursor-pointer no-underline active:scale-95 ${
               isWishlistPage
-                ? 'border border-[#B8737D]/50 bg-[#FFF5F3] text-[#B8737D]'
-                : 'text-[#2C2523] hover:text-[#B8737D] border border-transparent'
+                ? 'bg-[#FFF2F0] border border-[#D498A0] text-[#2C2523] shadow-[0px_1px_4px_rgba(212,152,160,0.12)]'
+                : 'text-[#2C2523] hover:text-[#B8737D] hover:bg-[#FFF5F3] hover:border hover:border-[#D498A0]/40 border border-transparent'
             }`}
             title="Tủ đồ trong mơ (Danh sách yêu thích)"
           >
-            <Heart className={`w-[19px] h-[19px] stroke-[1.8] ${isWishlistPage ? 'fill-[#B8737D]/20 text-[#B8737D]' : ''}`} />
-            <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-0.5 rounded-full bg-[#B8737D] text-white font-jakarta text-[9.5px] font-bold flex items-center justify-center leading-none">
-              {wishlistCount}
-            </span>
+            <Heart className="w-[18px] h-[18px] stroke-[1.8] text-[#2C2523]" />
           </Link>
 
           {/* User Profile Dropdown */}
