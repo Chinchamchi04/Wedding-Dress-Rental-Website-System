@@ -287,6 +287,31 @@ export default function DressDetailPage() {
     }, 4500);
   };
 
+  const handleConsultStylist = () => {
+    if (!dress) return;
+
+    const consultData = {
+      id: dress.id,
+      code: dress.code || `MÃ: #UB-${dress.id}`,
+      name: dress.name,
+      category: dress.silhouette || dress.category || 'HAUTE COUTURE',
+      tag: 'ĐANG TƯ VẤN',
+      price: typeof dress.rentalPrice === 'number'
+        ? `${dress.rentalPrice.toLocaleString('vi-VN')}₫`
+        : (dress.price || '5.200.000₫'),
+      priceUnit: '/ 1 ngày',
+      depositInfo: dress.depositPrice
+        ? `Tiền cọc bảo lãnh: ${typeof dress.depositPrice === 'number' ? dress.depositPrice.toLocaleString('vi-VN') : dress.depositPrice}₫`
+        : 'Tiền cọc bảo lãnh: 15.000.000₫',
+      image: (dress.images && dress.images[selectedImageIndex || 0]) || dress.image || (dress.images && dress.images[0]) || '',
+      description: dress.description || 'Thiết kế thủ công tinh xảo chuẩn Haute Couture UniBridal',
+    };
+
+    navigate('/tin-nhan', {
+      state: { consultDress: consultData },
+    });
+  };
+
   const handleToggleWishlist = () => {
     if (!dress?.id) return;
     const result = toggleWishlist(dress.id);
@@ -657,14 +682,15 @@ export default function DressDetailPage() {
                 THÊM VÀO GIỎ HÀNG
               </button>
 
-              {/* Row 4: LIÊN HỆ VỚI NGƯỜI BÁN */}
-              <a
-                href="tel:19008888"
-                className="w-full h-[46px] px-5 rounded-[4px] bg-[#FDF6F4] hover:bg-[#F9ECE8] border border-[#F2DDD9] text-[#553C40] font-jakarta text-[12.5px] font-medium tracking-[0.5px] uppercase transition-colors flex items-center justify-center gap-2 no-underline active:scale-[0.99]"
+              {/* Row 4: TƯ VẤN TRỰC TIẾP VỚI CHUYÊN VIÊN ATELIER */}
+              <button
+                type="button"
+                onClick={handleConsultStylist}
+                className="w-full h-[46px] px-5 rounded-[4px] bg-[#FDF6F4] hover:bg-[#F9ECE8] border border-[#F2DDD9] text-[#553C40] font-jakarta text-[12.5px] font-medium tracking-[0.5px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
               >
                 <Headphones className="w-4 h-4 text-[#70484E]" strokeWidth={1.8} />
                 TƯ VẤN TRỰC TIẾP VỚI CHUYÊN VIÊN ATELIER
-              </a>
+              </button>
             </div>
 
             {/* Commitments & Trust Signals - Khớp 100% với Hình 2 */}

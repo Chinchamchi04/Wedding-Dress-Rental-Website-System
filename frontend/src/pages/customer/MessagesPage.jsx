@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Search,
   Phone,
@@ -25,7 +25,7 @@ import {
   Trash2,
   Bell
 } from 'lucide-react';
-import { message } from 'antd';
+import { message, Modal } from 'antd';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import BookingModal from '../../components/common/BookingModal';
@@ -37,8 +37,12 @@ import aboutFounderImg from '../../assets/about_founder_portrait.jpg';
 
 export default function MessagesPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('mai-anh');
+  const [pinnedConsultProduct, setPinnedConsultProduct] = useState(
+    location.state?.consultDress || null
+  );
   const [searchTerm, setSearchTerm] = useState('');
   const [inputText, setInputText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -241,6 +245,85 @@ export default function MessagesPage() {
     }
     prevMessagesCountRef.current = currentCount;
   }, [activeTab, messages, isStaffTyping]);
+
+  // Lắng nghe yêu cầu tư vấn sản phẩm từ DressDetailPage
+  useEffect(() => {
+    if (location.state?.consultDress) {
+      const dressData = location.state.consultDress;
+      setPinnedConsultProduct(dressData);
+      setActiveTab('mai-anh');
+
+      setMessages((prev) => {
+        const maiAnhMessages = prev['mai-anh'] || [];
+        const alreadyAdded = maiAnhMessages.some(
+          (m) => m.product?.id === dressData.id && m.isConsultInquiry
+        );
+
+        if (alreadyAdded) return prev;
+
+        const currentTime = new Intl.DateTimeFormat('vi-VN', {
+          hour: '2-digit',
+          minute: '2-digit',
+        }).format(new Date());
+
+        const newConsultMsg = {
+          id: Date.now(),
+          sender: 'user',
+          authorName: 'Nàng Quỳnh Anh',
+          initials: 'QA',
+          time: currentTime,
+          type: 'product_recommendation',
+          isConsultInquiry: true,
+          text: `Chào Master Stylist Mai Anh! Mình đang xem mẫu váy "${dressData.name}" (${dressData.code}) trên website và muốn được tư vấn may đo, chỉnh sửa số đo cũng như đặt lịch thử riêng tư cho mẫu này ạ ✨`,
+          product: dressData,
+        };
+
+        return {
+          ...prev,
+          'mai-anh': [...maiAnhMessages, newConsultMsg],
+        };
+      });
+
+      // Tự động cuộn xuống đáy container chat khi nhận sản phẩm tư vấn
+      setTimeout(() => {
+        if (messagesContainerRef.current) {
+          messagesContainerRef.current.scrollTo({
+            top: messagesContainerRef.current.scrollHeight,
+            behavior: 'smooth',
+          });
+        }
+      }, 150);
+
+      // Phản hồi tự động từ Stylist Mai Anh
+      const timer = setTimeout(() => {
+        setIsStaffTyping(true);
+        setTimeout(() => {
+          setIsStaffTyping(false);
+          const replyTime = new Intl.DateTimeFormat('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit',
+          }).format(new Date());
+
+          const staffReply = {
+            id: Date.now() + 1,
+            sender: 'staff',
+            authorName: 'Master Stylist Mai Anh',
+            avatar: aboutFounderImg,
+            time: replyTime,
+            type: 'text',
+            text: `UniBridal chào nàng Quỳnh Anh! Mẫu thiết kế "${dressData.name}" thuộc dòng Haute Couture cao cấp đang có sẵn bản toile và phom chuẩn tại Atelier VIP. Mai Anh đã giữ riêng slot thử và tư vấn 1-1 cho nàng vào cuối tuần này nhé! Nàng có thể nhắn số đo 3 vòng để stylist chuẩn bị trước ạ 💖`,
+          };
+
+          setMessages((prev) => ({
+            ...prev,
+            'mai-anh': [...(prev['mai-anh'] || []), staffReply],
+          }));
+        }, 1500);
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
 
   // Handle Send Message
   const handleSendMessage = (customText = null) => {
@@ -698,6 +781,49 @@ export default function MessagesPage() {
                 </div>
               </div>
             </div>
+
+            {/* Pinned Consultation Product Banner (Ghim Sản Phẩm Tư Vấn) */}
+            {pinnedConsultProduct && (
+              <div className="px-4 sm:px-6 py-2.5 bg-[#FFF8F7] border-b border-[#F2DDD9] flex items-center justify-between gap-3 shadow-2xs select-none">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#B8737D] uppercase tracking-wider flex-shrink-0">
+                    <Pin className="w-3.5 h-3.5 fill-[#B8737D]/20 -rotate-45" />
+                    <span className="hidden sm:inline">Đang tư vấn:</span>
+                  </div>
+                  <img
+                    src={pinnedConsultProduct.image}
+                    alt={pinnedConsultProduct.name}
+                    className="w-9 h-9 rounded-md object-cover border border-[#E8D7D3] flex-shrink-0 bg-white"
+                  />
+                  <div className="truncate">
+                    <span className="font-playfair font-bold text-[13.5px] text-[#2C2523] truncate mr-2 block sm:inline">
+                      {pinnedConsultProduct.name}
+                    </span>
+                    <span className="text-[12px] font-bold text-[#7E4A52]">
+                      {pinnedConsultProduct.price}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/dresses/${pinnedConsultProduct.id}`)}
+                    className="px-2.5 py-1 text-[11px] font-bold text-[#7D4D54] hover:bg-[#FBECEB] rounded-lg border border-[#E8D3D6] transition-colors bg-white cursor-pointer tracking-wider uppercase"
+                  >
+                    Xem chi tiết
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPinnedConsultProduct(null)}
+                    className="p-1 text-[#9E908D] hover:text-[#2C2523] rounded-md transition-colors border-0 bg-transparent cursor-pointer"
+                    title="Bỏ ghim sản phẩm"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Chat Messages Stream */}
             <div
