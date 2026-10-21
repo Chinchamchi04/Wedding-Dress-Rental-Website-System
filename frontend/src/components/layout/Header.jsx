@@ -42,6 +42,9 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
   const cartCount = propCartCount !== undefined ? propCartCount : internalCartCount;
   const wishlistCount = propWishlistCount !== undefined ? propWishlistCount : internalWishlistCount;
   const isWishlistPage = location.pathname === '/wishlist' || location.pathname === '/yeu-thich';
+  const isAboutPage = location.pathname === '/about' || location.pathname === '/ve-chung-toi';
+  const isCollectionPage = location.pathname === '/collection' || location.pathname === '/bo-suu-tap';
+  const isHomePage = location.pathname === '/';
 
   const categories = [
     {
@@ -191,10 +194,14 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
           <Link
             to="/"
             onClick={(e) => {
-              e.preventDefault();
-              handleNavClick('');
+              if (location.pathname === '/') {
+                e.preventDefault();
+                handleNavClick('');
+              }
             }}
-            className="font-jakarta text-[15.5px] font-medium text-[#2C2523] no-underline hover:text-[#B8737D] transition-colors cursor-pointer"
+            className={`font-jakarta text-[15.5px] no-underline transition-colors cursor-pointer ${
+              isHomePage ? 'text-[#804E55] font-semibold' : 'font-medium text-[#2C2523] hover:text-[#B8737D]'
+            }`}
           >
             Trang chủ
           </Link>
@@ -202,21 +209,21 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
           {/* Bộ Sưu Tập - 1 Nút bấm trực tiếp */}
           <Link
             to="/collection"
-            className="font-jakarta text-[15.5px] font-medium text-[#2C2523] no-underline hover:text-[#B8737D] transition-colors cursor-pointer"
+            className={`font-jakarta text-[15.5px] no-underline transition-colors cursor-pointer ${
+              isCollectionPage ? 'text-[#804E55] font-semibold' : 'font-medium text-[#2C2523] hover:text-[#B8737D]'
+            }`}
           >
             Bộ Sưu Tập
           </Link>
 
-          <a
-            href="/#brides"
-            onClick={(e) => {
-              e.preventDefault();
-              handleNavClick('#brides');
-            }}
-            className="font-jakarta text-[15.5px] font-medium text-[#2C2523] no-underline hover:text-[#B8737D] transition-colors cursor-pointer"
+          <Link
+            to="/about"
+            className={`font-jakarta text-[15.5px] no-underline transition-colors cursor-pointer ${
+              isAboutPage ? 'text-[#804E55] font-semibold' : 'font-medium text-[#2C2523] hover:text-[#B8737D]'
+            }`}
           >
             Về chúng tôi
-          </a>
+          </Link>
         </nav>
 
         {/* Action Elements Right */}
@@ -391,16 +398,15 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
           </Link>
 
 
-          <a
-            href="/#brides"
-            onClick={(e) => {
-              e.preventDefault();
-              handleNavClick('#brides');
-            }}
-            className="block font-jakarta text-[16px] font-semibold text-[#2C2523] no-underline hover:text-[#B8737D] cursor-pointer"
+          <Link
+            to="/about"
+            onClick={() => setMobileMenuOpen(false)}
+            className={`block font-jakarta text-[16px] no-underline ${
+              isAboutPage ? 'text-[#804E55] font-semibold' : 'font-semibold text-[#2C2523] hover:text-[#B8737D]'
+            }`}
           >
             Về chúng tôi
-          </a>
+          </Link>
 
           <div>
             <div className="text-[11px] font-bold tracking-wider text-[#B8737D] uppercase mb-2">

@@ -7,6 +7,7 @@ import OrderDetailPage from './pages/customer/OrderDetailPage';
 import ChangePasswordPage from './pages/customer/ChangePasswordPage';
 import CollectionPage from './pages/customer/CollectionPage';
 import WishlistPage from './pages/customer/WishlistPage';
+import AboutUsPage from './pages/customer/AboutUsPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
@@ -21,6 +22,8 @@ export default function App() {
     <Router>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/about" element={<AboutUsPage />} />
+        <Route path="/ve-chung-toi" element={<AboutUsPage />} />
         <Route path="/wishlist" element={<WishlistPage />} />
         <Route path="/yeu-thich" element={<WishlistPage />} />
         <Route path="/collection" element={<CollectionPage />} />
