@@ -14,7 +14,9 @@ import {
   Calendar,
   Gem,
   Award,
-  CheckCircle2
+  CheckCircle2,
+  Building2,
+  Mail
 } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
@@ -427,7 +429,7 @@ export default function AboutUsPage() {
             <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white border border-[#F3D8D8] shadow-xs mb-3.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#B8737D]"></span>
               <span className="font-jakarta font-bold text-[10.5px] uppercase tracking-[1.4px] text-[#B8737D]">
-                HỆ THỐNG SHOWROOM & SALON
+                LIÊN HỆ & HỆ THỐNG SHOWROOM
               </span>
             </div>
 
@@ -442,84 +444,66 @@ export default function AboutUsPage() {
             {/* 2 Showroom Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-7 text-left">
               {/* Showroom TP. Hồ Chí Minh */}
-              <div className="bg-white rounded-[26px] border border-[#EEDECF] p-8 shadow-[0px_6px_24px_rgba(201,138,144,0.08)] flex flex-col justify-between hover:shadow-[0px_12px_32px_rgba(184,115,125,0.14)] hover:-translate-y-1 transition-all">
-                <div>
-                  <div className="w-12 h-12 rounded-[14px] bg-[#FFF2F0] border border-[#D498A0]/70 flex items-center justify-center text-[#804E55] mb-5">
-                    <MapPin className="w-5 h-5 stroke-[1.8]" />
-                  </div>
-                  <span className="font-jakarta text-[11px] font-bold text-[#B8737D] uppercase tracking-[1.2px] block mb-1">
-                    SHOWROOM & ATELIER
-                  </span>
-                  <h3 className="font-playfair text-[22px] font-semibold text-[#2C2523] mb-4">
-                    TP. Hồ Chí Minh
-                  </h3>
-
-                  <div className="space-y-3 font-jakarta text-[13.5px] text-[#514344]">
-                    <div className="flex items-start gap-2.5">
-                      <MapPin className="w-4 h-4 text-[#804E55] shrink-0 mt-0.5" />
-                      <span>Số 12 Đường Lê Duẩn, Phường Bến Nghé, Quận 1</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <Phone className="w-4 h-4 text-[#804E55] shrink-0" />
-                      <span>Hotline: 0908 123 456</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <Clock className="w-4 h-4 text-[#804E55] shrink-0" />
-                      <span>09:00 - 21:00 (Tất cả các ngày trong tuần)</span>
-                    </div>
-                  </div>
+              <div className="bg-white rounded-[26px] border border-[#EEDECF] p-8 sm:p-9 shadow-[0px_6px_24px_rgba(201,138,144,0.06)] hover:shadow-[0px_12px_32px_rgba(184,115,125,0.12)] hover:-translate-y-1 transition-all">
+                <div className="w-12 h-12 rounded-[14px] bg-[#FFF2F0] border border-[#D498A0]/70 flex items-center justify-center text-[#804E55] mb-6">
+                  <MapPin className="w-5 h-5 stroke-[1.8]" />
                 </div>
+                <span className="font-jakarta text-[11px] font-bold text-[#847374] uppercase tracking-[0.14em] block mb-1.5">
+                  FLAGSHIP SOUTH
+                </span>
+                <h3 className="font-playfair text-[24px] sm:text-[26px] font-semibold text-[#2C2523] mb-6">
+                  TP. Hồ Chí Minh
+                </h3>
 
-                <div className="pt-6 mt-6 border-t border-[#F2E8E1]">
-                  <button
-                    type="button"
-                    onClick={() => setIsBookingOpen(true)}
-                    className="w-full py-3 rounded-xl bg-[#804E55] hover:bg-[#6D3940] text-white font-jakarta text-[12.5px] font-semibold tracking-wide transition-all shadow-xs flex items-center justify-center gap-2 border-0 cursor-pointer active:scale-98"
-                  >
-                    <Calendar className="w-4 h-4" />
-                    <span>Đặt Lịch Thử Váy Riêng Tư</span>
-                  </button>
+                <div className="space-y-4 font-jakarta text-[13.5px] sm:text-[14px] text-[#514344]">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="w-4 h-4 text-[#804E55] shrink-0 mt-0.5" />
+                    <span>Số 88 Nam Kỳ Khởi Nghĩa, Phường Bến Nghé, Quận 1</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Phone className="w-4 h-4 text-[#804E55] shrink-0" />
+                    <span>Hotline VIP: 0908 123 888</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Clock className="w-4 h-4 text-[#804E55] shrink-0" />
+                    <span>09:00 – 21:00 (Tất cả các ngày trong tuần)</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-4 h-4 text-[#804E55] shrink-0" />
+                    <span>contact.hcm@unibridal.com</span>
+                  </div>
                 </div>
               </div>
 
               {/* Showroom Hà Nội */}
-              <div className="bg-white rounded-[26px] border border-[#EEDECF] p-8 shadow-[0px_6px_24px_rgba(201,138,144,0.08)] flex flex-col justify-between hover:shadow-[0px_12px_32px_rgba(184,115,125,0.14)] hover:-translate-y-1 transition-all">
-                <div>
-                  <div className="w-12 h-12 rounded-[14px] bg-[#FFF2F0] border border-[#D498A0]/70 flex items-center justify-center text-[#804E55] mb-5">
-                    <MapPin className="w-5 h-5 stroke-[1.8]" />
-                  </div>
-                  <span className="font-jakarta text-[11px] font-bold text-[#B8737D] uppercase tracking-[1.2px] block mb-1">
-                    SHOWROOM & SALON
-                  </span>
-                  <h3 className="font-playfair text-[22px] font-semibold text-[#2C2523] mb-4">
-                    Hà Nội
-                  </h3>
-
-                  <div className="space-y-3 font-jakarta text-[13.5px] text-[#514344]">
-                    <div className="flex items-start gap-2.5">
-                      <MapPin className="w-4 h-4 text-[#804E55] shrink-0 mt-0.5" />
-                      <span>Số 24 Tràng Thi, Phường Hàng Trống, Quận Hoàn Kiếm</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <Phone className="w-4 h-4 text-[#804E55] shrink-0" />
-                      <span>Hotline: 0909 789 012</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <Clock className="w-4 h-4 text-[#804E55] shrink-0" />
-                      <span>09:00 - 21:00 (Tất cả các ngày trong tuần)</span>
-                    </div>
-                  </div>
+              <div className="bg-white rounded-[26px] border border-[#EEDECF] p-8 sm:p-9 shadow-[0px_6px_24px_rgba(201,138,144,0.06)] hover:shadow-[0px_12px_32px_rgba(184,115,125,0.12)] hover:-translate-y-1 transition-all">
+                <div className="w-12 h-12 rounded-[14px] bg-[#FFF2F0] border border-[#D498A0]/70 flex items-center justify-center text-[#804E55] mb-6">
+                  <Building2 className="w-5 h-5 stroke-[1.8]" />
                 </div>
+                <span className="font-jakarta text-[11px] font-bold text-[#847374] uppercase tracking-[0.14em] block mb-1.5">
+                  FLAGSHIP NORTH
+                </span>
+                <h3 className="font-playfair text-[24px] sm:text-[26px] font-semibold text-[#2C2523] mb-6">
+                  Hà Nội
+                </h3>
 
-                <div className="pt-6 mt-6 border-t border-[#F2E8E1]">
-                  <button
-                    type="button"
-                    onClick={() => setIsBookingOpen(true)}
-                    className="w-full py-3 rounded-xl bg-[#804E55] hover:bg-[#6D3940] text-white font-jakarta text-[12.5px] font-semibold tracking-wide transition-all shadow-xs flex items-center justify-center gap-2 border-0 cursor-pointer active:scale-98"
-                  >
-                    <Calendar className="w-4 h-4" />
-                    <span>Đặt Lịch Thử Váy Riêng Tư</span>
-                  </button>
+                <div className="space-y-4 font-jakarta text-[13.5px] sm:text-[14px] text-[#514344]">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="w-4 h-4 text-[#804E55] shrink-0 mt-0.5" />
+                    <span>Số 24 Tràng Tiền, Phường Tràng Tiền, Quận Hoàn Kiếm</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Phone className="w-4 h-4 text-[#804E55] shrink-0" />
+                    <span>Hotline VIP: 0909 789 999</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Clock className="w-4 h-4 text-[#804E55] shrink-0" />
+                    <span>09:00 – 21:00 (Tất cả các ngày trong tuần)</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-4 h-4 text-[#804E55] shrink-0" />
+                    <span>contact.hn@unibridal.com</span>
+                  </div>
                 </div>
               </div>
             </div>
