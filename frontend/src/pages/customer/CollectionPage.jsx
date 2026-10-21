@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search, SlidersHorizontal, Heart,
@@ -314,7 +314,7 @@ export default function CollectionPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
             {/* SIDEBAR BỘ LỌC TUYỂN CHỌN */}
-            <aside className="lg:col-span-3.5 xl:col-span-3 bg-white rounded-[28px] border border-[#EEDECF] p-6 shadow-[0px_4px_24px_rgba(201,138,144,0.08)] sticky top-24">
+            <aside className="lg:col-span-4 xl:col-span-3 bg-white rounded-[28px] border border-[#EEDECF] p-6 shadow-[0px_4px_24px_rgba(201,138,144,0.08)] sticky top-24">
 
               {/* Header Sidebar */}
               <div className="flex items-center justify-between pb-4 border-b border-[#E6DAC8]/60 mb-6">
@@ -465,7 +465,7 @@ export default function CollectionPage() {
             </aside>
 
             {/* CỘT CHÍNH: LƯỚI SẢN PHẨM & THANH SẮP XẾP */}
-            <div ref={gridTopRef} className="lg:col-span-8.5 xl:col-span-9 flex flex-col scroll-mt-6">
+            <div ref={gridTopRef} className="lg:col-span-8 xl:col-span-9 flex flex-col scroll-mt-6">
 
               {/* TOP BAR: SỐ LƯỢNG + SORT SELECT */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-6 border-b border-[#E6DAC8]/60">
@@ -517,7 +517,10 @@ export default function CollectionPage() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                   {paginatedProducts.map((dress) => {
-                    const isWishlisted = wishlistIds.includes(dress.id);
+                    const isWishlisted = Boolean(
+                      Array.isArray(wishlistIds) &&
+                      wishlistIds.some((w) => (typeof w === 'object' ? w?.id : w) == dress.id)
+                    );
 
                     return (
                       <div

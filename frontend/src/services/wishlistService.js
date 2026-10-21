@@ -55,9 +55,6 @@ export const RECOMMENDED_DRESSES = [
   },
 ];
 
-/**
- * Lấy danh sách ID các sản phẩm yêu thích từ localStorage
- */
 export function getWishlistIds() {
   if (typeof window === 'undefined') return DEFAULT_WISHLIST_IDS;
   try {
@@ -68,7 +65,13 @@ export function getWishlistIds() {
       return DEFAULT_WISHLIST_IDS;
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : DEFAULT_WISHLIST_IDS;
+    if (Array.isArray(parsed)) {
+      const cleaned = parsed
+        .map((item) => (typeof item === 'object' && item !== null ? Number(item?.id) : Number(item)))
+        .filter((id) => !Number.isNaN(id) && id > 0);
+      return cleaned.length > 0 ? cleaned : DEFAULT_WISHLIST_IDS;
+    }
+    return DEFAULT_WISHLIST_IDS;
   } catch (err) {
     console.warn('Lỗi khi đọc wishlist từ localStorage:', err);
     return DEFAULT_WISHLIST_IDS;
@@ -79,9 +82,9 @@ export function getWishlistIds() {
  * Kiểm tra một sản phẩm đã có trong wishlist hay chưa
  */
 export function isWishlisted(id) {
-  const numId = Number(id);
+  const targetId = Number(id);
   const ids = getWishlistIds();
-  return ids.includes(numId) || ids.includes(String(id));
+  return ids.some((itemId) => Number(itemId) === targetId);
 }
 
 /**

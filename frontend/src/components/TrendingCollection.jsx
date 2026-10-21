@@ -144,7 +144,10 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
         {/* 4-Column Product Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
           {items.map((item) => {
-            const isWishlisted = wishlistedIds.includes(item.id);
+            const isWishlisted = Boolean(
+              Array.isArray(wishlistedIds) &&
+              wishlistedIds.some((w) => (typeof w === 'object' ? w?.id : w) == item.id)
+            );
             return (
               <div
                 key={item.id}
