@@ -56,25 +56,27 @@ export const RECOMMENDED_DRESSES = [
 ];
 
 export function getWishlistIds() {
-  if (typeof window === 'undefined') return DEFAULT_WISHLIST_IDS;
+  if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(WISHLIST_KEY);
-    if (!raw) {
-      // Khởi tạo mặc định nếu người dùng chưa tương tác lần nào
+    if (raw === null) {
+      // Khởi tạo mặc định lần đầu tiên người dùng vào web
       localStorage.setItem(WISHLIST_KEY, JSON.stringify(DEFAULT_WISHLIST_IDS));
-      return DEFAULT_WISHLIST_IDS;
+      return [...DEFAULT_WISHLIST_IDS];
+    }
+    if (!raw.trim()) {
+      return [];
     }
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
-      const cleaned = parsed
+      return parsed
         .map((item) => (typeof item === 'object' && item !== null ? Number(item?.id) : Number(item)))
         .filter((id) => !Number.isNaN(id) && id > 0);
-      return cleaned.length > 0 ? cleaned : DEFAULT_WISHLIST_IDS;
     }
-    return DEFAULT_WISHLIST_IDS;
+    return [];
   } catch (err) {
     console.warn('Lỗi khi đọc wishlist từ localStorage:', err);
-    return DEFAULT_WISHLIST_IDS;
+    return [];
   }
 }
 

@@ -131,7 +131,13 @@ export default function WishlistPage() {
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#804E55] text-white font-jakarta text-[12.5px] font-medium shadow-sm shrink-0 self-start md:self-auto">
                 <Heart className="w-4 h-4 fill-white text-white" />
                 <span>
-                  Đang lưu <strong className="font-bold">{wishlistItems.length}</strong> tuyệt tác đắt giá
+                  {wishlistItems.length > 0 ? (
+                    <>
+                      Đang lưu <strong className="font-bold">{wishlistItems.length}</strong> tuyệt tác đắt giá
+                    </>
+                  ) : (
+                    <span>Không có sản phẩm yêu thích nào</span>
+                  )}
                 </span>
               </div>
             </div>
@@ -157,13 +163,13 @@ export default function WishlistPage() {
                 <Heart className="w-10 h-10 stroke-[1.5]" />
               </div>
               <h3 className="font-playfair text-[24px] sm:text-[28px] font-semibold text-[#2C2523] mb-3">
-                Tủ Đồ Trong Mơ Đang Trống
+                Không có sản phẩm yêu thích nào
               </h3>
               <p className="font-jakarta text-[14px] text-[#695C4E] max-w-[480px] mx-auto mb-8 leading-relaxed">
                 Nàng chưa lưu mẫu thiết kế nào vào danh sách yêu thích. Hãy khám phá bộ sưu tập và chọn những chiếc váy cưới ưng ý nhất cho ngày trọng đại!
               </p>
               <Link
-                to="/bo-suu-tap"
+                to="/collection"
                 className="inline-flex items-center gap-2 px-7 py-3 rounded-xl bg-[#804E55] hover:bg-[#6D3940] text-white font-jakarta text-[13.5px] font-semibold tracking-wide no-underline transition-all shadow-md active:scale-95"
               >
                 <span>Khám Phá Bộ Sưu Tập</span>
