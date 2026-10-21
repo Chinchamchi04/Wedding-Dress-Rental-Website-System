@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Heart, ShoppingBag, ArrowRight, Sparkles, X, ChevronRight, Check
+  Heart, ShoppingBag, ArrowRight, Sparkles, X, ChevronRight, Check, Trash2
 } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
@@ -10,6 +10,7 @@ import {
   getWishlistDresses,
   getWishlistIds,
   removeFromWishlist,
+  clearWishlist,
   toggleWishlist,
   WISHLIST_EVENT,
   RECOMMENDED_DRESSES,
@@ -78,6 +79,28 @@ export default function WishlistPage() {
     navigate(`/checkout?dressId=${dress.id}`);
   };
 
+  // Thêm tất cả sản phẩm trong Wishlist vào giỏ thuê hàng
+  const handleAddAllToCart = () => {
+    if (!wishlistItems || wishlistItems.length === 0) return;
+    let addedCount = 0;
+    wishlistItems.forEach((dress) => {
+      const added = addToCart(dress);
+      if (added) addedCount++;
+    });
+    if (addedCount > 0) {
+      showToast(`Đã thêm ${addedCount} tuyệt tác vào giỏ thuê thành công!`);
+    } else {
+      showToast('Tất cả sản phẩm yêu thích đã có trong giỏ thuê váy.');
+    }
+  };
+
+  // Xóa toàn bộ sản phẩm khỏi Wishlist
+  const handleClearAll = () => {
+    if (!wishlistItems || wishlistItems.length === 0) return;
+    clearWishlist();
+    showToast('Đã xóa tất cả sản phẩm khỏi danh sách yêu thích');
+  };
+
   return (
     <div className="min-h-screen bg-[#FAF7F5] text-[#2C2523] flex flex-col font-jakarta selection:bg-[#FCEEE9] selection:text-[#B8737D]">
       {/* 1. Header */}
@@ -127,18 +150,47 @@ export default function WishlistPage() {
                 </p>
               </div>
 
-              {/* Pill badge: Đang lưu {count} tuyệt tác */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#804E55] text-white font-jakarta text-[12.5px] font-medium shadow-sm shrink-0 self-start md:self-auto">
-                <Heart className="w-4 h-4 fill-white text-white" />
-                <span>
-                  {wishlistItems.length > 0 ? (
-                    <>
-                      Đang lưu <strong className="font-bold">{wishlistItems.length}</strong> tuyệt tác đắt giá
-                    </>
-                  ) : (
-                    <span>Không có sản phẩm yêu thích nào</span>
-                  )}
-                </span>
+              {/* Nhóm nút bên phải: Badge trạng thái + Thêm tất cả vào giỏ hàng + Xóa tất cả */}
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start md:self-auto">
+                {/* Pill badge: Đang lưu {count} tuyệt tác */}
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#804E55] text-white font-jakarta text-[12.5px] font-medium shadow-sm">
+                  <Heart className="w-4 h-4 fill-white text-white" />
+                  <span>
+                    {wishlistItems.length > 0 ? (
+                      <>
+                        Đang lưu <strong className="font-bold">{wishlistItems.length}</strong> tuyệt tác đắt giá
+                      </>
+                    ) : (
+                      <span>Không có sản phẩm yêu thích nào</span>
+                    )}
+                  </span>
+                </div>
+
+                {wishlistItems.length > 0 && (
+                  <>
+                    {/* Nút 1: Thêm tất cả vào giỏ hàng */}
+                    <button
+                      type="button"
+                      onClick={handleAddAllToCart}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white hover:bg-[#FFF7F5] border border-[#804E55]/30 text-[#804E55] font-jakarta text-[12.5px] font-semibold tracking-wide transition-all shadow-xs cursor-pointer active:scale-95"
+                      title="Thêm tất cả sản phẩm vào giỏ thuê"
+                    >
+                      <ShoppingBag className="w-3.5 h-3.5" />
+                      <span>Thêm tất cả vào giỏ hàng</span>
+                    </button>
+
+                    {/* Nút 2: Xóa tất cả */}
+                    <button
+                      type="button"
+                      onClick={handleClearAll}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white hover:bg-[#FFF0F0] border border-[#E0BCBC] text-[#B84E59] hover:text-[#963740] font-jakarta text-[12.5px] font-semibold tracking-wide transition-all shadow-xs cursor-pointer active:scale-95"
+                      title="Xóa tất cả sản phẩm khỏi yêu thích"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Xóa tất cả</span>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 

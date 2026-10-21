@@ -127,6 +127,14 @@ export function removeFromWishlist(id) {
 }
 
 /**
+ * Xóa toàn bộ sản phẩm khỏi danh sách yêu thích
+ */
+export function clearWishlist() {
+  saveWishlistIds([]);
+  return [];
+}
+
+/**
  * Đảo trạng thái yêu thích (Thêm nếu chưa có, Xóa nếu đã có)
  */
 export function toggleWishlist(id) {
