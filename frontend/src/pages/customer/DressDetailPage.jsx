@@ -11,6 +11,7 @@ import Footer from '../../components/layout/Footer';
 import BookingModal from '../../components/common/BookingModal';
 import { getDressById, getRelatedDresses, formatCurrencyVND } from '../../services/dressService';
 import { addToCart } from '../../services/cartService';
+import { isWishlisted as checkWishlisted, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
 
 // Import local photos for feedbacks
 import card1 from '../../assets/card1_elysian.jpg';
@@ -157,6 +158,7 @@ export default function DressDetailPage() {
           setSelectedImageIndex(0);
           setSelectedColor(result.data.colors?.[0] || null);
           setSelectedSize(result.data.sizes?.[1]?.id || 'S');
+          setIsWishlisted(checkWishlisted(result.data.id));
         }
         if (related.success) {
           setRelatedDresses(related.data);
@@ -171,6 +173,21 @@ export default function DressDetailPage() {
       isMounted = false;
     };
   }, [id]);
+
+  // Lắng nghe sự kiện đồng bộ Wishlist
+  useEffect(() => {
+    const syncWishlist = () => {
+      if (dress?.id) {
+        setIsWishlisted(checkWishlisted(dress.id));
+      }
+    };
+    window.addEventListener(WISHLIST_EVENT, syncWishlist);
+    window.addEventListener('storage', syncWishlist);
+    return () => {
+      window.removeEventListener(WISHLIST_EVENT, syncWishlist);
+      window.removeEventListener('storage', syncWishlist);
+    };
+  }, [dress?.id]);
 
   // Calculate rental duration in days
   const rentalDays = useMemo(() => {
@@ -270,6 +287,20 @@ export default function DressDetailPage() {
     }, 4500);
   };
 
+  const handleToggleWishlist = () => {
+    if (!dress?.id) return;
+    const result = toggleWishlist(dress.id);
+    setIsWishlisted(result.isAdded);
+    setRentNotification(
+      result.isAdded
+        ? `Đã lưu "${dress?.name}" vào tủ đồ trong mơ ♥`
+        : `Đã xóa "${dress?.name}" khỏi tủ đồ trong mơ`
+    );
+    setTimeout(() => {
+      setRentNotification('');
+    }, 3800);
+  };
+
   if (loading || !dress) {
     return (
       <div className="min-h-screen bg-[#FDFBF7] flex flex-col justify-center items-center font-jakarta">
@@ -282,7 +313,7 @@ export default function DressDetailPage() {
   return (
     <div className="min-h-screen bg-[#FAF7F5] text-[#2C2523] flex flex-col font-jakarta selection:bg-[#FCEEE9] selection:text-[#B8737D]">
       {/* 1. Header */}
-      <Header onOpenBooking={() => setIsBookingOpen(true)} wishlistCount={isWishlisted ? 1 : 0} />
+      <Header onOpenBooking={() => setIsBookingOpen(true)} />
 
       {/* Toast Notification */}
       {rentNotification && (
@@ -585,7 +616,7 @@ export default function DressDetailPage() {
 
                 <button
                   type="button"
-                  onClick={() => setIsWishlisted(!isWishlisted)}
+                  onClick={handleToggleWishlist}
                   className={`w-[48px] h-[48px] rounded-[4px] border flex items-center justify-center transition-colors cursor-pointer ${isWishlisted
                     ? 'bg-[#FFF2F0] border-[#70484E] text-[#70484E]'
                     : 'bg-white border-[#D6C7C3] text-[#70484E] hover:border-[#70484E]'

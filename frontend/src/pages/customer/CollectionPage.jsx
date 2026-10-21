@@ -9,6 +9,7 @@ import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import BookingModal from '../../components/common/BookingModal';
 import { addToCart } from '../../services/cartService';
+import { getWishlistIds, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
 
 import logoEmblemImg from '../../assets/logo_emblem.png';
 import { DRESS_CATALOG } from '../../data/dressCatalog';
@@ -55,10 +56,21 @@ export default function CollectionPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   // State tương tác: Giỏ hàng, Wishlist, Modal Thuê Váy, Toast Thông Báo
-  const [wishlistIds, setWishlistIds] = useState([]);
+  const [wishlistIds, setWishlistIds] = useState(() => getWishlistIds());
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Đồng bộ Wishlist thời gian thực với toàn bộ hệ thống
+  useEffect(() => {
+    const refreshWishlist = () => setWishlistIds(getWishlistIds());
+    window.addEventListener(WISHLIST_EVENT, refreshWishlist);
+    window.addEventListener('storage', refreshWishlist);
+    return () => {
+      window.removeEventListener(WISHLIST_EVENT, refreshWishlist);
+      window.removeEventListener('storage', refreshWishlist);
+    };
+  }, []);
 
   // Hiển thị toast thông báo
   const showToast = (msg) => {
@@ -70,12 +82,12 @@ export default function CollectionPage() {
 
   // Toggle Wishlist
   const handleToggleWishlist = (id) => {
-    setWishlistIds((prev) => {
-      const isExist = prev.includes(id);
-      const updated = isExist ? prev.filter((item) => item !== id) : [...prev, id];
-      showToast(isExist ? 'Đã xóa váy khỏi danh sách yêu thích' : 'Đã thêm váy vào danh sách yêu thích ♥');
-      return updated;
-    });
+    const result = toggleWishlist(id);
+    showToast(
+      result.isAdded
+        ? 'Đã thêm váy vào danh sách yêu thích ♥'
+        : 'Đã xóa váy khỏi danh sách yêu thích'
+    );
   };
 
   // Thêm vào giỏ thuê

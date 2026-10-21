@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingBag, Heart, User, Calendar, ChevronDown, Menu, X, LogOut } from 'lucide-react';
+import { ShoppingBag, Heart, User, Calendar, ChevronDown, Menu, X, LogOut, Bell, MessageSquare } from 'lucide-react';
 import logoImg from '../../assets/logo.png';
 import { clearProfile } from '../../services/profileService';
 import { CART_EVENT, getCart } from '../../services/cartService';
+import { getWishlistIds, WISHLIST_EVENT } from '../../services/wishlistService';
 
-const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCount = 2 }) => {
+const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCount: propWishlistCount }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -16,6 +17,7 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userTimeoutRef = useRef(null);
   const [internalCartCount, setInternalCartCount] = useState(() => getCart().length);
+  const [internalWishlistCount, setInternalWishlistCount] = useState(() => getWishlistIds().length);
 
   useEffect(() => {
     const refreshCart = () => setInternalCartCount(getCart().length);
@@ -27,7 +29,19 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
     };
   }, []);
 
+  useEffect(() => {
+    const refreshWishlist = () => setInternalWishlistCount(getWishlistIds().length);
+    window.addEventListener(WISHLIST_EVENT, refreshWishlist);
+    window.addEventListener('storage', refreshWishlist);
+    return () => {
+      window.removeEventListener(WISHLIST_EVENT, refreshWishlist);
+      window.removeEventListener('storage', refreshWishlist);
+    };
+  }, []);
+
   const cartCount = propCartCount !== undefined ? propCartCount : internalCartCount;
+  const wishlistCount = propWishlistCount !== undefined ? propWishlistCount : internalWishlistCount;
+  const isWishlistPage = location.pathname === '/wishlist' || location.pathname === '/yeu-thich';
 
   const categories = [
     {
@@ -206,18 +220,26 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
         </nav>
 
         {/* Action Elements Right */}
-        <div className="flex items-center gap-3 sm:gap-4">
-          {/* Wishlist Heart with badge */}
-          <Link
-            to="/profile/orders"
-            className="relative p-1.5 flex items-center justify-center text-[#2C2523] hover:text-[#B8737D] transition-colors border-0 bg-transparent cursor-pointer no-underline"
-            title="Danh sách yêu thích & Đơn hàng"
+        <div className="flex items-center gap-2.5 sm:gap-3.5">
+          {/* Notification Bell */}
+          <button
+            type="button"
+            className="p-1.5 flex items-center justify-center text-[#2C2523] hover:text-[#B8737D] transition-colors border-0 bg-transparent cursor-pointer"
+            title="Thông báo hệ thống"
+            onClick={() => onOpenBooking ? onOpenBooking() : navigate('/dat-lich')}
           >
-            <Heart className="w-[19px] h-[19px] stroke-[1.8]" />
-            <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-0.5 rounded-full bg-[#B8737D] text-white font-jakarta text-[9.5px] font-bold flex items-center justify-center leading-none">
-              {wishlistCount}
-            </span>
-          </Link>
+            <Bell className="w-[19px] h-[19px] stroke-[1.8]" />
+          </button>
+
+          {/* Chat / Support */}
+          <button
+            type="button"
+            className="p-1.5 flex items-center justify-center text-[#2C2523] hover:text-[#B8737D] transition-colors border-0 bg-transparent cursor-pointer"
+            title="Tư vấn trực tuyến"
+            onClick={() => onOpenBooking ? onOpenBooking() : navigate('/dat-lich')}
+          >
+            <MessageSquare className="w-[19px] h-[19px] stroke-[1.8]" />
+          </button>
 
           {/* Shopping Bag with badge */}
           <Link
@@ -228,6 +250,22 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
             <ShoppingBag className="w-[19px] h-[19px] stroke-[1.8]" />
             <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-0.5 rounded-full bg-[#B8737D] text-white font-jakarta text-[9.5px] font-bold flex items-center justify-center leading-none">
               {cartCount}
+            </span>
+          </Link>
+
+          {/* Wishlist Heart with badge (Active Pill style when on Wishlist page) */}
+          <Link
+            to="/wishlist"
+            className={`relative p-1.5 flex items-center justify-center transition-all cursor-pointer no-underline rounded-full ${
+              isWishlistPage
+                ? 'border border-[#B8737D]/50 bg-[#FFF5F3] text-[#B8737D]'
+                : 'text-[#2C2523] hover:text-[#B8737D] border border-transparent'
+            }`}
+            title="Tủ đồ trong mơ (Danh sách yêu thích)"
+          >
+            <Heart className={`w-[19px] h-[19px] stroke-[1.8] ${isWishlistPage ? 'fill-[#B8737D]/20 text-[#B8737D]' : ''}`} />
+            <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-0.5 rounded-full bg-[#B8737D] text-white font-jakarta text-[9.5px] font-bold flex items-center justify-center leading-none">
+              {wishlistCount}
             </span>
           </Link>
 
