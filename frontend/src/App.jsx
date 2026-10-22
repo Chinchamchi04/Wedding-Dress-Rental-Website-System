@@ -6,6 +6,8 @@ import OrderHistoryPage from './pages/customer/OrderHistoryPage';
 import OrderDetailPage from './pages/customer/OrderDetailPage';
 import ChangePasswordPage from './pages/customer/ChangePasswordPage';
 import CollectionPage from './pages/customer/CollectionPage';
+import WishlistPage from './pages/customer/WishlistPage';
+import AboutUsPage from './pages/customer/AboutUsPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
@@ -14,6 +16,7 @@ import CartPage from './pages/customer/CartPage';
 import CheckoutPage from './pages/customer/CheckoutPage';
 import AppointmentPage from './pages/customer/AppointmentPage';
 import GuestBookingPage from './pages/customer/GuestBookingPage';
+import MessagesPage from './pages/customer/MessagesPage';
 import StaffDashboardPage from './pages/staff/StaffDashboardPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import RevenueReportPage from './pages/admin/RevenueReportPage';
@@ -26,6 +29,10 @@ export default function App() {
     <Router>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/about" element={<AboutUsPage />} />
+        <Route path="/ve-chung-toi" element={<AboutUsPage />} />
+        <Route path="/wishlist" element={<WishlistPage />} />
+        <Route path="/yeu-thich" element={<WishlistPage />} />
         <Route path="/collection" element={<CollectionPage />} />
         <Route path="/bo-suu-tap" element={<CollectionPage />} />
         <Route path="/cart" element={<CartPage />} />
@@ -38,6 +45,9 @@ export default function App() {
         <Route path="/booking" element={<AppointmentPage />} />
         <Route path="/thue-nhanh" element={<GuestBookingPage />} />
         <Route path="/guest-booking" element={<GuestBookingPage />} />
+        <Route path="/tin-nhan" element={<MessagesPage />} />
+        <Route path="/messages" element={<MessagesPage />} />
+        <Route path="/chat" element={<MessagesPage />} />
         <Route path="/staff" element={<Navigate to="/staff/dashboard" replace />} />
         <Route path="/staff/dashboard" element={<StaffDashboardPage />} />
         <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />

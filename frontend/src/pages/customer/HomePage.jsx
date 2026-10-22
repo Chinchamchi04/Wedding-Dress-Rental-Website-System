@@ -7,12 +7,24 @@ import TrendingCollection from '../../components/TrendingCollection';
 import RealBridesGallery from '../../components/RealBridesGallery';
 import Footer from '../../components/layout/Footer';
 import BookingModal from '../../components/common/BookingModal';
+import { getWishlistIds, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
 
 export default function HomePage() {
   const location = useLocation();
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [wishlistedIds, setWishlistedIds] = useState([1, 2]);
+  const [wishlistedIds, setWishlistedIds] = useState(() => getWishlistIds());
+
+  // Đồng bộ trạng thái yêu thích với toàn hệ thống
+  useEffect(() => {
+    const refresh = () => setWishlistedIds(getWishlistIds());
+    window.addEventListener(WISHLIST_EVENT, refresh);
+    window.addEventListener('storage', refresh);
+    return () => {
+      window.removeEventListener(WISHLIST_EVENT, refresh);
+      window.removeEventListener('storage', refresh);
+    };
+  }, []);
 
   // Tự động cuộn đến mục khi URL có hash (ví dụ: /#collection, /#silhouettes, /#brides)
   useEffect(() => {
@@ -38,9 +50,7 @@ export default function HomePage() {
   };
 
   const handleToggleWishlist = (id) => {
-    setWishlistedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+    toggleWishlist(id);
   };
 
   const handleSelectSilhouette = (silhouette) => {
