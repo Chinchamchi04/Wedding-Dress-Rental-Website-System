@@ -1,35 +1,84 @@
 import React, { useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Sparkles,
-  Layers,
   CalendarCheck,
   Package,
-  FileSignature,
   Headphones,
+  BarChart3,
   Store,
   LogOut,
   Menu,
-  X
+  X,
+  Layers,
+  FileSignature
 } from 'lucide-react';
 import logoImg from '../../assets/logo.png';
-import emblemImg from '../../assets/images/unibridal-emblem-transparent.png';
 import heroBride from '../../assets/hero_bride.jpg';
 import HangerIcon from '../common/HangerIcon';
 
-export default function AdminLayout({ children, activeMenu = 'don-thue' }) {
+export default function AdminLayout({
+  children,
+  activeMenu,
+  role = 'admin',
+  title,
+  subtitle,
+  controls
+}) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Tự động nhận diện menu đang active nếu không truyền chủ động
+  const currentPath = location.pathname;
+  const isStaff = role === 'staff' || currentPath.startsWith('/staff');
+
+  const getActiveKey = () => {
+    if (activeMenu) return activeMenu;
+    if (currentPath.includes('/dashboard')) return 'dashboard';
+    if (currentPath.includes('/reports') || currentPath.includes('/revenue')) return 'revenue';
+    if (currentPath.includes('/don-thue') || currentPath.includes('/orders')) return 'don-thue';
+    if (currentPath.includes('/kho-hang') || currentPath.includes('/inventory')) return 'inventory';
+    if (currentPath.includes('/cham-soc-khach-hang') || currentPath.includes('/customer-care')) return 'customer-care';
+    return 'dashboard';
+  };
+
+  const activeKey = getActiveKey();
+
   const menuItems = [
-    { key: 'dashboard', label: 'Tổng Quan', icon: LayoutDashboard, to: '/admin/don-thue' },
-    { key: 'products', label: 'Quản Lý Sản Phẩm', icon: HangerIcon, to: '/admin/kho-hang' },
-    { key: 'categories', label: 'Quản Lý Danh Mục', icon: Layers, to: '/admin/kho-hang' },
-    { key: 'don-thue', label: 'Quản Lý Đơn Thuê', icon: CalendarCheck, to: '/admin/don-thue' },
-    { key: 'inventory', label: 'Quản Lý Kho Hàng', icon: Package, to: '/admin/kho-hang' },
-    { key: 'contracts', label: 'Quản Lý Hợp Đồng', icon: FileSignature, to: '/admin/kho-hang' },
-    { key: 'customer-care', label: 'Chăm sóc khách hàng', icon: Headphones, to: '/admin/cham-soc-khach-hang' },
+    {
+      key: 'dashboard',
+      label: 'Tổng Quan',
+      icon: LayoutDashboard,
+      to: isStaff ? '/staff/dashboard' : '/admin/dashboard'
+    },
+    {
+      key: 'don-thue',
+      label: 'Quản Lý Đơn Thuê',
+      icon: CalendarCheck,
+      to: isStaff ? '/staff/don-thue' : '/admin/don-thue'
+    },
+    {
+      key: 'inventory',
+      label: 'Quản Lý Kho Hàng',
+      icon: Package,
+      to: isStaff ? '/staff/kho-hang' : '/admin/kho-hang'
+    },
+    {
+      key: 'customer-care',
+      label: 'Chăm Sóc Khách Hàng',
+      icon: Headphones,
+      to: isStaff ? '/staff/cham-soc-khach-hang' : '/admin/cham-soc-khach-hang'
+    },
+    ...(!isStaff ? [
+      {
+        key: 'revenue',
+        label: 'Báo Cáo Doanh Thu',
+        icon: BarChart3,
+        to: '/admin/reports/revenue'
+      }
+    ] : [])
   ];
 
   return (
@@ -42,7 +91,7 @@ export default function AdminLayout({ children, activeMenu = 'don-thue' }) {
         />
       )}
 
-      {/* Left Sidebar - Sticky/Cố định khi cuộn */}
+      {/* Left Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#FCF7F4] border-r border-[#EFE5E1] flex flex-col justify-between py-6 px-4 transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 shrink-0 overflow-y-auto ${
           sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
@@ -59,9 +108,14 @@ export default function AdminLayout({ children, activeMenu = 'don-thue' }) {
                   className="w-full h-full object-contain"
                 />
               </div>
-              <span className="font-serif text-[20px] font-semibold tracking-normal text-[#733F49] select-none leading-none">
-                UniBridal
-              </span>
+              <div className="flex flex-col">
+                <span className="font-serif text-[19px] font-bold tracking-normal text-[#733F49] select-none leading-none">
+                  UniBridal
+                </span>
+                <span className="text-[10px] uppercase tracking-wider text-[#A39192] mt-1 font-semibold">
+                  Atelier Haute Couture
+                </span>
+              </div>
             </Link>
             <button
               type="button"
@@ -84,7 +138,7 @@ export default function AdminLayout({ children, activeMenu = 'don-thue' }) {
           <nav className="flex flex-col gap-1.5">
             {menuItems.map((item) => {
               const Icon = item.icon;
-              const isActive = activeMenu === item.key;
+              const isActive = activeKey === item.key;
               return (
                 <NavLink
                   key={item.key}
@@ -152,8 +206,10 @@ export default function AdminLayout({ children, activeMenu = 'don-thue' }) {
                 <div className="text-[13.5px] font-bold text-[#2C2523] leading-tight">
                   Trần Bích Ngọc
                 </div>
-                <div className="inline-block mt-0.5 px-2 py-0.5 rounded-sm bg-[#FDECEE] text-[#B8737D] text-[9.5px] font-bold tracking-wider uppercase">
-                  STAFF MODE
+                <div className={`inline-block mt-0.5 px-2 py-0.5 rounded-sm text-[9.5px] font-bold tracking-wider uppercase ${
+                  isStaff ? 'bg-[#FDECEE] text-[#B8737D]' : 'bg-[#EBF5EE] text-[#2F6F4E]'
+                }`}>
+                  {isStaff ? 'STAFF MODE' : 'ADMIN MODE'}
                 </div>
               </div>
               <div className="relative">
@@ -167,6 +223,17 @@ export default function AdminLayout({ children, activeMenu = 'don-thue' }) {
             </div>
           </div>
         </header>
+
+        {/* Optional Page Heading Header if title or controls are passed */}
+        {(title || controls) && (
+          <div className="px-6 lg:px-8 pt-6 pb-2 max-w-[1400px] w-full mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              {title && <h1 className="text-2xl font-serif font-bold text-[#302626]">{title}</h1>}
+              {subtitle && <p className="text-sm text-[#7A6A6B] mt-1">{subtitle}</p>}
+            </div>
+            {controls && <div>{controls}</div>}
+          </div>
+        )}
 
         {/* Page Body */}
         <main className="flex-1 p-6 lg:p-8 max-w-[1400px] w-full mx-auto">

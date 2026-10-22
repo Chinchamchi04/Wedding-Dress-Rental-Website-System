@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart } from 'lucide-react';
-import { getAllDresses } from '../services/dressService';
-import { getWishlistIds, toggleWishlist, WISHLIST_EVENT } from '../services/wishlistService';
-import card1Img from '../assets/card1_elysian.jpg';
-import card2Img from '../assets/card2_celeste.jpg';
-import card3Img from '../assets/card3_lumiere.jpg';
-import card4Img from '../assets/card4_monet.jpg';
+import { getAllDresses } from '../../services/dressService';
+import { getWishlistIds, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
+import card1Img from '../../assets/card1_elysian.jpg';
+import card2Img from '../../assets/card2_celeste.jpg';
+import card3Img from '../../assets/card3_lumiere.jpg';
+import card4Img from '../../assets/card4_monet.jpg';
 
 const products = [
   {

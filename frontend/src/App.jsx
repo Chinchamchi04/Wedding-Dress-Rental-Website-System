@@ -23,11 +23,17 @@ import RevenueReportPage from './pages/admin/RevenueReportPage';
 import OrderRentalManagement from './pages/admin/OrderRentalManagement';
 import InventoryManagement from './pages/admin/InventoryManagement';
 import CustomerCareManagement from './pages/admin/CustomerCareManagement';
+import { AuthProvider } from './contexts/AuthContext';
+import { CartProvider } from './contexts/CartContext';
+import { WishlistProvider } from './contexts/WishlistContext';
 
 export default function App() {
   return (
-    <Router>
-      <Routes>
+    <AuthProvider>
+      <CartProvider>
+        <WishlistProvider>
+          <Router>
+            <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutUsPage />} />
         <Route path="/ve-chung-toi" element={<AboutUsPage />} />
@@ -81,8 +87,11 @@ export default function App() {
         <Route path="/staff/customer-care" element={<CustomerCareManagement />} />
         <Route path="/cham-soc-khach-hang" element={<CustomerCareManagement />} />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Router>
+          <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Router>
+        </WishlistProvider>
+      </CartProvider>
+    </AuthProvider>
   );
 }

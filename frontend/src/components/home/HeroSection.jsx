@@ -1,7 +1,7 @@
 import React from 'react';
 import { CheckCircle } from 'lucide-react';
-import heroBrideImg from '../assets/hero_bride.jpg';
-import laceDetailImg from '../assets/lace_detail.jpg';
+import heroBrideImg from '../../assets/hero_bride.jpg';
+import laceDetailImg from '../../assets/lace_detail.jpg';
 
 const HeroSection = () => {
   return (

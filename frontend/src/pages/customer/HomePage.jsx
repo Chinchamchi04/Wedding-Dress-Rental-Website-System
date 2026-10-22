@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Header from '../../components/layout/Header';
-import HeroSection from '../../components/HeroSection';
-import SilhouetteShowcase from '../../components/SilhouetteShowcase';
-import TrendingCollection from '../../components/TrendingCollection';
-import RealBridesGallery from '../../components/RealBridesGallery';
+import HeroSection from '../../components/home/HeroSection';
+import SilhouetteShowcase from '../../components/home/SilhouetteShowcase';
+import TrendingCollection from '../../components/home/TrendingCollection';
+import RealBridesGallery from '../../components/home/RealBridesGallery';
 import Footer from '../../components/layout/Footer';
 import BookingModal from '../../components/common/BookingModal';
 import { getWishlistIds, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
