@@ -23,6 +23,8 @@ import RevenueReportPage from './pages/admin/RevenueReportPage';
 import OrderRentalManagement from './pages/admin/OrderRentalManagement';
 import InventoryManagement from './pages/admin/InventoryManagement';
 import CustomerCareManagement from './pages/admin/CustomerCareManagement';
+import ContractManagement from './pages/admin/ContractManagement';
+import ContractTemplateManagement from './pages/admin/ContractTemplateManagement';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import { WishlistProvider } from './contexts/WishlistContext';
@@ -51,6 +53,10 @@ export default function App() {
         <Route path="/booking" element={<AppointmentPage />} />
         <Route path="/thue-nhanh" element={<GuestBookingPage />} />
         <Route path="/guest-booking" element={<GuestBookingPage />} />
+        <Route path="/thue-vay-guest" element={<GuestBookingPage />} />
+        <Route path="/thu-vay-guest" element={<GuestBookingPage />} />
+        <Route path="/dat-lich-guest" element={<GuestBookingPage />} />
+        <Route path="/dang-ky-guest" element={<GuestBookingPage />} />
         <Route path="/tin-nhan" element={<MessagesPage />} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/chat" element={<MessagesPage />} />
@@ -86,6 +92,16 @@ export default function App() {
         <Route path="/staff/cham-soc-khach-hang" element={<CustomerCareManagement />} />
         <Route path="/staff/customer-care" element={<CustomerCareManagement />} />
         <Route path="/cham-soc-khach-hang" element={<CustomerCareManagement />} />
+        <Route path="/admin/hop-dong" element={<ContractManagement />} />
+        <Route path="/admin/contracts" element={<ContractManagement />} />
+        <Route path="/staff/hop-dong" element={<ContractManagement />} />
+        <Route path="/staff/contracts" element={<ContractManagement />} />
+        <Route path="/quan-ly-hop-dong" element={<ContractManagement />} />
+        <Route path="/hop-dong" element={<ContractManagement />} />
+        <Route path="/admin/mau-hop-dong" element={<ContractTemplateManagement />} />
+        <Route path="/admin/contract-templates" element={<ContractTemplateManagement />} />
+        <Route path="/quan-ly-mau-hop-dong" element={<ContractTemplateManagement />} />
+        <Route path="/mau-hop-dong" element={<ContractTemplateManagement />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

@@ -41,6 +41,8 @@ export default function AdminLayout({
     if (currentPath.includes('/don-thue') || currentPath.includes('/orders')) return 'don-thue';
     if (currentPath.includes('/kho-hang') || currentPath.includes('/inventory')) return 'inventory';
     if (currentPath.includes('/cham-soc-khach-hang') || currentPath.includes('/customer-care')) return 'customer-care';
+    if (currentPath.includes('/hop-dong') || currentPath.includes('/contracts')) return 'contracts';
+    if (currentPath.includes('/mau-hop-dong') || currentPath.includes('/contract-templates')) return 'contract-templates';
     return 'dashboard';
   };
 
@@ -60,6 +62,12 @@ export default function AdminLayout({
       to: isStaff ? '/staff/don-thue' : '/admin/don-thue'
     },
     {
+      key: 'contracts',
+      label: 'Quản Lý Hợp Đồng',
+      icon: FileSignature,
+      to: isStaff ? '/staff/hop-dong' : '/admin/hop-dong'
+    },
+    {
       key: 'inventory',
       label: 'Quản Lý Kho Hàng',
       icon: Package,
@@ -72,6 +80,12 @@ export default function AdminLayout({
       to: isStaff ? '/staff/cham-soc-khach-hang' : '/admin/cham-soc-khach-hang'
     },
     ...(!isStaff ? [
+      {
+        key: 'contract-templates',
+        label: 'Mẫu Hợp Đồng',
+        icon: Layers,
+        to: '/admin/mau-hop-dong'
+      },
       {
         key: 'revenue',
         label: 'Báo Cáo Doanh Thu',
