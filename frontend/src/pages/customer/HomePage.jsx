@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { Sparkles, X } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import HeroSection from '../../components/home/HeroSection';
 import SilhouetteShowcase from '../../components/home/SilhouetteShowcase';
@@ -14,6 +15,14 @@ export default function HomePage() {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [wishlistedIds, setWishlistedIds] = useState(() => getWishlistIds());
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3200);
+  };
 
   // Đồng bộ trạng thái yêu thích với toàn hệ thống
   useEffect(() => {
@@ -50,7 +59,12 @@ export default function HomePage() {
   };
 
   const handleToggleWishlist = (id) => {
-    toggleWishlist(id);
+    const result = toggleWishlist(id);
+    showToast(
+      result?.isAdded
+        ? 'Đã thêm váy vào danh sách yêu thích ♥'
+        : 'Đã xóa váy khỏi danh sách yêu thích'
+    );
   };
 
   const handleSelectSilhouette = (silhouette) => {
@@ -68,6 +82,21 @@ export default function HomePage() {
         onOpenBooking={() => handleOpenBooking(null)}
         wishlistCount={wishlistedIds.length}
       />
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#2C2523] text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-[#E6DAC8]/40 animate-bounce text-[13px] font-medium">
+          <Sparkles className="w-4 h-4 text-[#B8737D]" />
+          <span>{toastMessage}</span>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="text-white/60 hover:text-white ml-2 bg-transparent border-0 cursor-pointer p-0"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* 2. Main Page Content */}
       <main className="flex-1 w-full">
