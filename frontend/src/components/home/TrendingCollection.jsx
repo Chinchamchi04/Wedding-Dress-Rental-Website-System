@@ -130,9 +130,6 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
 
         {/* Section Header */}
         <div className="max-w-[700px] mb-10 sm:mb-12 text-left">
-          <span className="font-jakarta font-semibold text-[11px] sm:text-[11.5px] tracking-[0.2em] uppercase text-[#B8737D] block mb-0.5 leading-none">
-            WEDDING DRESS RENTAL
-          </span>
           <h2 className="font-playfair text-[38px] sm:text-[44px] leading-[1.15] font-normal tracking-tight text-[#221816] mb-3 m-0">
             Xu Hướng Váy Cưới 2026
           </h2>
