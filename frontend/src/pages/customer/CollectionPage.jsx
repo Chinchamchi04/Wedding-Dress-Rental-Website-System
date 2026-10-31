@@ -207,7 +207,7 @@ export default function CollectionPage() {
 
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#2C2523] text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-[#E6DAC8]/40 animate-bounce text-[13px] font-medium">
+        <div className="fixed bottom-24 right-6 z-50 bg-[#2C2523] text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-[#E6DAC8]/40 animate-bounce text-[13px] font-medium">
           <Sparkles className="w-4 h-4 text-[#B8737D]" />
           <span>{toastMessage}</span>
           <button
@@ -283,7 +283,7 @@ export default function CollectionPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Tìm kiếm theo tên thiết kế, phom dáng, chất liệu (ví dụ: Elysian, Ballgown, Ren 3D)..."
+                placeholder="Tìm kiếm theo tên thiết kế, phom dáng, chất liệu..."
                 className="flex-1 bg-transparent border-0 outline-none font-jakarta text-[13.5px] sm:text-[14px] text-[#2C2523] placeholder:text-[#847374]/70 py-1"
               />
 

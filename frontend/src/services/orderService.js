@@ -26,3 +26,5 @@ export function mapOrder(order) {
 
 export const getOrders = async () => (await axiosClient.get('/orders/my')).data.map(mapOrder);
 export const getOrder = async (id) => mapOrder((await axiosClient.get(`/orders/my/${encodeURIComponent(id)}`)).data);
+export const getDressBookedDates = async (dressId) => (await axiosClient.get('/orders/booked-dates', { params: { dressId } })).data;
+export const createOrder = async (payload) => (await axiosClient.post('/orders', payload)).data;

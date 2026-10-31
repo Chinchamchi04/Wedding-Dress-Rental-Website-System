@@ -74,7 +74,27 @@ const contractTemplateSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
-    clauses: [clauseSchema],
+    // File văn bản mẫu hợp đồng tải lên (.doc, .docx, .pdf)
+    documentFile: {
+      url: { type: String, default: '' },
+      name: { type: String, default: '' },
+      size: { type: String, default: '' },
+      uploadedAt: { type: Date, default: null },
+    },
+    // Đường dẫn mở trực tiếp bản PDF hợp đồng chuẩn A4 trực tuyến
+    pdfUrl: {
+      type: String,
+      default: '',
+    },
+    // Đường dẫn xem trước trực tuyến (Web preview)
+    contractUrl: {
+      type: String,
+      default: '',
+    },
+    clauses: {
+      type: [clauseSchema],
+      default: [],
+    },
     isDefault: {
       type: Boolean,
       default: false,

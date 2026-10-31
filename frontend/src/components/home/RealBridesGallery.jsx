@@ -3,7 +3,7 @@ import React from 'react';
 const reviews = [
   {
     id: 1,
-    author: 'Minh Thư & Hoàng Nam',
+    author: 'Minh Thư và Hoàng Nam',
     venue: 'Lễ cưới tại Park Hyatt Saigon',
     dressType: 'Ballgown',
     quote: (
@@ -18,7 +18,7 @@ const reviews = [
   },
   {
     id: 2,
-    author: 'Khánh Linh & Eric Tran',
+    author: 'Khánh Linh và Eric Tran',
     venue: 'Destination Wedding tại Amanoi',
     dressType: 'Silk Gown',
     quote: (
@@ -35,7 +35,7 @@ const reviews = [
   },
   {
     id: 3,
-    author: 'Phương Uyên & Tuấn Anh',
+    author: 'Phương Uyên và Tuấn Anh',
     venue: 'Lễ cưới tại JW Marriott Hanoi',
     dressType: 'Mermaid',
     quote: (
@@ -50,7 +50,7 @@ const reviews = [
   },
   {
     id: 4,
-    author: 'Thảo Vy & Daniel Lee',
+    author: 'Thảo Vy và Daniel Lee',
     venue: 'Lễ cưới tại InterContinental Danang',
     dressType: 'A-Line Lace',
     quote: (
@@ -64,7 +64,7 @@ const reviews = [
   },
   {
     id: 5,
-    author: 'Hà My & Quốc Bảo',
+    author: 'Hà My và Quốc Bảo',
     venue: 'Lễ cưới tại GEM Center Saigon',
     dressType: 'Royal Princess',
     quote: (
@@ -78,7 +78,7 @@ const reviews = [
   },
   {
     id: 6,
-    author: 'Kim Ngân & Tuấn Hưng',
+    author: 'Kim Ngân và Tuấn Hưng',
     venue: 'Lễ cưới tại Lotte Hotel Hanoi',
     dressType: 'Minimalist Silk',
     quote: (
@@ -118,7 +118,7 @@ const RealBridesGallery = () => {
           {allReviews.map((item, index) => (
             <div
               key={`${item.id}-${index}`}
-              className="w-[310px] sm:w-[350px] md:w-[370px] shrink-0 bg-white border border-[#E6DAC8] rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between select-none"
+              className="w-[310px] sm:w-[350px] md:w-[370px] shrink-0 bg-white border border-[#E6DAC8] hover:border-[#D498A0] rounded-2xl p-6 shadow-[0_4px_16px_rgba(218,142,150,0.08)] hover:shadow-[0_16px_36px_rgba(218,142,150,0.32)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between select-none cursor-pointer"
             >
               <div>
                 {/* Photo */}

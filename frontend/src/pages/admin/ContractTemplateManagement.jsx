@@ -1,7 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
 import {
   Layers,
+  Upload,
+  Download,
+  FileCode,
   FileSignature,
   FileText,
   Plus,
@@ -27,13 +30,23 @@ import {
   DollarSign,
   Calendar,
   AlertTriangle,
-  History
+  History,
+  ExternalLink,
+  Link2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { getContractTemplates } from '../../services/contractService';
 
 const MOCK_TEMPLATES = [
   {
     id: 'TPL-HC-01',
+    pdfUrl: 'http://localhost:5000/api/contract-templates/TPL-HC-01/pdf',
+    contractUrl: 'http://localhost:5000/api/contract-templates/TPL-HC-01/pdf',
+    documentFile: {
+      name: 'Mau_Hop_Dong_Thue_Vay_Haute_Couture.pdf',
+      size: '286 KB',
+      url: 'http://localhost:5000/api/contract-templates/TPL-HC-01/pdf'
+    },
     name: 'Mẫu Hợp Đồng Thuê Váy Cưới Haute Couture Tiêu Chuẩn',
     category: 'Haute Couture',
     badge: 'Mặc định hệ thống',
@@ -76,6 +89,13 @@ const MOCK_TEMPLATES = [
   },
   {
     id: 'TPL-BESPOKE-02',
+    pdfUrl: 'http://localhost:5000/api/contract-templates/TPL-BP-02/pdf',
+    contractUrl: 'http://localhost:5000/api/contract-templates/TPL-BP-02/pdf',
+    documentFile: {
+      name: 'Hop_Dong_May_Do_Bespoke_First_Wear.pdf',
+      size: '312 KB',
+      url: 'http://localhost:5000/api/contract-templates/TPL-BP-02/pdf'
+    },
     name: 'Mẫu Hợp Đồng May Đo Thiết Kế Độc Bản & Thuê Nước Đầu',
     category: 'Bespoke First-Wear',
     badge: 'Hạng sang Exclusive',
@@ -238,6 +258,46 @@ export default function ContractTemplateManagement() {
   const [editTemplate, setEditTemplate] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [showToast, setShowToast] = useState('');
+
+  // Tải danh sách mẫu hợp đồng từ Database API
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const res = await getContractTemplates();
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          const backendList = res.data.map((item) => ({
+            id: item.code || item._id,
+            name: item.name,
+            category: item.category,
+            badge: item.badge || 'Mặc định hệ thống',
+            status: item.status || 'active',
+            version: item.version || 'v2026.1',
+            updatedAt: item.updatedAt ? new Date(item.updatedAt).toISOString().split('T')[0] : '2026-10-29',
+            updatedBy: item.updatedBy || 'Ban Giám Đốc Atelier',
+            appliedCount: item.appliedCount || 142,
+            defaultDuration: item.defaultDuration || '4 ngày 3 đêm',
+            depositRate: item.depositRate || '50% giá trị hợp đồng',
+            overdueFee: item.overdueFee || '800.000 VNĐ / ngày trễ',
+            description: item.description || '',
+            pdfUrl: item.pdfUrl || `http://localhost:5000/api/contract-templates/${item.code || item._id}/pdf`,
+            contractUrl: item.contractUrl || item.pdfUrl || `http://localhost:5000/api/contract-templates/${item.code || item._id}/pdf`,
+            documentFile: item.documentFile?.name
+              ? item.documentFile
+              : {
+                  name: `Hop_Dong_${item.code || 'Mau'}.pdf`,
+                  size: '286 KB',
+                  url: item.pdfUrl || `http://localhost:5000/api/contract-templates/${item.code || item._id}/pdf`,
+                },
+            clauses: item.clauses || [],
+          }));
+          setTemplates(backendList);
+        }
+      } catch (err) {
+        console.warn('Sử dụng mẫu hợp đồng dự phòng:', err);
+      }
+    };
+    fetchTemplates();
+  }, []);
 
   // Clause Library Mock
   const clauseLibrary = [
@@ -526,6 +586,20 @@ export default function ContractTemplateManagement() {
                   </div>
 
                   <div className="flex items-center justify-between text-[#8C7A6B] pt-2 border-t border-[#F2E8E2]">
+                    <span className="text-[11px] text-[#A39284]">File văn bản mẫu:</span>
+                    <a
+                      href={tpl.pdfUrl || tpl.documentFile?.url || `http://localhost:5000/api/contract-templates/${tpl.id || tpl.code}/pdf`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-[#854F55] hover:text-[#5F323B] bg-[#FFF0ED] hover:bg-[#FFE4DE] border border-[#FFDADC] px-2 py-0.5 rounded-md flex items-center gap-1 text-[11px] max-w-[170px] truncate transition-colors group"
+                      title={tpl.documentFile?.name || 'Mở file PDF mẫu hợp đồng'}
+                    >
+                      <FileText className="w-3 h-3 text-[#B8737D] shrink-0" />
+                      <span className="truncate group-hover:underline">{tpl.documentFile?.name || 'Hop_Dong_Mau.pdf'}</span>
+                      <ExternalLink className="w-2.5 h-2.5 text-[#B8737D] shrink-0 opacity-70 group-hover:opacity-100" />
+                    </a>
+                  </div>
+                  <div className="flex items-center justify-between text-[#8C7A6B]">
                     <span className="text-[11px] text-[#A39284]">Số lượt hợp đồng áp dụng:</span>
                     <span className="font-bold text-[#C5A880] bg-[#FAF3EC] px-2 py-0.5 rounded-md">
                       {tpl.appliedCount} hợp đồng
@@ -534,13 +608,35 @@ export default function ContractTemplateManagement() {
                 </div>
 
                 {/* Footer Actions */}
-                <div className="p-4 bg-white border-t border-[#F7EFEA] flex items-center justify-between gap-2">
+                <div className="p-4 bg-white border-t border-[#F7EFEA] flex items-center justify-between gap-1.5">
                   <button
                     onClick={() => setPreviewTemplate(tpl)}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-[#2C2523] bg-[#FAF7F2] hover:bg-[#F2ECE4] rounded-xl transition-all border border-[#E8DFD8]"
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-2.5 text-xs font-semibold text-[#2C2523] bg-[#FAF7F2] hover:bg-[#F2ECE4] rounded-xl transition-all border border-[#E8DFD8]"
                   >
                     <Eye className="w-3.5 h-3.5 text-[#C5A880]" />
                     Xem Mẫu
+                  </button>
+
+                  <a
+                    href={tpl.pdfUrl || tpl.documentFile?.url || `http://localhost:5000/api/contract-templates/${tpl.id || tpl.code}/pdf`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Mở trực tiếp bản PDF Hợp đồng (chuẩn in ấn A4)"
+                    className="p-2 text-[#733F49] hover:bg-[#FFF0ED] rounded-xl transition-all border border-[#FFDADC] hover:border-[#733F49] flex items-center justify-center"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+
+                  <button
+                    onClick={() => {
+                      const link = tpl.pdfUrl || tpl.contractUrl || `http://localhost:5000/api/contract-templates/${tpl.id || tpl.code}/pdf`;
+                      navigator.clipboard.writeText(link);
+                      triggerToast(`Đã sao chép link hợp đồng: ${link}`);
+                    }}
+                    title="Sao chép đường dẫn link hợp đồng"
+                    className="p-2 text-[#8C7A6B] hover:text-[#C5A880] hover:bg-[#FAF7F2] rounded-xl transition-all border border-transparent hover:border-[#E8DFD8]"
+                  >
+                    <Link2 className="w-4 h-4" />
                   </button>
 
                   <button
@@ -720,6 +816,63 @@ export default function ContractTemplateManagement() {
 
             {/* Modal Body: Document Preview Style */}
             <div className="p-8 overflow-y-auto space-y-6 text-[#2C2523] font-serif bg-[#FCFAF8]">
+              {/* Download / Direct Link Card */}
+              <div className="bg-[#FFF8F6] border border-[#FFDADC] rounded-2xl p-4 font-sans text-xs shadow-xs space-y-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#854F55] text-white flex items-center justify-center font-bold text-sm shrink-0">
+                      PDF
+                    </div>
+                    <div>
+                      <p className="font-bold text-[#2C2523] text-sm">
+                        {previewTemplate.documentFile?.name || `Hop_Dong_Mau_${previewTemplate.id}.pdf`}
+                      </p>
+                      <p className="text-[11px] text-[#8C7A6B]">
+                        Dung lượng: {previewTemplate.documentFile?.size || '286 KB'} • Định dạng: PDF / Word • Cập nhật: {previewTemplate.updatedAt || '2026-10-29'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <a
+                      href={previewTemplate.pdfUrl || previewTemplate.documentFile?.url || `http://localhost:5000/api/contract-templates/${previewTemplate.id}/pdf`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#854F55] hover:bg-[#6E3F44] text-white font-semibold rounded-xl text-xs transition-colors shrink-0 shadow-xs text-decoration-none"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      Mở Link PDF (Chuẩn A4)
+                    </a>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const link = previewTemplate.pdfUrl || previewTemplate.contractUrl || `http://localhost:5000/api/contract-templates/${previewTemplate.id}/pdf`;
+                        navigator.clipboard.writeText(link);
+                        triggerToast(`Đã sao chép link hợp đồng: ${link}`);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-[#FAF7F2] text-[#854F55] border border-[#FFDADC] font-semibold rounded-xl text-xs transition-colors shrink-0"
+                    >
+                      <Link2 className="w-3.5 h-3.5" />
+                      Sao Chép Link
+                    </button>
+                  </div>
+                </div>
+
+                {/* Đường dẫn link hợp đồng trực tiếp */}
+                <div className="bg-white/80 border border-[#F5E1E3] rounded-xl p-2.5 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <span className="text-[10.5px] font-bold text-[#8C7A6B] uppercase shrink-0">Link hợp đồng:</span>
+                    <span className="text-[11.5px] font-mono text-[#854F55] truncate select-all">
+                      {previewTemplate.pdfUrl || previewTemplate.contractUrl || `http://localhost:5000/api/contract-templates/${previewTemplate.id}/pdf`}
+                    </span>
+                  </div>
+                  <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold shrink-0">
+                    Sẵn sàng mở
+                  </span>
+                </div>
+              </div>
+
               {/* National Header */}
               <div className="text-center space-y-1 font-sans border-b border-[#E8DFD8] pb-6">
                 <p className="text-xs uppercase font-bold tracking-widest text-[#594B43]">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
@@ -870,6 +1023,47 @@ export default function ContractTemplateManagement() {
                 />
               </div>
 
+              {/* TẢI LÊN / ĐỔI FILE MẪU HỢP ĐỒNG */}
+              <div>
+                <label className="block text-[11px] font-bold text-[#594B43] uppercase mb-1 flex items-center justify-between">
+                  <span>File Văn Bản Mẫu Hiện Tại (.docx / .pdf)</span>
+                  <span className="text-[10px] text-[#389E0D] font-semibold">Đã đính kèm</span>
+                </label>
+                <div className="bg-[#FFF8F6] border border-[#FFDADC] rounded-xl p-3 flex items-center justify-between gap-3 mb-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-[#854F55] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                      W
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-[#2C2523] truncate">{editTemplate.documentFile?.name || 'Mau_Hop_Dong.docx'}</p>
+                      <p className="text-[10px] text-[#8C7A6B]">{editTemplate.documentFile?.size || '250 KB'}</p>
+                    </div>
+                  </div>
+                  <label className="cursor-pointer text-[11px] font-semibold text-[#854F55] hover:text-[#6E3F44] border border-[#FFDADC] bg-white px-2.5 py-1 rounded-lg shrink-0">
+                    Đổi File Khác
+                    <input
+                      type="file"
+                      accept=".doc,.docx,.pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setEditTemplate({
+                            ...editTemplate,
+                            documentFile: {
+                              name: file.name,
+                              size: `${Math.round(file.size / 1024)} KB`,
+                              url: '#'
+                            }
+                          });
+                          triggerToast(`Đã tải lên file mới: ${file.name}`);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+
               <div className="pt-2 border-t border-[#F2E8E2] flex items-center justify-end gap-3">
                 <button
                   type="button"
@@ -930,18 +1124,16 @@ export default function ContractTemplateManagement() {
                   depositRate: form.deposit.value || '100% giá thuê',
                   overdueFee: form.overdue.value || '500.000 VNĐ / ngày',
                   description: form.desc.value || 'Mẫu hợp đồng được thiết lập cho gói dịch vụ mới.',
-                  clauses: [
-                    {
-                      id: 1,
-                      title: 'Điều 1: Bàn giao và kiểm tra hiện trạng',
-                      content: 'Khách hàng cùng nhân viên phụ trách chụp ảnh xác thực tình trạng váy trước khi rời showroom.'
-                    },
-                    {
-                      id: 2,
-                      title: 'Điều 2: Tiền đặt cọc và chính sách hoàn trả',
-                      content: 'Khoản cọc được hoàn trả trong vòng 24h sau khi nhận lại trang phục và phụ kiện nguyên vẹn.'
-                    }
-                  ]
+                  documentFile: form.contractFile?.files?.[0] ? {
+                    name: form.contractFile.files[0].name,
+                    size: `${Math.round(form.contractFile.files[0].size / 1024)} KB`,
+                    url: '#'
+                  } : {
+                    name: `Mau_Hop_Dong_${form.name.value.replace(/\s+/g, '_')}.docx`,
+                    size: '220 KB',
+                    url: '#'
+                  },
+                  clauses: []
                 };
                 setTemplates([newTpl, ...templates]);
                 setIsCreateModalOpen(false);
