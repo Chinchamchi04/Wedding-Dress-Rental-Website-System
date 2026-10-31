@@ -22,8 +22,10 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '8mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use('/api', apiRouter);
+// Mount the OTP authentication endpoints before the legacy API router, which
+// also defines /auth/login and /auth/register.
 app.use('/api/auth', authRoutes);
+app.use('/api', apiRouter);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/contract-templates', contractTemplateRoutes);

@@ -60,7 +60,7 @@ const products = [
 ];
 
 const renderPriceWithDong = (priceStr) => {
-  const num = priceStr.replace(/[^0-9.]/g, '');
+  const num = String(priceStr ?? '0').replace(/[^0-9.]/g, '');
   return (
     <span>
       {num}<span className="underline decoration-[2px] underline-offset-[3px] ml-0.5 font-medium">đ</span>
@@ -69,7 +69,7 @@ const renderPriceWithDong = (priceStr) => {
 };
 
 const renderDepositWithDong = (amountStr) => {
-  const num = amountStr.replace(/[^0-9.]/g, '');
+  const num = String(amountStr ?? '0').replace(/[^0-9.]/g, '');
   return (
     <span>
       {num}<span className="underline decoration-1 underline-offset-1">đ</span>
@@ -107,8 +107,8 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
           rating: String(d.rating || '5.0'),
           rentCount: `${d.rentCount || 0} lượt thuê`,
           size: d.sizes?.length ? `Size: ${d.sizes.map((s) => (typeof s === 'string' ? s : s.id)).join(' - ')}` : 'Size: S - M',
-          price: typeof d.price === 'number' ? `${new Intl.NumberFormat('vi-VN').format(d.price)}₫` : d.price,
-          depositAmount: typeof d.depositAmount === 'number' ? `${new Intl.NumberFormat('vi-VN').format(d.depositAmount)}₫` : d.depositAmount,
+          price: (() => { const value = d.rentPrice ?? d.price ?? products[index]?.price; return typeof value === 'number' ? `${new Intl.NumberFormat('vi-VN').format(value)}₫` : value; })(),
+          depositAmount: (() => { const value = d.depositAmount ?? products[index]?.depositAmount; return typeof value === 'number' ? `${new Intl.NumberFormat('vi-VN').format(value)}₫` : value; })(),
           image: d.images?.[0] || products[index]?.image || card1Img,
         }));
         setItems(mapped);

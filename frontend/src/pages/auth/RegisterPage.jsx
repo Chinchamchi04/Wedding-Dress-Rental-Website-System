@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Sparkles, Lock, Mail, Phone, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import Logo from '../../components/common/Logo';
 import { useAuth } from '../../contexts/AuthContext';
-import { registerAccount } from '../../services/authService';
+import { registerAccount, resendEmailOtp, verifyEmailOtp } from '../../services/authService';
 
 // Icons using lucide-react
 const SparkleIcon = () => <Sparkles size={12} fill="currentColor" stroke="none" />;
@@ -30,6 +30,10 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [registrationStep, setRegistrationStep] = useState('form');
+  const [registrationOtp, setRegistrationOtp] = useState('');
+  const [registrationEmail, setRegistrationEmail] = useState('');
+  const [developmentOtp, setDevelopmentOtp] = useState('');
 
   // Evaluate password strength (0 to 4)
   const getPasswordStrength = (pass) => {
@@ -60,11 +64,40 @@ export default function RegisterPage() {
     }
     setError(''); setSubmitting(true);
     try {
-      const result = await registerAccount({ name: fullName, phone, email, password });
-      login(result.user, result.token);
-      navigate('/profile');
+      const result = await registerAccount({ fullName, phone, email, password });
+      setRegistrationEmail(result.email || email.trim());
+      setDevelopmentOtp(result.devOtp || '');
+      setRegistrationStep('otp');
     } catch (requestError) { setError(requestError.message || 'Không thể đăng ký.'); }
     finally { setSubmitting(false); }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSubmitting(true);
+    try {
+      const result = await verifyEmailOtp({ email: registrationEmail, otp: registrationOtp.trim() });
+      login(result.user, result.token);
+      navigate('/profile');
+    } catch (requestError) {
+      setError(requestError.message || 'Mã xác thực chưa đúng.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setError('');
+    setSubmitting(true);
+    try {
+      const result = await resendEmailOtp(registrationEmail);
+      setDevelopmentOtp(result.devOtp || '');
+    } catch (requestError) {
+      setError(requestError.message || 'Không thể gửi lại mã xác thực.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -867,15 +900,48 @@ export default function RegisterPage() {
             {/* Form Header */}
             <div className="ub-header-group">
               <span className="ub-form-overhead">UNIBRIDAL HAUTE COUTURE</span>
-              <h2 className="ub-form-heading">Đăng Ký Tài Khoản</h2>
+              <h2 className="ub-form-heading">{registrationStep === 'form' ? 'Đăng Ký Tài Khoản' : 'Xác Thực Email'}</h2>
               <p className="ub-form-description">
-                Tạo tài khoản để lưu giữ danh sách váy cưới mơ ước, đặt lịch thử váy riêng tư và nhận đặc quyền độc bản.
+                {registrationStep === 'form'
+                  ? 'Tạo tài khoản để lưu giữ danh sách váy cưới mơ ước, đặt lịch thử váy riêng tư và nhận đặc quyền độc bản.'
+                  : `Nhập mã OTP đã gửi tới ${registrationEmail} để kích hoạt tài khoản.`}
               </p>
             </div>
 
             {/* Registration Form */}
-            <form className="ub-form" onSubmit={handleSubmit} id="register-form">
+            <form className="ub-form" onSubmit={registrationStep === 'form' ? handleSubmit : handleVerifyOtp} id="register-form">
               {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
+
+              {registrationStep === 'otp' ? (
+                <>
+                  <div className="ub-field-group">
+                    <label className="ub-label" htmlFor="reg-otp">Mã xác thực OTP</label>
+                    <div className="ub-input-box">
+                      <input
+                        id="reg-otp"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={6}
+                        pattern="[0-9]{6}"
+                        className="ub-input ub-input--no-icon"
+                        placeholder="Nhập mã 6 chữ số"
+                        value={registrationOtp}
+                        onChange={(e) => setRegistrationOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        required
+                      />
+                    </div>
+                  </div>
+                  {developmentOtp && <p className="text-sm text-[#854F55]">Mã OTP (chế độ phát triển): <strong>{developmentOtp}</strong></p>}
+                  <button type="submit" disabled={submitting || registrationOtp.length !== 6} className="ub-submit-btn">
+                    <span className="ub-submit-btn__text">XÁC THỰC VÀ TẠO TÀI KHOẢN</span>
+                    <span className="ub-submit-btn__arrow">→</span>
+                  </button>
+                  <button type="button" disabled={submitting} onClick={handleResendOtp} className="ub-login-link">
+                    Gửi lại mã OTP
+                  </button>
+                </>
+              ) : <>
 
               {/* Row 1: Full Name & Phone Number */}
               <div className="ub-form-row">
@@ -1037,6 +1103,7 @@ export default function RegisterPage() {
                 <span className="ub-submit-btn__text">TẠO TÀI KHOẢN THÀNH VIÊN</span>
                 <span className="ub-submit-btn__arrow">→</span>
               </button>
+              </>}
             </form>
 
             {/* Bottom Login Prompt */}
