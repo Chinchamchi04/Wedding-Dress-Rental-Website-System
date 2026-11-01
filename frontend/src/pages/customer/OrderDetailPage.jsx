@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { message, Modal } from 'antd';
 import {
   ArrowLeft,
   CalendarDays,
@@ -13,9 +14,12 @@ import {
   RefreshCcw,
   Star,
   XCircle,
+  MessageCircle,
+  Printer,
+  AlertCircle,
 } from 'lucide-react';
 import AccountLayout from '../../components/layout/AccountLayout';
-import { formatVnd, getOrder } from '../../services/orderService';
+import { formatVnd, getOrder, updateOrderStatus } from '../../services/orderService';
 
 /* ─────────────────────────────────────────────
    STATUS TIMELINE CONFIG
@@ -232,6 +236,34 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [cancelling, setCancelling] = useState(false);
+
+  const handleCancelOrder = () => {
+    Modal.confirm({
+      title: 'Xác nhận yêu cầu hủy đơn thuê',
+      content: 'Nàng có chắc chắn muốn hủy đơn thuê này? Tiền cọc sẽ được xử lý hoàn trả theo chính sách hợp đồng của UniBridal.',
+      okText: 'Xác nhận hủy',
+      okType: 'danger',
+      cancelText: 'Đóng',
+      onOk: async () => {
+        setCancelling(true);
+        try {
+          await updateOrderStatus(order._id || order.id, 'cancelled');
+          message.success('Đã gửi yêu cầu hủy đơn thành công');
+          setOrder((prev) => ({
+            ...prev,
+            rawStatus: 'cancelled',
+            status: 'cancelled',
+            statusLabel: 'Đã hủy',
+          }));
+        } catch {
+          message.error('Không thể hủy đơn lúc này. Vui lòng liên hệ showroom.');
+        } finally {
+          setCancelling(false);
+        }
+      },
+    });
+  };
 
   useEffect(() => {
     let active = true;
@@ -352,6 +384,41 @@ export default function OrderDetailPage() {
                   lễ phục.
                 </p>
               </section>
+            </div>
+
+            {/* ── ACTION BUTTONS ── */}
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white p-5 border border-[#EEDECF] shadow-xs">
+              <div className="text-xs text-[#766966] flex items-center gap-2">
+                <AlertCircle size={15} className="text-[#BA7A83] shrink-0" />
+                <span>Cần thay đổi số đo hoặc hỗ trợ dời ngày thuê? Showroom UniBridal luôn sẵn sàng 24/7.</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <Link
+                  to="/messages"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#BA7A83] text-[#804E55] text-xs font-semibold hover:bg-[#FFF9F6] transition-colors"
+                >
+                  <MessageCircle size={14} />
+                  Nhắn tin với Showroom
+                </Link>
+                {(order.rawStatus === 'deposit_paid' || order.rawStatus === 'pending_payment') && (
+                  <button
+                    type="button"
+                    onClick={handleCancelOrder}
+                    disabled={cancelling}
+                    className="px-4 py-2 rounded-xl border border-red-200 bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100 transition-colors cursor-pointer"
+                  >
+                    {cancelling ? 'Đang xử lý...' : 'Yêu cầu hủy đơn'}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#BA7A83] hover:bg-[#a86a73] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs border-0"
+                >
+                  <Printer size={14} />
+                  In Biên Nhận Đơn
+                </button>
+              </div>
             </div>
           </>
         )}
