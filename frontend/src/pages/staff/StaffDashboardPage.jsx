@@ -139,7 +139,12 @@ export default function StaffDashboardPage() {
   ];
 
   return (
-    <DashboardLayout role="staff">
+    <DashboardLayout
+      role="staff"
+      title="Tổng Quan Vận Hành"
+      subtitle="Theo dõi tiến độ đơn hàng và lịch hẹn tiếp đón cô dâu hôm nay"
+      activeNav="dashboard"
+    >
       {error && <p role="alert" className="mb-4 text-sm text-red-700">{error}</p>}
       {data?.ordersMissingDepositTransaction > 0 && (
         <p role="alert" className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">

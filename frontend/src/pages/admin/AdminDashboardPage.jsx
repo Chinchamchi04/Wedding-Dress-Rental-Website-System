@@ -77,7 +77,13 @@ export default function AdminDashboardPage() {
   );
 
   return (
-    <DashboardLayout role="admin" controls={controls}>
+    <DashboardLayout
+      role="admin"
+      controls={controls}
+      title="Tổng Quan Kinh Doanh"
+      subtitle="Chỉ số hoạt động & phân tích tài chính UniBridal 2026"
+      activeNav="dashboard"
+    >
       {error && <p role="alert" className="mb-4 text-sm text-red-700">{error}</p>}
       {data?.ordersMissingDepositTransaction > 0 && (
         <p role="alert" className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
