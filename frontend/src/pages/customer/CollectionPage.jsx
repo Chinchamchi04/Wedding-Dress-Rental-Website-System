@@ -755,23 +755,25 @@ export default function CollectionPage() {
                             )}
                           </div>
 
-                          {/* Right Heart Wishlist Button */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleWishlist(dress.id);
-                            }}
-                            className="absolute top-3.5 right-3.5 w-[34px] h-[34px] rounded-[8px] bg-white flex items-center justify-center text-[#4A3E3F] hover:text-[#BA7A83] border border-[#EEDECF] shadow-[0px_2px_8px_rgba(0,0,0,0.06)] cursor-pointer z-10 transition-transform active:scale-90 p-0"
-                            style={{ borderRadius: '8px' }}
-                            title="Yêu thích"
-                          >
-                            <Heart
-                              className={`w-4 h-4 transition-colors ${
-                                isWishlisted ? 'fill-[#BA7A83] text-[#BA7A83]' : 'text-[#4A3E3F]'
-                              }`}
-                            />
-                          </button>
+                          {/* Right Heart Wishlist Button - Chỉ hiển thị khi đã đăng nhập */}
+                          {isLoggedIn && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleWishlist(dress.id);
+                              }}
+                              className="absolute top-3.5 right-3.5 w-[34px] h-[34px] rounded-[8px] bg-white flex items-center justify-center text-[#4A3E3F] hover:text-[#BA7A83] border border-[#EEDECF] shadow-[0px_2px_8px_rgba(0,0,0,0.06)] cursor-pointer z-10 transition-transform active:scale-90 p-0"
+                              style={{ borderRadius: '8px' }}
+                              title="Yêu thích"
+                            >
+                              <Heart
+                                className={`w-4 h-4 transition-colors ${
+                                  isWishlisted ? 'fill-[#BA7A83] text-[#BA7A83]' : 'text-[#4A3E3F]'
+                                }`}
+                              />
+                            </button>
+                          )}
 
                           {/* Quick Fitting Button on Hover */}
                           <div className="absolute inset-x-4 bottom-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center">

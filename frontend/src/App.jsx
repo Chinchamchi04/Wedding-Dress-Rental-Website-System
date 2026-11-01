@@ -43,8 +43,8 @@ export default function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/about" element={<AboutUsPage />} />
               <Route path="/ve-chung-toi" element={<AboutUsPage />} />
-              <Route path="/wishlist" element={<WishlistPage />} />
-              <Route path="/yeu-thich" element={<WishlistPage />} />
+              <Route path="/wishlist" element={<ProtectedRoute allowedRoles={['customer', 'staff', 'admin']}><WishlistPage /></ProtectedRoute>} />
+              <Route path="/yeu-thich" element={<ProtectedRoute allowedRoles={['customer', 'staff', 'admin']}><WishlistPage /></ProtectedRoute>} />
               <Route path="/collection" element={<CollectionPage />} />
               <Route path="/bo-suu-tap" element={<CollectionPage />} />
               <Route path="/cart" element={<ProtectedRoute allowedRoles={['customer', 'staff', 'admin']}><CartPage /></ProtectedRoute>} />

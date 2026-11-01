@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 import { getAllDresses } from '../../services/dressService';
 import { getWishlistIds, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
 import card1Img from '../../assets/card1_elysian.jpg';
@@ -89,6 +90,7 @@ const renderDepositWithDong = (amountVal) => {
 
 const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: propWishlistedIds }) => {
   const navigate = useNavigate();
+  const { isLoggedIn } = useAuth();
   const [items, setItems] = useState(products);
   const [internalWishlistIds, setInternalWishlistIds] = useState(() => getWishlistIds());
 
@@ -186,26 +188,28 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
                     </div>
                   )}
 
-                  {/* Right Heart Button */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onToggleWishlist) {
-                        onToggleWishlist(item.id);
-                      } else {
-                        toggleWishlist(item.id);
-                      }
-                    }}
-                    className="absolute top-4 right-4 w-[36px] h-[36px] rounded-[12px] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] flex items-center justify-center text-[#4A3E3D] hover:text-[#B26B74] border-0 cursor-pointer z-10 transition-transform hover:scale-105 active:scale-90 p-0"
-                    title="Yêu thích"
-                    aria-label="Yêu thích"
-                  >
-                    <Heart
-                      className={`w-[17px] h-[17px] ${isWishlisted ? 'fill-[#B26B74] text-[#B26B74]' : 'text-[#4A3E3D]'}`}
-                      strokeWidth={1.65}
-                    />
-                  </button>
+                  {/* Right Heart Button - Chỉ hiển thị khi đã đăng nhập */}
+                  {isLoggedIn && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onToggleWishlist) {
+                          onToggleWishlist(item.id);
+                        } else {
+                          toggleWishlist(item.id);
+                        }
+                      }}
+                      className="absolute top-4 right-4 w-[36px] h-[36px] rounded-[12px] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] flex items-center justify-center text-[#4A3E3D] hover:text-[#B26B74] border-0 cursor-pointer z-10 transition-transform hover:scale-105 active:scale-90 p-0"
+                      title="Yêu thích"
+                      aria-label="Yêu thích"
+                    >
+                      <Heart
+                        className={`w-[17px] h-[17px] ${isWishlisted ? 'fill-[#B26B74] text-[#B26B74]' : 'text-[#4A3E3D]'}`}
+                        strokeWidth={1.65}
+                      />
+                    </button>
+                  )}
                 </div>
 
                 {/* Details Bottom */}

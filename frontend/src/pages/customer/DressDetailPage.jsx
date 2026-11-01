@@ -641,17 +641,19 @@ export default function DressDetailPage() {
                   ĐẶT THUÊ NGAY (KÝ HỢP ĐỒNG & CỌC)
                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleToggleWishlist}
-                  className={`w-[48px] h-[48px] rounded-[4px] border flex items-center justify-center transition-colors cursor-pointer ${isWishlisted
-                    ? 'bg-[#FFF2F0] border-[#70484E] text-[#70484E]'
-                    : 'bg-white border-[#D6C7C3] text-[#70484E] hover:border-[#70484E]'
-                    }`}
-                  title={isWishlisted ? 'Đã yêu thích' : 'Lưu vào danh sách yêu thích'}
-                >
-                  <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} strokeWidth={1.75} />
-                </button>
+                {isLoggedIn && (
+                  <button
+                    type="button"
+                    onClick={handleToggleWishlist}
+                    className={`w-[48px] h-[48px] rounded-[4px] border flex items-center justify-center transition-colors cursor-pointer ${isWishlisted
+                      ? 'bg-[#FFF2F0] border-[#70484E] text-[#70484E]'
+                      : 'bg-white border-[#D6C7C3] text-[#70484E] hover:border-[#70484E]'
+                      }`}
+                    title={isWishlisted ? 'Đã yêu thích' : 'Lưu vào danh sách yêu thích'}
+                  >
+                    <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} strokeWidth={1.75} />
+                  </button>
+                )}
               </div>
 
               {/* Row 2: ĐIỀN PHIẾU THUÊ & THỬ VÁY (GUEST) */}
