@@ -49,15 +49,30 @@ export default function ProfilePage() {
   const uploadRef = useRef(null);
   const readerRef = useRef(null);
   const navigate = useNavigate();
+
   useEffect(() => {
     let active = true;
-    getProfile().then((profile) => {
-      if (!active) return;
-      setSaved(profile); setAvatar(profile.avatar); form.setFieldsValue(profile); updateUser(profile);
-    }).catch((error) => { if (active) setNotice({ type: 'error', text: error.message || 'Không tải được hồ sơ.' }); });
-    return () => { active = false; };
+    getProfile()
+      .then((profile) => {
+        if (!active) return;
+        setSaved(profile);
+        setAvatar(profile.avatar);
+        form.setFieldsValue(profile);
+        updateUser(profile);
+      })
+      .catch((error) => {
+        if (active) setNotice({ type: 'error', text: error.message || 'Không tải được thông tin hồ sơ.' });
+      });
+    return () => {
+      active = false;
+    };
   }, [form]);
-  useEffect(() => () => { readerRef.current?.abort(); readerRef.current = null; }, []);
+
+  useEffect(() => () => {
+    readerRef.current?.abort();
+    readerRef.current = null;
+  }, []);
+
   const today = new Date();
   const maxBirthday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
@@ -73,13 +88,22 @@ export default function ProfilePage() {
   };
 
   const submit = async (values) => {
-    const profile = { ...saved, ...values, name: values.name.trim(), email: values.email.trim(), phone: values.phone.trim(), avatar };
+    const profile = {
+      ...saved,
+      ...values,
+      name: values.name.trim(),
+      email: values.email.trim(),
+      phone: values.phone.trim(),
+      avatar,
+    };
     try {
       const updated = await saveProfile(profile);
-      setSaved(updated); updateUser(updated); form.setFieldsValue(updated);
-      setNotice({ type: 'success', text: 'Đã cập nhật hồ sơ.' });
+      setSaved(updated);
+      updateUser(updated);
+      form.setFieldsValue(updated);
+      setNotice({ type: 'success', text: 'Đã cập nhật thông tin hồ sơ thành công.' });
     } catch (error) {
-      setNotice({ type: 'error', text: error.message || 'Không thể cập nhật hồ sơ.' });
+      setNotice({ type: 'error', text: error.message || 'Không thể cập nhật hồ sơ. Vui lòng thử lại.' });
     }
   };
 
@@ -88,68 +112,156 @@ export default function ProfilePage() {
     event.target.value = '';
     if (!file) return;
     readerRef.current?.abort();
-    setReadingAvatar(false);
     setAvatarError('');
-    if (!['image/jpeg', 'image/png'].includes(file.type) || file.size > 5 * 1024 * 1024) {
-      setAvatarError('Vui lòng chọn ảnh JPG hoặc PNG, dung lượng tối đa 5MB.');
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      setAvatarError('Chỉ hỗ trợ file ảnh định dạng PNG, JPG hoặc WEBP.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError('Dung lượng ảnh đại diện tối đa là 5MB.');
       return;
     }
     setReadingAvatar(true);
     const reader = new FileReader();
     readerRef.current = reader;
     reader.onload = () => {
-      const image = new Image();
-      image.onload = () => { if (readerRef.current === reader) { setAvatar(reader.result); setReadingAvatar(false); } };
-      image.onerror = () => { if (readerRef.current === reader) { setAvatarError('Tệp ảnh không hợp lệ hoặc đã bị hỏng.'); setReadingAvatar(false); } };
-      image.src = reader.result;
+      setAvatar(reader.result);
+      setReadingAvatar(false);
+      setNotice({ type: 'info', text: 'Ảnh mới đã sẵn sàng. Bấm "Lưu thay đổi" để hoàn tất.' });
     };
-    reader.onerror = () => { setAvatarError('Không thể đọc ảnh. Vui lòng thử lại.'); setReadingAvatar(false); };
+    reader.onerror = () => {
+      setAvatarError('Đọc file ảnh thất bại. Vui lòng thử lại.');
+      setReadingAvatar(false);
+    };
     reader.readAsDataURL(file);
   };
 
-  const logout = () => {
-    logoutAccount(); navigate('/login');
-  };
+  return (
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: '#874e57',
+          colorBorder: '#eee2df',
+          borderRadius: 2,
+          fontFamily: 'inherit',
+          colorText: '#2c2221',
+        },
+      }}
+    >
+      <style>{profileStyles}</style>
+      <AccountLayout breadcrumb={[{ label: 'Hồ sơ cá nhân' }]}>
+        <section className="profile-card rounded-lg bg-white px-5 py-7 sm:px-7" aria-labelledby="profile-title">
+          <p className="account-overline text-[#874e57]">Thông tin thành viên độc quyền</p>
+          <h1 id="profile-title" className="mt-1 font-playfair text-[25px]">
+            Hồ Sơ Của Nàng
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-[#6c5b57]">
+            Quản lý thông tin cá nhân, liên hệ và các thông số riêng tư để chuyên viên UniBridal chuẩn bị chu đáo nhất cho ngày cưới.
+          </p>
+          <div className="account-heading-rule mt-3" />
 
-  return <ConfigProvider theme={{ token: { colorPrimary: '#874e57', colorText: '#302725', colorBorder: '#eadbd8', borderRadius: 2, controlHeight: 44, fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14 }, components: { Input: { activeShadow: '0 0 0 2px #b8737d20' }, Select: { selectorBg: '#fff8f6' } } }}>
-    <AccountLayout onLogout={logout} breadcrumb={[{ label: 'Chỉnh Sửa Hồ Sơ' }]}>
-          <style>{profileStyles}</style>
-          <section className="profile-card rounded-lg bg-white px-5 py-8 sm:px-7" aria-labelledby="profile-title">
-            <p className="mb-2 text-[11px] uppercase tracking-[1px] text-[#874e57]">Thông tin cá nhân</p>
-            <h1 id="profile-title" className="font-playfair text-[23px] font-normal leading-tight">Chỉnh Sửa Hồ Sơ</h1>
-            <p className="mb-3 mt-2 text-sm text-[#6c5b57]">Cập nhật thông tin liên hệ của bạn.</p>
-            <div className="mb-7 h-0.5 w-12 bg-[#b8737d]" />
-            {notice && <Alert className="mb-5" type={notice.type} showIcon title={notice.text} closable onClose={() => setNotice(null)} />}
-            <>
-              <div className="profile-identity mb-7 flex items-center gap-4 rounded-lg border border-[#f1e1dd] bg-[#fff8f6] p-4">
-                <div className="relative shrink-0">
-                  <img src={avatar || emblemImg} alt="Ảnh đại diện của bạn" className={`h-[84px] w-[84px] rounded-[18px] border-2 border-[#e6c9c9] bg-white ${avatar ? 'object-cover' : 'object-contain p-1'}`} />
-                  <span className="absolute -bottom-0.5 right-0 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-[#874e57] text-white"><Camera size={11} /></span>
+          {notice && (
+            <div className="mt-4">
+              <Alert
+                type={notice.type}
+                message={notice.text}
+                showIcon
+                closable
+                onClose={() => setNotice(null)}
+              />
+            </div>
+          )}
+
+          <div className="profile-identity mt-6 flex flex-wrap items-center gap-5 border-b border-[#eee2df] pb-6">
+            <div className="relative h-20 w-20 overflow-hidden rounded-full border border-[#eee2df] bg-[#fff8f6]">
+              {avatar ? (
+                <img src={avatar} alt="Ảnh đại diện của nàng" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center font-playfair text-2xl text-[#874e57]">
+                  {saved.name?.charAt(0) || 'U'}
                 </div>
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1"><h2 className="break-words text-lg font-semibold">{saved.name || 'Tài khoản của bạn'}</h2></div>
-                  <p className="mb-2 mt-1 text-xs text-[#6c5b57]">Định dạng hỗ trợ: JPG, PNG tối đa 5MB</p>
-                  <button type="button" onClick={() => uploadRef.current?.click()} disabled={readingAvatar} className="flex items-center gap-1.5 border border-[#eadbd8] bg-white px-3 py-1.5 text-[11px] text-[#874e57] hover:bg-[#f9ebe8] disabled:opacity-60"><Upload size={13} />{readingAvatar ? 'ĐANG ĐỌC ẢNH…' : 'ĐỔI ẢNH ĐẠI DIỆN'}</button>
-                  <input ref={uploadRef} type="file" accept="image/jpeg,image/png" aria-label="Chọn ảnh đại diện" className="hidden" onChange={uploadAvatar} />
+              )}
+              {readingAvatar && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-xs text-white">
+                  ...
                 </div>
-              </div>
-              {avatarError && <Alert type="error" showIcon title={avatarError} className="mb-4" />}
-              <h2 className="profile-contact-title mb-4 flex items-center gap-2 border-b border-[#f0e9e6] pb-2 text-lg font-semibold"><IdCard size={18} className="text-[#874e57]" />1. Thông Tin Liên Hệ</h2>
-              <Form form={form} layout="vertical" initialValues={saved} onFinish={submit} requiredMark={false} scrollToFirstError className="profile-form">
-                <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
-                  <Form.Item name="name" label="HỌ VÀ TÊN" rules={[{ required: true, whitespace: true, message: 'Vui lòng nhập họ và tên.' }, { max: 100, message: 'Họ và tên tối đa 100 ký tự.' }]}><Input autoComplete="name" maxLength={100} /></Form.Item>
-                  <Form.Item name="phone" label="SỐ ĐIỆN THOẠI" rules={[{ required: true, message: 'Vui lòng nhập số điện thoại.' }, { validator: (_, value) => !value || /^(0\d{9}|\+84\d{9})$/.test(value.replace(/[\s.-]/g, '')) ? Promise.resolve() : Promise.reject(new Error('Nhập số điện thoại Việt Nam hợp lệ.')) }]}><Input type="tel" autoComplete="tel" /></Form.Item>
-                  <Form.Item name="email" label="ĐỊA CHỈ EMAIL" rules={[{ required: true, message: 'Vui lòng nhập email.' }, { type: 'email', message: 'Địa chỉ email chưa hợp lệ.' }]}><Input autoComplete="email" type="email" /></Form.Item>
-                  <Form.Item name="gender" label="GIỚI TÍNH" rules={[{ required: true, message: 'Vui lòng chọn giới tính.' }]}><Select options={[{ value: 'female', label: 'Nữ' }, { value: 'male', label: 'Nam' }, { value: 'other', label: 'Khác' }, { value: 'unspecified', label: 'Không muốn chia sẻ' }]} /></Form.Item>
-                  <Form.Item name="birthday" label="NGÀY SINH" className="sm:col-span-2" rules={[{ validator: (_, value) => !value || (value >= '1900-01-01' && value <= maxBirthday) ? Promise.resolve() : Promise.reject(new Error('Ngày sinh phải từ năm 1900 đến hôm nay.')) }]}><Input type="date" min="1900-01-01" max={maxBirthday} autoComplete="bday" /></Form.Item>
-                </div>
-                <div className="mt-3 flex flex-col gap-4 border-t border-[#f0e9e6] pt-4 xl:flex-row xl:items-center xl:justify-between">
-                  <p className="flex items-center gap-2 text-xs text-[#6c5b57]"><BadgeCheck size={18} className="shrink-0 text-[#b8737d]" />Thông tin liên hệ và ảnh được đồng bộ; giới tính và ngày sinh lưu trên thiết bị này.</p>
-                  <div className="flex gap-2"><button type="button" onClick={cancel} className="profile-cancel min-w-[126px] flex-1 border border-[#eadbd8] bg-white px-4 py-2.5 text-[13px] tracking-wider hover:bg-[#fff8f6]">HỦY BỎ</button><button type="submit" disabled={readingAvatar} className="flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-sm bg-[#874e57] px-6 py-2.5 text-[13px] tracking-wider text-white hover:bg-[#703d45] disabled:opacity-50"><Check size={16} />LƯU THAY ĐỔI</button></div>
-                </div>
-              </Form>
-            </>
-          </section>
-    </AccountLayout>
-  </ConfigProvider>;
+              )}
+            </div>
+            <div>
+              <input
+                ref={uploadRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={uploadAvatar}
+              />
+              <button
+                type="button"
+                onClick={() => uploadRef.current?.click()}
+                className="account-button-secondary inline-flex items-center gap-1.5"
+              >
+                <Camera size={14} /> Thay đổi ảnh
+              </button>
+              {avatarError && <p className="mt-1.5 text-xs text-red-700">{avatarError}</p>}
+            </div>
+          </div>
+
+          <Form
+            form={form}
+            layout="vertical"
+            initialValues={saved}
+            onFinish={submit}
+            className="profile-form mt-6"
+          >
+            <div className="grid grid-cols-1 gap-x-5 sm:grid-cols-2">
+              <Form.Item
+                label={<span className="font-semibold uppercase tracking-wider text-[11px]">Họ và tên *</span>}
+                name="name"
+                rules={[{ required: true, message: 'Vui lòng nhập họ và tên của bạn.' }]}
+              >
+                <Input placeholder="Nhập họ và tên..." size="large" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span className="font-semibold uppercase tracking-wider text-[11px]">Số điện thoại *</span>}
+                name="phone"
+                rules={[{ required: true, message: 'Vui lòng nhập số điện thoại liên lạc.' }]}
+              >
+                <Input placeholder="Nhập số điện thoại Zalo..." size="large" />
+              </Form.Item>
+            </div>
+
+            <div className="grid grid-cols-1 gap-x-5 sm:grid-cols-2">
+              <Form.Item
+                label={<span className="font-semibold uppercase tracking-wider text-[11px]">Địa chỉ email *</span>}
+                name="email"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập địa chỉ email.' },
+                  { type: 'email', message: 'Địa chỉ email không đúng định dạng.' },
+                ]}
+              >
+                <Input placeholder="email@domain.com" size="large" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span className="font-semibold uppercase tracking-wider text-[11px]">Ngày sinh</span>}
+                name="birthday"
+              >
+                <Input type="date" max={maxBirthday} size="large" />
+              </Form.Item>
+            </div>
+
+            <div className="mt-6 flex flex-wrap justify-end gap-3 border-t border-[#eee2df] pt-6">
+              <button type="button" onClick={cancel} className="account-button-secondary">
+                HỦY THAY ĐỔI
+              </button>
+              <button type="submit" className="account-button-primary">
+                LƯU THAY ĐỔI
+              </button>
+            </div>
+          </Form>
+        </section>
+      </AccountLayout>
+    </ConfigProvider>
+  );
 }

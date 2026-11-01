@@ -3,6 +3,8 @@ import User from '../models/User.model.js';
 import Role from '../models/Role.model.js';
 import Permission from '../models/Permission.model.js';
 
+const JWT_SECRET = process.env.JWT_SECRET || 'unibridal_jwt_secret_key_2026_wdp301';
+
 /**
  * Middleware xác thực Access Token (JWT)
  */
@@ -23,7 +25,7 @@ export const authenticate = async (req, res, next) => {
     }
 
     // Giải mã token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
 
     // Tìm kiếm user và nạp thông tin Role kèm danh sách Permissions
     const user = await User.findById(decoded.id)
@@ -62,7 +64,7 @@ export const authenticate = async (req, res, next) => {
 };
 
 /**
- * Middleware xác thực Access Token tùy chọn (nếu có thì gắn req.user, không có thì cho qua)
+ * Middleware xác thực Access Token tùy chọn (nếu có thì gán req.user, không có thì cho qua)
  */
 export const optionalAuthenticate = async (req, res, next) => {
   try {
@@ -71,14 +73,14 @@ export const optionalAuthenticate = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
     }
     if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'unibridal_jwt_secret_key_2026_wdp301');
+      const decoded = jwt.verify(token, JWT_SECRET);
       const user = await User.findById(decoded.id).populate('roleId');
       if (user && user.isActive) {
         req.user = user;
       }
     }
   } catch (err) {
-    // Bỏ qua lỗi token đối với request không bắt buộc đăng nhập
+    // Bỏ qua lỗi token đối với request không bắt buộc đăng nhập (guest checkout)
   }
   next();
 };
@@ -155,5 +157,3 @@ export const checkPermission = (requiredPermissionCode) => {
 };
 
 export const verifyToken = authenticate;
-
-
