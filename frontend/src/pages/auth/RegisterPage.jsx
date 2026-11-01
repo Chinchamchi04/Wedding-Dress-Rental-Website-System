@@ -236,6 +236,7 @@ export default function RegisterPage() {
       setIsLoading(false);
       if (res?.data?.user && res?.data?.token) {
         setAuth(res.data.user, res.data.token);
+        sessionStorage.setItem('unibridal_show_onboarding', 'true');
       }
       setStep(3);
     } catch (err) {
@@ -1429,7 +1430,10 @@ export default function RegisterPage() {
 
                 <button
                   type="button"
-                  onClick={() => navigate('/', { replace: true })}
+                  onClick={() => {
+                    sessionStorage.setItem('unibridal_show_onboarding', 'true');
+                    navigate('/', { replace: true, state: { isNewRegister: true } });
+                  }}
                   className="ub-submit-btn"
                   style={{ width: '100%', cursor: 'pointer' }}
                 >
