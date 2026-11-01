@@ -22,5 +22,11 @@ router.get('/:id', optionalAuthenticate, orderController.getOrderById);
 // 5. Cập nhật trạng thái đơn thuê (Admin / Staff)
 router.patch('/:id/status', authenticate, authorize('STAFF', 'ADMIN'), orderController.updateOrderStatus);
 
+// 6. Nhân viên lập biên bản kiểm định tình trạng váy khi khách trả
+router.post('/:id/inspection', authenticate, authorize('STAFF', 'ADMIN'), orderController.submitReturnInspection);
+
+// 7. Lấy biên bản kiểm định của đơn thuê
+router.get('/:id/inspection', authenticate, authorize('STAFF', 'ADMIN'), orderController.getReturnInspection);
+
 export default router;
 
