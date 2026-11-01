@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
-import BookingModal from '../../components/common/BookingModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { getDressById, getRelatedDresses, formatCurrencyVND } from '../../services/dressService';
 import { addToCart } from '../../services/cartService';
@@ -656,24 +655,14 @@ export default function DressDetailPage() {
                 )}
               </div>
 
-              {/* Row 2: ĐIỀN PHIẾU THUÊ & THỬ VÁY (GUEST) */}
-              <button
-                type="button"
-                onClick={() => navigate(`/thue-nhanh?dressId=${dress.id}`)}
-                className="w-full h-[48px] px-5 rounded-[4px] bg-[#FAF4EE] hover:bg-[#F2E8DF] border border-[#E0D0C4] text-[#70484E] font-jakarta text-[13px] font-semibold tracking-[0.8px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
-              >
-                <Calendar className="w-4 h-4 text-[#70484E]" />
-                ĐIỀN PHIẾU THUÊ & THỬ VÁY (DÀNH CHO GUEST)
-              </button>
-
-              {/* Row 3: ĐẶT LỊCH THỬ VÁY TẠI SHOWROOM */}
+              {/* Row 2: ĐẶT LỊCH THỬ VÁY PRIVATE SUITE (MIỄN PHÍ) */}
               <button
                 type="button"
                 onClick={() => navigate(`/dat-lich?dressId=${dress.id}`)}
-                className="w-full h-[46px] px-5 rounded-[4px] bg-white hover:bg-[#FAF4F3] border border-[#D6C7C3] text-[#5A4848] font-jakarta text-[12.5px] font-medium tracking-[0.5px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+                className="w-full h-[48px] px-5 rounded-[4px] bg-[#FAF4EE] hover:bg-[#F2E8DF] border border-[#E0D0C4] text-[#70484E] font-jakarta text-[13px] font-semibold tracking-[0.8px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
               >
-                <Clock className="w-4 h-4 text-[#70484E]" />
-                CHỈ ĐẶT LỊCH THỬ VÁY PRIVATE SUITE (MIỄN PHÍ)
+                <Calendar className="w-4 h-4 text-[#70484E]" />
+                ĐẶT LỊCH THỬ VÁY PRIVATE SUITE (MIỄN PHÍ)
               </button>
 
               {/* Row 3: THÊM VÀO GIỎ HÀNG */}
@@ -1039,12 +1028,7 @@ export default function DressDetailPage() {
         </div>
       )}
 
-      {/* 5. Booking Modal */}
-      <BookingModal
-        isOpen={isBookingOpen}
-        onClose={() => setIsBookingOpen(false)}
-        preselectedProduct={dress}
-      />
+
 
       {/* 6. Footer */}
       <Footer />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Sparkles, X } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import HeroSection from '../../components/home/HeroSection';
@@ -7,13 +7,13 @@ import SilhouetteShowcase from '../../components/home/SilhouetteShowcase';
 import TrendingCollection from '../../components/home/TrendingCollection';
 import RealBridesGallery from '../../components/home/RealBridesGallery';
 import Footer from '../../components/layout/Footer';
-import BookingModal from '../../components/common/BookingModal';
 import OnboardingWelcomeModal from '../../components/common/OnboardingWelcomeModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { getWishlistIds, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
 
 export default function HomePage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -62,8 +62,7 @@ export default function HomePage() {
   }, [location]);
 
   const handleOpenBooking = (product = null) => {
-    setSelectedProduct(product);
-    setIsBookingOpen(true);
+    navigate(product?.id ? `/dat-lich?dressId=${product.id}` : '/dat-lich');
   };
 
   const handleCloseBooking = () => {
@@ -135,12 +134,7 @@ export default function HomePage() {
       {/* 3. Footer */}
       <Footer />
 
-      {/* 4. Interactive Consultation / Fitting Booking Modal */}
-      <BookingModal
-        isOpen={isBookingOpen}
-        onClose={handleCloseBooking}
-        preselectedProduct={selectedProduct}
-      />
+
 
       {/* 5. Post-Registration Bridal Onboarding Modal */}
       <OnboardingWelcomeModal

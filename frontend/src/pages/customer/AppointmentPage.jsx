@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Calendar,
@@ -129,13 +130,25 @@ export default function AppointmentPage() {
   // Step 4: VIP Services
   const [selectedServices, setSelectedServices] = useState(['tea', 'stylist', 'polaroid']);
 
-  // Step 5: Bride Contact Info
-  const [fullName, setFullName] = useState('Lê Nguyễn Thảo My');
-  const [phone, setPhone] = useState('0938 128 899');
-  const [email, setEmail] = useState('thaomy.bride@gmail.com');
+  const { user, isLoggedIn } = useAuth();
+
+  // Step 5: Bride Contact Info (Tự động điền nếu đã đăng nhập, để trống nếu chưa đăng nhập)
+  const [fullName, setFullName] = useState(() => (isLoggedIn ? (user?.fullName || user?.name || '') : ''));
+  const [phone, setPhone] = useState(() => (isLoggedIn ? (user?.phone || '') : ''));
+  const [email, setEmail] = useState(() => (isLoggedIn ? (user?.email || '') : ''));
   const [guestsCount, setGuestsCount] = useState(2);
-  const [weddingDate, setWeddingDate] = useState('');
-  const [notes, setNotes] = useState('Cô dâu muốn thử form siết eo corsetry và voan dài đính ren đồng bộ.');
+  const [weddingDate, setWeddingDate] = useState(() => (isLoggedIn ? (user?.weddingDate || '') : ''));
+  const [notes, setNotes] = useState('');
+
+  // Tự động đồng bộ nếu user đăng nhập sau khi load
+  useEffect(() => {
+    if (isLoggedIn && user) {
+      if (user.fullName || user.name) setFullName(user.fullName || user.name);
+      if (user.phone) setPhone(user.phone);
+      if (user.email) setEmail(user.email);
+      if (user.weddingDate) setWeddingDate(user.weddingDate);
+    }
+  }, [isLoggedIn, user]);
 
   // Form Validation Errors
   const [errors, setErrors] = useState({});
@@ -957,6 +970,12 @@ export default function AppointmentPage() {
                       <p className="text-[12px] text-[#847374] m-0 mt-0.5">
                         Chuyên viên tư vấn sẽ liên hệ xác nhận lịch và hỗ trợ chu đáo nhất
                       </p>
+                      {isLoggedIn && (
+                        <p className="text-[12px] text-[#2E7D32] font-semibold m-0 mt-1 flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#2E7D32]" />
+                          Tự động điền thông tin từ tài khoản ({user?.fullName || user?.name || user?.email})
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -999,7 +1018,7 @@ export default function AppointmentPage() {
                           className={`w-full bg-[#FCF9F6] border rounded-xl px-3.5 py-2.5 text-[14px] text-[#2C2523] font-medium focus:outline-none focus:bg-white ${
                             errors.phone ? 'border-red-500' : 'border-[#EEDECF] focus:border-[#733F49]'
                           }`}
-                          placeholder="09xx xxx xxx"
+                          placeholder="Nhập số điện thoại liên hệ"
                         />
                         {errors.phone && (
                           <span className="text-[11px] text-red-600 mt-1 block">{errors.phone}</span>
@@ -1021,7 +1040,7 @@ export default function AppointmentPage() {
                           className={`w-full bg-[#FCF9F6] border rounded-xl px-3.5 py-2.5 text-[14px] text-[#2C2523] font-medium focus:outline-none focus:bg-white ${
                             errors.email ? 'border-red-500' : 'border-[#EEDECF] focus:border-[#733F49]'
                           }`}
-                          placeholder="email@example.com"
+                          placeholder="Nhập email nhận thư xác nhận"
                         />
                         {errors.email && (
                           <span className="text-[11px] text-red-600 mt-1 block">{errors.email}</span>

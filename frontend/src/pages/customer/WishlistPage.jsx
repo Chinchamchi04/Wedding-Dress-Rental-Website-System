@@ -5,7 +5,6 @@ import {
 } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
-import BookingModal from '../../components/common/BookingModal';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   getWishlistDresses,
@@ -108,7 +107,7 @@ export default function WishlistPage() {
       {/* 1. Header */}
       <Header
         wishlistCount={wishlistItems.length}
-        onOpenBooking={() => setIsBookingOpen(true)}
+        onOpenBooking={() => navigate('/dat-lich')}
       />
 
       {/* Floating Toast Notification */}
@@ -477,10 +476,7 @@ export default function WishlistPage() {
       </main>
 
       {/* 3. Booking Modal */}
-      <BookingModal
-        isOpen={isBookingOpen}
-        onClose={() => setIsBookingOpen(false)}
-      />
+
 
       {/* 4. Footer */}
       <Footer />

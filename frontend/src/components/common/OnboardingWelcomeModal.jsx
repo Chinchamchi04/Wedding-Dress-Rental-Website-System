@@ -116,3 +116,4 @@ export default function OnboardingWelcomeModal({ isOpen, onClose, userName }) {
     </div>
   );
 }
+

@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
-import BookingModal from '../../components/common/BookingModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { addToCart } from '../../services/cartService';
 import { getWishlistIds, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
@@ -160,8 +159,7 @@ export default function CollectionPage() {
 
   // Đặt Lịch Thử Váy Riêng Tư
   const handleOpenFitting = (dress) => {
-    setSelectedProduct(dress);
-    setIsBookingOpen(true);
+    navigate(dress?.id ? `/dat-lich?dressId=${dress.id}` : '/dat-lich');
   };
 
   // Xóa toàn bộ bộ lọc
@@ -289,7 +287,7 @@ export default function CollectionPage() {
     <div className="relative min-h-screen bg-[#FDFBF7] text-[#2C2523] flex flex-col font-jakarta selection:bg-[#FCEEE9] selection:text-[#B8737D]">
 
       {/* 1. Header Navigation */}
-      <Header onOpenBooking={() => setIsBookingOpen(true)} />
+      <Header onOpenBooking={() => navigate('/dat-lich')} />
 
       {/* Toast Notification */}
       {toastMessage && (
@@ -1029,14 +1027,7 @@ export default function CollectionPage() {
       <Footer />
 
       {/* 4. Booking Consultation Modal */}
-      <BookingModal
-        isOpen={isBookingOpen}
-        onClose={() => {
-          setIsBookingOpen(false);
-          setSelectedProduct(null);
-        }}
-        preselectedProduct={selectedProduct}
-      />
+
 
     </div>
   );

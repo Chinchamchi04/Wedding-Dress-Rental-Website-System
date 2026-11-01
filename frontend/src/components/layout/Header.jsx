@@ -432,7 +432,7 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
           {/* Đặt Lịch Thử Váy CTA Button */}
           <button
             type="button"
-            onClick={onOpenBooking || (() => navigate('/thue-nhanh'))}
+            onClick={onOpenBooking || (() => navigate('/dat-lich'))}
             className="hidden sm:inline-flex items-center gap-2 bg-[#B8737D] hover:bg-[#a6626c] text-white font-jakarta text-[13.5px] font-semibold px-4 py-2 sm:px-4.5 sm:py-2.5 rounded-xl sm:rounded-2xl transition-all shadow-sm hover:shadow-md cursor-pointer border-0 select-none ml-1 active:scale-95"
           >
             <Calendar className="w-4 h-4 stroke-[2]" />
@@ -556,7 +556,7 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
               onClick={() => {
                 setMobileMenuOpen(false);
                 if (onOpenBooking) onOpenBooking();
-                else handleNavClick('#home');
+                else navigate('/dat-lich');
               }}
               className="w-full inline-flex items-center justify-center gap-2 bg-[#B8737D] hover:bg-[#a6626c] text-white font-jakarta text-[14px] font-semibold px-4 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer border-0"
             >

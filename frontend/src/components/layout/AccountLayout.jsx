@@ -3,7 +3,6 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { ClipboardPenLine, History, LogOut, ReceiptText } from 'lucide-react';
 import Header from './Header';
 import Footer from './Footer';
-import BookingModal from '../common/BookingModal';
 import { useAuth } from '../../contexts/AuthContext';
 
 const accountLayoutStyles = `
@@ -88,7 +87,7 @@ export default function AccountLayout({ children, breadcrumb = [], notice, onLog
   return (
     <div className="profile-page min-h-screen font-jakarta text-[#302725]">
       <style>{accountLayoutStyles}</style>
-      <Header onLogout={logout} onOpenBooking={() => setIsBookingOpen(true)} />
+      <Header onLogout={logout} onOpenBooking={() => navigate('/dat-lich')} />
       <main className="profile-main mx-auto w-full max-w-[1320px] px-5 pb-20 pt-4 sm:px-8">
         <nav aria-label="Đường dẫn" className="mb-4 flex flex-wrap items-center gap-2 text-xs text-[#6c5b57]">
           <Link to="/" className="hover:text-[#874e57]">Trang chủ</Link>
@@ -112,7 +111,7 @@ export default function AccountLayout({ children, breadcrumb = [], notice, onLog
         </div>
       </main>
       <Footer variant="profile" />
-      <BookingModal isOpen={isBookingOpen} onClose={() => setIsBookingOpen(false)} />
+      
     </div>
   );
 }
