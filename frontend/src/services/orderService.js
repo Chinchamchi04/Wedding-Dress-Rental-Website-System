@@ -92,26 +92,16 @@ const DEMO_ORDERS = [
 export async function getOrders(params = {}) {
   try {
     const res = await axiosClient.get('/orders/my', { params });
-    const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
-    if (list.length > 0) {
+    const list = Array.isArray(res.data) ? res.data : (Array.isArray(res) ? res : res.data?.data || []);
+    if (list && list.length >= 0) {
       return list.map(mapOrder);
     }
   } catch (error) {
-    // Không ném lỗi nếu là lỗi xác thực hoặc kết nối - fallback
-  }
-
-  try {
-    const res = await axiosClient.get('/orders', { params });
-    const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
-    if (list.length > 0) {
-      return list.map(mapOrder);
-    }
-  } catch (error) {
-    // Tiếp tục fallback
+    // Không ném lỗi nếu là lỗi xác thực
   }
 
   const cached = localStorage.getItem('unibridal-orders');
-  return (cached ? JSON.parse(cached) : DEMO_ORDERS).map(mapOrder);
+  return (cached ? JSON.parse(cached) : []).map(mapOrder);
 }
 
 /**
@@ -228,16 +218,18 @@ export function getDemoOrder(id) {
 export async function getAllOrdersAdmin(params = {}) {
   try {
     const res = await axiosClient.get('/orders', { params });
-    const payload = res.data?.data || res.data;
+    const list = Array.isArray(res.data) ? res.data : (Array.isArray(res) ? res : res.data?.data || []);
+    const total = res.pagination?.total ?? res.total ?? list.length;
+    const page = res.pagination?.page ?? res.page ?? 1;
+    const totalPages = res.pagination?.totalPages ?? res.totalPages ?? 1;
     return {
-      orders: Array.isArray(payload) ? payload : (payload?.orders || payload?.items || []),
-      total: res.data?.total ?? res.data?.pagination?.total ?? 0,
-      page: res.data?.page ?? res.data?.pagination?.page ?? 1,
-      totalPages: res.data?.totalPages ?? res.data?.pagination?.totalPages ?? 1,
+      orders: list,
+      total,
+      page,
+      totalPages,
     };
   } catch (error) {
-    // Fallback demo khi API chưa khởi chạy
-    return { orders: DEMO_ORDERS, total: DEMO_ORDERS.length, page: 1, totalPages: 1 };
+    return { orders: [], total: 0, page: 1, totalPages: 1 };
   }
 }
 

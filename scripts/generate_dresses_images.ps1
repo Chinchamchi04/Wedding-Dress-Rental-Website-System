@@ -170,3 +170,4 @@ foreach ($img in $baseImages) { $img.Dispose() }
 $logoImg.Dispose()
 
 Write-Output "Successfully generated all 50 dress images with UniBridal logo in $outDir"
+

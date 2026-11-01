@@ -221,6 +221,54 @@ export default function InventoryManagement() {
     setTimeout(() => setToastMsg(''), 3500);
   };
 
+  // Đồng bộ toàn bộ 50 mẫu váy từ cơ sở dữ liệu thực vào Quản lý kho
+  useEffect(() => {
+    let active = true;
+    getAllDresses()
+      .then((res) => {
+        if (!active) return;
+        const dbDresses = res?.data;
+        if (Array.isArray(dbDresses) && dbDresses.length > 0) {
+          setItems((prev) => {
+            // Nếu đã có danh sách 50 mẫu đầy đủ thì giữ nguyên trạng thái sửa đổi cục bộ
+            if (prev && prev.length >= dbDresses.length) return prev;
+            const shelves = ['KỆ A1 - TẦNG 2', 'KỆ B2 - TẦNG 1', 'KỆ C1 - TẦNG 3', 'KỆ VIP - SẢNH TRƯỚC', 'KỆ D3 - TẦNG 2'];
+            const mapped = dbDresses.map((d, index) => {
+              const num = (index + 1).toString().padStart(2, '0');
+              const code = d.code || `UB-${(index + 1).toString().padStart(3, '0')}`;
+              const shelf = shelves[index % shelves.length];
+              const statusType = index % 8 === 0 ? 'drying' : index % 7 === 0 ? 'pending' : index % 3 === 0 ? 'ready' : 'stored';
+              const statusText = statusType === 'stored' ? 'ĐẠT CHUẨN LƯU KHO'
+                : statusType === 'ready' ? 'SẴN SÀNG XUẤT GIAO'
+                : statusType === 'drying' ? 'GIẶT SẤY NHIỆT THẤP'
+                : 'CHỜ KIỂM ĐỊNH';
+              
+              return {
+                id: d._id || d.id || `inv_${index + 1}`,
+                code: `KHÔ-${code}`,
+                name: d.name,
+                rfid: `#RF-2026-${(index + 1).toString().padStart(4, '0')}`,
+                location: shelf,
+                statusType,
+                statusText,
+                stock: (d.sizes?.length || 2) * 2,
+                sizes: Array.isArray(d.sizes) ? d.sizes.join(', ') : 'S, M',
+                description: d.description || 'Lễ phục cưới cao cấp UniBridal Haute Couture',
+                price: d.rentPrice || d.price || 5000000,
+                inspector: `Bởi: ${currentInspectorName}`,
+                inspectDate: 'Hôm nay',
+                image: (d.images && d.images[0]) || d.image || `/assets/dresses/dress_${num}.jpg`,
+              };
+            });
+            try { localStorage.setItem('unibridal_inventory_local', JSON.stringify(mapped)); } catch {}
+            return mapped;
+          });
+        }
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [currentInspectorName]);
+
   const statusOptions = [
     { value: 'all', label: 'Tất Cả Tình Trạng' },
     { value: 'stored', label: 'Đạt chuẩn lưu kho' },

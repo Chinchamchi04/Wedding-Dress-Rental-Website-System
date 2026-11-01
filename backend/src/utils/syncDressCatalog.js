@@ -57,3 +57,4 @@ ${catalogItems.join(',\n')}
 }
 
 sync().catch(console.error);
+

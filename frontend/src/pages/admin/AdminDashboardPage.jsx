@@ -48,14 +48,16 @@ export default function AdminDashboardPage() {
   const chart = useMemo(() => {
     const values = data?.chart || [];
     const primary = values.map((item) => (item.orderValue || 0) / 1_000_000);
-    const max = Math.max(1, ...primary);
+    const rawMax = Math.max(4, ...primary);
+    const step = Math.ceil(rawMax / 4);
+    const max = step * 4;
     return {
       labels: values.map((item) => item.label),
       primary,
       secondary: values.map(() => 0),
       trend: primary,
       max,
-      ticks: [0, max / 4, max / 2, max * 0.75, max],
+      ticks: [0, step, step * 2, step * 3, max],
       unit: 'tr',
     };
   }, [data]);
