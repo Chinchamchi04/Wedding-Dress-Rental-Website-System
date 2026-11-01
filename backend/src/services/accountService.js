@@ -127,7 +127,20 @@ export async function getOrder(customerId, identifier) {
 
 export async function listDresses() {
   return Dress.find({ status: { $ne: 'retired' } })
-    .select('code name images rentPrice depositAmount status sizes collectionTag')
+    .populate('categoryId', 'name slug')
     .sort({ code: 1 })
     .lean();
+}
+
+export async function getDressDetail(idOrSlug) {
+  const filter = mongoose.isValidObjectId(idOrSlug)
+    ? { _id: idOrSlug }
+    : { $or: [{ slug: String(idOrSlug).toLowerCase() }, { code: String(idOrSlug).toUpperCase() }] };
+
+  const dress = await Dress.findOne(filter)
+    .populate('categoryId', 'name slug')
+    .lean();
+
+  if (!dress) fail(404, 'Không tìm thấy thông tin sản phẩm yêu cầu.');
+  return dress;
 }

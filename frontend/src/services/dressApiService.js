@@ -23,12 +23,13 @@ const localImages = {
 
 export function dressImage(dress) {
   const raw = typeof dress === 'string' ? dress : (dress?.image || dress?.images?.[0] || '');
-  if (!raw) return card1;
+  if (!raw) return '/assets/dresses/dress_01.jpg';
   if (/^data:image\//.test(raw)) return raw;
+  if (/^\/assets\//.test(raw) || /^\/images\//.test(raw)) return raw;
+  if (/^https?:\/\//.test(raw)) return raw;
   const card = raw.match(/card(\d+)/i)?.[1];
   if (card && localImages[card]) return localImages[card];
-  if (/^https?:\/\//.test(raw)) return raw;
-  return localImages[card] || card1;
+  return raw || card1;
 }
 
 export const getDressesFromApi = async () =>

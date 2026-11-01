@@ -9,6 +9,7 @@ const handle = (action) => (req, res, next) => Promise.resolve(action(req, res))
 router.post('/auth/login', handle(account.login));
 router.post('/auth/register', handle(account.register));
 router.get('/dresses', handle(account.dresses));
+router.get('/dresses/:id', handle(account.dressDetail));
 router.get('/profile', authenticate, handle(account.profile));
 router.put('/profile', authenticate, handle(account.updateProfile));
 router.patch('/profile/password', authenticate, handle(account.changePassword));

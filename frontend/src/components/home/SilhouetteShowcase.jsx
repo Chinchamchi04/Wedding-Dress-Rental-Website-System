@@ -12,7 +12,7 @@ const silhouettes = [
     count: '18 MẪU ĐỘC BẢN',
     title: 'Công Chúa Hoàng Gia',
     description: 'Lộng lẫy, bồng bềnh với cấu trúc siết eo corsetry tôn vinh tỉ lệ vàng.',
-    image: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=85',
+    image: '/assets/dresses/dress_01.jpg',
     fallback: card1Img,
   },
   {
@@ -20,7 +20,7 @@ const silhouettes = [
     count: '14 MẪU ĐỘC BẢN',
     title: 'Đuôi Cá Điêu Khắc',
     description: 'Ôm trọn đường cong quyến rũ với chất liệu ren hoa nổi 3D cao cấp.',
-    image: card2Img,
+    image: '/assets/dresses/dress_02.jpg',
     fallback: card2Img,
   },
   {
@@ -28,7 +28,7 @@ const silhouettes = [
     count: '22 MẪU ĐỘC BẢN',
     title: 'Chữ A Thanh Lịch',
     description: 'Nhẹ nhàng, bay bổng, hoàn hảo cho tiệc cưới ngoài trời và sảnh tiệc thân mật.',
-    image: 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=800&q=85',
+    image: '/assets/dresses/dress_04.jpg',
     fallback: card7Img,
   },
   {
@@ -37,7 +37,7 @@ const silhouettes = [
     count: '12 MẪU ĐỘC BẢN',
     title: 'Satin Lụa Tối Giản',
     description: 'Vẻ đẹp đương đại từ lụa tơ tằm nguyên bản, thuần khiết và sang trọng.',
-    image: 'https://images.unsplash.com/photo-1532712938310-34cb3982ef74?auto=format&fit=crop&w=800&q=85',
+    image: '/assets/dresses/dress_03.jpg',
     fallback: card3Img,
   },
 ];

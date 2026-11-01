@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth.routes.js';
 import appointmentRoutes from './routes/appointment.routes.js';
 import orderRoutes from './routes/order.routes.js';
@@ -10,6 +12,15 @@ import apiRouter from './routes/index.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 
 const app = express();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Phục vụ static files cho hình ảnh đầm cưới và logo thương hiệu UniBridal
+app.use('/assets', express.static(path.join(__dirname, '../public/assets')));
+app.use('/images', express.static(path.join(__dirname, '../public/images')));
+app.use('/assets', express.static(path.join(__dirname, '../../frontend/public/assets')));
+app.use('/images', express.static(path.join(__dirname, '../../frontend/public/images')));
 
 // Cấu hình CORS cho phép cả cổng 5173 (Vite), 3000 và các origin cấu hình
 const allowedOrigins = [

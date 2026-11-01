@@ -10,3 +10,4 @@ export const changePassword = async (req, res) => ok(res, 'Đổi mật khẩu t
 export const orders = async (req, res) => ok(res, 'Lấy danh sách đơn hàng thành công.', await account.getOrders(req.user._id));
 export const order = async (req, res) => ok(res, 'Lấy chi tiết đơn hàng thành công.', await account.getOrder(req.user._id, req.params.id));
 export const dresses = async (req, res) => ok(res, 'Lấy danh sách sản phẩm thành công.', await account.listDresses());
+export const dressDetail = async (req, res) => ok(res, 'Lấy chi tiết sản phẩm thành công.', await account.getDressDetail(req.params.id));

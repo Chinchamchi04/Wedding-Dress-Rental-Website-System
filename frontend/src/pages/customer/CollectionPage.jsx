@@ -83,13 +83,17 @@ export default function CollectionPage() {
           // Kết nối backend nếu có dữ liệu mới
           const merged = [...DRESS_CATALOG];
           apiDresses.forEach((d) => {
-            const foundIndex = merged.findIndex((m) => String(m.id) === String(d.id || d._id));
+            const foundIndex = merged.findIndex(
+              (m) => String(m.id) === String(d.id || d._id) || String(m.code) === String(d.code)
+            );
             if (foundIndex >= 0) {
               merged[foundIndex] = {
                 ...merged[foundIndex],
+                ...d,
                 name: d.name || merged[foundIndex].name,
                 priceNumber: d.price || d.rentPrice || merged[foundIndex].priceNumber,
                 status: d.status || merged[foundIndex].status,
+                image: (d.images && d.images[0]) || merged[foundIndex].image,
               };
             }
           });
