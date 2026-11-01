@@ -33,10 +33,8 @@ export default function AdminDashboardPage() {
     getAdminDashboard(period)
       .then((value) => {
         if (!active) return;
-        if (value && (value.totalOrders > 0 || value.orderValue > 0)) {
+        if (value) {
           setData(value);
-        } else {
-          setData(MOCK_ADMIN_DASHBOARD);
         }
       })
       .catch(() => {

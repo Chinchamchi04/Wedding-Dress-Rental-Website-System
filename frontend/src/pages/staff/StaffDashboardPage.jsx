@@ -84,10 +84,8 @@ export default function StaffDashboardPage() {
     getStaffDashboard(period)
       .then((value) => {
         if (!active) return;
-        if (value && (value.totalOrders > 0 || value.todayDeliveries > 0)) {
+        if (value) {
           setData(value);
-        } else {
-          setData(MOCK_STAFF_DASHBOARD);
         }
       })
       .catch(() => {

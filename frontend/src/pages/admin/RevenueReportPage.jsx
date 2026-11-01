@@ -154,10 +154,8 @@ export default function RevenueReportPage() {
     getRevenueReport(period)
       .then((value) => {
         if (!active) return;
-        if (value && (value.revenue > 0 || (value.transactions && value.transactions.length > 0))) {
+        if (value) {
           setReport(value);
-        } else {
-          setReport(MOCK_FALLBACK);
         }
       })
       .catch((issue) => {

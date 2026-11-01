@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { getAllOrdersAdmin } from '../../services/orderService';
 import AdminLayout from '../../components/layout/AdminLayout';
 import {
   Search,
@@ -175,7 +176,7 @@ export default function ContractManagement() {
   };
 
   const filteredContracts = useMemo(() => {
-    return MOCK_CONTRACTS.filter((item) => {
+    return contracts.filter((item) => {
       const matchSearch =
         item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -184,18 +185,18 @@ export default function ContractManagement() {
       const matchStatus = selectedStatus === 'all' || item.status === selectedStatus;
       return matchSearch && matchStatus;
     });
-  }, [searchTerm, selectedStatus]);
+  }, [contracts, searchTerm, selectedStatus]);
 
   const stats = useMemo(() => {
     return {
-      total: MOCK_CONTRACTS.length,
-      active: MOCK_CONTRACTS.filter((c) => c.status === 'active').length,
-      pending: MOCK_CONTRACTS.filter((c) => c.status === 'pending_signature').length,
-      completed: MOCK_CONTRACTS.filter((c) => c.status === 'completed').length,
-      disputed: MOCK_CONTRACTS.filter((c) => c.status === 'disputed').length,
-      totalDeposit: MOCK_CONTRACTS.reduce((sum, c) => sum + (c.status === 'active' ? c.depositAmount : 0), 0)
+      total: contracts.length,
+      active: contracts.filter((c) => c.status === 'active').length,
+      pending: contracts.filter((c) => c.status === 'pending_signature').length,
+      completed: contracts.filter((c) => c.status === 'completed').length,
+      disputed: contracts.filter((c) => c.status === 'disputed').length,
+      totalDeposit: contracts.reduce((sum, c) => sum + (c.status === 'active' ? c.depositAmount : 0), 0)
     };
-  }, []);
+  }, [contracts]);
 
   const getStatusBadge = (status) => {
     switch (status) {

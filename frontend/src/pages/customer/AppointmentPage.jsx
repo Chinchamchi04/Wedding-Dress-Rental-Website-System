@@ -40,7 +40,7 @@ import {
   createAppointment,
   createAppointmentApi,
 } from '../../services/appointmentService';
-import { MOCK_DRESSES } from '../../services/dressService';
+import { MOCK_DRESSES, getAllDresses } from '../../services/dressService';
 
 // Helper: Format Vietnamese Date
 function formatVietnameseDate(dateStr) {
@@ -169,9 +169,23 @@ export default function AppointmentPage() {
   );
 
   // Selected Dress Objects
+  const [availableDresses, setAvailableDresses] = useState(MOCK_DRESSES);
+
+  useEffect(() => {
+    let active = true;
+    getAllDresses().then((res) => {
+      if (!active) return;
+      const list = res?.data || [];
+      if (Array.isArray(list) && list.length > 0) {
+        setAvailableDresses(list.slice(0, 12));
+      }
+    }).catch(() => {});
+    return () => { active = false; };
+  }, []);
+
   const chosenDresses = useMemo(
-    () => MOCK_DRESSES.filter((d) => selectedDressIds.includes(d.id)),
-    [selectedDressIds]
+    () => availableDresses.filter((d) => selectedDressIds.includes(d.id)),
+    [availableDresses, selectedDressIds]
   );
 
   // Filtered Time Slots
@@ -857,7 +871,7 @@ export default function AppointmentPage() {
                   )}
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                    {MOCK_DRESSES.map((dress) => {
+                    {availableDresses.map((dress) => {
                       const isSelected = selectedDressIds.includes(dress.id);
                       return (
                         <div
