@@ -1,8 +1,27 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { CalendarClock, ChartNoAxesCombined, ClipboardCheck, PackageCheck, ShieldPlus } from 'lucide-react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import {
+  CalendarClock,
+  ChartNoAxesCombined,
+  ClipboardCheck,
+  PackageCheck,
+  ShieldPlus,
+  Calendar,
+  Clock,
+  Check,
+  X,
+  Phone,
+  Sparkles,
+  Users,
+} from 'lucide-react';
+import { message } from 'antd';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import DashboardChart from '../../components/common/DashboardChart';
 import { getStaffDashboard } from '../../services/reportService';
+import {
+  getAppointmentsApi,
+  updateAppointmentStatusApi,
+  APPOINTMENT_EVENT,
+} from '../../services/appointmentService';
 
 const PERIODS = { week: '7 ngày qua', month: 'Tháng này', quarter: 'Quý này' };
 
@@ -27,6 +46,37 @@ export default function StaffDashboardPage() {
   const [period, setPeriod] = useState('week');
   const [data, setData] = useState(MOCK_STAFF_DASHBOARD);
   const [error, setError] = useState('');
+  const [appointments, setAppointments] = useState([]);
+  const [loadingApt, setLoadingApt] = useState(false);
+
+  const fetchAppointments = useCallback(async () => {
+    setLoadingApt(true);
+    try {
+      const res = await getAppointmentsApi();
+      const list = Array.isArray(res?.data) ? res.data : (res?.data?.data || []);
+      setAppointments(list);
+    } catch {
+      // ignore
+    } finally {
+      setLoadingApt(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAppointments();
+    window.addEventListener(APPOINTMENT_EVENT, fetchAppointments);
+    return () => window.removeEventListener(APPOINTMENT_EVENT, fetchAppointments);
+  }, [fetchAppointments]);
+
+  const handleUpdateStatus = async (id, newStatus) => {
+    try {
+      await updateAppointmentStatusApi(id, newStatus);
+      message.success(`Đã cập nhật trạng thái lịch hẹn thành "${newStatus === 'confirmed' ? 'Đã xác nhận' : newStatus === 'completed' ? 'Hoàn tất' : 'Đã hủy'}"`);
+      fetchAppointments();
+    } catch {
+      message.error('Cập nhật trạng thái lịch hẹn thất bại.');
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -157,6 +207,165 @@ export default function StaffDashboardPage() {
             trendLabel="Xu hướng đơn"
             unit=" đơn"
           />
+        )}
+      </section>
+
+      {/* LỊCH HẸN THỬ VÁY PRIVATE SUITE (Atelier Appointments) */}
+      <section
+        className="mt-[27px] rounded-lg border border-[#f2e7e2] bg-white px-7 pb-[30px] pt-[27px] max-[650px]:mt-5 max-[650px]:p-4"
+        aria-labelledby="staff-appointments-title"
+      >
+        <div className="flex items-center justify-between gap-4 border-b border-[#f3e9e5] pb-4 mb-5 max-[768px]:flex-col max-[768px]:items-start">
+          <div>
+            <p className="ub-dashboard-eyebrow text-[#B8737D] flex items-center gap-1.5 font-bold tracking-[1.5px] uppercase text-[11px]">
+              <Sparkles size={14} /> PRIVATE SUITE ATELIER
+            </p>
+            <h2 id="staff-appointments-title" className="font-playfair text-[20px] font-bold text-[#2C2523] mt-1">
+              Lịch Hẹn Thử Váy VIP Hôm Nay & Sắp Tới
+            </h2>
+            <p className="text-[12.5px] text-[#7A6B6C]">
+              Quản lý và tiếp đón cô dâu đặt phòng thử riêng tư 1:1 cùng chuyên viên Haute Couture.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={fetchAppointments}
+            disabled={loadingApt}
+            className="px-3.5 py-1.5 rounded-lg border border-[#EFE2DC] bg-[#FFF9F6] text-[12px] font-semibold text-[#804E55] hover:bg-[#FCEEEA] transition-colors cursor-pointer"
+          >
+            {loadingApt ? 'Đang tải...' : 'Làm mới lịch'}
+          </button>
+        </div>
+
+        {appointments.length === 0 ? (
+          <div className="py-12 text-center text-[#8C7D7E] text-[13px]">
+            Hiện chưa có lịch hẹn thử váy nào được ghi nhận.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[700px]">
+              <thead>
+                <tr className="border-b border-[#F2E5E0] bg-[#FFF6F3] text-[11px] font-bold text-[#7A696B] uppercase tracking-wider">
+                  <th className="py-3 px-4">MÃ & KHÁCH HÀNG</th>
+                  <th className="py-3 px-4">NGÀY & KHUNG GIỜ</th>
+                  <th className="py-3 px-4">LỄ PHỤC QUAN TÂM</th>
+                  <th className="py-3 px-4 text-center">TRẠNG THÁI</th>
+                  <th className="py-3 px-4 text-right">THAO TÁC</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F6EDE9] text-[12.5px]">
+                {appointments.map((apt) => {
+                  const aptId = apt._id || apt.id || apt.appointmentCode;
+                  const name = apt.customerName || apt.fullName || 'Cô dâu';
+                  const phone = apt.customerPhone || apt.phone || '—';
+                  const dateStr = apt.appointmentDate
+                    ? new Date(apt.appointmentDate).toLocaleDateString('vi-VN')
+                    : apt.date || '—';
+                  const time = apt.timeSlot || '—';
+                  const dresses = apt.interestedDresses || apt.selectedDresses || [];
+                  const status = apt.status?.toLowerCase() || 'pending';
+
+                  return (
+                    <tr key={aptId} className="hover:bg-[#FCF9F7] transition-colors">
+                      <td className="py-3.5 px-4">
+                        <div className="font-semibold text-[#2C2523]">{name}</div>
+                        <div className="text-[11.5px] text-[#7A6B6C] flex items-center gap-1 mt-0.5">
+                          <Phone size={12} className="text-[#BA7A83]" />
+                          <span>{phone}</span>
+                        </div>
+                        {apt.guestsCount && (
+                          <div className="text-[10.5px] text-[#A89899] mt-0.5">
+                            Đi cùng: {apt.guestsCount} người
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-1.5 font-medium text-[#2C2523]">
+                          <Calendar size={13} className="text-[#BA7A83]" />
+                          <span>{dateStr}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[11.5px] text-[#7A6B6C] mt-0.5">
+                          <Clock size={12} className="text-[#BA7A83]" />
+                          <span>{time}</span>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 max-w-[240px]">
+                        {dresses.length > 0 ? (
+                          <div className="space-y-1">
+                            {dresses.map((d, i) => (
+                              <div
+                                key={i}
+                                className="inline-block px-2 py-0.5 rounded-md bg-[#FFF2EE] text-[#804E55] text-[11px] font-medium mr-1 mb-1 border border-[#F3DBD4]"
+                              >
+                                {d.name || d}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-[#998889] italic">Tư vấn trực tiếp tại chỗ</span>
+                        )}
+                        {apt.notes && (
+                          <div className="text-[11px] text-[#8A797A] truncate mt-1" title={apt.notes}>
+                            Ghi chú: {apt.notes}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        {status === 'confirmed' ? (
+                          <span className="inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#EAF8EE] text-[#1E8347]">
+                            Đã xác nhận
+                          </span>
+                        ) : status === 'completed' ? (
+                          <span className="inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#F0FDF4] text-[#166534]">
+                            Hoàn tất
+                          </span>
+                        ) : status === 'cancelled' ? (
+                          <span className="inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#F3F4F6] text-[#6B7280]">
+                            Đã hủy
+                          </span>
+                        ) : (
+                          <span className="inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#FEF3C7] text-[#92400E]">
+                            Chờ duyệt
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1.5">
+                          {status !== 'confirmed' && status !== 'completed' && status !== 'cancelled' && (
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateStatus(aptId, 'confirmed')}
+                              className="px-2.5 py-1 rounded-md bg-[#1E8347] hover:bg-[#166534] text-white text-[11px] font-semibold transition-colors cursor-pointer border-0"
+                            >
+                              Xác nhận
+                            </button>
+                          )}
+                          {status === 'confirmed' && (
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateStatus(aptId, 'completed')}
+                              className="px-2.5 py-1 rounded-md bg-[#BA7A83] hover:bg-[#a86a73] text-white text-[11px] font-semibold transition-colors cursor-pointer border-0"
+                            >
+                              Đã thử xong
+                            </button>
+                          )}
+                          {status !== 'cancelled' && status !== 'completed' && (
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateStatus(aptId, 'cancelled')}
+                              className="px-2 py-1 rounded-md bg-[#FAF5F2] hover:bg-[#FCEEEA] text-[#847374] hover:text-[#BA7A83] text-[11px] transition-colors cursor-pointer border border-[#EEDECF]"
+                            >
+                              Hủy
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
     </DashboardLayout>

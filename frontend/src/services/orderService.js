@@ -220,3 +220,36 @@ export function getDemoOrder(id) {
   const item = DEMO_ORDERS.find((order) => order.id === id);
   return mapOrder(item);
 }
+
+/**
+ * Lấy toàn bộ danh sách đơn thuê (Admin)
+ * @param {Object} params - { status, search, page, limit }
+ */
+export async function getAllOrdersAdmin(params = {}) {
+  try {
+    const res = await axiosClient.get('/orders', { params });
+    const payload = res.data?.data || res.data;
+    return {
+      orders: Array.isArray(payload) ? payload : (payload?.orders || payload?.items || []),
+      total: res.data?.total ?? res.data?.pagination?.total ?? 0,
+      page: res.data?.page ?? res.data?.pagination?.page ?? 1,
+      totalPages: res.data?.totalPages ?? res.data?.pagination?.totalPages ?? 1,
+    };
+  } catch (error) {
+    // Fallback demo khi API chưa khởi chạy
+    return { orders: DEMO_ORDERS, total: DEMO_ORDERS.length, page: 1, totalPages: 1 };
+  }
+}
+
+/**
+ * Lấy biên bản kiểm định trả váy theo orderId
+ * @param {string} orderId
+ */
+export async function getReturnInspection(orderId) {
+  try {
+    const res = await axiosClient.get(`/orders/${orderId}/inspection`);
+    return res.data?.data || res.data || null;
+  } catch (error) {
+    return null;
+  }
+}

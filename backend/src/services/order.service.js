@@ -200,10 +200,10 @@ export const submitReturnInspection = async (orderId, data, staffUser) => {
 
   // Tổng khấu trừ từ hư hỏng
   const itemsCondition = (data.itemsCondition || []).map((item) => ({
-    dressId: item.dressId,
+    dressId: item.dressId || item.id || null,
     condition: item.condition || 'good',
-    note: item.note || '',
-    repairFee: Number(item.repairFee || 0),
+    note: item.note || item.damageNotes || '',
+    repairFee: Number(item.repairFee ?? item.compensation ?? 0),
   }));
   const damageTotal = itemsCondition.reduce((sum, i) => sum + i.repairFee, 0);
 
