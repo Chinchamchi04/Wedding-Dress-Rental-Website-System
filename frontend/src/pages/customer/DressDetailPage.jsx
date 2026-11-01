@@ -678,14 +678,14 @@ export default function DressDetailPage() {
 
               {/* Row 3: THÊM VÀO GIỎ HÀNG */}
               {isLoggedIn && (
-              <button
-                type="button"
-                onClick={handleOnlineRent}
-                className="w-full h-[48px] px-5 rounded-[4px] bg-white hover:bg-[#FAF4F3] border border-[#70484E] text-[#70484E] font-jakarta text-[13px] font-semibold tracking-[0.8px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
-              >
-                <ShoppingBag className="w-4 h-4" strokeWidth={1.8} />
-                THÊM VÀO GIỎ HÀNG
-              </button>
+                <button
+                  type="button"
+                  onClick={handleOnlineRent}
+                  className="w-full h-[48px] px-5 rounded-[4px] bg-white hover:bg-[#FAF4F3] border border-[#70484E] text-[#70484E] font-jakarta text-[13px] font-semibold tracking-[0.8px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+                >
+                  <ShoppingBag className="w-4 h-4" strokeWidth={1.8} />
+                  THÊM VÀO GIỎ HÀNG
+                </button>
 
               )}
 
@@ -842,8 +842,8 @@ export default function DressDetailPage() {
                     document.getElementById('feedback-section')?.scrollIntoView({ behavior: 'smooth' });
                   }}
                   className={`w-9 h-9 rounded-[8px] flex items-center justify-center border transition-colors ${feedbackPage === 1
-                      ? 'border-[#EAE0DC] text-[#C4B4B0] cursor-not-allowed bg-transparent'
-                      : 'border-[#EAE0DC] bg-white text-[#70484E] hover:border-[#70484E] cursor-pointer'
+                    ? 'border-[#EAE0DC] text-[#C4B4B0] cursor-not-allowed bg-transparent'
+                    : 'border-[#EAE0DC] bg-white text-[#70484E] hover:border-[#70484E] cursor-pointer'
                     }`}
                   aria-label="Trang trước"
                 >
@@ -872,8 +872,8 @@ export default function DressDetailPage() {
                         document.getElementById('feedback-section')?.scrollIntoView({ behavior: 'smooth' });
                       }}
                       className={`w-9 h-9 rounded-[8px] flex items-center justify-center font-jakarta text-[13px] font-medium transition-colors cursor-pointer ${isActive
-                          ? 'bg-[#70484E] text-white shadow-xs'
-                          : 'bg-white border border-[#EAE0DC] text-[#5A4848] hover:border-[#70484E] hover:text-[#70484E]'
+                        ? 'bg-[#70484E] text-white shadow-xs'
+                        : 'bg-white border border-[#EAE0DC] text-[#5A4848] hover:border-[#70484E] hover:text-[#70484E]'
                         }`}
                     >
                       {pNum}
@@ -889,8 +889,8 @@ export default function DressDetailPage() {
                     document.getElementById('feedback-section')?.scrollIntoView({ behavior: 'smooth' });
                   }}
                   className={`w-9 h-9 rounded-[8px] flex items-center justify-center border transition-colors ${feedbackPage === totalFeedbackPages
-                      ? 'border-[#EAE0DC] text-[#C4B4B0] cursor-not-allowed bg-transparent'
-                      : 'border-[#EAE0DC] bg-white text-[#70484E] hover:border-[#70484E] cursor-pointer'
+                    ? 'border-[#EAE0DC] text-[#C4B4B0] cursor-not-allowed bg-transparent'
+                    : 'border-[#EAE0DC] bg-white text-[#70484E] hover:border-[#70484E] cursor-pointer'
                     }`}
                   aria-label="Trang kế tiếp"
                 >

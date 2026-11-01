@@ -42,7 +42,9 @@ export default function LoginPage() {
         } else if (userRole === 'staff') {
           navigate('/staff/dashboard', { replace: true });
         } else {
-          const from = location.state?.from?.pathname || '/profile';
+          const from = (location.state?.from?.pathname && location.state.from.pathname !== '/profile')
+            ? location.state.from.pathname
+            : '/';
           navigate(from, { replace: true });
         }
       }
@@ -82,7 +84,9 @@ export default function LoginPage() {
         } else if (userRole === 'staff') {
           navigate('/staff/dashboard', { replace: true });
         } else {
-          const from = location.state?.from?.pathname || '/profile';
+          const from = (location.state?.from?.pathname && location.state.from.pathname !== '/profile')
+            ? location.state.from.pathname
+            : '/';
           navigate(from, { replace: true });
         }
       }
