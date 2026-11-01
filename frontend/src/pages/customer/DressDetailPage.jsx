@@ -297,13 +297,9 @@ export default function DressDetailPage() {
       name: dress.name,
       category: dress.silhouette || dress.category || 'HAUTE COUTURE',
       tag: 'ĐANG TƯ VẤN',
-      price: typeof dress.rentalPrice === 'number'
-        ? `${dress.rentalPrice.toLocaleString('vi-VN')}₫`
-        : (dress.price || '5.200.000₫'),
+      price: formatCurrencyVND(dress.rentalPrice || dress.price || 5200000),
       priceUnit: '/ 1 ngày',
-      depositInfo: dress.depositPrice
-        ? `Tiền cọc bảo lãnh: ${typeof dress.depositPrice === 'number' ? dress.depositPrice.toLocaleString('vi-VN') : dress.depositPrice}₫`
-        : 'Tiền cọc bảo lãnh: 15.000.000₫',
+      depositInfo: `Tiền cọc bảo lãnh: ${formatCurrencyVND(dress.depositPrice || 15000000)}`,
       image: (dress.images && dress.images[selectedImageIndex || 0]) || dress.image || (dress.images && dress.images[0]) || '',
       description: dress.description || 'Thiết kế thủ công tinh xảo chuẩn Haute Couture UniBridal',
     };

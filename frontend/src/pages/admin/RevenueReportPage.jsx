@@ -1,10 +1,11 @@
+import { formatCurrencyVND } from '../../utils/formatCurrency';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Banknote, ChevronLeft, ChevronRight, LockKeyhole, Search, TrendingUp, ShieldCheck } from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { getRevenueReport } from '../../services/reportService';
 import './RevenueReportPage.css';
 
-const money = (value) => `${Number(value || 0).toLocaleString('vi-VN')} ₫`;
+const money = (value) => formatCurrencyVND(value);
 const PERIODS = { week: '7 ngày qua', month: 'Tháng này', quarter: 'Quý này', year: 'Năm nay' };
 const TYPE = {
   deposit_payment: 'Thu tiền cọc',

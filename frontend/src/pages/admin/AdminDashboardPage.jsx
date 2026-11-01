@@ -1,3 +1,4 @@
+import { formatCurrencyVND } from '../../utils/formatCurrency';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Banknote, Gem, PackageCheck } from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
@@ -5,7 +6,7 @@ import DashboardChart from '../../components/common/DashboardChart';
 import { getAdminDashboard } from '../../services/reportService';
 
 const PERIODS = { week: '7 ngày qua', month: 'Tháng này', quarter: 'Quý này', year: 'Năm nay' };
-const money = (value) => `${Number(value || 0).toLocaleString('vi-VN')} ₫`;
+const money = (value) => formatCurrencyVND(value);
 
 const MOCK_ADMIN_DASHBOARD = {
   orderValue: 145000000,

@@ -1,3 +1,4 @@
+import { formatCurrencyVND, formatNumberDots } from '../../utils/formatCurrency';
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
@@ -864,9 +865,9 @@ export default function CheckoutPage() {
             <p>2.5. Hai bên thực hiện ký Biên bản kiểm định bàn giao và thu hồi để ghi nhận hiện trạng đính kết ren, hạt cườm và kết cấu váy tại thời điểm giao và nhận lại.</p>
 
             <div class="clause-heading">ĐIỀU 3: GIÁ THUÊ & PHƯƠNG THỨC THANH TOÁN</div>
-            <p>3.1. Tổng giá trị hợp đồng thuê trọn gói (${rentalDays} ngày): <strong>${totalRentPrice.toLocaleString('vi-VN')} VNĐ</strong> (Đã bao gồm VAT, dịch vụ giặt hấp khử khuẩn và phí tinh chỉnh phom váy).</p>
-            <p>3.2. Tiền đặt cọc giữ lịch độc quyền (50% giá trị hợp đồng): <strong>${amountToPayToday.toLocaleString('vi-VN')} VNĐ</strong>, Bên B thanh toán ngay khi ký hợp đồng thông qua cổng chuyển khoản VietQR Techcombank.</p>
-            <p>3.3. Số tiền thuê còn lại (${(totalRentPrice - amountToPayToday).toLocaleString('vi-VN')} VNĐ) sẽ được Bên B thanh toán dứt điểm tại thời điểm nhận bàn giao lễ phục.</p>
+            <p>3.1. Tổng giá trị hợp đồng thuê trọn gói (${rentalDays} ngày): <strong>${formatNumberDots(totalRentPrice)} VNĐ</strong> (Đã bao gồm VAT, dịch vụ giặt hấp khử khuẩn và phí tinh chỉnh phom váy).</p>
+            <p>3.2. Tiền đặt cọc giữ lịch độc quyền (50% giá trị hợp đồng): <strong>${formatNumberDots(amountToPayToday)} VNĐ</strong>, Bên B thanh toán ngay khi ký hợp đồng thông qua cổng chuyển khoản VietQR Techcombank.</p>
+            <p>3.3. Số tiền thuê còn lại (${formatNumberDots(totalRentPrice - amountToPayToday)} VNĐ) sẽ được Bên B thanh toán dứt điểm tại thời điểm nhận bàn giao lễ phục.</p>
 
             <div class="clause-heading">ĐIỀU 4: CAM KẾT DỊCH VỤ & BẢO HIỂM LỄ PHỤC</div>
             <p>4.1. Cam kết chất lượng: Bên A cam kết bàn giao đúng tác phẩm thiết kế đã chọn, đúng số đo may đo đã ghi nhận và đầy đủ bộ phụ kiện cao cấp đi kèm.</p>
@@ -994,12 +995,12 @@ export default function CheckoutPage() {
         <p>1.3. Tiêu chuẩn giao nhận: Lễ phục được giặt sấy tiệt trùng sinh học, ủi phẳng phiu và tinh chỉnh theo số đo cô dâu hoàn thiện trước giờ trao nhận 2 giờ trong Vali VIP Courier bảo quản chân không.</p>
 
         <div class='clause-title'>ĐIỀU 2: GIÁ THUÊ & PHƯƠNG THỨC THANH TOÁN</div>
-        <p>2.1. Tổng chi phí thuê váy trọn gói (${rentalDays} ngày): <strong>${totalRentPrice.toLocaleString('vi-VN')} VNĐ</strong>.</p>
-        <p>2.2. Số tiền đặt cọc giữ lịch độc quyền: <strong>${amountToPayToday.toLocaleString('vi-VN')} VNĐ</strong> (thanh toán qua cổng chuyển khoản VietQR Techcombank).</p>
+        <p>2.1. Tổng chi phí thuê váy trọn gói (${rentalDays} ngày): <strong>${formatNumberDots(totalRentPrice)} VNĐ</strong>.</p>
+        <p>2.2. Số tiền đặt cọc giữ lịch độc quyền: <strong>${formatNumberDots(amountToPayToday)} VNĐ</strong> (thanh toán qua cổng chuyển khoản VietQR Techcombank).</p>
         <p>2.3. Số tiền còn lại (nếu chọn cọc 50%) sẽ được thanh toán khi nhận bàn giao váy cưới.</p>
 
         <div class='clause-title'>ĐIỀU 3: CỌC BẢO LÃNH HOÀN TRẢ & CAM KẾT HOÀN TIỀN 100%</div>
-        <p>3.1. Tiền cọc bảo lãnh hoàn trả trang phục: <strong>${depositCollateral.toLocaleString('vi-VN')} VNĐ</strong>.</p>
+        <p>3.1. Tiền cọc bảo lãnh hoàn trả trang phục: <strong>${formatNumberDots(depositCollateral)} VNĐ</strong>.</p>
         <p>3.2. Bên A cam kết hoàn trả 100% khoản cọc bảo lãnh tự động vào tài khoản ngân hàng của Bên B trong vòng 24 giờ sau khi tiếp nhận lại trang phục nguyên vẹn.</p>
 
         <div class='clause-title'>ĐIỀU 4: BẢO HIỂM VẢI REN & QUY ĐỊNH BẢO QUẢN</div>
@@ -1139,7 +1140,7 @@ export default function CheckoutPage() {
 
         setIsSuccessModalOpen(true);
         message.success({
-          content: `✓ Giao dịch cọc ${amountToPayToday.toLocaleString('vi-VN')}₫ thành công! Đã kích hoạt hợp đồng điện tử.`,
+          content: `✓ Giao dịch cọc ${formatCurrencyVND(amountToPayToday)} thành công! Đã kích hoạt hợp đồng điện tử.`,
           key: 'payment_confirm',
           duration: 3,
         });
@@ -2047,13 +2048,13 @@ export default function CheckoutPage() {
                         </h4>
                         <div className="pl-3.5 space-y-1 text-[#554749]">
                           <p className="m-0">
-                            2.1. Tổng chi phí thuê váy cưới trọn gói: <strong className="text-[#2C2523]">{totalRentPrice.toLocaleString('vi-VN')}₫</strong>.
+                            2.1. Tổng chi phí thuê váy cưới trọn gói: <strong className="text-[#2C2523]">{formatCurrencyVND(totalRentPrice)}</strong>.
                           </p>
                           <p className="m-0">
-                            2.2. Tiền đặt cọc giữ lịch độc quyền (50%): <strong className="text-[#733F49]">{amountToPayToday.toLocaleString('vi-VN')}₫</strong> (Bên B hoàn tất thanh toán chuyển khoản tại Bước 3).
+                            2.2. Tiền đặt cọc giữ lịch độc quyền (50%): <strong className="text-[#733F49]">{formatCurrencyVND(amountToPayToday)}</strong> (Bên B hoàn tất thanh toán chuyển khoản tại Bước 3).
                           </p>
                           <p className="m-0">
-                            2.3. Số tiền còn lại: <strong>{(totalRentPrice - amountToPayToday).toLocaleString('vi-VN')}₫</strong> sẽ được Bên B thanh toán khi nhận bàn giao lễ phục.
+                            2.3. Số tiền còn lại: <strong>{formatCurrencyVND(totalRentPrice - amountToPayToday)}</strong> sẽ được Bên B thanh toán khi nhận bàn giao lễ phục.
                           </p>
                         </div>
                       </div>
@@ -2336,10 +2337,10 @@ export default function CheckoutPage() {
                         </span>
                       </div>
                       <div className="font-jakarta font-extrabold text-[22px] text-[#733F49] mb-1 tabular-nums tracking-tight">
-                        {Math.round(totalRentPrice * 0.5).toLocaleString('vi-VN')}₫
+                        {formatCurrencyVND(Math.round(totalRentPrice * 0.5))}
                       </div>
                       <p className="text-[11.5px] text-[#6B5C5D] m-0 leading-relaxed">
-                        Thanh toán 50% hôm nay để giữ lịch. Phần còn lại {Math.round(totalRentPrice * 0.5).toLocaleString('vi-VN')}₫ thanh toán khi nhận bàn giao váy.
+                        Thanh toán 50% hôm nay để giữ lịch. Phần còn lại {formatCurrencyVND(Math.round(totalRentPrice * 0.5))} thanh toán khi nhận bàn giao váy.
                       </p>
                     </div>
 
@@ -2360,7 +2361,7 @@ export default function CheckoutPage() {
                         </span>
                       </div>
                       <div className="font-jakarta font-extrabold text-[22px] text-[#733F49] mb-1 tabular-nums tracking-tight">
-                        {totalRentPrice.toLocaleString('vi-VN')}₫
+                        {formatCurrencyVND(totalRentPrice)}
                       </div>
                       <p className="text-[11.5px] text-[#6B5C5D] m-0 leading-relaxed">
                         Thanh toán toàn bộ phí thuê váy hôm nay. Tặng miễn phí mượn bộ voan cài đầu ren Pháp đồng bộ trị giá 1.500.000₫.
@@ -2452,7 +2453,7 @@ export default function CheckoutPage() {
                           <div>
                             <span className="text-[10px] text-[#847374] block uppercase font-bold">SỐ TIỀN CỌC HÔM NAY:</span>
                             <strong className="font-mono text-[16px] text-[#2E7D32]">
-                              {amountToPayToday.toLocaleString('vi-VN')}₫
+                              {formatCurrencyVND(amountToPayToday)}
                             </strong>
                           </div>
                           <button
@@ -2589,7 +2590,7 @@ export default function CheckoutPage() {
                       <span>Gói <strong>{rentalDays} ngày</strong></span>
                     </div>
                     <div className="font-jakarta font-extrabold text-[19px] text-[#733F49] mt-1.5 tabular-nums tracking-tight">
-                      {totalRentPrice.toLocaleString('vi-VN')}₫
+                      {formatCurrencyVND(totalRentPrice)}
                     </div>
                   </div>
                 </div>
@@ -2649,12 +2650,12 @@ export default function CheckoutPage() {
                 <div className="space-y-2 text-[12.5px]">
                   <div className="flex items-center justify-between text-[#6B5C5D]">
                     <span>Giá thuê ({rentalDays} ngày):</span>
-                    <span className="font-bold text-[#2C2523]">{totalRentPrice.toLocaleString('vi-VN')}₫</span>
+                    <span className="font-bold text-[#2C2523]">{formatCurrencyVND(totalRentPrice)}</span>
                   </div>
                   {rentalDays > 4 && (
                     <div className="flex items-center justify-between text-[11px] text-[#847374] pl-2 border-l-2 border-[#EEDECF]">
                       <span>Gia hạn {rentalDays - 4} ngày (+800k/ngày):</span>
-                      <span className="font-semibold text-[#733F49]">+{((rentalDays - 4) * 800000).toLocaleString('vi-VN')}₫</span>
+                      <span className="font-semibold text-[#733F49]">+{formatCurrencyVND((rentalDays - 4) * 800000)}</span>
                     </div>
                   )}
                   <div className="flex items-center justify-between text-[#6B5C5D]">
@@ -2676,7 +2677,7 @@ export default function CheckoutPage() {
                     </span>
                   </div>
                   <span className="font-jakarta font-extrabold text-[23px] sm:text-[25px] text-[#733F49] tabular-nums tracking-tight">
-                    {amountToPayToday.toLocaleString('vi-VN')}₫
+                    {formatCurrencyVND(amountToPayToday)}
                   </span>
                 </div>
 

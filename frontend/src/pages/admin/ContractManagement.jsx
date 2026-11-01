@@ -187,7 +187,7 @@ const MOCK_CONTRACTS = [
   }
 ];
 
-const fmtVnd = (num) => `${Number(num || 0).toLocaleString('vi-VN')}₫`;
+const fmtVnd = (num) => formatCurrencyVND(num);
 
 export default function ContractManagement() {
   const [contracts, setContracts] = useState(() => {

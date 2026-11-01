@@ -1,3 +1,4 @@
+import { formatCurrencyVND } from '../../utils/formatCurrency';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -510,7 +511,7 @@ export default function AppointmentPage() {
                           </div>
                           {dress.price && (
                             <div className="text-[11px] font-bold text-[#733F49] mt-0.5">
-                              Giá thuê niêm yết: {Number(dress.price).toLocaleString('vi-VN')}₫
+                              Giá thuê niêm yết: {formatCurrencyVND(dress.price)}
                             </div>
                           )}
                         </div>
@@ -908,7 +909,7 @@ export default function AppointmentPage() {
                               {dress.name}
                             </h4>
                             <div className="text-[11px] font-bold text-[#733F49]">
-                              {dress.price.toLocaleString('vi-VN')}₫
+                              {formatCurrencyVND(dress.price)}
                             </div>
                           </div>
                         </div>
@@ -1173,7 +1174,7 @@ export default function AppointmentPage() {
                               {dress.name}
                             </span>
                             <span className="text-[11px] font-bold text-[#733F49]">
-                              {dress.price.toLocaleString('vi-VN')}₫
+                              {formatCurrencyVND(dress.price)}
                             </span>
                           </div>
                         ))}

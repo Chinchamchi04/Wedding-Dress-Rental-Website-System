@@ -10,7 +10,7 @@ import Footer from '../../components/layout/Footer';
 import { useAuth } from '../../contexts/AuthContext';
 import { addToCart } from '../../services/cartService';
 import { getWishlistIds, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
-import { getAllDresses } from '../../services/dressService';
+import { getAllDresses, formatCurrencyVND } from '../../services/dressService';
 
 import logoEmblemImg from '../../assets/logo_emblem.png';
 import { DRESS_CATALOG } from '../../data/dressCatalog';
@@ -90,11 +90,16 @@ export default function CollectionPage() {
               (m) => String(m.id) === String(d.id || d._id) || String(m.code) === String(d.code)
             );
             if (foundIndex >= 0) {
+              const priceNum = d.price || d.rentPrice || merged[foundIndex].priceNumber || 5200000;
+              const depositNum = d.depositAmount || merged[foundIndex].depositAmount || 15000000;
               merged[foundIndex] = {
                 ...merged[foundIndex],
                 ...d,
                 name: d.name || merged[foundIndex].name,
-                priceNumber: d.price || d.rentPrice || merged[foundIndex].priceNumber,
+                priceNumber: priceNum,
+                price: formatCurrencyVND(priceNum),
+                depositAmount: formatCurrencyVND(depositNum),
+                depositPolicy: '(Hoàn cọc tức thì)',
                 status: d.status || merged[foundIndex].status,
                 image: (d.images && d.images[0]) || merged[foundIndex].image,
               };
@@ -841,7 +846,7 @@ export default function CollectionPage() {
                           <div className="pt-2">
                             <div className="flex items-baseline gap-1.5 mb-1.5">
                               <span className="font-playfair font-bold text-[28px] sm:text-[30px] leading-tight text-[#BA7A83] tracking-tight">
-                                {dress.price}
+                                {formatCurrencyVND(dress.priceNumber || dress.price)}
                               </span>
                               <span className="font-jakarta text-[12px] font-medium text-[#695C4E] ml-1">
                                 / 1 ngày
@@ -849,9 +854,9 @@ export default function CollectionPage() {
                             </div>
 
                             <p className="font-jakarta text-[11.5px] leading-[18px] text-[#695C4E] mb-4 m-0">
-                              Tiền cọc bảo lãnh: <strong className="font-semibold text-[#2C2523]">{dress.depositAmount}</strong>
+                              Tiền cọc bảo lãnh: <strong className="font-semibold text-[#2C2523]">{formatCurrencyVND(dress.depositAmount)}</strong>
                               <br />
-                              <span className="text-[#7A6B6C]">{dress.depositPolicy}</span>
+                              <span className="text-[#7A6B6C]">{dress.depositPolicy || '(Hoàn cọc tức thì)'}</span>
                             </p>
 
                             {/* Nút Bấm: Thêm Vào Giỏ & Thuê Ngay (Chỉ hiện nút Giỏ Hàng khi đã đăng nhập) */}

@@ -62,11 +62,9 @@ const products = [
 ];
 
 const renderPriceWithDong = (priceVal) => {
-  if (priceVal === undefined || priceVal === null) return '5.200.000 ₫';
-  const str =
-    typeof priceVal === 'number'
-      ? new Intl.NumberFormat('vi-VN').format(priceVal)
-      : String(priceVal).replace(/[^0-9.]/g, '');
+  if (priceVal === undefined || priceVal === null || priceVal === '') return '5.200.000 ₫';
+  const num = typeof priceVal === 'number' ? priceVal : Number(String(priceVal).replace(/[^0-9]/g, ''));
+  const str = !isNaN(num) ? Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '5.200.000';
   return (
     <span>
       {str}
@@ -76,11 +74,9 @@ const renderPriceWithDong = (priceVal) => {
 };
 
 const renderDepositWithDong = (amountVal) => {
-  if (amountVal === undefined || amountVal === null) return '15.000.000 ₫';
-  const str =
-    typeof amountVal === 'number'
-      ? new Intl.NumberFormat('vi-VN').format(amountVal)
-      : String(amountVal).replace(/[^0-9.]/g, '');
+  if (amountVal === undefined || amountVal === null || amountVal === '') return '15.000.000 ₫';
+  const num = typeof amountVal === 'number' ? amountVal : Number(String(amountVal).replace(/[^0-9]/g, ''));
+  const str = !isNaN(num) ? Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '15.000.000';
   return (
     <span>
       {str}

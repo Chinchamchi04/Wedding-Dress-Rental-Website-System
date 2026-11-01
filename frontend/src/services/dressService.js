@@ -643,8 +643,10 @@ export async function getAllDresses(params = {}) {
 }
 
 export function formatCurrencyVND(amount) {
-  if (typeof amount !== 'number') return amount;
-  return new Intl.NumberFormat('vi-VN').format(amount) + '₫';
+  if (amount === undefined || amount === null || amount === '') return '0 ₫';
+  const num = typeof amount === 'number' ? amount : Number(String(amount).replace(/[^0-9]/g, ''));
+  if (isNaN(num)) return '0 ₫';
+  return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' ₫';
 }
 
 
