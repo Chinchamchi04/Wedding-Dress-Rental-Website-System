@@ -15,13 +15,16 @@ import { getAllDresses } from '../../services/dressService';
 import logoEmblemImg from '../../assets/logo_emblem.png';
 import { DRESS_CATALOG } from '../../data/dressCatalog';
 
-// Danh mục Phom Dáng chuẩn Haute Couture
+// Danh mục Phom Dáng chuẩn Haute Couture đồng bộ 8 danh mục hệ thống
 const SILHOUETTE_OPTIONS = [
   { id: 'all', label: 'Tất cả (All)' },
   { id: 'ballgown', label: 'Công Chúa Bồng Xòe (Ballgown)' },
   { id: 'mermaid', label: 'Đuôi Cá Điêu Khắc (Mermaid)' },
   { id: 'a-line', label: 'Chữ A Thanh Lịch (A-line)' },
-  { id: 'sheath', label: 'Satin Suông Tối Giản (Minimal Slip)' },
+  { id: 'silk-gown', label: 'Lụa Satin Tối Giản (Silk Gown)' },
+  { id: 'princess', label: 'Váy Cưới Hoàng Gia (Princess)' },
+  { id: 'traditional', label: 'Áo Dài Cưới Truyền Thống (Traditional)' },
+  { id: 'tuxedo', label: 'Vest Cưới & Tuxedo (Tuxedo)' },
 ];
 
 // Danh mục Chất Liệu Thượng Hạng
@@ -239,8 +242,15 @@ export default function CollectionPage() {
   const filteredProducts = useMemo(() => {
     return catalogItems.filter((dress) => {
       // Lọc phom dáng
-      if (selectedSilhouette !== 'all' && dress.category !== selectedSilhouette) {
-        return false;
+      if (selectedSilhouette !== 'all') {
+        const normCat = (dress.category || dress.silhouette || '').toLowerCase().replace(/\s+/g, '-');
+        const target = selectedSilhouette.toLowerCase().replace(/\s+/g, '-');
+        const isMatch = normCat === target || 
+          (target === 'sheath' && normCat === 'silk-gown') ||
+          (target === 'silk-gown' && normCat === 'sheath');
+        if (!isMatch) {
+          return false;
+        }
       }
 
       // Lọc chất liệu (nếu có chọn)
