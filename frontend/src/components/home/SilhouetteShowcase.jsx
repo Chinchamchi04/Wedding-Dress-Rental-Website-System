@@ -1,6 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import card1Img from '../../assets/card1_elysian.jpg';
+import card2Img from '../../assets/card2_celeste.jpg';
+import card7Img from '../../assets/card7_vivienne.jpg';
+import card3Img from '../../assets/card3_lumiere.jpg';
 
 const silhouettes = [
   {
@@ -9,13 +13,15 @@ const silhouettes = [
     title: 'Công Chúa Hoàng Gia',
     description: 'Lộng lẫy, bồng bềnh với cấu trúc siết eo corsetry tôn vinh tỉ lệ vàng.',
     image: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=85',
+    fallback: card1Img,
   },
   {
     id: 'mermaid',
     count: '14 MẪU ĐỘC BẢN',
     title: 'Đuôi Cá Điêu Khắc',
     description: 'Ôm trọn đường cong quyến rũ với chất liệu ren hoa nổi 3D cao cấp.',
-    image: 'https://images.unsplash.com/photo-1546804784-896d0dca3800?auto=format&fit=crop&w=800&q=85',
+    image: card2Img,
+    fallback: card2Img,
   },
   {
     id: 'a-line',
@@ -23,6 +29,7 @@ const silhouettes = [
     title: 'Chữ A Thanh Lịch',
     description: 'Nhẹ nhàng, bay bổng, hoàn hảo cho tiệc cưới ngoài trời và sảnh tiệc thân mật.',
     image: 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=800&q=85',
+    fallback: card7Img,
   },
   {
     id: 'sheath',
@@ -31,6 +38,7 @@ const silhouettes = [
     title: 'Satin Lụa Tối Giản',
     description: 'Vẻ đẹp đương đại từ lụa tơ tằm nguyên bản, thuần khiết và sang trọng.',
     image: 'https://images.unsplash.com/photo-1532712938310-34cb3982ef74?auto=format&fit=crop&w=800&q=85',
+    fallback: card3Img,
   },
 ];
 
@@ -66,6 +74,11 @@ const SilhouetteShowcase = ({ onSelectSilhouette }) => {
               <img
                 src={item.image}
                 alt={item.title}
+                onError={(e) => {
+                  if (item.fallback && e.currentTarget.src !== item.fallback) {
+                    e.currentTarget.src = item.fallback;
+                  }
+                }}
                 className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
               />
 
@@ -99,7 +112,7 @@ const SilhouetteShowcase = ({ onSelectSilhouette }) => {
                     Khám phá bộ sưu tập
                     <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-white group-hover:w-full transition-all duration-300" />
                   </span>
-                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1.5 transition-transform duration-300" />
+                  <ArrowRight className="w-4 h-4 text-[#FCEEE9] group-hover:text-white group-hover:translate-x-1 transition-all duration-300" />
                 </div>
               </div>
             </div>

@@ -9,13 +9,31 @@ import card7 from '../assets/card7_vivienne.jpg';
 import card8 from '../assets/card8_juliette.jpg';
 import card9 from '../assets/card9_genevieve.jpg';
 
-const localImages = { 1: card1, 2: card2, 3: card3, 4: card4, 5: card5, 6: card6, 7: card7, 8: card8, 9: card9 };
+const localImages = {
+  1: card1,
+  2: card2,
+  3: card3,
+  4: card4,
+  5: card5,
+  6: card6,
+  7: card7,
+  8: card8,
+  9: card9,
+};
 
 export function dressImage(dress) {
-  const raw = dress.image || dress.images?.[0] || '';
-  if (/^https?:\/\//.test(raw) || /^data:image\//.test(raw)) return raw;
-  const card = raw.match(/card(\d+)_dress/)?.[1];
-  return localImages[card] || raw;
+  const raw = typeof dress === 'string' ? dress : (dress?.image || dress?.images?.[0] || '');
+  if (!raw) return card1;
+  if (/^data:image\//.test(raw)) return raw;
+  const card = raw.match(/card(\d+)/i)?.[1];
+  if (card && localImages[card]) return localImages[card];
+  if (/^https?:\/\//.test(raw)) return raw;
+  return localImages[card] || card1;
 }
 
-export const getDressesFromApi = async () => (await axiosClient.get('/dresses')).data.map((dress) => ({ ...dress, id: String(dress._id), image: dressImage(dress) }));
+export const getDressesFromApi = async () =>
+  (await axiosClient.get('/dresses')).data.map((dress) => ({
+    ...dress,
+    id: String(dress._id),
+    image: dressImage(dress),
+  }));

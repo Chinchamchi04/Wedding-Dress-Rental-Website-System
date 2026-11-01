@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Heart } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getAllDresses } from '../../services/dressService';
+import { dressImage } from '../../services/dressApiService';
 import { getWishlistIds, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
 import card1Img from '../../assets/card1_elysian.jpg';
 import card2Img from '../../assets/card2_celeste.jpg';
@@ -124,7 +125,7 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
               : 'Size: S - M',
             price: d.price || d.rentPrice || products[index]?.price,
             depositAmount: d.depositAmount || products[index]?.depositAmount,
-            image: (d.images && d.images[0]) || products[index]?.image || card1Img,
+            image: dressImage(d) || products[index]?.image || card1Img,
           }));
           setItems(mapped);
         }
@@ -157,7 +158,7 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
 
         {/* 4-Column Product Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
-          {items.map((item) => {
+          {items.map((item, index) => {
             const isWishlisted = Boolean(
               Array.isArray(wishlistedIds) &&
               wishlistedIds.some((w) => {
@@ -176,6 +177,12 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
                   <img
                     src={item.image}
                     alt={item.name}
+                    onError={(e) => {
+                      const fallback = products[index]?.image || card1Img;
+                      if (e.currentTarget.src !== fallback) {
+                        e.currentTarget.src = fallback;
+                      }
+                    }}
                     className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 ease-out"
                   />
 
