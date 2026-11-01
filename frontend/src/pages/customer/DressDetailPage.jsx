@@ -9,6 +9,7 @@ import {
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import BookingModal from '../../components/common/BookingModal';
+import { useAuth } from '../../contexts/AuthContext';
 import { getDressById, getRelatedDresses, formatCurrencyVND } from '../../services/dressService';
 import { addToCart } from '../../services/cartService';
 import { isWishlisted as checkWishlisted, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
@@ -110,6 +111,7 @@ const getPaginationItems = (current, total) => {
 export default function DressDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isLoggedIn } = useAuth();
 
   const [dress, setDress] = useState(null);
   const [relatedDresses, setRelatedDresses] = useState([]);
@@ -673,6 +675,7 @@ export default function DressDetailPage() {
               </button>
 
               {/* Row 3: THÊM VÀO GIỎ HÀNG */}
+              {isLoggedIn && (
               <button
                 type="button"
                 onClick={handleOnlineRent}
@@ -681,6 +684,8 @@ export default function DressDetailPage() {
                 <ShoppingBag className="w-4 h-4" strokeWidth={1.8} />
                 THÊM VÀO GIỎ HÀNG
               </button>
+
+              )}
 
               {/* Row 4: TƯ VẤN TRỰC TIẾP VỚI CHUYÊN VIÊN ATELIER */}
               <button

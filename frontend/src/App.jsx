@@ -47,7 +47,7 @@ export default function App() {
               <Route path="/yeu-thich" element={<WishlistPage />} />
               <Route path="/collection" element={<CollectionPage />} />
               <Route path="/bo-suu-tap" element={<CollectionPage />} />
-              <Route path="/cart" element={<CartPage />} />
+              <Route path="/cart" element={<ProtectedRoute allowedRoles={['customer', 'staff', 'admin']}><CartPage /></ProtectedRoute>} />
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/dat-coc" element={<CheckoutPage />} />
               <Route path="/thanh-toan" element={<CheckoutPage />} />

@@ -8,6 +8,7 @@ import {
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import BookingModal from '../../components/common/BookingModal';
+import { useAuth } from '../../contexts/AuthContext';
 import { addToCart } from '../../services/cartService';
 import { getWishlistIds, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
 import { getAllDresses } from '../../services/dressService';
@@ -44,6 +45,7 @@ const ITEMS_PER_PAGE = 9;
 
 export default function CollectionPage() {
   const navigate = useNavigate();
+  const { isLoggedIn } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const gridTopRef = useRef(null);
 
@@ -847,30 +849,45 @@ export default function CollectionPage() {
                               <span className="text-[#7A6B6C]">{dress.depositPolicy}</span>
                             </p>
 
-                            {/* 2 Nút Bấm: Thêm Vào Giỏ & Thuê Ngay */}
-                            <div className="grid grid-cols-2 gap-2.5">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleAddToCart(dress);
-                                }}
-                                className="w-full py-2.5 rounded-[10px] bg-white border border-[#BA7A83] text-[#BA7A83] font-jakarta text-[12.5px] font-semibold tracking-wide hover:bg-[#FFF9F6] transition-all cursor-pointer shadow-xs active:scale-[0.98]"
-                              >
-                                Thêm Vào Giỏ
-                              </button>
+                            {/* Nút Bấm: Thêm Vào Giỏ & Thuê Ngay (Chỉ hiện nút Giỏ Hàng khi đã đăng nhập) */}
+                            {isLoggedIn ? (
+                              <div className="grid grid-cols-2 gap-2.5">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAddToCart(dress);
+                                  }}
+                                  className="w-full py-2.5 rounded-[10px] bg-white border border-[#BA7A83] text-[#BA7A83] font-jakarta text-[12.5px] font-semibold tracking-wide hover:bg-[#FFF9F6] transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                                >
+                                  Thêm Vào Giỏ
+                                </button>
 
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRentNow(dress);
-                                }}
-                                className="w-full py-2.5 rounded-[10px] bg-[#804E55] hover:bg-[#6D3940] text-white font-jakarta text-[12.5px] font-semibold tracking-wide transition-all cursor-pointer border-0 shadow-xs active:scale-[0.98]"
-                              >
-                                Thuê Ngay
-                              </button>
-                            </div>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRentNow(dress);
+                                  }}
+                                  className="w-full py-2.5 rounded-[10px] bg-[#804E55] hover:bg-[#6D3940] text-white font-jakarta text-[12.5px] font-semibold tracking-wide transition-all cursor-pointer border-0 shadow-xs active:scale-[0.98]"
+                                >
+                                  Thuê Ngay
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-1">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRentNow(dress);
+                                  }}
+                                  className="w-full py-2.5 rounded-[10px] bg-[#804E55] hover:bg-[#6D3940] text-white font-jakarta text-[12.5px] font-semibold tracking-wide transition-all cursor-pointer border-0 shadow-xs active:scale-[0.98]"
+                                >
+                                  Thuê Ngay
+                                </button>
+                              </div>
+                            )}
 
                           </div>
                         </div>

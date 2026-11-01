@@ -261,30 +261,32 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
 
         {/* Action Elements Right */}
         <div className="flex items-center gap-2.5 sm:gap-3.5">
-          {/* Shopping Bag with badge */}
-          <Link
-            to="/cart"
-            className={`relative w-[36px] h-[36px] sm:w-[38px] sm:h-[38px] flex items-center justify-center rounded-[12px] transition-all duration-300 cursor-pointer no-underline active:scale-95 ${
-              isCartPage
-                ? 'bg-[#FFF2F0] border border-[#D498A0] text-[#2C2523] shadow-[0_0_14px_rgba(218,142,150,0.55)]'
-                : 'text-[#2C2523] hover:text-[#B8737D] hover:bg-[#FFF5F3] hover:border hover:border-[#D498A0]/50 hover:shadow-[0_0_10px_rgba(218,142,150,0.35)] border border-transparent'
-            }`}
-            style={
-              isCartPage
-                ? {
-                    boxShadow: '0 0 14px rgba(218, 142, 150, 0.55), 0 1px 6px rgba(186, 122, 131, 0.25)',
-                  }
-                : undefined
-            }
-            title="Giỏ thuê váy"
-          >
-            <ShoppingBag className="w-[18px] h-[18px] stroke-[1.8] text-[#2C2523]" />
-            {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-[#B8737D] text-white font-jakarta text-[9.5px] font-bold flex items-center justify-center leading-none shadow-xs">
-                {cartCount}
-              </span>
-            )}
-          </Link>
+          {/* Shopping Bag with badge - Chỉ hiển thị khi đã đăng nhập */}
+          {isLoggedIn && (
+            <Link
+              to="/cart"
+              className={`relative w-[36px] h-[36px] sm:w-[38px] sm:h-[38px] flex items-center justify-center rounded-[12px] transition-all duration-300 cursor-pointer no-underline active:scale-95 ${
+                isCartPage
+                  ? 'bg-[#FFF2F0] border border-[#D498A0] text-[#2C2523] shadow-[0_0_14px_rgba(218,142,150,0.55)]'
+                  : 'text-[#2C2523] hover:text-[#B8737D] hover:bg-[#FFF5F3] hover:border hover:border-[#D498A0]/50 hover:shadow-[0_0_10px_rgba(218,142,150,0.35)] border border-transparent'
+              }`}
+              style={
+                isCartPage
+                  ? {
+                      boxShadow: '0 0 14px rgba(218, 142, 150, 0.55), 0 1px 6px rgba(186, 122, 131, 0.25)',
+                    }
+                  : undefined
+              }
+              title="Giỏ thuê váy"
+            >
+              <ShoppingBag className="w-[18px] h-[18px] stroke-[1.8] text-[#2C2523]" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-[#B8737D] text-white font-jakarta text-[9.5px] font-bold flex items-center justify-center leading-none shadow-xs">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+          )}
 
           {/* Wishlist Heart */}
           <Link

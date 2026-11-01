@@ -158,10 +158,10 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
           {items.map((item) => {
             const isWishlisted = Boolean(
               Array.isArray(wishlistedIds) &&
-                wishlistedIds.some((w) => {
-                  const wId = typeof w === 'object' && w !== null ? w?.id : w;
-                  return String(wId) === String(item.id) || Number(wId) === Number(item.id);
-                })
+              wishlistedIds.some((w) => {
+                const wId = typeof w === 'object' && w !== null ? w?.id : w;
+                return String(wId) === String(item.id) || Number(wId) === Number(item.id);
+              })
             );
             return (
               <div
