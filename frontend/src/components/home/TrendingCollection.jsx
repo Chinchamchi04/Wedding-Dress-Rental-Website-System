@@ -13,12 +13,12 @@ const products = [
     id: 1,
     name: 'Elysian Rose Ballgown',
     badgeMain: 'BALLGOWN VIP',
-    badgeSub: 'Còn Lịch 11/2025',
+    badgeSub: 'Còn Lịch 11/2026',
     rating: '4.9',
     rentCount: '128 lượt thuê',
     size: 'Size: S - M',
-    price: '5.200.000₫',
-    depositAmount: '15.000.000₫',
+    price: 5200000,
+    depositAmount: 15000000,
     image: card1Img,
   },
   {
@@ -29,8 +29,8 @@ const products = [
     rating: '5.0',
     rentCount: '89 lượt thuê',
     size: 'Size: M',
-    price: '6.500.000₫',
-    depositAmount: '18.000.000₫',
+    price: 6500000,
+    depositAmount: 18000000,
     image: card2Img,
   },
   {
@@ -41,38 +41,48 @@ const products = [
     rating: '4.8',
     rentCount: '94 lượt thuê',
     size: 'Size: XS - S',
-    price: '3.800.000₫',
-    depositAmount: '10.000.000₫',
+    price: 3800000,
+    depositAmount: 10000000,
     image: card3Img,
   },
   {
     id: 4,
     name: 'Monet 3D Floral Couture',
-    badgeMain: 'NEW SEASON 2025',
+    badgeMain: 'NEW SEASON 2026',
     badgeSub: 'Hoa Thủ Công 3D',
     rating: '4.9',
     rentCount: '62 lượt thuê',
     size: 'Size: S - M',
-    price: '5.500.000₫',
-    depositAmount: '15.000.000₫',
+    price: 5500000,
+    depositAmount: 15000000,
     image: card4Img,
   },
 ];
 
-const renderPriceWithDong = (priceStr) => {
-  const num = priceStr.replace(/[^0-9.]/g, '');
+const renderPriceWithDong = (priceVal) => {
+  if (priceVal === undefined || priceVal === null) return '5.200.000 ₫';
+  const str =
+    typeof priceVal === 'number'
+      ? new Intl.NumberFormat('vi-VN').format(priceVal)
+      : String(priceVal).replace(/[^0-9.]/g, '');
   return (
     <span>
-      {num}<span className="underline decoration-[2px] underline-offset-[3px] ml-0.5 font-medium">đ</span>
+      {str}
+      <span className="underline decoration-[2px] underline-offset-[3px] ml-0.5 font-medium">₫</span>
     </span>
   );
 };
 
-const renderDepositWithDong = (amountStr) => {
-  const num = amountStr.replace(/[^0-9.]/g, '');
+const renderDepositWithDong = (amountVal) => {
+  if (amountVal === undefined || amountVal === null) return '15.000.000 ₫';
+  const str =
+    typeof amountVal === 'number'
+      ? new Intl.NumberFormat('vi-VN').format(amountVal)
+      : String(amountVal).replace(/[^0-9.]/g, '');
   return (
     <span>
-      {num}<span className="underline decoration-1 underline-offset-1">đ</span>
+      {str}
+      <span className="underline decoration-1 underline-offset-1">₫</span>
     </span>
   );
 };
@@ -96,24 +106,30 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
 
   useEffect(() => {
     let isMounted = true;
-    getAllDresses().then((res) => {
-      if (isMounted && res?.success && res.data?.length > 0) {
-        const mapped = res.data.slice(0, 4).map((d, index) => ({
-          id: d._id || d.id || index + 1,
-          slug: d.slug,
-          name: d.name,
-          badgeMain: d.collectionTag?.split(' ')?.[0] || 'HAUTE COUTURE',
-          badgeSub: d.silhouette ? `Dáng ${d.silhouette}` : 'Có sẵn',
-          rating: String(d.rating || '5.0'),
-          rentCount: `${d.rentCount || 0} lượt thuê`,
-          size: d.sizes?.length ? `Size: ${d.sizes.map((s) => (typeof s === 'string' ? s : s.id)).join(' - ')}` : 'Size: S - M',
-          price: typeof d.price === 'number' ? `${new Intl.NumberFormat('vi-VN').format(d.price)}₫` : d.price,
-          depositAmount: typeof d.depositAmount === 'number' ? `${new Intl.NumberFormat('vi-VN').format(d.depositAmount)}₫` : d.depositAmount,
-          image: d.images?.[0] || products[index]?.image || card1Img,
-        }));
-        setItems(mapped);
-      }
-    });
+    getAllDresses()
+      .then((res) => {
+        if (isMounted && res?.data?.length > 0) {
+          const mapped = res.data.slice(0, 4).map((d, index) => ({
+            id: d.id || d._id || index + 1,
+            slug: d.slug,
+            name: d.name || products[index]?.name,
+            badgeMain: d.collectionTag?.split(' ')?.[0] || products[index]?.badgeMain || 'HAUTE COUTURE',
+            badgeSub: d.silhouette ? `Dáng ${d.silhouette}` : products[index]?.badgeSub || 'Có sẵn',
+            rating: String(d.rating || '4.9'),
+            rentCount: `${d.rentCount || 88} lượt thuê`,
+            size: d.sizes?.length
+              ? `Size: ${d.sizes.map((s) => (typeof s === 'string' ? s : s.id || s.label)).join(' - ')}`
+              : 'Size: S - M',
+            price: d.price || d.rentPrice || products[index]?.price,
+            depositAmount: d.depositAmount || products[index]?.depositAmount,
+            image: (d.images && d.images[0]) || products[index]?.image || card1Img,
+          }));
+          setItems(mapped);
+        }
+      })
+      .catch(() => {
+        // Fallback default products
+      });
 
     return () => {
       isMounted = false;
@@ -127,7 +143,6 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
   return (
     <section id="collection" className="py-16 sm:py-20 bg-[#FAF7F5]">
       <div className="max-w-[1280px] mx-auto px-5 sm:px-8">
-
         {/* Section Header */}
         <div className="max-w-[700px] mb-10 sm:mb-12 text-left">
           <h2 className="font-playfair text-[38px] sm:text-[44px] leading-[1.15] font-normal tracking-tight text-[#221816] mb-3 m-0">
@@ -143,10 +158,10 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
           {items.map((item) => {
             const isWishlisted = Boolean(
               Array.isArray(wishlistedIds) &&
-              wishlistedIds.some((w) => {
-                const wId = typeof w === 'object' && w !== null ? w?.id : w;
-                return String(wId) === String(item.id) || Number(wId) === Number(item.id);
-              })
+                wishlistedIds.some((w) => {
+                  const wId = typeof w === 'object' && w !== null ? w?.id : w;
+                  return String(wId) === String(item.id) || Number(wId) === Number(item.id);
+                })
             );
             return (
               <div
@@ -171,7 +186,7 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
                     </div>
                   )}
 
-                  {/* Right Heart Button (Rounded rectangle squircle matching reference) */}
+                  {/* Right Heart Button */}
                   <button
                     type="button"
                     onClick={(e) => {
@@ -193,7 +208,7 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
                   </button>
                 </div>
 
-                {/* Details Bottom - Compact and hugging button closely at the bottom */}
+                {/* Details Bottom */}
                 <div className="px-5 pt-6 sm:pt-6.5 pb-4 flex flex-col justify-start">
                   <div>
                     {/* Rating & Size Row */}
@@ -217,7 +232,6 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
 
                   {/* Price & Deposit */}
                   <div>
-                    {/* Price & Unit - Large Didone Serif style */}
                     <div className="flex items-baseline gap-1.5 mb-2 flex-nowrap">
                       <span className="font-playfair font-medium text-[33px] sm:text-[35px] leading-none text-[#B26B74] tracking-tight whitespace-nowrap">
                         {renderPriceWithDong(item.price)}
@@ -232,9 +246,7 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
                       <p className="m-0">
                         Tiền cọc bảo lãnh: <strong className="font-bold text-[#231A19]">{renderDepositWithDong(item.depositAmount)}</strong>
                       </p>
-                      <p className="m-0 text-[#6B5C5D]">
-                        (Hoàn tức thì)
-                      </p>
+                      <p className="m-0 text-[#6B5C5D]">(Hoàn cọc tức thì)</p>
                     </div>
 
                     {/* Thuê Ngay Button */}
@@ -254,7 +266,6 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
             );
           })}
         </div>
-
       </div>
     </section>
   );
