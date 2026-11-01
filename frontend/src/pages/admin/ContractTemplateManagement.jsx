@@ -401,52 +401,6 @@ export default function ContractTemplateManagement() {
         </div>
       )}
 
-      {/* Top Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white p-5 rounded-2xl border border-[#EFE5E1] shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] uppercase tracking-wider text-[#9E8E81] font-semibold">Mẫu Tiêu Chuẩn</p>
-            <h3 className="text-2xl font-bold text-[#2C2523] mt-1">05 <span className="text-xs font-normal text-emerald-600">Đang áp dụng</span></h3>
-            <p className="text-[11px] text-[#A39284] mt-1">+1 Bản thảo thử nghiệm</p>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-[#C5A880] flex items-center justify-center border border-[#F4EBE6]">
-            <Layers className="w-6 h-6" />
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-[#EFE5E1] shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] uppercase tracking-wider text-[#9E8E81] font-semibold">Hợp Đồng Ký Theo Mẫu</p>
-            <h3 className="text-2xl font-bold text-[#2C2523] mt-1">358 <span className="text-xs font-normal text-[#C5A880]">Lượt</span></h3>
-            <p className="text-[11px] text-emerald-600 mt-1">Tỷ lệ ký số thành công 98.4%</p>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
-            <FileSignature className="w-6 h-6" />
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-[#EFE5E1] shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] uppercase tracking-wider text-[#9E8E81] font-semibold">Tỷ Lệ Cọc Trung Bình</p>
-            <h3 className="text-2xl font-bold text-[#2C2523] mt-1">100% <span className="text-xs font-normal text-[#9E8E81]">giá thuê</span></h3>
-            <p className="text-[11px] text-[#A39284] mt-1">Bảo chứng tài sản an toàn tuyệt đối</p>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
-            <ShieldCheck className="w-6 h-6" />
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-[#EFE5E1] shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] uppercase tracking-wider text-[#9E8E81] font-semibold">Quy Chuẩn Pháp Lý</p>
-            <h3 className="text-2xl font-bold text-[#2C2523] mt-1">eID 2026</h3>
-            <p className="text-[11px] text-[#A39284] mt-1">Cập nhật Luật Giao dịch điện tử</p>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100">
-            <Scale className="w-6 h-6" />
-          </div>
-        </div>
-      </div>
 
       {/* Tabs navigation */}
       <div className="flex border-b border-[#EAE0D7] mb-6 gap-6">
