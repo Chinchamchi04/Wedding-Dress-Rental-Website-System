@@ -1,32 +1,34 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Archive, BarChart3, CalendarCheck2, FileText, Gem, House, LayoutDashboard,
   LogOut, Menu, Scissors, Sparkles, Tags, UserRoundCog,
-  UsersRound, X,
+  UsersRound, X, Layers,
 } from 'lucide-react';
 import './Dashboard.css';
 import { useAuth } from '../../contexts/AuthContext';
 
-const COMMON_ITEMS = [
-  { label: 'Quản Lý Sản Phẩm', Icon: Scissors },
-  { label: 'Quản Lý Danh Mục', Icon: Tags },
-  { label: 'Quản Lý Đơn Thuê', Icon: CalendarCheck2 },
-  { label: 'Quản Lý Kho Hàng', Icon: Archive },
-  { label: 'Quản Lý Hợp Đồng', Icon: FileText },
-  { label: 'Chăm sóc khách hàng', Icon: UsersRound },
-];
-
 function Sidebar({ role, close, closeButtonRef, activeNav }) {
-  const { logout } = useAuth();
-  const isAdmin = role === 'admin';
-  const items = [
-    { label: 'Tổng Quan', Icon: LayoutDashboard, path: isAdmin ? '/admin/dashboard' : '/staff/dashboard' },
-    ...(isAdmin ? [{ label: 'Quản Lý Tài Khoản', Icon: UserRoundCog }] : []),
-    ...COMMON_ITEMS,
-    ...(isAdmin ? [{ label: 'Báo Cáo Doanh Thu', Icon: BarChart3, path: '/admin/reports/revenue' }] : []),
-  ];
+  const { logout, user } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
+  const isAdmin = role === 'admin' || user?.role === 'admin';
+  const prefix = isAdmin ? '/admin' : '/staff';
+
+  const items = [
+    { label: 'Tổng Quan', Icon: LayoutDashboard, path: `${prefix}/dashboard` },
+    { label: 'Quản Lý Sản Phẩm', Icon: Scissors, path: `${prefix}/kho-hang` },
+    { label: 'Quản Lý Danh Mục', Icon: Tags, path: '/bo-suu-tap' },
+    { label: 'Quản Lý Đơn Thuê', Icon: CalendarCheck2, path: `${prefix}/don-thue` },
+    { label: 'Quản Lý Kho Hàng', Icon: Archive, path: `${prefix}/kho-hang` },
+    { label: 'Quản Lý Hợp Đồng', Icon: FileText, path: `${prefix}/hop-dong` },
+    { label: 'Chăm sóc khách hàng', Icon: UsersRound, path: `${prefix}/cham-soc-khach-hang` },
+    ...(isAdmin ? [
+      { label: 'Mẫu Hợp Đồng', Icon: Layers, path: '/admin/mau-hop-dong' },
+      { label: 'Báo Cáo Doanh Thu', Icon: BarChart3, path: '/admin/reports/revenue' },
+      { label: 'Quản Lý Tài Khoản', Icon: UserRoundCog, path: '/profile' },
+    ] : []),
+  ];
 
   return (
     <aside className="ub-dashboard-sidebar sticky top-0 flex h-screen w-[288px] flex-col bg-[#fff0ec] px-4 pb-4 pt-[18px] max-[1120px]:w-[248px] max-[850px]:w-[288px]" aria-label="Menu quản trị">
@@ -38,15 +40,25 @@ function Sidebar({ role, close, closeButtonRef, activeNav }) {
       </div>
       <nav className="ub-dashboard-nav" aria-label="Điều hướng quản trị">
         <p>MENU QUẢN TRỊ</p>
-        {items.map(({ label, Icon, path }) => label === activeNav ? (
-          <div key={label} className="ub-dashboard-nav-item is-current" aria-current="page"><Icon size={17} strokeWidth={1.9} /><span>{label}</span></div>
-        ) : path ? (
-          <Link key={label} to={path} onClick={close} className="ub-dashboard-nav-item"><Icon size={17} strokeWidth={1.9} /><span>{label}</span></Link>
-        ) : (
-          <button key={label} type="button" className="ub-dashboard-nav-item" disabled title="Chức năng đang phát triển" aria-label={`${label} — đang phát triển`}>
-            <Icon size={17} strokeWidth={1.9} /><span>{label}</span>
-          </button>
-        ))}
+        {items.map(({ label, Icon, path }) => {
+          const isCurrent = label === activeNav || (path && location.pathname === path);
+          return isCurrent ? (
+            <div key={label} className="ub-dashboard-nav-item is-current" aria-current="page">
+              <Icon size={17} strokeWidth={1.9} />
+              <span>{label}</span>
+            </div>
+          ) : path ? (
+            <Link key={label} to={path} onClick={close} className="ub-dashboard-nav-item">
+              <Icon size={17} strokeWidth={1.9} />
+              <span>{label}</span>
+            </Link>
+          ) : (
+            <div key={label} className="ub-dashboard-nav-item">
+              <Icon size={17} strokeWidth={1.9} />
+              <span>{label}</span>
+            </div>
+          );
+        })}
       </nav>
       <div className="ub-dashboard-sidebar-bottom mt-auto">
         <Link to="/" onClick={close}><House size={17} strokeWidth={1.8} /> VỀ TRANG CHỦ</Link>
