@@ -102,14 +102,17 @@ export default function StaffDashboardPage() {
     const values = data?.chart || [];
     const primary = values.map((item) => item.orders || 0);
     const secondary = values.map((item) => item.completed || 0);
-    const max = Math.max(1, ...primary);
+    const rawMax = Math.max(0, ...primary, ...secondary);
+    const max = Math.max(4, Math.ceil(rawMax));
+    const step = Math.ceil(max / 4);
+    const actualMax = step * 4;
     return {
       labels: values.map((item) => item.label),
       primary,
       secondary,
       trend: primary,
-      max,
-      ticks: [0, max / 4, max / 2, max * 0.75, max],
+      max: actualMax,
+      ticks: [0, step, step * 2, step * 3, actualMax],
     };
   }, [data]);
 
