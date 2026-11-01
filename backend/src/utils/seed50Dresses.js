@@ -683,7 +683,7 @@ async function seedDresses() {
         rentCount: Math.floor(Math.random() * 80) + 20,
         isFeatured: index < 8,
         collectionTag: item.collectionTag,
-        rating: 4.8 + Math.round(Math.random() * 2) / 10,
+        rating: Number((4.8 + (index % 3) * 0.1).toFixed(1)),
         reviewCount: Math.floor(Math.random() * 40) + 12,
         description: item.description,
         highlights: [

@@ -803,7 +803,7 @@ export default function CollectionPage() {
                             <div className="flex items-center justify-between text-[11.5px] font-jakarta mb-2.5">
                               <div className="flex items-center gap-1.5 text-[#2C2523]">
                                 <span className="text-[#C68A4C] text-[13px] leading-none">★</span>
-                                <span className="font-bold text-[12px]">{dress.rating || '4.9'}</span>
+                                <span className="font-bold text-[12px]">{Number(dress.rating || 4.9).toFixed(1)}</span>
                                 <span className="text-[#695C4E] font-medium text-[11.5px] ml-0.5">
                                   ({dress.rentCount})
                                 </span>

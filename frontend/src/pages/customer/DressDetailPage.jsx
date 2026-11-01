@@ -464,7 +464,9 @@ export default function DressDetailPage() {
                       <Star key={i} className="w-4 h-4 fill-current" />
                     ))}
                   </div>
-                  <span className="font-bold ml-1 text-[#231A19]">{dress.rating}</span>
+                  <span className="font-bold ml-1 text-[#231A19]">
+                    {Number(dress.rating || 5).toFixed(1)}
+                  </span>
                   <span className="text-[#8A7978]">({dress.rentCount})</span>
                 </div>
                 <div className="text-[#8A7978] tracking-wider text-[12px] font-medium">

@@ -118,7 +118,7 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
             name: d.name || products[index]?.name,
             badgeMain: d.collectionTag?.split(' ')?.[0] || products[index]?.badgeMain || 'HAUTE COUTURE',
             badgeSub: d.silhouette ? `Dáng ${d.silhouette}` : products[index]?.badgeSub || 'Có sẵn',
-            rating: String(d.rating || '4.9'),
+            rating: Number(d.rating || 4.9).toFixed(1),
             rentCount: `${d.rentCount || 88} lượt thuê`,
             size: d.sizes?.length
               ? `Size: ${d.sizes.map((s) => (typeof s === 'string' ? s : s.id || s.label)).join(' - ')}`
@@ -225,7 +225,7 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
                     {/* Rating & Size Row */}
                     <div className="flex items-center justify-between text-[12px] font-jakarta mb-2">
                       <div className="flex items-center gap-1.5 text-[#B26B74]">
-                        <span className="font-bold">★ {item.rating}</span>
+                        <span className="font-bold">★ {Number(item.rating || 4.9).toFixed(1)}</span>
                         <span className="text-[#C69098] font-normal">({item.rentCount})</span>
                       </div>
                       <span className="text-[#231A19] font-semibold tracking-wide text-[12.5px]">
