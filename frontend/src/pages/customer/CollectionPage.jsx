@@ -1,20 +1,21 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search, SlidersHorizontal, Heart,
   Sparkles, Scissors, ShieldCheck, ChevronLeft, ChevronRight,
-  Check, X
+  Check, X, Calendar, LayoutGrid, Grid3X3, Filter
 } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import BookingModal from '../../components/common/BookingModal';
 import { addToCart } from '../../services/cartService';
 import { getWishlistIds, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
+import { getAllDresses } from '../../services/dressService';
 
 import logoEmblemImg from '../../assets/logo_emblem.png';
 import { DRESS_CATALOG } from '../../data/dressCatalog';
 
-// Danh mục Phom Dáng
+// Danh mục Phom Dáng chuẩn Haute Couture
 const SILHOUETTE_OPTIONS = [
   { id: 'all', label: 'Tất cả (All)' },
   { id: 'ballgown', label: 'Công Chúa Bồng Xòe (Ballgown)' },
@@ -23,7 +24,7 @@ const SILHOUETTE_OPTIONS = [
   { id: 'sheath', label: 'Satin Suông Tối Giản (Minimal Slip)' },
 ];
 
-// Danh mục Chất Liệu
+// Danh mục Chất Liệu Thượng Hạng
 const MATERIAL_OPTIONS = [
   'Ren 3D Floral',
   'Lụa Mikado Ý',
@@ -43,23 +44,76 @@ const ITEMS_PER_PAGE = 9;
 
 export default function CollectionPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const gridTopRef = useRef(null);
 
-  // State Bộ lọc
-  const [selectedSilhouette, setSelectedSilhouette] = useState('all');
+  // State Bộ lọc từ URL hoặc mặc định
+  const urlCategory = searchParams.get('category') || searchParams.get('silhouette') || 'all';
+  const urlQuery = searchParams.get('q') || searchParams.get('search') || '';
+  const urlPrice = searchParams.get('price');
+
+  const [selectedSilhouette, setSelectedSilhouette] = useState(urlCategory);
   const [selectedMaterials, setSelectedMaterials] = useState([]);
-  const [selectedPriceRanges, setSelectedPriceRanges] = useState(['5-10']); // Giữ checked visual 5 - 10 triệu như Figma
-  const [isFilterApplied, setIsFilterApplied] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [appliedSearch, setAppliedSearch] = useState('');
+  const [selectedPriceRanges, setSelectedPriceRanges] = useState(urlPrice ? [urlPrice] : []);
+  const [isFilterApplied, setIsFilterApplied] = useState(Boolean(urlPrice || (urlCategory && urlCategory !== 'all')));
+  const [searchQuery, setSearchQuery] = useState(urlQuery);
+  const [appliedSearch, setAppliedSearch] = useState(urlQuery);
   const [sortBy, setSortBy] = useState('popular');
   const [currentPage, setCurrentPage] = useState(1);
+  const [gridCols, setGridCols] = useState(3); // 2 or 3 columns
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   // State tương tác: Giỏ hàng, Wishlist, Modal Thuê Váy, Toast Thông Báo
   const [wishlistIds, setWishlistIds] = useState(() => getWishlistIds());
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Danh mục sản phẩm (kết hợp dữ liệu chuẩn Figma 72 mẫu + backend API nếu có)
+  const [catalogItems, setCatalogItems] = useState(DRESS_CATALOG);
+
+  useEffect(() => {
+    let active = true;
+    getAllDresses()
+      .then((res) => {
+        if (!active) return;
+        const apiDresses = res?.data;
+        if (Array.isArray(apiDresses) && apiDresses.length > 0) {
+          // Kết nối backend nếu có dữ liệu mới
+          const merged = [...DRESS_CATALOG];
+          apiDresses.forEach((d) => {
+            const foundIndex = merged.findIndex((m) => String(m.id) === String(d.id || d._id));
+            if (foundIndex >= 0) {
+              merged[foundIndex] = {
+                ...merged[foundIndex],
+                name: d.name || merged[foundIndex].name,
+                priceNumber: d.price || d.rentPrice || merged[foundIndex].priceNumber,
+                status: d.status || merged[foundIndex].status,
+              };
+            }
+          });
+          setCatalogItems(merged);
+        }
+      })
+      .catch(() => {
+        // Fallback giữ nguyên 72 mẫu thiết kế độc bản
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Đồng bộ URL params khi user truy cập link có params
+  useEffect(() => {
+    if (urlCategory && urlCategory !== selectedSilhouette) {
+      setSelectedSilhouette(urlCategory);
+    }
+    if (urlQuery && urlQuery !== appliedSearch) {
+      setSearchQuery(urlQuery);
+      setAppliedSearch(urlQuery);
+    }
+  }, [urlCategory, urlQuery]);
 
   // Đồng bộ Wishlist thời gian thực với toàn bộ hệ thống
   useEffect(() => {
@@ -85,7 +139,7 @@ export default function CollectionPage() {
     const result = toggleWishlist(id);
     showToast(
       result.isAdded
-        ? 'Đã thêm váy vào danh sách yêu thích ♥'
+        ? 'Đã thêm váy vào danh sách yêu thích'
         : 'Đã xóa váy khỏi danh sách yêu thích'
     );
   };
@@ -102,6 +156,12 @@ export default function CollectionPage() {
     navigate(`/checkout?dressId=${dress.id}`);
   };
 
+  // Đặt Lịch Thử Váy Riêng Tư
+  const handleOpenFitting = (dress) => {
+    setSelectedProduct(dress);
+    setIsBookingOpen(true);
+  };
+
   // Xóa toàn bộ bộ lọc
   const handleClearFilters = () => {
     setSelectedSilhouette('all');
@@ -111,7 +171,30 @@ export default function CollectionPage() {
     setSearchQuery('');
     setAppliedSearch('');
     setCurrentPage(1);
+    setSearchParams({});
     showToast('Đã xóa tất cả bộ lọc');
+  };
+
+  // Xóa từng bộ lọc đơn lẻ
+  const handleRemoveSilhouette = () => {
+    setSelectedSilhouette('all');
+    setCurrentPage(1);
+  };
+
+  const handleRemoveMaterial = (mat) => {
+    setSelectedMaterials((prev) => prev.filter((m) => m !== mat));
+    setCurrentPage(1);
+  };
+
+  const handleRemovePrice = (priceId) => {
+    setSelectedPriceRanges((prev) => prev.filter((p) => p !== priceId));
+    setCurrentPage(1);
+  };
+
+  const handleRemoveSearch = () => {
+    setSearchQuery('');
+    setAppliedSearch('');
+    setCurrentPage(1);
   };
 
   // Chuyển trang & cuộn mượt lên đầu lưới sản phẩm
@@ -150,7 +233,7 @@ export default function CollectionPage() {
 
   // Lọc và Sắp xếp danh sách
   const filteredProducts = useMemo(() => {
-    return DRESS_CATALOG.filter((dress) => {
+    return catalogItems.filter((dress) => {
       // Lọc phom dáng
       if (selectedSilhouette !== 'all' && dress.category !== selectedSilhouette) {
         return false;
@@ -169,10 +252,10 @@ export default function CollectionPage() {
       // Lọc từ khóa tìm kiếm
       if (appliedSearch) {
         const query = appliedSearch.toLowerCase();
-        const matchName = dress.name.toLowerCase().includes(query);
-        const matchCategory = dress.categoryName.toLowerCase().includes(query);
-        const matchMaterial = dress.material.toLowerCase().includes(query);
-        const matchBadge = dress.badgeMain.toLowerCase().includes(query) || (dress.badgeSub && dress.badgeSub.toLowerCase().includes(query));
+        const matchName = dress.name?.toLowerCase().includes(query);
+        const matchCategory = dress.categoryName?.toLowerCase().includes(query);
+        const matchMaterial = dress.material?.toLowerCase().includes(query);
+        const matchBadge = dress.badgeMain?.toLowerCase().includes(query) || (dress.badgeSub && dress.badgeSub.toLowerCase().includes(query));
 
         if (!matchName && !matchCategory && !matchMaterial && !matchBadge) {
           return false;
@@ -181,12 +264,12 @@ export default function CollectionPage() {
 
       return true;
     }).sort((a, b) => {
-      if (sortBy === 'price-asc') return a.priceNumber - b.priceNumber;
-      if (sortBy === 'price-desc') return b.priceNumber - a.priceNumber;
-      if (sortBy === 'rating') return parseFloat(b.rating) - parseFloat(a.rating);
+      if (sortBy === 'price-asc') return (a.priceNumber || 0) - (b.priceNumber || 0);
+      if (sortBy === 'price-desc') return (b.priceNumber || 0) - (a.priceNumber || 0);
+      if (sortBy === 'rating') return parseFloat(b.rating || 4.9) - parseFloat(a.rating || 4.9);
       return 0; // popular / default
     });
-  }, [selectedSilhouette, selectedMaterials, selectedPriceRanges, isFilterApplied, appliedSearch, sortBy]);
+  }, [catalogItems, selectedSilhouette, selectedMaterials, selectedPriceRanges, isFilterApplied, appliedSearch, sortBy]);
 
   // Tổng số trang
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
@@ -197,13 +280,14 @@ export default function CollectionPage() {
     return filteredProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredProducts, currentPage]);
 
+  // Số lượng bộ lọc đang hoạt động
+  const activeFiltersCount = (selectedSilhouette !== 'all' ? 1 : 0) + selectedMaterials.length + (isFilterApplied ? selectedPriceRanges.length : 0) + (appliedSearch ? 1 : 0);
+
   return (
     <div className="relative min-h-screen bg-[#FDFBF7] text-[#2C2523] flex flex-col font-jakarta selection:bg-[#FCEEE9] selection:text-[#B8737D]">
 
       {/* 1. Header Navigation */}
-      <Header
-        onOpenBooking={() => setIsBookingOpen(true)}
-      />
+      <Header onOpenBooking={() => setIsBookingOpen(true)} />
 
       {/* Toast Notification */}
       {toastMessage && (
@@ -242,7 +326,7 @@ export default function CollectionPage() {
 
             {/* Subtext 2 lines */}
             <p className="font-jakarta text-[13.5px] sm:text-[14.5px] leading-[22px] text-[#514344] max-w-[760px] mx-auto mb-6">
-              Hòa quyện giữa kĩ thuật corsetry siết eo quý tộc và chất liệu lụa Mikado tơ tằm thượng hạng Ý & Pháp.
+              Hòa quyện giữa kỹ thuật corsetry siết eo quý tộc và chất liệu lụa Mikado tơ tằm thượng hạng Ý & Pháp.
               <br className="hidden sm:inline" />
               Mỗi thiết kế là một độc bản tôn vinh trọn vẹn đường nét thuần khiết, rạng ngời của nàng dâu trong ngày trọng đại nhất cuộc đời.
             </p>
@@ -270,7 +354,7 @@ export default function CollectionPage() {
         <div className="max-w-[1280px] mx-auto px-6 sm:px-8 mt-6">
 
           {/* SEARCH BAR */}
-          <div className="mb-8">
+          <div className="mb-6">
             <form
               onSubmit={handleSearchSubmit}
               className="w-full bg-white rounded-2xl border border-[#E6DAC8] shadow-[0px_4px_20px_rgba(201,138,144,0.08)] p-2 sm:p-2.5 flex items-center gap-3 transition-all focus-within:border-[#B8737D] focus-within:shadow-[0px_4px_24px_rgba(201,138,144,0.16)]"
@@ -283,7 +367,7 @@ export default function CollectionPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Tìm kiếm theo tên thiết kế, phom dáng, chất liệu..."
+                placeholder="Tìm kiếm theo tên thiết kế, phom dáng, chất liệu ren/lụa..."
                 className="flex-1 bg-transparent border-0 outline-none font-jakarta text-[13.5px] sm:text-[14px] text-[#2C2523] placeholder:text-[#847374]/70 py-1"
               />
 
@@ -310,12 +394,106 @@ export default function CollectionPage() {
             </form>
           </div>
 
+          {/* ACTIVE FILTER CHIPS (Hiển thị các bộ lọc đang kích hoạt) */}
+          {activeFiltersCount > 0 && (
+            <div className="mb-6 flex flex-wrap items-center gap-2 p-3 rounded-xl bg-[#FFF9F6] border border-[#EEDECF]/80">
+              <span className="text-[12px] font-semibold text-[#847374] flex items-center gap-1.5 mr-1">
+                <Filter className="w-3.5 h-3.5 text-[#B8737D]" />
+                Đang lọc:
+              </span>
+
+              {selectedSilhouette !== 'all' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E6DAC8] text-[11.5px] font-medium text-[#2C2523] shadow-xs">
+                  Phom dáng: {SILHOUETTE_OPTIONS.find((s) => s.id === selectedSilhouette)?.label.split('(')[0]}
+                  <button
+                    type="button"
+                    onClick={handleRemoveSilhouette}
+                    className="text-[#847374] hover:text-[#B8737D] cursor-pointer bg-transparent border-0 p-0"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+
+              {selectedMaterials.map((mat) => (
+                <span
+                  key={mat}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E6DAC8] text-[11.5px] font-medium text-[#2C2523] shadow-xs"
+                >
+                  {mat}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveMaterial(mat)}
+                    className="text-[#847374] hover:text-[#B8737D] cursor-pointer bg-transparent border-0 p-0"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+
+              {isFilterApplied && selectedPriceRanges.map((priceId) => {
+                const opt = PRICE_RANGE_OPTIONS.find((p) => p.id === priceId);
+                return (
+                  <span
+                    key={priceId}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E6DAC8] text-[11.5px] font-medium text-[#2C2523] shadow-xs"
+                  >
+                    Giá: {opt?.label}
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePrice(priceId)}
+                      className="text-[#847374] hover:text-[#B8737D] cursor-pointer bg-transparent border-0 p-0"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                );
+              })}
+
+              {appliedSearch && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E6DAC8] text-[11.5px] font-medium text-[#2C2523] shadow-xs">
+                  Từ khóa: &quot;{appliedSearch}&quot;
+                  <button
+                    type="button"
+                    onClick={handleRemoveSearch}
+                    className="text-[#847374] hover:text-[#B8737D] cursor-pointer bg-transparent border-0 p-0"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="text-[11.5px] text-[#B8737D] hover:underline font-semibold ml-auto cursor-pointer bg-transparent border-0 p-1"
+              >
+                Xóa tất cả
+              </button>
+            </div>
+          )}
+
+          {/* MOBILE FILTER TOGGLE BUTTON (< lg) */}
+          <div className="lg:hidden mb-4 flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => setIsMobileFilterOpen(!isMobileFilterOpen)}
+              className="flex-1 py-2.5 px-4 rounded-xl bg-white border border-[#EEDECF] flex items-center justify-center gap-2 text-[13px] font-medium text-[#2C2523] shadow-xs"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-[#B8737D]" />
+              <span>{isMobileFilterOpen ? 'Đóng bộ lọc' : `Bộ lọc tuyển chọn ${activeFiltersCount > 0 ? `(${activeFiltersCount})` : ''}`}</span>
+            </button>
+          </div>
+
           {/* LAYOUT 2 CỘT: SIDEBAR BỘ LỌC + GRID SẢN PHẨM */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
             {/* SIDEBAR BỘ LỌC TUYỂN CHỌN */}
-            <aside className="lg:col-span-4 xl:col-span-3 bg-white rounded-[28px] border border-[#EEDECF] p-6 shadow-[0px_4px_24px_rgba(201,138,144,0.08)] sticky top-24">
-
+            <aside
+              className={`lg:col-span-4 xl:col-span-3 bg-white rounded-[28px] border border-[#EEDECF] p-6 shadow-[0px_4px_24px_rgba(201,138,144,0.08)] lg:sticky lg:top-24 ${
+                isMobileFilterOpen ? 'block mb-6' : 'hidden lg:block'
+              }`}
+            >
               {/* Header Sidebar */}
               <div className="flex items-center justify-between pb-4 border-b border-[#E6DAC8]/60 mb-6">
                 <div className="flex items-center gap-2">
@@ -326,7 +504,7 @@ export default function CollectionPage() {
                     Bộ Lọc Tuyển Chọn
                   </h2>
                 </div>
-                {(selectedSilhouette !== 'all' || selectedMaterials.length > 0 || isFilterApplied) && (
+                {activeFiltersCount > 0 && (
                   <button
                     type="button"
                     onClick={handleClearFilters}
@@ -452,6 +630,7 @@ export default function CollectionPage() {
                 onClick={() => {
                   setIsFilterApplied(true);
                   setCurrentPage(1);
+                  setIsMobileFilterOpen(false);
                   showToast(`Đã áp dụng bộ lọc: Tìm thấy ${filteredProducts.length} kết quả`);
                 }}
                 className="w-full py-3 rounded-[14px] bg-[#BA7A83] hover:bg-[#a86a73] text-white font-jakarta text-[12.5px] font-semibold tracking-[0.8px] uppercase flex items-center justify-center gap-2 transition-all shadow-[0px_4px_16px_rgba(186,122,131,0.25)] border-0 cursor-pointer active:scale-[0.98]"
@@ -461,40 +640,66 @@ export default function CollectionPage() {
                 </div>
                 <span>Áp Dụng Bộ Lọc</span>
               </button>
-
             </aside>
 
             {/* CỘT CHÍNH: LƯỚI SẢN PHẨM & THANH SẮP XẾP */}
             <div ref={gridTopRef} className="lg:col-span-8 xl:col-span-9 flex flex-col scroll-mt-6">
 
-              {/* TOP BAR: SỐ LƯỢNG + SORT SELECT */}
+              {/* TOP BAR: SỐ LƯỢNG + VIEW SWITCHER + SORT SELECT */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-6 border-b border-[#E6DAC8]/60">
                 <div className="font-jakarta text-[13px] text-[#514344]">
-                  Đang hiển thị: <strong className="text-[#2C2523] font-bold text-[14px]">{paginatedProducts.length}</strong> / {isFilterApplied || appliedSearch ? filteredProducts.length : 48} thiết kế lộng lẫy
+                  Đang hiển thị: <strong className="text-[#2C2523] font-bold text-[14px]">{paginatedProducts.length}</strong> / {filteredProducts.length} thiết kế lộng lẫy
                 </div>
 
-                <div className="flex items-center gap-2 self-end sm:self-auto">
-                  <span className="font-jakarta text-[12.5px] text-[#847374]">
-                    Sắp xếp:
-                  </span>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => {
-                      setSortBy(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="px-3 py-1.5 rounded-lg border border-[#E6DAC8] bg-white text-[#2C2523] font-jakarta text-[12.5px] focus:outline-none focus:border-[#B8737D] cursor-pointer shadow-xs"
-                  >
-                    <option value="popular">Phổ biến nhất</option>
-                    <option value="newest">Mới nhất 2026</option>
-                    <option value="price-asc">Giá: Thấp đến cao</option>
-                    <option value="price-desc">Giá: Cao đến thấp</option>
-                    <option value="rating">Đánh giá cao nhất</option>
-                  </select>
+                <div className="flex items-center gap-3 self-end sm:self-auto">
+                  {/* Grid View Mode Toggle */}
+                  <div className="hidden sm:flex items-center gap-1 border border-[#E6DAC8] bg-white p-1 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => setGridCols(2)}
+                      className={`p-1.5 rounded transition-all cursor-pointer border-0 ${
+                        gridCols === 2 ? 'bg-[#FAF0EC] text-[#B8737D]' : 'bg-transparent text-[#847374] hover:text-[#2C2523]'
+                      }`}
+                      title="Xem ảnh lớn (2 cột)"
+                    >
+                      <LayoutGrid className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGridCols(3)}
+                      className={`p-1.5 rounded transition-all cursor-pointer border-0 ${
+                        gridCols === 3 ? 'bg-[#FAF0EC] text-[#B8737D]' : 'bg-transparent text-[#847374] hover:text-[#2C2523]'
+                      }`}
+                      title="Xem lưới chuẩn (3 cột)"
+                    >
+                      <Grid3X3 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Sort Dropdown */}
+                  <div className="flex items-center gap-2">
+                    <span className="font-jakarta text-[12.5px] text-[#847374]">
+                      Sắp xếp:
+                    </span>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => {
+                        setSortBy(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="px-3 py-1.5 rounded-lg border border-[#E6DAC8] bg-white text-[#2C2523] font-jakarta text-[12.5px] focus:outline-none focus:border-[#B8737D] cursor-pointer shadow-xs"
+                    >
+                      <option value="popular">Phổ biến nhất</option>
+                      <option value="newest">Mới nhất 2026</option>
+                      <option value="price-asc">Giá: Thấp đến cao</option>
+                      <option value="price-desc">Giá: Cao đến thấp</option>
+                      <option value="rating">Đánh giá cao nhất</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              {/* GRID 3 CỘT SẢN PHẨM VÁY CƯỚI (3x3 = 9 card) */}
+              {/* GRID SẢN PHẨM VÁY CƯỚI */}
               {paginatedProducts.length === 0 ? (
                 <div className="bg-white rounded-2xl border border-[#E6DAC8] p-12 text-center my-6">
                   <div className="w-16 h-16 rounded-full bg-[#FFF7F5] flex items-center justify-center text-[#B8737D] mx-auto mb-4">
@@ -515,7 +720,7 @@ export default function CollectionPage() {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div className={`grid grid-cols-1 ${gridCols === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-2 xl:grid-cols-3'} gap-6`}>
                   {paginatedProducts.map((dress) => {
                     const isWishlisted = Boolean(
                       Array.isArray(wishlistIds) &&
@@ -528,7 +733,7 @@ export default function CollectionPage() {
                         onClick={() => navigate(`/dresses/${dress.id}`)}
                         className="bg-white border border-[#EEDECF] rounded-[24px] overflow-hidden shadow-[0px_4px_20px_rgba(201,138,144,0.06)] hover:shadow-[0px_12px_32px_rgba(184,115,125,0.14)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group cursor-pointer"
                       >
-                        {/* Hình Ảnh & Badges */}
+                        {/* Hình ảnh & Badges */}
                         <div className="relative w-full h-[380px] bg-[#FCEEE9] overflow-hidden rounded-t-[23px]">
                           <img
                             src={dress.image}
@@ -548,7 +753,7 @@ export default function CollectionPage() {
                             )}
                           </div>
 
-                          {/* Right Heart Wishlist Button - Hình vuông bo góc 8px (squircle) */}
+                          {/* Right Heart Wishlist Button */}
                           <button
                             type="button"
                             onClick={(e) => {
@@ -566,7 +771,22 @@ export default function CollectionPage() {
                             />
                           </button>
 
-                          {/* Logo UniBridal cắt phông (transparent watermark) ở góc ảnh */}
+                          {/* Quick Fitting Button on Hover */}
+                          <div className="absolute inset-x-4 bottom-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenFitting(dress);
+                              }}
+                              className="px-4 py-2 rounded-xl bg-white/95 hover:bg-white text-[#733F49] font-jakarta text-[12px] font-bold tracking-wide shadow-lg border border-[#EEDECF] flex items-center gap-1.5 cursor-pointer backdrop-blur-sm transition-all"
+                            >
+                              <Calendar className="w-3.5 h-3.5 text-[#B8737D]" />
+                              <span>Đặt lịch thử tại Showroom</span>
+                            </button>
+                          </div>
+
+                          {/* Logo UniBridal cộp phóng watermark ở góc ảnh */}
                           <div
                             className="absolute bottom-3 right-3.5 z-10 pointer-events-none select-none transition-transform duration-300 group-hover:scale-110"
                             title="UniBridal Haute Couture"
@@ -586,7 +806,7 @@ export default function CollectionPage() {
                             <div className="flex items-center justify-between text-[11.5px] font-jakarta mb-2.5">
                               <div className="flex items-center gap-1.5 text-[#2C2523]">
                                 <span className="text-[#C68A4C] text-[13px] leading-none">★</span>
-                                <span className="font-bold text-[12px]">{dress.rating}</span>
+                                <span className="font-bold text-[12px]">{dress.rating || '4.9'}</span>
                                 <span className="text-[#695C4E] font-medium text-[11.5px] ml-0.5">
                                   ({dress.rentCount})
                                 </span>
@@ -661,7 +881,7 @@ export default function CollectionPage() {
                 </div>
               )}
 
-              {/* PHÂN TRANG (PAGINATION) - Đúng Figma 100% */}
+              {/* PHÂN TRANG (PAGINATION) */}
               {totalPages > 1 && (
                 <div className="mt-12 flex items-center justify-center gap-1.5 sm:gap-2">
                   {/* Nút Trước (<) */}
@@ -722,7 +942,7 @@ export default function CollectionPage() {
                     </button>
                   )}
 
-                  {/* Dynamic Pages giữa (nếu đang ở trang 4, 5, 6, 7) */}
+                  {/* Dynamic Pages ở giữa */}
                   {currentPage > 3 && currentPage < totalPages && (
                     <>
                       {currentPage > 4 && (
@@ -747,7 +967,7 @@ export default function CollectionPage() {
                     <span className="px-1 text-[#847374] font-jakarta text-[13px]">...</span>
                   )}
 
-                  {/* Nút Trang cuối (Trang 8) */}
+                  {/* Nút Trang cuối */}
                   {totalPages > 3 && (
                     <button
                       type="button"
