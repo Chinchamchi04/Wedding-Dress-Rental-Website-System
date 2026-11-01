@@ -2,6 +2,48 @@ import axiosClient from '../api/axiosClient';
 import elysianImage from '../assets/card1_elysian.jpg';
 import auroraImage from '../assets/card3_lumiere.jpg';
 import { formatCurrencyVND } from '../utils/formatCurrency';
+import { dressImage } from './dressApiService';
+
+const STATUS = {
+  pending_payment: ['active', 'Chờ thanh toán cọc'],
+  deposit_paid: ['active', 'Đã đặt cọc'],
+  preparing: ['active', 'Đang chuẩn bị bàn giao'],
+  delivered: ['active', 'Đã bàn giao'],
+  renting: ['active', 'Đang thuê'],
+  returned: ['active', 'Đã trả váy'],
+  completed: ['complete', 'Hoàn tất'],
+  cancelled: ['cancelled', 'Đã hủy'],
+};
+
+const fmtDate = (date) => (date ? new Date(date).toLocaleDateString('vi-VN') : '—');
+export const formatVnd = (value) => formatCurrencyVND(value);
+
+export function mapOrder(order) {
+  if (!order) return null;
+  const item = order.items?.[0] || {};
+  const [status, statusLabel] = STATUS[order.status] || ['active', order.statusLabel || order.status || 'Đang xử lý'];
+  return {
+    id: order.orderCode || order.id || order._id,
+    _id: order._id || order.id,
+    orderCode: order.orderCode || order.id,
+    status,
+    statusLabel,
+    rawStatus: order.status,
+    date: fmtDate(order.rentalStartDate || order.createdAt || order.date),
+    dress: item.name || order.dress || 'Lễ phục',
+    image: order.image || (item.dressId ? dressImage(item.dressId) : elysianImage),
+    imageAlt: order.imageAlt || item.name || 'Lễ phục',
+    category: item.dressId?.silhouette || order.category || 'Haute Couture',
+    size: item.size || order.size || '—',
+    style: order.style || 'Theo đơn hàng',
+    amount: order.totalRentPrice || order.amount || 0,
+    deposit: order.totalDeposit || order.deposit || 0,
+    rentalDates: order.rentalDates || `${fmtDate(order.rentalStartDate)} – ${fmtDate(order.rentalEndDate)}`,
+    fitting: order.fitting || 'Liên hệ showroom để xác nhận',
+    shippingAddress: order.shippingAddress,
+    items: order.items || [],
+  };
+}
 
 // Dữ liệu mẫu dự phòng khi Backend chưa khởi chạy
 const DEMO_ORDERS = [
@@ -49,33 +91,56 @@ const DEMO_ORDERS = [
  */
 export async function getOrders(params = {}) {
   try {
-    return await axiosClient.get('/orders', { params });
+    const res = await axiosClient.get('/orders/my', { params });
+    const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+    if (list.length > 0) {
+      return list.map(mapOrder);
+    }
   } catch (error) {
-    const cached = localStorage.getItem('unibridal-orders');
-    return {
-      success: true,
-      data: cached ? JSON.parse(cached) : DEMO_ORDERS,
-    };
+    // Không ném lỗi nếu là lỗi xác thực hoặc kết nối - fallback
   }
+
+  try {
+    const res = await axiosClient.get('/orders', { params });
+    const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+    if (list.length > 0) {
+      return list.map(mapOrder);
+    }
+  } catch (error) {
+    // Tiếp tục fallback
+  }
+
+  const cached = localStorage.getItem('unibridal-orders');
+  return (cached ? JSON.parse(cached) : DEMO_ORDERS).map(mapOrder);
 }
 
 /**
  * Lấy chi tiết đơn thuê theo ID hoặc OrderCode
  * @param {string} idOrCode
  */
-export async function getOrderById(idOrCode) {
+export async function getOrder(idOrCode) {
   try {
-    return await axiosClient.get(`/orders/${idOrCode}`);
+    const res = await axiosClient.get(`/orders/my/${encodeURIComponent(idOrCode)}`);
+    if (res?.data) return mapOrder(res.data);
   } catch (error) {
-    const cached = JSON.parse(localStorage.getItem('unibridal-orders') || '[]');
-    const all = [...cached, ...DEMO_ORDERS];
-    const found = all.find((o) => o.id === idOrCode || o._id === idOrCode || o.orderCode === idOrCode);
-    return {
-      success: !!found,
-      data: found || DEMO_ORDERS[0],
-    };
+    // Thử endpoint chung
   }
+
+  try {
+    const res = await axiosClient.get(`/orders/${encodeURIComponent(idOrCode)}`);
+    const raw = res?.data?.data || res?.data;
+    if (raw) return mapOrder(raw);
+  } catch (error) {
+    // Fallback demo
+  }
+
+  const cached = JSON.parse(localStorage.getItem('unibridal-orders') || '[]');
+  const all = [...cached, ...DEMO_ORDERS];
+  const found = all.find((o) => o.id === idOrCode || o._id === idOrCode || o.orderCode === idOrCode);
+  return mapOrder(found || DEMO_ORDERS[0]);
 }
+
+export const getOrderById = getOrder;
 
 /**
  * Tạo mới đơn thuê váy từ giỏ hàng
@@ -147,15 +212,11 @@ export async function getDressBookedDates(dressId) {
   }
 }
 
-// Giữ lại các hàm cũ để tương thích hoàn toàn với các component đang gọi
 export function getDemoOrders() {
-  return DEMO_ORDERS;
+  return DEMO_ORDERS.map(mapOrder);
 }
 
 export function getDemoOrder(id) {
-  return DEMO_ORDERS.find((order) => order.id === id);
-}
-
-export function formatVnd(value) {
-  return formatCurrencyVND(value);
+  const item = DEMO_ORDERS.find((order) => order.id === id);
+  return mapOrder(item);
 }

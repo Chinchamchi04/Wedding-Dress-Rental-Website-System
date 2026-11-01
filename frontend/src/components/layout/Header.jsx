@@ -11,7 +11,7 @@ import ChatWidget from '../common/ChatWidget';
 const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCount: propWishlistCount }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isLoggedIn, logout, isAdmin, isStaff } = useAuth();
+  const { user, isLoggedIn, logout, isAdmin, isStaff, role } = useAuth();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -79,7 +79,7 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
     },
   ];
 
-  const userAccountItems = [
+  const accountLinks = [
     {
       title: 'Trang cá nhân',
       subtitle: 'Quản lý thông tin và hồ sơ',
@@ -112,12 +112,31 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
       subtitle: 'Bảo mật tài khoản',
       href: '/profile/password',
     },
+  ];
+
+  const guestLinks = [
     {
-      title: 'Đăng xuất',
-      subtitle: 'Thoát phiên đăng nhập hiện tại',
-      isLogout: true,
+      title: 'Đăng nhập',
+      subtitle: 'Đăng nhập tài khoản thành viên',
+      href: '/login',
+    },
+    {
+      title: 'Đăng ký thành viên',
+      subtitle: 'Tạo tài khoản UniBridal mới',
+      href: '/register',
     },
   ];
+
+  const userAccountItems = isLoggedIn
+    ? [
+        ...accountLinks,
+        {
+          title: 'Đăng xuất',
+          subtitle: 'Thoát phiên đăng nhập hiện tại',
+          isLogout: true,
+        },
+      ]
+    : guestLinks;
 
   // Điều hướng thông minh: Nếu đang ở trang chủ thì cuộn mượt mà; nếu đang ở trang khác thì chuyển về trang chủ + hash
   const handleNavClick = (hash = '') => {

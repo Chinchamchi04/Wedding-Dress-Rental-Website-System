@@ -1,66 +1,121 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getMe, logout as serviceLogout } from '../services/authService';
+import { getProfile } from '../services/profileService';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
+const AUTH_USER_KEY = 'unibridal.authUser';
 
 export function AuthProvider({ children }) {
+  const [token, setToken] = useState(() => {
+    return localStorage.getItem('token') || sessionStorage.getItem('token') || localStorage.getItem('accessToken') || null;
+  });
+
   const [user, setUser] = useState(() => {
     try {
-      const saved = localStorage.getItem('user');
+      const saved = localStorage.getItem('user') || localStorage.getItem(AUTH_USER_KEY) || sessionStorage.getItem(AUTH_USER_KEY);
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
     }
   });
 
-  const [token, setToken] = useState(() => {
-    return localStorage.getItem('token') || localStorage.getItem('accessToken') || null;
-  });
-
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Đồng bộ thông tin người dùng từ backend khi mở app
-  useEffect(() => {
-    const syncUser = async () => {
-      if (token) {
-        try {
-          const res = await getMe();
-          if (res?.data) {
-            setUser(res.data);
-            localStorage.setItem('user', JSON.stringify(res.data));
-          }
-        } catch (err) {
-          // Nếu token không hợp lệ (401), đăng xuất an toàn
-          if (err.status === 401) {
-            logout();
-          }
-        }
-      }
-      setIsLoading(false);
-    };
-
-    syncUser();
-  }, [token]);
-
-  const login = (userData, authToken) => {
-    if (authToken) {
-      localStorage.setItem('token', authToken);
-      setToken(authToken);
-    }
-    if (userData) {
-      localStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
-    }
-  };
+  const [isLoading, setIsLoading] = useState(!!token);
 
   const logout = () => {
     serviceLogout();
-    setUser(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('user');
+    localStorage.removeItem(AUTH_USER_KEY);
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem(AUTH_USER_KEY);
     setToken(null);
+    setUser(null);
+    setIsLoading(false);
+  };
+
+  // Đồng bộ thông tin người dùng từ backend khi mở app
+  useEffect(() => {
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
+
+    let active = true;
+
+    const syncUser = async () => {
+      try {
+        let profileData = null;
+        try {
+          const res = await getMe();
+          if (res?.data) profileData = res.data;
+        } catch {
+          // Fallback to getProfile()
+          try {
+            profileData = await getProfile();
+          } catch {
+            // ignore
+          }
+        }
+
+        if (active && profileData) {
+          setUser(profileData);
+          localStorage.setItem('user', JSON.stringify(profileData));
+          localStorage.setItem(AUTH_USER_KEY, JSON.stringify(profileData));
+        }
+      } catch (err) {
+        if (active && (err?.status === 401 || err?.response?.status === 401)) {
+          logout();
+        }
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    };
+
+    syncUser();
+
+    return () => {
+      active = false;
+    };
+  }, [token]);
+
+  const login = (userData, authToken, remember = true) => {
+    if (!authToken || !userData) {
+      throw new Error('Thiếu dữ liệu đăng nhập.');
+    }
+
+    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('user');
+    localStorage.removeItem(AUTH_USER_KEY);
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem(AUTH_USER_KEY);
+
+    const store = remember ? localStorage : sessionStorage;
+    store.setItem('token', authToken);
+    store.setItem('user', JSON.stringify(userData));
+    store.setItem(AUTH_USER_KEY, JSON.stringify(userData));
+
+    setToken(authToken);
+    setUser(userData);
+  };
+
+  const updateUser = (profile) => {
+    localStorage.setItem('user', JSON.stringify(profile));
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(profile));
+    sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(profile));
+    setUser(profile);
+  };
+
+  const updateToken = (nextToken) => {
+    localStorage.setItem('token', nextToken);
+    sessionStorage.setItem('token', nextToken);
+    setToken(nextToken);
   };
 
   const isLoggedIn = !!token && !!user;
-  const role = (user?.role || user?.roleId?.code || (token ? 'customer' : 'guest')).toLowerCase();
+  const rawRole = user?.role || user?.roleId?.code || (token ? 'customer' : 'guest');
+  const role = (typeof rawRole === 'string' ? rawRole : 'guest').toLowerCase();
 
   return (
     <AuthContext.Provider
@@ -70,11 +125,14 @@ export function AuthProvider({ children }) {
         isLoggedIn,
         role,
         isLoading,
+        loading: isLoading,
         isAdmin: role === 'admin',
         isStaff: role === 'staff' || role === 'admin',
         isCustomer: role === 'customer',
         login,
         logout,
+        updateUser,
+        updateToken,
       }}
     >
       {children}
@@ -89,3 +147,5 @@ export function useAuth() {
   }
   return context;
 }
+
+export default AuthContext;

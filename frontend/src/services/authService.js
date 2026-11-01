@@ -76,6 +76,12 @@ export async function register(userData) {
 }
 
 /**
+ * Helper tương thích với code của nhóm
+ */
+export const loginAccount = async (email, password) => (await axiosClient.post('/auth/login', { email, password })).data;
+export const registerAccount = async (payload) => (await axiosClient.post('/auth/register', payload)).data;
+
+/**
  * Xác thực mã OTP email để kích hoạt tài khoản
  * @param {Object} verifyData - { email, otp }
  */
