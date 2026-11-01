@@ -523,30 +523,6 @@ export default function CollectionPage() {
                 <div className="flex flex-col gap-2">
                   {SILHOUETTE_OPTIONS.map((opt) => {
                     const isSelected = selectedSilhouette === opt.id;
-                    const isAllPill = opt.id === 'all';
-
-                    if (isAllPill) {
-                      return (
-                        <div key={opt.id} className="w-full">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedSilhouette('all');
-                              setCurrentPage(1);
-                            }}
-                            className={`inline-flex items-center justify-center px-4 py-2 rounded-full font-jakarta text-[12px] font-medium transition-all cursor-pointer ${
-                              isSelected
-                                ? 'bg-[#985860] text-white shadow-xs'
-                                : 'bg-[#FFF9F6] text-[#514344] border border-[#E6DAC8] hover:border-[#B8737D]'
-                            }`}
-                          >
-                            <span>Tất cả (All)</span>
-                            {isSelected && <span className="ml-1 text-[11px] font-bold">✓</span>}
-                          </button>
-                        </div>
-                      );
-                    }
-
                     return (
                       <button
                         key={opt.id}
@@ -555,13 +531,22 @@ export default function CollectionPage() {
                           setSelectedSilhouette(opt.id);
                           setCurrentPage(1);
                         }}
-                        className={`w-full py-2.5 px-4 rounded-[14px] text-center font-jakarta text-[12.5px] transition-all cursor-pointer font-medium ${
+                        className={`w-full py-2.5 px-4 rounded-[14px] border flex items-center justify-between cursor-pointer transition-all text-left ${
                           isSelected
-                            ? 'bg-[#BA7A83] text-white shadow-xs font-semibold'
-                            : 'bg-white text-[#2C2523] border border-[#EEDECF] hover:border-[#BA7A83] hover:text-[#BA7A83]'
+                            ? 'bg-[#FFF9F6] border-[#BA7A83] shadow-xs'
+                            : 'bg-white border-[#EEDECF] hover:border-[#BA7A83] hover:bg-[#FFFDFC]'
                         }`}
                       >
-                        {opt.label}
+                        <span
+                          className={`font-jakarta text-[12.5px] transition-colors ${
+                            isSelected ? 'text-[#804E55] font-semibold' : 'text-[#2C2523] font-normal'
+                          }`}
+                        >
+                          {opt.label}
+                        </span>
+                        {isSelected && (
+                          <Check className="w-4 h-4 text-[#BA7A83] stroke-[2.5] shrink-0" />
+                        )}
                       </button>
                     );
                   })}
@@ -581,13 +566,14 @@ export default function CollectionPage() {
                         key={mat}
                         type="button"
                         onClick={() => handleToggleMaterial(mat)}
-                        className={`px-3.5 py-1.5 rounded-full font-jakarta text-[12px] transition-all cursor-pointer ${
+                        className={`px-3.5 py-1.5 rounded-full font-jakarta text-[12px] transition-all cursor-pointer flex items-center gap-1.5 ${
                           isSelected
                             ? 'bg-[#BA7A83] text-white border border-[#BA7A83] font-medium shadow-xs'
                             : 'bg-white text-[#2C2523] border border-[#EEDECF] hover:border-[#BA7A83] hover:text-[#BA7A83]'
                         }`}
                       >
-                        {mat}
+                        <span>{mat}</span>
+                        {isSelected && <Check className="w-3 h-3 text-white stroke-[2.5]" />}
                       </button>
                     );
                   })}
@@ -599,26 +585,31 @@ export default function CollectionPage() {
                 <h3 className="font-jakarta text-[11px] font-bold tracking-[1.5px] uppercase text-[#695C4E] mb-3">
                   MỨC GIÁ THUÊ
                 </h3>
-                <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-2">
                   {PRICE_RANGE_OPTIONS.map((range) => {
                     const isChecked = selectedPriceRanges.includes(range.id);
                     return (
-                      <div
+                      <button
                         key={range.id}
+                        type="button"
                         onClick={() => handleTogglePriceRange(range.id)}
-                        className={`w-full py-2.5 px-4 rounded-[14px] border flex items-center justify-between cursor-pointer transition-all select-none ${
+                        className={`w-full py-2.5 px-4 rounded-[14px] border flex items-center justify-between cursor-pointer transition-all select-none text-left ${
                           isChecked
-                            ? 'bg-[#FFF9F6] border-[#EEDECF] shadow-xs'
-                            : 'bg-white border-[#EEDECF] hover:border-[#BA7A83]'
+                            ? 'bg-[#FFF9F6] border-[#BA7A83] shadow-xs'
+                            : 'bg-white border-[#EEDECF] hover:border-[#BA7A83] hover:bg-[#FFFDFC]'
                         }`}
                       >
-                        <span className="font-jakarta text-[12.5px] text-[#2C2523] font-normal">
+                        <span
+                          className={`font-jakarta text-[12.5px] transition-colors ${
+                            isChecked ? 'text-[#804E55] font-semibold' : 'text-[#2C2523] font-normal'
+                          }`}
+                        >
                           {range.label}
                         </span>
                         {isChecked && (
-                          <Check className="w-4 h-4 text-[#BA7A83] stroke-[2.5]" />
+                          <Check className="w-4 h-4 text-[#BA7A83] stroke-[2.5] shrink-0" />
                         )}
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
