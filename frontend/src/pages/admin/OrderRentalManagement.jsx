@@ -19,6 +19,10 @@ import {
   AlertTriangle,
   Camera,
   UploadCloud,
+  Archive,
+  FileText,
+  Eye,
+  FolderArchive,
 } from 'lucide-react';
 import HangerIcon from '../../components/common/HangerIcon';
 import {
@@ -218,11 +222,10 @@ function UpdateStatusDropdown({ order, onUpdated }) {
                   key={s}
                   type="button"
                   onClick={() => handleChange(s)}
-                  className={`w-full flex items-center justify-between px-3.5 py-2 text-left text-[12px] transition-colors font-medium border-0 bg-transparent cursor-pointer ${
-                    isCancel
+                  className={`w-full flex items-center justify-between px-3.5 py-2 text-left text-[12px] transition-colors font-medium border-0 bg-transparent cursor-pointer ${isCancel
                       ? 'text-red-600 hover:bg-red-50 hover:text-red-700'
                       : 'text-[#4A3E3F] hover:bg-[#FAF4EE] hover:text-[#733F49]'
-                  }`}
+                    }`}
                 >
                   <span className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full shrink-0 ${isCancel ? 'bg-red-500' : 'bg-[#733F49]'}`} />
@@ -240,6 +243,7 @@ function UpdateStatusDropdown({ order, onUpdated }) {
 }
 
 function InspectionModal({ order, onClose, onSuccess }) {
+  const isCompletedOrder = order.status === 'completed' || order.status === 'complete';
   const [itemsCondition, setItemsCondition] = useState(
     () =>
       (order.items || []).map((item) => ({
@@ -308,14 +312,14 @@ function InspectionModal({ order, onClose, onSuccess }) {
         evidencePhotos,
       });
 
-      // Nếu kiểm định đạt yêu cầu, tự động cập nhật đơn hoàn tất
+      // Nếu kiểm định đạt yêu cầu, tự động cập nhật đơn hoàn tất và chuyển vào kho lưu trữ
       try {
         await updateOrderStatus(order._id, 'completed');
       } catch (e) {
         // ignore if already updated
       }
 
-      message.success(`Kiểm định trả váy thành công! Đã lưu ${evidencePhotos.length} ảnh bằng chứng & chuyển sang Hoàn tất.`);
+      message.success(`Kiểm định trả váy thành công! Đơn hàng đã được hoàn tất và tự động chuyển vào Kho Lưu Trữ.`);
       onSuccess();
     } catch {
       message.error('Gửi biên bản kiểm định thất bại. Vui lòng thử lại.');
@@ -333,9 +337,11 @@ function InspectionModal({ order, onClose, onSuccess }) {
             <ShieldCheck size={20} className="text-[#B8737D]" />
             <div>
               <h3 className="font-playfair text-[17px] font-bold text-[#5F2B36]">
-                Kiểm Định Trả Váy
+                {isCompletedOrder ? 'Hồ Sơ Lưu Trữ Đơn Thuê & Quyết Toán Cọc' : 'Kiểm Định Trả Váy'}
               </h3>
-              <p className="text-[11.5px] text-[#8C7D7E]">Đơn #{order.orderCode}</p>
+              <p className="text-[11.5px] text-[#8C7D7E]">
+                Đơn #{order.orderCode} {isCompletedOrder ? '• Đã Hoàn Tất Lưu Kho' : ''}
+              </p>
             </div>
           </div>
           <button
@@ -488,26 +494,39 @@ function InspectionModal({ order, onClose, onSuccess }) {
 
           {/* Actions */}
           <div className="flex gap-3 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
-            >
-              Hủy
-            </button>
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={handleSubmit}
-              className="flex-1 py-2.5 rounded-xl bg-[#733F49] text-[12px] font-bold text-white hover:bg-[#5C3038] transition-colors border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
-            >
-              {submitting ? (
-                <RefreshCw size={14} className="animate-spin" />
-              ) : (
-                <ShieldCheck size={14} />
-              )}
-              Xác Nhận Kiểm Định
-            </button>
+            {isCompletedOrder ? (
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full py-2.5 rounded-xl bg-[#733F49] text-[12px] font-bold text-white hover:bg-[#5C3038] transition-colors border-0 cursor-pointer flex items-center justify-center gap-2"
+              >
+                <CheckCircle2 size={14} />
+                <span>Đóng Hồ Sơ Lưu Trữ</span>
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 py-2.5 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={handleSubmit}
+                  className="flex-1 py-2.5 rounded-xl bg-[#733F49] text-[12px] font-bold text-white hover:bg-[#5C3038] transition-colors border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {submitting ? (
+                    <RefreshCw size={14} className="animate-spin" />
+                  ) : (
+                    <ShieldCheck size={14} />
+                  )}
+                  Xác Nhận & Chuyển Vào Kho Lưu Trữ
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -525,7 +544,7 @@ export default function OrderRentalManagement() {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-    } catch {}
+    } catch { }
     return DEMO_ORDERS_ADMIN;
   });
   const [loading, setLoading] = useState(true);
@@ -536,9 +555,14 @@ export default function OrderRentalManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
+  const [viewMode, setViewMode] = useState('active'); // 'active' (Đơn Đang Xử Lý) | 'archived' (Kho Lưu Trữ)
 
   const [inspectionOrder, setInspectionOrder] = useState(null); // for inspection modal
   const [statusMenuId, setStatusMenuId] = useState(null); // row dropdown open id
+
+  const isArchived = (order) => order.status === 'completed' || order.status === 'complete' || order.status === 'cancelled';
+  const activeOrdersCount = useMemo(() => orders.filter((o) => !isArchived(o)).length, [orders]);
+  const archivedOrdersCount = useMemo(() => orders.filter(isArchived).length, [orders]);
 
   // ── Load orders ──────────────────────────────────────────────────────────
   const loadOrders = useCallback(async () => {
@@ -564,7 +588,7 @@ export default function OrderRentalManagement() {
             const parsed = JSON.parse(saved);
             if (Array.isArray(parsed) && parsed.length > 0) fallback = parsed;
           }
-        } catch {}
+        } catch { }
         setOrders(fallback);
         setTotal(fallback.length);
         setTotalPages(1);
@@ -577,7 +601,7 @@ export default function OrderRentalManagement() {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) fallback = parsed;
         }
-      } catch {}
+      } catch { }
       setOrders(fallback);
       setTotal(fallback.length);
       setTotalPages(1);
@@ -593,7 +617,7 @@ export default function OrderRentalManagement() {
         const next = prev.map((o) => (o._id === orderId ? { ...o, status: newStatus } : o));
         try {
           localStorage.setItem('unibridal_orders_local', JSON.stringify(next));
-        } catch {}
+        } catch { }
         return next;
       });
     }
@@ -615,6 +639,10 @@ export default function OrderRentalManagement() {
   // ── Client-side filter (for demo fallback) ───────────────────────────────
   const filteredOrders = useMemo(() => {
     return orders.filter((o) => {
+      // Phân tách đơn đang xử lý và kho lưu trữ
+      if (viewMode === 'active' && isArchived(o)) return false;
+      if (viewMode === 'archived' && !isArchived(o)) return false;
+
       const q = searchTerm.toLowerCase();
       const matchSearch =
         !q ||
@@ -625,7 +653,7 @@ export default function OrderRentalManagement() {
       const matchStatus = statusFilter === 'all' || o.status === statusFilter;
       return matchSearch && matchStatus;
     });
-  }, [orders, searchTerm, statusFilter]);
+  }, [orders, searchTerm, statusFilter, viewMode]);
 
   const selectedFilterLabel =
     FILTER_OPTIONS.find((opt) => opt.value === statusFilter)?.label ?? 'Tất Cả Trạng Thái';
@@ -656,7 +684,10 @@ export default function OrderRentalManagement() {
       {/* 4 Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
         {/* Card 1: Tổng đơn */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FCDCE1_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] p-5 shadow-xs flex flex-col justify-between overflow-hidden">
+        <div
+          onClick={() => { setViewMode('active'); setStatusFilter('all'); setActivePage(1); }}
+          className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FCDCE1_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] p-5 shadow-xs flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md hover:border-[#B8737D]/50 transition-all"
+        >
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#736364] uppercase">
@@ -675,12 +706,15 @@ export default function OrderRentalManagement() {
           </div>
           <div className="mt-5 flex items-center gap-1.5 text-[12px] text-[#7A6B6C]">
             <RefreshCw size={14} className="text-[#8C6D62]" />
-            <span>Đang hiển thị trang {activePage}</span>
+            <span>Hiển thị danh sách đang xử lý</span>
           </div>
         </div>
 
         {/* Card 2: Đang thuê */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EDE9FE_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] p-5 shadow-xs flex flex-col justify-between overflow-hidden">
+        <div
+          onClick={() => { setViewMode('active'); setStatusFilter('renting'); setActivePage(1); }}
+          className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EDE9FE_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] p-5 shadow-xs flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md hover:border-[#6D28D9]/50 transition-all"
+        >
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#736364] uppercase">
@@ -703,15 +737,18 @@ export default function OrderRentalManagement() {
           </div>
         </div>
 
-        {/* Card 3: Hoàn tất */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#DEF5E7_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] p-5 shadow-xs flex flex-col justify-between overflow-hidden">
+        {/* Card 3: Hoàn tất (Kho Lưu Trữ) */}
+        <div
+          onClick={() => { setViewMode('archived'); setStatusFilter('all'); setActivePage(1); }}
+          className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#DEF5E7_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] p-5 shadow-xs flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md hover:border-[#229A53]/50 transition-all"
+        >
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#736364] uppercase">
-                ĐÃ HOÀN TẤT
+                ĐÃ HOÀN TẤT (LƯU KHO)
               </span>
               <div className="w-11 h-11 rounded-2xl bg-[#EAF7EE] flex items-center justify-center text-[#229A53]">
-                <CheckCircle2 size={20} />
+                <Archive size={20} />
               </div>
             </div>
             <div className="flex items-baseline">
@@ -721,14 +758,17 @@ export default function OrderRentalManagement() {
               <span className="text-[13px] font-medium text-[#8C7D7E] ml-2">đơn</span>
             </div>
           </div>
-          <div className="mt-5 flex items-center gap-1.5 text-[12px] text-[#7A6B6C]">
+          <div className="mt-5 flex items-center gap-1.5 text-[12px] text-[#1E8347] font-medium">
             <CheckCircle2 size={14} className="text-[#229A53]" />
-            <span>Đã hoàn cọc cho khách</span>
+            <span>Đã đưa vào Kho Lưu Trữ (Click xem)</span>
           </div>
         </div>
 
         {/* Card 4: Đã hủy */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FCDFD9_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] p-5 shadow-xs flex flex-col justify-between overflow-hidden">
+        <div
+          onClick={() => { setViewMode('archived'); setStatusFilter('cancelled'); setActivePage(1); }}
+          className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FCDFD9_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] p-5 shadow-xs flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md hover:border-[#B8737D]/50 transition-all"
+        >
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#736364] uppercase">
@@ -747,7 +787,7 @@ export default function OrderRentalManagement() {
           </div>
           <div className="mt-5 flex items-center gap-1.5 text-[12px] text-[#7A6B6C]">
             <Clock size={14} className="text-[#B8737D]" />
-            <span>Đơn đã bị hủy trong kỳ</span>
+            <span>Lưu trữ đơn hủy trong kỳ</span>
           </div>
         </div>
       </div>
@@ -799,11 +839,10 @@ export default function OrderRentalManagement() {
                       setActivePage(1);
                       setFilterDropdownOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between px-4 py-2 text-left text-[13px] transition-colors ${
-                      statusFilter === opt.value
+                    className={`w-full flex items-center justify-between px-4 py-2 text-left text-[13px] transition-colors ${statusFilter === opt.value
                         ? 'bg-[#F9EDE9] text-[#733F49] font-bold'
                         : 'bg-transparent text-[#5F4E50] hover:bg-[#FAF5F2]'
-                    }`}
+                      }`}
                   >
                     <span>{opt.label}</span>
                     {statusFilter === opt.value && <Check size={14} />}
@@ -813,6 +852,62 @@ export default function OrderRentalManagement() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* View Mode Tabs: Đơn Đang Xử Lý vs Kho Lưu Trữ */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => { setViewMode('active'); setStatusFilter('all'); setActivePage(1); }}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all cursor-pointer ${
+              viewMode === 'active'
+                ? 'bg-[#733F49] text-white shadow-md'
+                : 'bg-white border border-[#EFE5E1] text-[#7A6B6C] hover:bg-[#FAF4F0]'
+            }`}
+          >
+            <SlidersHorizontal size={14} />
+            <span>Đơn Đang Xử Lý</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                viewMode === 'active' ? 'bg-white/20 text-white' : 'bg-[#FAF0EC] text-[#733F49]'
+              }`}
+            >
+              {activeOrdersCount}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setViewMode('archived'); setStatusFilter('all'); setActivePage(1); }}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all cursor-pointer ${
+              viewMode === 'archived'
+                ? 'bg-[#1E8347] text-white shadow-md'
+                : 'bg-white border border-[#EFE5E1] text-[#7A6B6C] hover:bg-[#FAF4F0]'
+            }`}
+          >
+            <Archive size={14} />
+            <span>Kho Lưu Trữ Đơn Hoàn Tất</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                viewMode === 'archived' ? 'bg-white/20 text-white' : 'bg-[#EAF7EE] text-[#1E8347]'
+              }`}
+            >
+              {archivedOrdersCount}
+            </span>
+          </button>
+        </div>
+
+        {viewMode === 'archived' ? (
+          <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#1E8347] bg-[#EAF7EE] px-4 py-2 rounded-xl border border-[#C6F0D4]">
+            <FolderArchive size={15} />
+            <span>Kho lưu trữ an toàn: Các đơn đã hoàn thành và quyết toán cọc bảo lãnh</span>
+          </div>
+        ) : (
+          <div className="text-[12px] text-[#8C7D7E] hidden md:block">
+            Hiển thị các đơn thuê đang tiếp nhận, giao trang phục và chuẩn bị kiểm định
+          </div>
+        )}
       </div>
 
       {/* Main Table */}
@@ -854,8 +949,18 @@ export default function OrderRentalManagement() {
                 </tr>
               ) : filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-[#8C7D7E] text-sm">
-                    Không tìm thấy đơn thuê nào phù hợp.
+                  <td colSpan={7} className="py-14 text-center text-[#8C7D7E] text-sm">
+                    {viewMode === 'archived' ? (
+                      <div className="flex flex-col items-center justify-center">
+                        <FolderArchive size={32} className="text-[#8C7D7E] mb-2 opacity-60" />
+                        <p className="font-medium text-[#4A3B3D]">Kho lưu trữ hiện chưa có đơn hoàn tất nào.</p>
+                        <p className="text-[12px] text-[#A39293] mt-0.5">
+                          Các đơn sau khi kiểm định và quyết toán cọc sẽ tự động chuyển vào đây.
+                        </p>
+                      </div>
+                    ) : (
+                      'Không tìm thấy đơn thuê nào phù hợp.'
+                    )}
                   </td>
                 </tr>
               ) : (
@@ -925,8 +1030,18 @@ export default function OrderRentalManagement() {
                       {/* Thao tác */}
                       <td className="py-4 px-5 text-right whitespace-nowrap">
                         <div className="inline-flex items-center gap-2">
-                          {/* KHI ĐẾN BƯỚC TRẢ VÁY (Đang Thuê / Đã Trả Váy): CHỈ HIỂN THỊ DUY NHẤT NÚT KIỂM ĐỊNH */}
-                          {order.status === 'renting' || order.status === 'returned' ? (
+                          {/* ĐỐI VỚI CÁC ĐƠN ĐÃ HOÀN TẤT TRONG KHO LƯU TRỮ */}
+                          {isArchived(order) ? (
+                            <button
+                              type="button"
+                              onClick={() => setInspectionOrder(order)}
+                              title="Xem biên bản kiểm định & hồ sơ lưu trữ"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#EAF7EE] border border-[#C6F0D4] text-[#1E8347] text-[12px] font-bold hover:bg-[#D5EFE0] transition-all cursor-pointer shadow-2xs"
+                            >
+                              <FileText size={13} />
+                              <span>Hồ Sơ Lưu Trữ</span>
+                            </button>
+                          ) : order.status === 'renting' || order.status === 'returned' ? (
                             <button
                               type="button"
                               onClick={() => setInspectionOrder(order)}
@@ -995,11 +1110,10 @@ export default function OrderRentalManagement() {
                   key={p}
                   type="button"
                   onClick={() => setActivePage(p)}
-                  className={`w-8 h-8 rounded-lg font-bold flex items-center justify-center transition-colors ${
-                    activePage === p
+                  className={`w-8 h-8 rounded-lg font-bold flex items-center justify-center transition-colors ${activePage === p
                       ? 'bg-[#78434D] text-white shadow-xs'
                       : 'bg-white border border-[#EFE5E1] shadow-2xs text-[#4A3B3D] hover:bg-[#F5ECE8]'
-                  }`}
+                    }`}
                 >
                   {p}
                 </button>
@@ -1030,7 +1144,7 @@ export default function OrderRentalManagement() {
               const next = prev.map((o) => (o._id === updatedId ? { ...o, status: 'completed' } : o));
               try {
                 localStorage.setItem('unibridal_orders_local', JSON.stringify(next));
-              } catch {}
+              } catch { }
               return next;
             });
             loadOrders();
