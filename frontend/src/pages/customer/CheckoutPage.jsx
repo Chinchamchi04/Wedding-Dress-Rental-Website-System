@@ -1184,19 +1184,6 @@ export default function CheckoutPage() {
       {/* Main Content */}
       <main className="flex-1 max-w-[1320px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-9">
 
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-[12.5px] text-[#847374] mb-4 print:hidden">
-          <Link to="/" className="hover:text-[#B8737D] transition-colors no-underline text-[#847374]">
-            Trang chủ
-          </Link>
-          <span>/</span>
-          <Link to="/collection" className="hover:text-[#B8737D] transition-colors no-underline text-[#847374]">
-            Bộ sưu tập
-          </Link>
-          <span>/</span>
-          <span className="text-[#2C2523] font-medium">Đặt Thuê, Ký Hợp Đồng & Thanh Toán</span>
-        </nav>
-
         {/* 1. Thanh Tạm Giữ Độc Quyền Váy 15 Phút (Hold Timer Banner) */}
         <div className="mb-6 bg-gradient-to-r from-[#FAF0EC] via-[#FFF9F6] to-[#FAF0EC] border border-[#F2D8D4] rounded-2xl p-4 sm:px-6 sm:py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs print:hidden animate-fade-in">
           <div className="flex items-center gap-3">
