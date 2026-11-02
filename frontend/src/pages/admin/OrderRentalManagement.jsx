@@ -17,6 +17,8 @@ import {
   Download,
   RefreshCw,
   AlertTriangle,
+  Camera,
+  UploadCloud,
 } from 'lucide-react';
 import HangerIcon from '../../components/common/HangerIcon';
 import {
@@ -249,7 +251,27 @@ function InspectionModal({ order, onClose, onSuccess }) {
         rentPrice: item.rentPrice ?? order.totalRentPrice ?? 0,
       }))
   );
+  const [evidencePhotos, setEvidencePhotos] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+
+  // Xử lý chụp ảnh / tải ảnh bằng chứng hiện trạng váy
+  const handlePhotoUpload = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    files.forEach((file) => {
+      if (!file.type.startsWith('image/')) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setEvidencePhotos((prev) => [...prev, event.target.result]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removePhoto = (idx) => {
+    setEvidencePhotos((prev) => prev.filter((_, i) => i !== idx));
+  };
 
   const lateDays = calcLate(order.rentalEndDate);
   const dailyLateFee = itemsCondition.reduce((acc, ic) => acc + ic.rentPrice * 0.05, 0);
@@ -281,8 +303,19 @@ function InspectionModal({ order, onClose, onSuccess }) {
         repairFee: Number(ic.compensation || 0),
         compensation: Number(ic.compensation || 0),
       }));
-      await submitReturnInspection(order._id, { itemsCondition: payload });
-      message.success('Kiểm định trả váy thành công!');
+      await submitReturnInspection(order._id, {
+        itemsCondition: payload,
+        evidencePhotos,
+      });
+
+      // Nếu kiểm định đạt yêu cầu, tự động cập nhật đơn hoàn tất
+      try {
+        await updateOrderStatus(order._id, 'completed');
+      } catch (e) {
+        // ignore if already updated
+      }
+
+      message.success(`Kiểm định trả váy thành công! Đã lưu ${evidencePhotos.length} ảnh bằng chứng & chuyển sang Hoàn tất.`);
       onSuccess();
     } catch {
       message.error('Gửi biên bản kiểm định thất bại. Vui lòng thử lại.');
@@ -380,6 +413,54 @@ function InspectionModal({ order, onClose, onSuccess }) {
               )}
             </div>
           ))}
+
+          {/* CHỤP ẢNH & LƯU BẰNG CHỨNG HIỆN TRẠNG VÁY */}
+          <div className="p-4 rounded-xl border border-[#EFE5E1] bg-[#FCF8F5] space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <Camera size={16} className="text-[#733F49]" />
+                <span className="font-bold text-[13px] text-[#2C2523]">
+                  Ảnh Chụp Bằng Chứng Hiện Trạng Váy ({evidencePhotos.length} ảnh)
+                </span>
+              </div>
+              <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#733F49] text-white text-[11.5px] font-bold cursor-pointer hover:bg-[#5C3038] transition-colors shadow-2xs">
+                <Camera size={13} />
+                <span>+ Chụp / Tải ảnh</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  multiple
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {evidencePhotos.length === 0 ? (
+              <div className="p-4 rounded-lg border border-dashed border-[#DDC6C0] text-center bg-white">
+                <Camera size={22} className="text-[#A38D91] mx-auto mb-1 opacity-70" />
+                <p className="text-[12px] text-[#7A6B6C] m-0">
+                  Nhân viên chụp ảnh cận cảnh hiện trạng váy (ren, khóa, gấu váy) để lưu hồ sơ đối soát và hoàn cọc
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
+                {evidencePhotos.map((photo, pIdx) => (
+                  <div key={pIdx} className="relative aspect-square rounded-lg overflow-hidden border border-[#E5D7D0] group">
+                    <img src={photo} alt={`Bằng chứng ${pIdx + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(pIdx)}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-red-600 transition-colors cursor-pointer"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Summary */}
           <div className="p-4 rounded-xl bg-[#FFF6F3] border border-[#EFE5E1] space-y-2 text-[12.5px]">
@@ -800,23 +881,40 @@ export default function OrderRentalManagement() {
                       {/* Thao tác */}
                       <td className="py-4 px-5 text-right whitespace-nowrap">
                         <div className="inline-flex items-center gap-2">
-                          <UpdateStatusDropdown
-                            order={order}
-                            onUpdated={() => {
-                              setStatusMenuId(null);
-                              loadOrders();
-                            }}
-                          />
-                          {canInspect && (
+                          {/* KHI ĐẾN BƯỚC TRẢ VÁY: CHỈ HIỂN THỊ DUY NHẤT NÚT KIỂM ĐỊNH */}
+                          {order.status === 'returned' ? (
                             <button
                               type="button"
                               onClick={() => setInspectionOrder(order)}
-                              title="Kiểm định trả váy"
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#EDE9FE] border border-[#DDD6FE] text-[11.5px] text-[#6D28D9] font-medium hover:bg-[#DDD6FE] transition-colors"
+                              title="Kiểm định trả váy & Chụp ảnh lưu bằng chứng"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#733F49] text-white text-[12px] font-bold hover:bg-[#5C3038] shadow-xs transition-all cursor-pointer"
                             >
-                              <ShieldCheck size={12} />
-                              Kiểm định
+                              <Camera size={13} />
+                              <ShieldCheck size={13} />
+                              <span>Kiểm Định Trả Váy</span>
                             </button>
+                          ) : (
+                            <>
+                              <UpdateStatusDropdown
+                                order={order}
+                                onUpdated={() => {
+                                  setStatusMenuId(null);
+                                  loadOrders();
+                                }}
+                              />
+                              {(order.status === 'renting' || order.status === 'delivered') && (
+                                <button
+                                  type="button"
+                                  onClick={() => setInspectionOrder(order)}
+                                  title="Kiểm định trả váy & Chụp ảnh bằng chứng"
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#EDE9FE] border border-[#DDD6FE] text-[11.5px] text-[#6D28D9] font-medium hover:bg-[#DDD6FE] transition-colors cursor-pointer"
+                                >
+                                  <Camera size={12} />
+                                  <ShieldCheck size={12} />
+                                  <span>Kiểm Định</span>
+                                </button>
+                              )}
+                            </>
                           )}
                         </div>
                       </td>

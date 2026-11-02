@@ -178,7 +178,8 @@ export const getDressBookedDates = async (dressId) => {
 /**
  * Lập biên bản kiểm định tình trạng váy khi khách trả
  * @param {string} orderId - ID đơn thuê
- * @param {Object} data - { itemsCondition, lateDays, staffId }
+ * @param {Object} data - { itemsCondition,
+    evidencePhotos: data.evidencePhotos || [], lateDays, staffId }
  * @param {Object} staffUser - user object của nhân viên
  */
 export const submitReturnInspection = async (orderId, data, staffUser) => {

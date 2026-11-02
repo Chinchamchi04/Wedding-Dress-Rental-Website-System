@@ -34,7 +34,7 @@ async function sync() {
     priceNumber: ${priceNum},
     price: '${priceNum.toLocaleString('vi-VN')}₫',
     depositAmount: '${(d.depositAmount || 15000000).toLocaleString('vi-VN')}₫',
-    depositPolicy: '(Hoàn tức thì)',
+  
     category: '${catSlug}',
     categoryName: '${d.silhouette}',
     material: '${d.material}',

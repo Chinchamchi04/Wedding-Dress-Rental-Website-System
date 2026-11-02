@@ -50,6 +50,7 @@ const returnInspectionSchema = new mongoose.Schema(
       min: 0,
     },
     itemsCondition: [itemConditionSchema],
+    evidencePhotos: [{ type: String }],
     totalDeduction: {
       type: Number,
       default: 0,
