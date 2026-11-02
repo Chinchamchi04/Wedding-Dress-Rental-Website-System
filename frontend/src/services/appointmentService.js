@@ -24,16 +24,6 @@ export const SHOWROOM_BRANCHES = [
     image: 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=600&q=80',
     mapUrl: 'https://maps.google.com/?q=26+Ly+Thuong+Kiet+Hoan+Kiem+Ha+Noi',
   },
-  {
-    id: 'dn-haichau',
-    name: 'UniBridal Boutique Coastal — Hải Châu, Đà Nẵng',
-    address: '152 Bạch Đằng, Phường Hải Châu 1, Quận Hải Châu, Đà Nẵng',
-    phone: '0236 388 8998',
-    hours: '09:00 — 21:00 (Thứ 2 — Chủ Nhật)',
-    features: ['View sông Hàn thơ mộng', 'Bộ sưu tập váy cưới ngoài trời & bãi biển', 'Stylist riêng tận tình'],
-    image: 'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?auto=format&fit=crop&w=600&q=80',
-    mapUrl: 'https://maps.google.com/?q=152+Bach+Dang+Hai+Chau+Da+Nang',
-  },
 ];
 
 export const TIME_SLOTS = [

@@ -180,7 +180,7 @@ export default function AppointmentPage() {
       if (Array.isArray(list) && list.length > 0) {
         setAvailableDresses(list.slice(0, 12));
       }
-    }).catch(() => {});
+    }).catch(() => { });
     return () => { active = false; };
   }, []);
 
@@ -314,7 +314,7 @@ export default function AppointmentPage() {
       </div>
 
       <main className="flex-1 max-w-[1320px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-9">
-        
+
         {/* Breadcrumb (hidden on print) */}
         <nav className="flex items-center gap-2 text-[12.5px] text-[#847374] mb-6 print:hidden">
           <Link to="/" className="hover:text-[#B8737D] transition-colors no-underline text-[#847374]">
@@ -327,7 +327,7 @@ export default function AppointmentPage() {
         {confirmedBooking ? (
           /* ================= SUCCESS CONFIRMATION INVITATION ================= */
           <div className="max-w-[820px] mx-auto animate-fade-in my-2 sm:my-4">
-            
+
             {/* Top Status Header */}
             <div className="text-center mb-8 print:hidden">
               <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#E8F5E9] to-[#C8E6C9] text-[#2E7D32] flex items-center justify-center mx-auto mb-3 shadow-[0_4px_16px_rgba(46,125,50,0.15)] ring-4 ring-white">
@@ -356,7 +356,7 @@ export default function AppointmentPage() {
               <div className="h-3.5 bg-gradient-to-r from-[#733F49] via-[#D4AF37] to-[#B8737D]" />
 
               <div className="p-6 sm:p-10 space-y-7">
-                
+
                 {/* Invitation Card Header */}
                 <div className="flex flex-col sm:flex-row items-center justify-between pb-6 border-b border-[#F0E5DC] text-center sm:text-left gap-4">
                   <div className="space-y-1">
@@ -384,7 +384,7 @@ export default function AppointmentPage() {
 
                 {/* Primary Booking Details Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-[13.5px]">
-                  
+
                   {/* Bride Info Box */}
                   <div className="bg-[#FCF9F6] p-5 rounded-2xl border border-[#EEDECF]/90 flex flex-col justify-between space-y-3">
                     <div>
@@ -633,7 +633,7 @@ export default function AppointmentPage() {
         ) : (
           /* ================= MAIN BOOKING FORM INTERFACE ================= */
           <div className="space-y-10">
-            
+
             {/* Hero Banner */}
             <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#2C2523] via-[#3D302E] to-[#4A3A37] text-white p-7 sm:p-10 shadow-xl border border-[#4A3A37]">
               <div className="max-w-[760px] relative z-10">
@@ -655,10 +655,10 @@ export default function AppointmentPage() {
 
             {/* Main Form Content */}
             <form onSubmit={handleSubmitBooking} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              
+
               {/* LEFT COLUMN: All Steps (col-span-8) */}
               <div className="lg:col-span-8 space-y-8">
-                
+
                 {/* BƯỚC 1: CHỌN SHOWROOM */}
                 <section className="bg-white rounded-2xl border border-[#F0E5DC] shadow-[0_4px_24px_rgba(44,37,35,0.03)] p-6 sm:p-7">
                   <div className="flex items-center gap-3 pb-4 border-b border-[#F5EDE8] mb-5">
@@ -675,18 +675,17 @@ export default function AppointmentPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     {SHOWROOM_BRANCHES.map((branch) => {
                       const isSelected = selectedBranchId === branch.id;
                       return (
                         <div
                           key={branch.id}
                           onClick={() => setSelectedBranchId(branch.id)}
-                          className={`rounded-2xl border overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${
-                            isSelected
+                          className={`rounded-2xl border overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${isSelected
                               ? 'border-[#733F49] ring-2 ring-[#733F49]/20 bg-[#FAF4EE] shadow-sm'
                               : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white hover:border-[#D8C7B8]'
-                          }`}
+                            }`}
                         >
                           <div className="h-32 w-full overflow-hidden relative">
                             <img
@@ -784,11 +783,10 @@ export default function AppointmentPage() {
                             key={p.id}
                             type="button"
                             onClick={() => setPeriodFilter(p.id)}
-                            className={`flex-1 py-1.5 rounded-lg text-[12px] font-bold transition-all border-0 cursor-pointer ${
-                              periodFilter === p.id
+                            className={`flex-1 py-1.5 rounded-lg text-[12px] font-bold transition-all border-0 cursor-pointer ${periodFilter === p.id
                                 ? 'bg-[#733F49] text-white shadow-2xs'
                                 : 'bg-transparent text-[#6B5C5D] hover:text-[#2C2523]'
-                            }`}
+                              }`}
                           >
                             {p.label}
                           </button>
@@ -810,26 +808,24 @@ export default function AppointmentPage() {
                           <div
                             key={slot.id}
                             onClick={() => !isDisabled && setSelectedTimeSlotId(slot.id)}
-                            className={`rounded-xl p-3 border transition-all text-left ${
-                              isDisabled
+                            className={`rounded-xl p-3 border transition-all text-left ${isDisabled
                                 ? 'bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed'
                                 : isSelected
-                                ? 'border-[#733F49] bg-[#FAF3F0] ring-1 ring-[#733F49] shadow-2xs cursor-pointer'
-                                : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white cursor-pointer'
-                            }`}
+                                  ? 'border-[#733F49] bg-[#FAF3F0] ring-1 ring-[#733F49] shadow-2xs cursor-pointer'
+                                  : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white cursor-pointer'
+                              }`}
                           >
                             <div className="flex items-center justify-between mb-1">
                               <span className="font-jakarta font-bold text-[14px] text-[#2C2523]">
                                 {slot.time}
                               </span>
                               <span
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                  isDisabled
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isDisabled
                                     ? 'bg-gray-200 text-gray-500'
                                     : slot.available === 1
-                                    ? 'bg-[#FFEBEE] text-[#C62828]'
-                                    : 'bg-[#E8F5E9] text-[#2E7D32]'
-                                }`}
+                                      ? 'bg-[#FFEBEE] text-[#C62828]'
+                                      : 'bg-[#E8F5E9] text-[#2E7D32]'
+                                  }`}
                               >
                                 {isDisabled ? 'Hết chỗ' : `Còn ${slot.available} chỗ`}
                               </span>
@@ -878,11 +874,10 @@ export default function AppointmentPage() {
                         <div
                           key={dress.id}
                           onClick={() => handleToggleDress(dress.id)}
-                          className={`rounded-xl border overflow-hidden cursor-pointer transition-all relative flex flex-col justify-between ${
-                            isSelected
+                          className={`rounded-xl border overflow-hidden cursor-pointer transition-all relative flex flex-col justify-between ${isSelected
                               ? 'border-[#733F49] ring-2 ring-[#733F49]/30 bg-[#FAF4EE] shadow-sm'
                               : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white hover:border-[#D8C7B8]'
-                          }`}
+                            }`}
                         >
                           <div className="aspect-[3/4] w-full overflow-hidden relative">
                             <img
@@ -941,11 +936,10 @@ export default function AppointmentPage() {
                         <div
                           key={srv.id}
                           onClick={() => handleToggleService(srv.id)}
-                          className={`rounded-xl p-4 border cursor-pointer transition-all flex items-start gap-3.5 ${
-                            isSelected
+                          className={`rounded-xl p-4 border cursor-pointer transition-all flex items-start gap-3.5 ${isSelected
                               ? 'border-[#733F49] bg-[#FAF3F0] shadow-2xs'
                               : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white'
-                          }`}
+                            }`}
                         >
                           <input
                             type="checkbox"
@@ -995,7 +989,7 @@ export default function AppointmentPage() {
                   </div>
 
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <div>
                         <label className="block font-jakarta text-[11px] font-bold uppercase tracking-wider text-[#733F49] mb-1.5">
                           HỌ VÀ TÊN CÔ DÂU *
@@ -1008,9 +1002,8 @@ export default function AppointmentPage() {
                             setFullName(e.target.value);
                             if (errors.fullName) setErrors({ ...errors, fullName: null });
                           }}
-                          className={`w-full bg-[#FCF9F6] border rounded-xl px-3.5 py-2.5 text-[14px] text-[#2C2523] font-medium focus:outline-none focus:bg-white ${
-                            errors.fullName ? 'border-red-500' : 'border-[#EEDECF] focus:border-[#733F49]'
-                          }`}
+                          className={`w-full bg-[#FCF9F6] border rounded-xl px-3.5 py-2.5 text-[14px] text-[#2C2523] font-medium focus:outline-none focus:bg-white ${errors.fullName ? 'border-red-500' : 'border-[#EEDECF] focus:border-[#733F49]'
+                            }`}
                           placeholder="Nhập họ tên cô dâu"
                         />
                         {errors.fullName && (
@@ -1030,9 +1023,8 @@ export default function AppointmentPage() {
                             setPhone(e.target.value);
                             if (errors.phone) setErrors({ ...errors, phone: null });
                           }}
-                          className={`w-full bg-[#FCF9F6] border rounded-xl px-3.5 py-2.5 text-[14px] text-[#2C2523] font-medium focus:outline-none focus:bg-white ${
-                            errors.phone ? 'border-red-500' : 'border-[#EEDECF] focus:border-[#733F49]'
-                          }`}
+                          className={`w-full bg-[#FCF9F6] border rounded-xl px-3.5 py-2.5 text-[14px] text-[#2C2523] font-medium focus:outline-none focus:bg-white ${errors.phone ? 'border-red-500' : 'border-[#EEDECF] focus:border-[#733F49]'
+                            }`}
                           placeholder="Nhập số điện thoại liên hệ"
                         />
                         {errors.phone && (
@@ -1052,9 +1044,8 @@ export default function AppointmentPage() {
                             setEmail(e.target.value);
                             if (errors.email) setErrors({ ...errors, email: null });
                           }}
-                          className={`w-full bg-[#FCF9F6] border rounded-xl px-3.5 py-2.5 text-[14px] text-[#2C2523] font-medium focus:outline-none focus:bg-white ${
-                            errors.email ? 'border-red-500' : 'border-[#EEDECF] focus:border-[#733F49]'
-                          }`}
+                          className={`w-full bg-[#FCF9F6] border rounded-xl px-3.5 py-2.5 text-[14px] text-[#2C2523] font-medium focus:outline-none focus:bg-white ${errors.email ? 'border-red-500' : 'border-[#EEDECF] focus:border-[#733F49]'
+                            }`}
                           placeholder="Nhập email nhận thư xác nhận"
                         />
                         {errors.email && (
@@ -1074,11 +1065,10 @@ export default function AppointmentPage() {
                               key={num}
                               type="button"
                               onClick={() => setGuestsCount(num)}
-                              className={`flex-1 py-2 rounded-xl text-[13px] font-bold transition-all border cursor-pointer ${
-                                guestsCount === num
+                              className={`flex-1 py-2 rounded-xl text-[13px] font-bold transition-all border cursor-pointer ${guestsCount === num
                                   ? 'bg-[#733F49] text-white border-[#733F49]'
                                   : 'bg-[#FCF9F6] text-[#2C2523] border-[#EEDECF] hover:bg-white'
-                              }`}
+                                }`}
                             >
                               {num} người
                             </button>
@@ -1118,16 +1108,16 @@ export default function AppointmentPage() {
 
               {/* RIGHT COLUMN: Sticky Summary Sidebar (col-span-4) */}
               <div className="lg:col-span-4 sticky top-24 space-y-4">
-                
+
                 <div className="bg-white rounded-3xl border border-[#F0E5DC] shadow-[0_8px_32px_rgba(44,37,35,0.06)] p-6 space-y-5">
-                  
+
                   {/* Top Eyebrow */}
                   <div className="pb-4 border-b border-[#F5EDE8]">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-[#B8737D] block mb-1">
                       TÓM TẮT LỊCH HẸN PRIVATE SUITE
                     </span>
                     <h3 className="font-playfair text-[20px] font-bold text-[#2C2523] m-0">
-                      Buổi Thử Lễ Phục Danh Dự
+                      Thông tin thử lễ phục
                     </h3>
                   </div>
 

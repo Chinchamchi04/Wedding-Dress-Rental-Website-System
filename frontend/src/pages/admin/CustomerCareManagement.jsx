@@ -515,10 +515,9 @@ export default function CustomerCareManagement() {
                 onChange={(e) => setAptBranchFilter(e.target.value)}
                 className="px-3 py-2 rounded-xl bg-[#FAF2EE] border border-[#EFE2DC] text-[#554748] font-medium outline-none cursor-pointer"
               >
-                <option value="all">Tất cả chi nhánh showroom</option>
+                <option value="all">Tất cả chi nhánh showroom (2 cơ sở)</option>
                 <option value="hcm-q1">UniBridal Q.1 TP.HCM</option>
                 <option value="hn-hoankiem">UniBridal Hoàn Kiếm, HN</option>
-                <option value="dn-haichau">UniBridal Hải Châu, Đà Nẵng</option>
               </select>
 
               {/* Status filter */}
@@ -581,8 +580,6 @@ export default function CustomerCareManagement() {
                       const branchLabel =
                         apt.branch === 'hn-hoankiem'
                           ? 'Hoàn Kiếm, HN'
-                          : apt.branch === 'dn-haichau'
-                          ? 'Hải Châu, Đà Nẵng'
                           : 'Q.1, TP. HCM';
 
                       return (

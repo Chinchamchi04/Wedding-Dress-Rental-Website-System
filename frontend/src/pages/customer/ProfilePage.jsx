@@ -304,12 +304,7 @@ export default function ProfilePage() {
                   <Input placeholder="Nhập 12 số CCCD gắn chip..." size="large" />
                 </Form.Item>
 
-                <Form.Item
-                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Ngày cưới chính thức</span>}
-                  name="weddingDate"
-                >
-                  <Input type="date" size="large" />
-                </Form.Item>
+
               </div>
 
               <Form.Item

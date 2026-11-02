@@ -857,11 +857,10 @@ export default function CheckoutPage() {
             <p>2.1. Tổng thời gian thuê: <strong>${rentalDays} ngày</strong> liên tục.</p>
             <p>2.2. Thời điểm nhận váy: Từ 09:00 ngày <strong>${rentalSchedule.startDate}</strong>.</p>
             <p>2.3. Ngày tổ chức hôn lễ chính thức: <strong>${rentalSchedule.weddingDate}</strong>.</p>
-            <p>2.4. Phương thức nhận váy & thu hồi: ${
-              deliveryMethod === 'delivery'
-                ? 'Bên A thực hiện giao váy tận nơi bằng Vali VIP Courier theo địa chỉ Bên B đã đăng ký. '
-                : 'Bên B nhận váy trực tiếp tại Showroom Atelier của Bên A (được hỗ trợ chuyên viên fitting và ủi sấy hoàn thiện trước giờ trao nhận). '
-            }Đến thời hạn hoàn trả (trước 20:00 ngày <strong>' + rentalSchedule.endDate + '</strong>), <strong>chuyên viên của Bên A sẽ chủ động liên hệ hẹn giờ và trực tiếp đến tận nơi thu hồi lễ phục trong vali bảo quản niêm phong & kiểm định hiện trạng</strong>, Bên B không cần phải tự mang trả.</p>
+            <p>2.4. Phương thức nhận váy & thu hồi: ${deliveryMethod === 'delivery'
+        ? 'Bên A thực hiện giao váy tận nơi bằng Vali VIP Courier theo địa chỉ Bên B đã đăng ký. '
+        : 'Bên B nhận váy trực tiếp tại Showroom Atelier của Bên A (được hỗ trợ chuyên viên fitting và ủi sấy hoàn thiện trước giờ trao nhận). '
+      }Đến thời hạn hoàn trả (trước 20:00 ngày <strong>' + rentalSchedule.endDate + '</strong>), <strong>chuyên viên của Bên A sẽ chủ động liên hệ hẹn giờ và trực tiếp đến tận nơi thu hồi lễ phục trong vali bảo quản niêm phong & kiểm định hiện trạng</strong>, Bên B không cần phải tự mang trả.</p>
             <p>2.5. Hai bên thực hiện ký Biên bản kiểm định bàn giao và thu hồi để ghi nhận hiện trạng đính kết ren, hạt cườm và kết cấu váy tại thời điểm giao và nhận lại.</p>
 
             <div class="clause-heading">ĐIỀU 3: GIÁ THUÊ & PHƯƠNG THỨC THANH TOÁN</div>
@@ -1964,7 +1963,7 @@ export default function CheckoutPage() {
                         Độc lập — Tự do — Hạnh phúc
                       </div>
                       <div className="w-24 h-[1.5px] bg-[#D4AF37] mx-auto my-2" />
-                      
+
                       <h2 className="font-playfair text-[23px] sm:text-[27px] font-bold text-[#733F49] tracking-wide mt-3 mb-1 uppercase">
                         HỢP ĐỒNG THUÊ LỄ PHỤC CƯỚI CAO CẤP
                       </h2>
@@ -2014,7 +2013,7 @@ export default function CheckoutPage() {
 
                     {/* Các Điều Khoản Hợp Đồng: Trình bày liền mạch thanh nhã như văn bản thật */}
                     <div className="space-y-6 text-[13px] leading-relaxed text-[#3C3133]">
-                      
+
                       {/* Điều 1 */}
                       <div className="space-y-1.5">
                         <h4 className="font-playfair text-[13.5px] font-bold text-[#733F49] uppercase tracking-wide m-0 flex items-center gap-2">
@@ -2097,7 +2096,7 @@ export default function CheckoutPage() {
 
                     {/* Khung Chữ Ký 2 Bên: Trình bày như cuối trang hợp đồng giấy thật */}
                     <div className="pt-6 border-t border-[#EFE7E0] grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                      
+
                       {/* Bên A Signature */}
                       <div className="text-center space-y-2 pr-0 md:pr-6 md:border-r border-[#EFE7E0]">
                         <div className="font-playfair text-[12.5px] font-bold uppercase tracking-wider text-[#2C2523]">
@@ -2137,22 +2136,20 @@ export default function CheckoutPage() {
                               <button
                                 type="button"
                                 onClick={() => setSignatureMode('draw')}
-                                className={`px-2.5 py-1 rounded-md transition-colors border-0 cursor-pointer ${
-                                  signatureMode === 'draw'
+                                className={`px-2.5 py-1 rounded-md transition-colors border-0 cursor-pointer ${signatureMode === 'draw'
                                     ? 'bg-[#733F49] text-white shadow-2xs'
                                     : 'bg-transparent text-[#733F49] hover:bg-white/60'
-                                }`}
+                                  }`}
                               >
                                 ✍️ Vẽ chữ ký
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setSignatureMode('type')}
-                                className={`px-2.5 py-1 rounded-md transition-colors border-0 cursor-pointer ${
-                                  signatureMode === 'type'
+                                className={`px-2.5 py-1 rounded-md transition-colors border-0 cursor-pointer ${signatureMode === 'type'
                                     ? 'bg-[#733F49] text-white shadow-2xs'
                                     : 'bg-transparent text-[#733F49] hover:bg-white/60'
-                                }`}
+                                  }`}
                               >
                                 ⌨️ Gõ họ tên
                               </button>
