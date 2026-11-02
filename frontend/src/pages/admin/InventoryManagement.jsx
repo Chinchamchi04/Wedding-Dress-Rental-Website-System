@@ -78,6 +78,11 @@ export default function InventoryManagement() {
     setTimeout(() => setToastMsg(''), 3500);
   };
 
+  const [selectedOrderView, setSelectedOrderView] = useState(null);
+
+  // Hàm tiện ích chuẩn hóa chuỗi để so khớp chính xác
+  const cleanStr = (s) => (s ? String(s).toLowerCase().replace(/[^a-z0-9]/g, '') : '');
+
   // Tính toán tình trạng kho và liên kết đơn thuê tự động
   const computeItemData = useCallback((d, index, orderList, overrides) => {
     const dressId = d._id || d.id || `inv_${index + 1}`;
@@ -107,16 +112,33 @@ export default function InventoryManagement() {
 
     // Tính toán liên kết với đơn thuê thực tế (Orders)
     const dressName = (d.name || '').trim().toLowerCase();
+    const dressCleanName = cleanStr(d.name);
+    const dressCleanCode = cleanStr(code);
+
     const matchedOrders = (orderList || []).filter((o) => {
       const hasItem = (o.items || []).some((it) => {
-        const itId = it.dressId || it.id || it._id;
+        const itId = it.dressId?._id || it.dressId || it.id || it._id;
         const itName = (it.name || '').trim().toLowerCase();
-        return (
-          (itId && String(itId) === String(dressId)) ||
-          (itName && (itName === dressName || itName.includes(dressName) || dressName.includes(itName)))
-        );
+        const itCleanName = cleanStr(it.name);
+        const itCode = cleanStr(it.code);
+        const idMatch = itId && String(itId) === String(dressId);
+        const nameMatch =
+          itName &&
+          (itName === dressName ||
+            itName.includes(dressName) ||
+            dressName.includes(itName) ||
+            (itCleanName && dressCleanName && (itCleanName === dressCleanName || dressCleanName.includes(itCleanName) || itCleanName.includes(dressCleanName))));
+        const codeMatch = itCode && dressCleanCode && itCode === dressCleanCode;
+        return idMatch || nameMatch || codeMatch;
       });
-      const mainMatch = (o.dress && (o.dress.trim().toLowerCase() === dressName || o.dress.trim().toLowerCase().includes(dressName)));
+      const mainDress = String(o.dress || '').trim().toLowerCase();
+      const mainClean = cleanStr(mainDress);
+      const mainMatch =
+        mainDress &&
+        (mainDress === dressName ||
+          mainDress.includes(dressName) ||
+          dressName.includes(mainDress) ||
+          (mainClean && dressCleanName && (mainClean === dressCleanName || dressCleanName.includes(mainClean))));
       return hasItem || mainMatch;
     });
 
@@ -136,7 +158,39 @@ export default function InventoryManagement() {
     );
     const rentedCount = rentingOrders.length;
 
-    // 3. Số lượng khả dụng sẵn sàng phục vụ trong kho
+    // 3. Phân bổ chi tiết theo từng Size: Khả dụng / Đang kiểm định / Đang thuê
+    const detailedSizes = sizeList.map((sz) => {
+      const sName = String(sz.size || '').trim();
+      const sQty = Number(sz.quantity) || 0;
+
+      const sMaint = maintenanceOrders.filter((o) => {
+        const itemSize = (o.items || []).find((it) => {
+          const itId = it.dressId?._id || it.dressId || it.id || it._id;
+          const itName = (it.name || '').trim().toLowerCase();
+          return (itId && String(itId) === String(dressId)) || (itName && itName.includes(dressName));
+        })?.size || o.size || '';
+        return String(itemSize).toUpperCase() === sName.toUpperCase();
+      }).length;
+
+      const sRented = rentingOrders.filter((o) => {
+        const itemSize = (o.items || []).find((it) => {
+          const itId = it.dressId?._id || it.dressId || it.id || it._id;
+          const itName = (it.name || '').trim().toLowerCase();
+          return (itId && String(itId) === String(dressId)) || (itName && itName.includes(dressName));
+        })?.size || o.size || '';
+        return String(itemSize).toUpperCase() === sName.toUpperCase();
+      }).length;
+
+      const sAvail = Math.max(0, sQty - sMaint - sRented);
+      return {
+        ...sz,
+        available: sAvail,
+        maintenance: sMaint,
+        rented: sRented,
+      };
+    });
+
+    // 4. Số lượng khả dụng sẵn sàng phục vụ trong kho
     const availableStock = Math.max(0, totalStock - rentedCount - maintenanceCount);
 
     // Xử lý trạng thái: Tự động vs Thủ công
@@ -151,7 +205,7 @@ export default function InventoryManagement() {
         statusText = 'ĐANG BẢO DƯỠNG';
         statusSubNote =
           availableStock > 0
-            ? `Kiểm định sau thuê (${maintenanceCount} bộ) • Khả dụng: ${availableStock}`
+            ? `Kiểm định sau thuê (${maintenanceCount} bộ) • Khả dụng: ${availableStock} bộ`
             : `Đang kiểm định & bảo dưỡng (${maintenanceCount} bộ)`;
       } else if (availableStock <= 0 && totalStock > 0) {
         statusType = 'out_of_stock';
@@ -197,8 +251,10 @@ export default function InventoryManagement() {
       rentedCount,
       maintenanceCount,
       relatedOrderCodes,
+      customerNames: matchedOrders.map((o) => (o.customerName || '').toLowerCase()),
+      customerPhones: matchedOrders.map((o) => (o.customerPhone || '').toLowerCase()),
       matchedOrders,
-      sizes: sizeList,
+      sizes: detailedSizes,
       totalUnits: `Tổng: ${String(totalStock).padStart(2, '0')} bộ`,
       description: override.description || d.description || 'Lễ phục cưới cao cấp UniBridal Haute Couture',
       rentPrice: override.rentPrice ?? d.rentPrice ?? d.price ?? 5000000,
@@ -279,22 +335,29 @@ export default function InventoryManagement() {
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
       const q = searchTerm.trim().toLowerCase();
+      const qClean = q.replace(/^[#\s]+/, ''); // Loại bỏ tiền tố # nếu người dùng nhập hoặc copy "#UB-2026-0004"
       const matchSearch =
         !q ||
         (item.name || '').toLowerCase().includes(q) ||
+        (item.name || '').toLowerCase().includes(qClean) ||
         (item.code || '').toLowerCase().includes(q) ||
+        (item.code || '').toLowerCase().includes(qClean) ||
         (item.location || '').toLowerCase().includes(q) ||
         (item.description || '').toLowerCase().includes(q) ||
-        (item.relatedOrderCodes || []).some((code) => code.includes(q));
+        (item.relatedOrderCodes || []).some((code) => code.includes(q) || code.includes(qClean)) ||
+        (item.customerNames || []).some((cn) => cn.includes(q) || cn.includes(qClean)) ||
+        (item.customerPhones || []).some((cp) => cp.includes(q) || cp.includes(qClean));
 
       const matchStatus =
         statusFilter === 'all' ||
         item.statusType === statusFilter ||
         (statusFilter === 'drying' &&
           (item.statusType === 'drying' || (item.maintenanceCount && item.maintenanceCount > 0))) ||
-        (statusFilter === 'stored' && item.statusType === 'partially_rented') ||
+        (statusFilter === 'stored' &&
+          (item.statusType === 'stored' || item.statusType === 'partially_rented')) ||
         (statusFilter === 'ready' &&
           (item.statusType === 'out_of_stock' ||
+            item.statusType === 'ready' ||
             item.statusType === 'partially_rented' ||
             (item.rentedCount && item.rentedCount > 0)));
 
@@ -821,14 +884,44 @@ export default function InventoryManagement() {
                               <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#FAF0EC] text-[#733F49] font-mono text-[10.5px] font-bold border border-[#F2D8D4] leading-none">
                                 {item.code}
                               </span>
-                              {item.relatedOrderCodes?.length > 0 && (
-                                <span
-                                  title={`Đơn thuê liên quan: ${item.relatedOrderCodes.join(', ')}`}
-                                  className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-[#FDF0EE] text-[#8C3A48] font-mono text-[10px] font-bold border border-[#F5CED3] leading-none"
-                                >
-                                  #{item.relatedOrderCodes[0].toUpperCase()}
-                                  {item.relatedOrderCodes.length > 1 ? ` (+${item.relatedOrderCodes.length - 1})` : ''}
-                                </span>
+                              {item.matchedOrders?.length > 0 && (
+                                <div className="flex items-center gap-1 flex-wrap mt-0.5">
+                                  {item.matchedOrders.map((ord, oIdx) => {
+                                    const oCode = String(ord.orderCode || ord.id || ord._id || '').toUpperCase();
+                                    const st = ord.rawStatus || ord.status;
+                                    const isMaint = ['returned', 'inspecting', 'maintenance'].includes(st);
+                                    const isRenting = ['renting', 'delivered', 'preparing', 'deposit_paid'].includes(st);
+                                    const isComplete = st === 'completed';
+
+                                    let badgeStyle = 'bg-[#FDF0EE] text-[#8C3A48] border-[#F5CED3]';
+                                    let badgeText = `#${oCode}`;
+                                    if (isMaint) {
+                                      badgeStyle = 'bg-[#FEF2E6] text-[#B45309] border-[#FED7AA] font-bold animate-pulse';
+                                      badgeText = `#${oCode} (Kiểm định)`;
+                                    } else if (isRenting) {
+                                      badgeStyle = 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]';
+                                      badgeText = `#${oCode} (Đang thuê)`;
+                                    } else if (isComplete) {
+                                      badgeStyle = 'bg-[#F0FDF4] text-[#166534] border-[#BBF7D0]';
+                                      badgeText = `#${oCode} (Hoàn tất)`;
+                                    }
+
+                                    return (
+                                      <button
+                                        key={oIdx}
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedOrderView(ord);
+                                        }}
+                                        title={`Khách hàng: ${ord.customerName || 'Khách'}\nSĐT: ${ord.customerPhone || '—'}\nTrạng thái: ${ord.statusLabel || st}\nNhấp để xem chi tiết đơn`}
+                                        className={`inline-flex items-center px-1.5 py-0.5 rounded-md font-mono text-[9.5px] border cursor-pointer hover:opacity-80 transition-all ${badgeStyle}`}
+                                      >
+                                        {badgeText}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
                               )}
                             </div>
                             {item.collection ? (
@@ -869,20 +962,35 @@ export default function InventoryManagement() {
                       {/* Col 4: Tồn kho theo size */}
                       <td className="py-4 px-4 text-center whitespace-nowrap">
                         <div className="flex flex-col items-center">
-                          <div className="text-[14.5px] font-bold text-[#2C2523] leading-tight">
-                            {String(item.totalStock || 0).padStart(2, '0')}{' '}
-                            <span className="text-[11.5px] font-medium text-[#8C7D7E]">bộ</span>
+                          <div className="text-[13.5px] font-bold text-[#2C2523] leading-tight">
+                            Khả dụng:{' '}
+                            <span className={item.availableStock < item.totalStock ? 'text-[#D97706]' : 'text-[#1E8347]'}>
+                              {String(item.availableStock).padStart(2, '0')}
+                            </span>
+                            <span className="text-[11.5px] font-medium text-[#8C7D7E]"> / {String(item.totalStock || 0).padStart(2, '0')} bộ</span>
                           </div>
                           <div className="flex flex-wrap items-center justify-center gap-1 mt-1.5">
                             {(Array.isArray(item.sizes) ? item.sizes : []).map((s, idx) => {
                               const sName = typeof s === 'object' ? s.size : s;
                               const sQty = typeof s === 'object' ? (s.quantity ?? 0) : 0;
+                              const sAvail = typeof s === 'object' && s.available !== undefined ? s.available : sQty;
+                              const sMaint = typeof s === 'object' ? (s.maintenance ?? 0) : 0;
+                              const sRented = typeof s === 'object' ? (s.rented ?? 0) : 0;
+
                               return (
                                 <span
                                   key={idx}
-                                  className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-[#FAF5F2] text-[#733F49] border border-[#EFE2DC] font-semibold text-[11px]"
+                                  title={sMaint > 0 ? `Đang có ${sMaint} bộ size ${sName} kiểm định sau thuê` : sRented > 0 ? `Đang có ${sRented} bộ size ${sName} đang được khách thuê` : `Sẵn sàng phục vụ: ${sAvail} bộ`}
+                                  className={`inline-flex items-center px-1.5 py-0.5 rounded-md border font-semibold text-[10.5px] ${
+                                    sMaint > 0
+                                      ? 'bg-[#FEF2E6] text-[#B45309] border-[#FED7AA]'
+                                      : sRented > 0
+                                      ? 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]'
+                                      : 'bg-[#FAF5F2] text-[#733F49] border-[#EFE2DC]'
+                                  }`}
                                 >
-                                  {sName}: <span className="font-bold ml-1 text-[#2C2523]">{sQty}</span>
+                                  {sName}: <span className="font-bold ml-1 text-[#2C2523]">{sAvail}/{sQty}</span>
+                                  {sMaint > 0 && <span className="ml-1 text-[9px] text-[#D97706] font-bold">({sMaint} bảo dưỡng)</span>}
                                 </span>
                               );
                             })}
@@ -1497,6 +1605,150 @@ export default function InventoryManagement() {
                     <span>Xác Nhận Xóa</span>
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Xem Nhanh Thông Tin Đơn Thuê & Biên Bản Kiểm Định */}
+      {selectedOrderView && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl border border-[#F2E5E0] animate-scaleUp font-jakarta">
+            <div className="flex items-center justify-between pb-3 border-b border-[#F0E5DC] mb-4">
+              <div>
+                <span className="text-[11px] font-bold text-[#8C7D7E] uppercase tracking-wider">
+                  Chi Tiết Đơn Thuê Thực Tế
+                </span>
+                <h3 className="font-playfair text-[20px] font-bold text-[#5F2B36] leading-tight">
+                  Đơn Hàng #{String(selectedOrderView.orderCode || selectedOrderView.id).toUpperCase()}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedOrderView(null)}
+                className="w-8 h-8 rounded-full bg-[#FAF5F2] hover:bg-[#F2E8E4] flex items-center justify-center text-[#7A696B] transition-colors cursor-pointer border-0"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3.5 text-xs text-[#2C2523]">
+              {/* Thông tin khách hàng */}
+              <div className="p-3.5 rounded-2xl bg-[#FFF9F6] border border-[#F2E5E0] space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-[#8C7D7E]">Khách hàng:</span>
+                  <span className="font-bold text-[#2C2523] text-[13px]">
+                    {selectedOrderView.customerName || selectedOrderView.brideName || 'Khách vãng lai'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[#8C7D7E]">Số điện thoại:</span>
+                  <span className="font-semibold text-[#5F4E50]">
+                    {selectedOrderView.customerPhone || selectedOrderView.phone || '—'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[#8C7D7E]">Thời gian thuê:</span>
+                  <span className="font-semibold text-[#733F49]">
+                    {selectedOrderView.rentalDates ||
+                      (selectedOrderView.rentalStartDate
+                        ? `${new Date(selectedOrderView.rentalStartDate).toLocaleDateString('vi-VN')} – ${new Date(selectedOrderView.rentalEndDate).toLocaleDateString('vi-VN')}`
+                        : '—')}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-1 border-t border-[#F2E5E0]">
+                  <span className="text-[#8C7D7E]">Trạng thái đơn:</span>
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border ${
+                      ['returned', 'inspecting', 'maintenance'].includes(selectedOrderView.rawStatus || selectedOrderView.status)
+                        ? 'bg-[#FEF2E6] text-[#B45309] border-[#FED7AA]'
+                        : ['renting', 'delivered', 'preparing', 'deposit_paid'].includes(selectedOrderView.rawStatus || selectedOrderView.status)
+                        ? 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]'
+                        : selectedOrderView.status === 'completed'
+                        ? 'bg-[#F0FDF4] text-[#166534] border-[#BBF7D0]'
+                        : 'bg-[#FAF5F2] text-[#733F49] border-[#EFE2DC]'
+                    }`}
+                  >
+                    {selectedOrderView.statusLabel ||
+                      (selectedOrderView.status === 'returned'
+                        ? 'Đã trả váy (Chờ kiểm định & hoàn cọc)'
+                        : selectedOrderView.status === 'completed'
+                        ? 'Hoàn tất (Váy đã về kho sẵn sàng)'
+                        : selectedOrderView.status === 'renting'
+                        ? 'Đang cho thuê'
+                        : selectedOrderView.status)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Sản phẩm trong đơn */}
+              <div className="p-3.5 rounded-2xl bg-white border border-[#EFE5E1] space-y-2">
+                <span className="text-[#8C7D7E] text-[11px] font-bold uppercase tracking-wider block">
+                  Lễ Phục Trong Đơn
+                </span>
+                {(selectedOrderView.items || []).map((it, idx) => (
+                  <div key={idx} className="flex items-center justify-between py-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-[#2C2523]">{it.name}</span>
+                      <span className="px-1.5 py-0.5 rounded-md bg-[#FAF0EC] text-[#733F49] font-mono text-[10px] font-bold">
+                        Size {it.size || 'S'}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-[#733F49]">{fmtVnd(it.rentPrice || it.price)}</div>
+                      <div className="text-[10px] text-[#8C7D7E]">Cọc: {fmtVnd(it.depositAmount || it.deposit)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Tình trạng kiểm định & Quyết toán hoàn cọc (nếu có) */}
+              {selectedOrderView.inspection && (
+                <div className="p-3.5 rounded-2xl bg-[#FFF9F6] border border-[#F2E5E0] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-[#B45309] text-[11px] uppercase tracking-wider">
+                      Biên Bản Kiểm Định Trả Váy
+                    </span>
+                    <span
+                      className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full border ${
+                        selectedOrderView.inspection.customerStatus === 'approved'
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                          : selectedOrderView.inspection.customerStatus === 'disputed'
+                          ? 'bg-amber-50 text-amber-800 border-amber-200'
+                          : 'bg-rose-50 text-rose-800 border-rose-200'
+                      }`}
+                    >
+                      {selectedOrderView.inspection.customerStatus === 'approved'
+                        ? 'Khách đã duyệt hoàn cọc'
+                        : selectedOrderView.inspection.customerStatus === 'disputed'
+                        ? 'Khách khiếu nại'
+                        : 'Chờ khách xác nhận'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-[12px]">
+                    <span className="text-[#8C7D7E]">Phí khấu trừ hư hỏng:</span>
+                    <span className="font-bold text-rose-600">
+                      -{fmtVnd(selectedOrderView.inspection.totalDeduction || 0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-[12.5px] pt-1 border-t border-[#F2E5E0]">
+                    <span className="text-[#8C7D7E] font-medium">Tiền cọc thực nhận hoàn lại:</span>
+                    <span className="font-bold text-[#1E8347] text-[14px]">
+                      {fmtVnd(selectedOrderView.inspection.refundAmount || selectedOrderView.totalDeposit || 0)}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedOrderView(null)}
+                className="px-5 py-2.5 rounded-xl bg-[#FAF0EC] hover:bg-[#F2E5DF] text-[#733F49] text-xs font-bold transition-colors cursor-pointer border-0"
+              >
+                Đóng
               </button>
             </div>
           </div>

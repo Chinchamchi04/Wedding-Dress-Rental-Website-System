@@ -112,12 +112,21 @@ function buckets(period, start, end) {
 export async function dashboard(role, period = 'month') {
   if (!['week', 'month', 'quarter', 'year'].includes(period)) period = 'month';
   const { start, end } = periodBounds(period);
-  const [orders, payments, maintenance, roleCustomer] = await Promise.all([
+  const [orders, payments, maintenanceOrdersDressIds, roleCustomer] = await Promise.all([
     Order.find({ createdAt: { $gte: start, $lte: end } }).select('status createdAt rentalStartDate totalRentPrice').lean(),
     Payment.find({ status: 'success', paidAt: { $gte: start, $lte: end } }).select('transactionType amount paidAt').lean(),
-    Dress.countDocuments({ status: 'maintenance' }),
+    Order.distinct('items.dressId', {
+      status: { $in: ['returned', 'inspecting', 'maintenance'] },
+    }),
     Role.findOne({ code: 'CUSTOMER' }).select('_id').lean(),
   ]);
+
+  const maintenance = await Dress.countDocuments({
+    $or: [
+      { status: 'maintenance' },
+      { _id: { $in: (maintenanceOrdersDressIds || []).filter(Boolean) } },
+    ],
+  });
 
   const members = roleCustomer ? await User.countDocuments({ roleId: roleCustomer._id, isActive: true }) : 0;
   const activeOrders = orders.filter((order) => ACTIVE_ORDER_STATUSES.includes(order.status));
