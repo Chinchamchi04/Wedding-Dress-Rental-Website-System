@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, Heart, Search } from 'lucide-react';
+import { Heart, Search } from 'lucide-react';
 import AccountLayout from '../../components/layout/AccountLayout';
 import { formatVnd, getDemoOrders, getOrders } from '../../services/orderService';
 import elysianImage from '../../assets/card1_elysian.jpg';
@@ -71,7 +71,6 @@ export default function OrderHistoryPage() {
   const [error, setError] = useState('');
   const [tab, setTab] = useState('all');
   const [query, setQuery] = useState('');
-  const [date, setDate] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -100,17 +99,16 @@ export default function OrderHistoryPage() {
       orders.filter(
         (order) =>
           (tab === 'all' || order.status === tab) &&
-          `${order.id || ''} ${order.dress || ''}`.toLocaleLowerCase('vi').includes(query.toLocaleLowerCase('vi').trim()) &&
-          (!date || (order.date && order.date.slice(3).split('/').reverse().join('-') === date.slice(0, 7)))
+          `${order.id || ''} ${order.dress || ''}`.toLocaleLowerCase('vi').includes(query.toLocaleLowerCase('vi').trim())
       ),
-    [orders, tab, query, date]
+    [orders, tab, query]
   );
 
   return (
-    <AccountLayout breadcrumb={[{ label: 'Lịch Sử Đơn Hàng' }]}>
-      <section className="profile-card rounded-lg bg-white px-5 py-7 sm:px-7" aria-labelledby="order-history-title">
-        <p className="account-overline text-[#874e57]">Lịch sử đặt thuê & mua lễ phục</p>
-        <h1 id="order-history-title" className="mt-1 font-playfair text-[25px]">
+    <AccountLayout hideBreadcrumb={true} breadcrumb={[]}>
+      <section className="profile-card rounded-2xl bg-white px-5 py-7 sm:px-7 border border-[#F0E5DC] shadow-xs font-jakarta" aria-labelledby="order-history-title">
+
+        <h1 id="order-history-title" className="mt-1 font-jakarta font-bold text-[24px] sm:text-[26px] text-[#2C2523] tracking-tight">
           Lịch Sử Đơn Hàng
         </h1>
         <p className="mt-2 text-sm leading-6 text-[#6c5b57]">
@@ -136,25 +134,15 @@ export default function OrderHistoryPage() {
             </button>
           ))}
         </div>
-        <div className="mt-5 flex flex-wrap gap-3 border-b border-[#eee2df] pb-5">
-          <label className="account-search relative min-w-[220px] flex-1">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#967c79]" />
+        <div className="mt-5 border-b border-[#eee2df] pb-5">
+          <label className="account-search relative block w-full">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#967c79]" />
             <span className="sr-only">Tìm mã đơn hàng hoặc tên váy</span>
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Tìm mã đơn, tên váy..."
-              className="w-full border border-[#eee2df] bg-[#fff8f6] py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[#874e57]"
-            />
-          </label>
-          <label className="flex items-center gap-2 border border-[#eee2df] bg-[#fff8f6] px-3 text-xs text-[#766966]">
-            <CalendarDays size={15} className="shrink-0" />
-            <span className="account-overline whitespace-nowrap">Lọc tháng</span>
-            <input
-              type="month"
-              value={date}
-              onChange={(event) => setDate(event.target.value)}
-              className="min-w-0 bg-transparent py-2.5 text-xs outline-none"
+              placeholder="Tìm theo mã đơn hàng, tên váy cưới..."
+              className="w-full rounded-xl border border-[#eee2df] bg-[#fff8f6] py-2.5 pl-10 pr-4 text-sm outline-none focus:border-[#874e57] focus:bg-white transition-colors"
             />
           </label>
         </div>
@@ -173,7 +161,6 @@ export default function OrderHistoryPage() {
                 onClick={() => {
                   setTab('all');
                   setQuery('');
-                  setDate('');
                 }}
                 className="account-button-secondary mt-5"
               >
