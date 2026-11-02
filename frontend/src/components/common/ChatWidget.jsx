@@ -409,7 +409,10 @@ export default function ChatWidget() {
           </div>
 
           {/* Quick Suggestions Chips */}
-          <div className="px-2.5 py-1.5 bg-[#FAF8F7] border-t border-[#F0E6E8] overflow-x-auto flex gap-1.5 no-scrollbar shrink-0">
+          <div
+            className="px-2.5 py-1.5 bg-[#FAF8F7] border-t border-[#F0E6E8] overflow-x-auto flex gap-1.5 no-scrollbar shrink-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
             {QUICK_SUGGESTIONS.map((item) => (
               <button
                 key={item.id}
