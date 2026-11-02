@@ -13,7 +13,6 @@ import {
   Pencil,
   MoreVertical,
   Check,
-  ShieldAlert,
   Sparkles,
   RefreshCw,
   Layers,
@@ -118,18 +117,14 @@ export default function InventoryManagement() {
       return hasItem || mainMatch;
     });
 
-    // 1. Đơn hàng đang ở bước thu hồi về và hậu kiểm/chờ khách duyệt kiểm định
-    const inspectingOrders = matchedOrders.filter((o) => (o.rawStatus || o.status) === 'returned');
-    const inspectingCount = inspectingOrders.length;
-
-    // 2. Đơn hàng đang cho thuê / chuẩn bị giao
+    // 1. Số lượng đang được khách thuê / chuẩn bị giao
     const rentingOrders = matchedOrders.filter((o) =>
       ['renting', 'delivered', 'preparing', 'deposit_paid'].includes(o.rawStatus || o.status)
     );
     const rentedCount = rentingOrders.length;
 
-    // 3. Số lượng khả dụng sẵn sàng phục vụ
-    const availableStock = Math.max(0, totalStock - rentedCount - inspectingCount);
+    // 2. Số lượng khả dụng sẵn sàng phục vụ trong kho
+    const availableStock = Math.max(0, totalStock - rentedCount);
 
     // Xử lý trạng thái: Tự động vs Thủ công
     const manualStatus = override.statusType || null;
@@ -138,18 +133,14 @@ export default function InventoryManagement() {
     let statusSubNote = '';
 
     if (statusType === 'auto') {
-      if (inspectingCount > 0) {
-        statusType = 'inspecting';
-        statusText = 'ĐANG HẬU KIỂM';
-        statusSubNote = `Thu hồi ${inspectingCount} bộ đang kiểm định`;
-      } else if (availableStock <= 0 && totalStock > 0) {
+      if (availableStock <= 0 && totalStock > 0) {
         statusType = 'out_of_stock';
-        statusText = 'HẾT HÀNG (ĐANG THUÊ)';
-        statusSubNote = `Đã xuất thuê toàn bộ ${totalStock} bộ`;
+        statusText = 'HẾT HÀNG';
+        statusSubNote = `Đã xuất thuê toàn bộ (${totalStock} bộ)`;
       } else if (rentedCount > 0) {
-        statusType = 'partially_rented';
+        statusType = 'stored';
         statusText = 'CÒN HÀNG';
-        statusSubNote = `Còn ${availableStock}/${totalStock} bộ (Đang thuê: ${rentedCount})`;
+        statusSubNote = `Sẵn sàng: ${availableStock} bộ • Đang thuê: ${rentedCount}`;
       } else {
         statusType = 'stored';
         statusText = 'CÒN HÀNG';
@@ -157,16 +148,13 @@ export default function InventoryManagement() {
       }
     } else if (statusType === 'drying') {
       statusText = 'ĐANG BẢO DƯỠNG';
-      statusSubNote = 'Giặt sấy vi khí hậu phục hồi';
-    } else if (statusType === 'inspecting') {
-      statusText = 'ĐANG HẬU KIỂM';
-      statusSubNote = 'Kiểm tra tình trạng sau thuê';
+      statusSubNote = 'Giặt khô, là hơi phục hồi';
     } else if (statusType === 'ready') {
       statusText = 'ĐÃ CHO THUÊ';
-      statusSubNote = 'Khách đang giữ lễ phục';
+      statusSubNote = 'Đang phục vụ cô dâu';
     } else if (statusType === 'out_of_stock') {
       statusText = 'HẾT HÀNG';
-      statusSubNote = 'Kho tạm thời hết mẫu này';
+      statusSubNote = 'Tạm hết mẫu này trong kho';
     } else {
       statusType = 'stored';
       statusText = 'CÒN HÀNG';
@@ -245,7 +233,6 @@ export default function InventoryManagement() {
     { value: 'stored', label: 'Còn Hàng' },
     { value: 'ready', label: 'Đã Cho Thuê' },
     { value: 'drying', label: 'Đang Bảo Dưỡng' },
-    { value: 'inspecting', label: 'Đang Hậu Kiểm' },
     { value: 'out_of_stock', label: 'Hết Hàng' },
   ];
 
@@ -832,29 +819,32 @@ export default function InventoryManagement() {
 
                       {/* Col 4: Tồn kho theo size */}
                       <td className="py-4 px-4 text-center whitespace-nowrap">
-                        <div className="flex flex-col items-center gap-1.5 mb-1">
-                          <div className="flex flex-wrap items-center justify-center gap-1">
-                            {(Array.isArray(item.sizes) ? item.sizes : []).map((s, idx) => (
-                              <span
-                                key={idx}
-                                className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#FAF0EC] text-[#733F49] border border-[#F2D8D4] font-semibold text-[11px] text-center"
-                              >
-                                {typeof s === 'object' && s?.label ? s.label : `Size ${s}`}
-                              </span>
-                            ))}
+                        <div className="flex flex-col items-center">
+                          <div className="text-[14.5px] font-bold text-[#2C2523] leading-tight">
+                            {String(item.totalStock || 0).padStart(2, '0')}{' '}
+                            <span className="text-[11.5px] font-medium text-[#8C7D7E]">bộ</span>
                           </div>
-                          {item.totalUnits && (
-                            <span className="text-[11.5px] text-[#5F4E50] text-center font-bold">
-                              {item.totalUnits}
-                            </span>
-                          )}
+                          <div className="flex flex-wrap items-center justify-center gap-1 mt-1.5">
+                            {(Array.isArray(item.sizes) ? item.sizes : []).map((s, idx) => {
+                              const sName = typeof s === 'object' ? s.size : s;
+                              const sQty = typeof s === 'object' ? (s.quantity ?? 0) : 0;
+                              return (
+                                <span
+                                  key={idx}
+                                  className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-[#FAF5F2] text-[#733F49] border border-[#EFE2DC] font-semibold text-[11px]"
+                                >
+                                  {sName}: <span className="font-bold ml-1 text-[#2C2523]">{sQty}</span>
+                                </span>
+                              );
+                            })}
+                          </div>
                         </div>
                       </td>
 
-                      {/* Col 5: Tình trạng kho (Tự động theo đơn + Chú thích chi tiết) */}
+                      {/* Col 5: Tình trạng kho */}
                       <td className="py-4 px-4 text-center whitespace-nowrap">
                         <div className="flex flex-col items-center gap-1">
-                          {(item.statusType === 'stored' || item.statusType === 'partially_rented') && (
+                          {item.statusType === 'stored' && (
                             <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase whitespace-nowrap bg-[#EFF6FF] text-[#1D4ED8] border border-[#BFDBFE]">
                               <Sparkles size={12} className="text-[#1D4ED8]" />
                               <span>Còn Hàng</span>
@@ -869,7 +859,7 @@ export default function InventoryManagement() {
                           {item.statusType === 'out_of_stock' && (
                             <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase whitespace-nowrap bg-[#FEF2F2] text-[#DC2626] border border-[#FECACA]">
                               <AlertTriangle size={12} className="text-[#DC2626]" />
-                              <span>Hết Hàng (Đang Thuê)</span>
+                              <span>Hết Hàng</span>
                             </span>
                           )}
                           {item.statusType === 'drying' && (
@@ -878,16 +868,10 @@ export default function InventoryManagement() {
                               <span>Đang Bảo Dưỡng</span>
                             </span>
                           )}
-                          {item.statusType === 'inspecting' && (
-                            <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase whitespace-nowrap bg-[#F5F3FF] text-[#7C3AED] border border-[#DDD6FE]">
-                              <ShieldAlert size={12} className="text-[#7C3AED]" />
-                              <span>Đang Hậu Kiểm</span>
-                            </span>
-                          )}
 
-                          {/* Chú thích rõ ràng phụ thuộc vào đơn thuê */}
+                          {/* Chú thích trạng thái rõ ràng, dễ hiểu */}
                           {item.statusSubNote && (
-                            <span className="text-[10px] text-[#8C7A7B] font-medium leading-tight max-w-[155px] text-center">
+                            <span className="text-[11px] text-[#8C7A7B] font-medium leading-tight max-w-[170px] text-center">
                               {item.statusSubNote}
                             </span>
                           )}
@@ -969,10 +953,10 @@ export default function InventoryManagement() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleUpdateItemStatus(item.id, 'inspecting', 'ĐANG HẬU KIỂM')}
-                                className="w-full px-3.5 py-2 text-xs text-[#7C3AED] hover:bg-[#F5F3FF] font-semibold block text-left transition-colors cursor-pointer border-0 bg-transparent"
+                                onClick={() => handleUpdateItemStatus(item.id, 'out_of_stock', 'HẾT HÀNG')}
+                                className="w-full px-3.5 py-2 text-xs text-[#DC2626] hover:bg-[#FEF2F2] font-semibold block text-left transition-colors cursor-pointer border-0 bg-transparent"
                               >
-                                🛡️ Chuyển Đang Hậu Kiểm
+                                ✕ Chuyển Hết Hàng
                               </button>
 
                               <div className="border-t border-[#F2E5E0] my-1" />
@@ -1135,7 +1119,6 @@ export default function InventoryManagement() {
                     <option value="auto">✦ Tự Động Theo Đơn Thuê</option>
                     <option value="stored">Còn Hàng (Sẵn Sàng)</option>
                     <option value="drying">Đang Bảo Dưỡng / Giặt Hấp</option>
-                    <option value="inspecting">Đang Hậu Kiểm Sau Thuê</option>
                     <option value="ready">Đã Cho Thuê</option>
                     <option value="out_of_stock">Hết Hàng</option>
                   </select>
