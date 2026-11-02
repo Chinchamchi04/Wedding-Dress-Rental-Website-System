@@ -55,7 +55,7 @@ const NEXT_STATUSES = {
   confirmed: ['preparing', 'cancelled'],
   preparing: ['delivered', 'cancelled'],
   delivered: ['renting', 'cancelled'],
-  renting: ['returned', 'cancelled'],
+  renting: [], // Bắt buộc nhân viên bấm nút [Kiểm Định], không dùng dropdown tùy ý
   returned: ['completed'],
   complete: [],
   completed: [],
@@ -183,7 +183,7 @@ function UpdateStatusDropdown({ order, onUpdated }) {
     try {
       await updateOrderStatus(order._id, newStatus);
       message.success(`Đã cập nhật trạng thái thành "${STATUS_CONFIG[newStatus]?.label ?? newStatus}"`);
-      onUpdated();
+      onUpdated?.(order._id, newStatus);
     } catch {
       message.error('Cập nhật trạng thái thất bại. Vui lòng thử lại.');
     } finally {
@@ -518,7 +518,16 @@ function InspectionModal({ order, onClose, onSuccess }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function OrderRentalManagement() {
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState(() => {
+    try {
+      const saved = localStorage.getItem('unibridal_orders_local');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return DEMO_ORDERS_ADMIN;
+  });
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -547,19 +556,49 @@ export default function OrderRentalManagement() {
         setTotal(result.total || rawList.length);
         setTotalPages(result.totalPages || Math.ceil((result.total || rawList.length) / PAGE_SIZE));
       } else {
-        // Fallback demo
-        setOrders(DEMO_ORDERS_ADMIN);
-        setTotal(DEMO_ORDERS_ADMIN.length);
+        // Fallback demo - nạp từ localStorage nếu có cập nhật
+        let fallback = DEMO_ORDERS_ADMIN;
+        try {
+          const saved = localStorage.getItem('unibridal_orders_local');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.length > 0) fallback = parsed;
+          }
+        } catch {}
+        setOrders(fallback);
+        setTotal(fallback.length);
         setTotalPages(1);
       }
     } catch {
-      setOrders(DEMO_ORDERS_ADMIN);
-      setTotal(DEMO_ORDERS_ADMIN.length);
+      let fallback = DEMO_ORDERS_ADMIN;
+      try {
+        const saved = localStorage.getItem('unibridal_orders_local');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) fallback = parsed;
+        }
+      } catch {}
+      setOrders(fallback);
+      setTotal(fallback.length);
       setTotalPages(1);
     } finally {
       setLoading(false);
     }
   }, [activePage, statusFilter, searchTerm]);
+
+  const handleOrderUpdated = (orderId, newStatus) => {
+    setStatusMenuId(null);
+    if (orderId && newStatus) {
+      setOrders((prev) => {
+        const next = prev.map((o) => (o._id === orderId ? { ...o, status: newStatus } : o));
+        try {
+          localStorage.setItem('unibridal_orders_local', JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+    }
+    loadOrders();
+  };
 
   useEffect(() => {
     loadOrders();
@@ -871,6 +910,11 @@ export default function OrderRentalManagement() {
                         <div className="text-[13.5px] font-bold text-[#863E4B]">
                           {fmtVnd(order.totalDeposit)}
                         </div>
+                        {order.totalRentPrice > 0 && (
+                          <div className="text-[11px] text-[#8C7D7E] mt-0.5">
+                            (Thuê: {fmtVnd(order.totalRentPrice)})
+                          </div>
+                        )}
                       </td>
 
                       {/* Trạng thái */}
@@ -881,8 +925,8 @@ export default function OrderRentalManagement() {
                       {/* Thao tác */}
                       <td className="py-4 px-5 text-right whitespace-nowrap">
                         <div className="inline-flex items-center gap-2">
-                          {/* KHI ĐẾN BƯỚC TRẢ VÁY: CHỈ HIỂN THỊ DUY NHẤT NÚT KIỂM ĐỊNH */}
-                          {order.status === 'returned' ? (
+                          {/* KHI ĐẾN BƯỚC TRẢ VÁY (Đang Thuê / Đã Trả Váy): CHỈ HIỂN THỊ DUY NHẤT NÚT KIỂM ĐỊNH */}
+                          {order.status === 'renting' || order.status === 'returned' ? (
                             <button
                               type="button"
                               onClick={() => setInspectionOrder(order)}
@@ -891,30 +935,13 @@ export default function OrderRentalManagement() {
                             >
                               <Camera size={13} />
                               <ShieldCheck size={13} />
-                              <span>Kiểm Định Trả Váy</span>
+                              <span>Kiểm Định</span>
                             </button>
                           ) : (
-                            <>
-                              <UpdateStatusDropdown
-                                order={order}
-                                onUpdated={() => {
-                                  setStatusMenuId(null);
-                                  loadOrders();
-                                }}
-                              />
-                              {(order.status === 'renting' || order.status === 'delivered') && (
-                                <button
-                                  type="button"
-                                  onClick={() => setInspectionOrder(order)}
-                                  title="Kiểm định trả váy & Chụp ảnh bằng chứng"
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#EDE9FE] border border-[#DDD6FE] text-[11.5px] text-[#6D28D9] font-medium hover:bg-[#DDD6FE] transition-colors cursor-pointer"
-                                >
-                                  <Camera size={12} />
-                                  <ShieldCheck size={12} />
-                                  <span>Kiểm Định</span>
-                                </button>
-                              )}
-                            </>
+                            <UpdateStatusDropdown
+                              order={order}
+                              onUpdated={handleOrderUpdated}
+                            />
                           )}
                         </div>
                       </td>
@@ -997,7 +1024,15 @@ export default function OrderRentalManagement() {
           order={inspectionOrder}
           onClose={() => setInspectionOrder(null)}
           onSuccess={() => {
+            const updatedId = inspectionOrder._id;
             setInspectionOrder(null);
+            setOrders((prev) => {
+              const next = prev.map((o) => (o._id === updatedId ? { ...o, status: 'completed' } : o));
+              try {
+                localStorage.setItem('unibridal_orders_local', JSON.stringify(next));
+              } catch {}
+              return next;
+            });
             loadOrders();
           }}
         />
