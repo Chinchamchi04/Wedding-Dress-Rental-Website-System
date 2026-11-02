@@ -295,9 +295,6 @@ export default function ProfilePage() {
                   2. Thông Tin Pháp Lý & Giao Nhận Lễ Phục
                 </h3>
               </div>
-              <p className="text-[12px] text-[#7A6B6A] mb-4">
-                Tự động điền vào Hợp đồng thuê điện tử và địa chỉ giao vali lễ phục tận nhà
-              </p>
 
               <div className="grid grid-cols-1 gap-x-5 sm:grid-cols-2">
                 <Form.Item

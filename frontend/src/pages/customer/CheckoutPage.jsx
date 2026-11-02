@@ -592,8 +592,8 @@ export default function CheckoutPage() {
   const totalRentPrice = baseRentPrice + extraDayFee;
   const depositCollateral = activeDress?.depositAmount || 15000000;
 
-  // Amount to pay today based on depositOption (30% or 100%)
-  const amountToPayToday = depositOption === 'deposit30' ? Math.round(totalRentPrice * 0.5) : totalRentPrice;
+  // Nghiệp vụ mới: Cọc 50% giá trị váy + Tiền thuê luôn; khi trả váy hoàn lại tiền cọc váy đó
+  const amountToPayToday = totalRentPrice + depositCollateral;
 
   // Validation Step 1
   const handleProceedToContract = (e) => {
@@ -866,8 +866,9 @@ export default function CheckoutPage() {
 
             <div class="clause-heading">ĐIỀU 3: GIÁ THUÊ & PHƯƠNG THỨC THANH TOÁN</div>
             <p>3.1. Tổng giá trị hợp đồng thuê trọn gói (${rentalDays} ngày): <strong>${formatNumberDots(totalRentPrice)} VNĐ</strong> (Đã bao gồm VAT, dịch vụ giặt hấp khử khuẩn và phí tinh chỉnh phom váy).</p>
-            <p>3.2. Tiền đặt cọc giữ lịch độc quyền (50% giá trị hợp đồng): <strong>${formatNumberDots(amountToPayToday)} VNĐ</strong>, Bên B thanh toán ngay khi ký hợp đồng thông qua cổng chuyển khoản VietQR Techcombank.</p>
-            <p>3.3. Số tiền thuê còn lại (${formatNumberDots(totalRentPrice - amountToPayToday)} VNĐ) sẽ được Bên B thanh toán dứt điểm tại thời điểm nhận bàn giao lễ phục.</p>
+            <p>3.2. Tiền cọc bảo lãnh trang phục (50% giá trị váy): <strong>${formatNumberDots(depositCollateral)} VNĐ</strong>.</p>
+            <p>3.3. Tổng số tiền thanh toán khi ký hợp đồng (Tiền thuê + Cọc bảo lãnh): <strong>${formatNumberDots(totalRentPrice + depositCollateral)} VNĐ</strong>, Bên B thanh toán ngay thông qua cổng chuyển khoản VietQR Techcombank.</p>
+            <p>3.4. Cam kết hoàn tiền cọc: Bên A cam kết hoàn trả 100% tiền cọc bảo lãnh (${formatNumberDots(depositCollateral)} VNĐ) vào tài khoản Bên B ngay khi tiếp nhận hoàn trả váy nguyên vẹn.</p>
 
             <div class="clause-heading">ĐIỀU 4: CAM KẾT DỊCH VỤ & BẢO HIỂM LỄ PHỤC</div>
             <p>4.1. Cam kết chất lượng: Bên A cam kết bàn giao đúng tác phẩm thiết kế đã chọn, đúng số đo may đo đã ghi nhận và đầy đủ bộ phụ kiện cao cấp đi kèm.</p>
@@ -996,8 +997,9 @@ export default function CheckoutPage() {
 
         <div class='clause-title'>ĐIỀU 2: GIÁ THUÊ & PHƯƠNG THỨC THANH TOÁN</div>
         <p>2.1. Tổng chi phí thuê váy trọn gói (${rentalDays} ngày): <strong>${formatNumberDots(totalRentPrice)} VNĐ</strong>.</p>
-        <p>2.2. Số tiền đặt cọc giữ lịch độc quyền: <strong>${formatNumberDots(amountToPayToday)} VNĐ</strong> (thanh toán qua cổng chuyển khoản VietQR Techcombank).</p>
-        <p>2.3. Số tiền còn lại (nếu chọn cọc 50%) sẽ được thanh toán khi nhận bàn giao váy cưới.</p>
+        <p>2.2. Tiền cọc bảo lãnh trang phục (50% giá trị váy): <strong>${formatNumberDots(depositCollateral)} VNĐ</strong>.</p>
+        <p>2.3. Tổng số tiền thanh toán khi ký hợp đồng (Tiền thuê + Tiền cọc bảo lãnh): <strong>${formatNumberDots(totalRentPrice + depositCollateral)} VNĐ</strong> (thanh toán qua cổng chuyển khoản VietQR Techcombank).</p>
+        <p>2.4. Cam kết hoàn tiền cọc: Bên A hoàn trả 100% khoản cọc bảo lãnh (${formatNumberDots(depositCollateral)} VNĐ) cho Bên B ngay sau khi nhận lại trang phục nguyên vẹn.</p>
 
         <div class='clause-title'>ĐIỀU 3: CỌC BẢO LÃNH HOÀN TRẢ & CAM KẾT HOÀN TIỀN 100%</div>
         <p>3.1. Tiền cọc bảo lãnh hoàn trả trang phục: <strong>${formatNumberDots(depositCollateral)} VNĐ</strong>.</p>
@@ -1115,7 +1117,7 @@ export default function CheckoutPage() {
         depositPaidAmount: amountToPayToday,
         totalPayment: totalRentPrice + depositCollateral,
         deliveryMethod: 'showroom',
-        notes: `Hôn lễ ngày ${rentalSchedule.weddingDate}. Đặt cọc ${depositOption === 'deposit30' ? '50%' : '100%'}. Phương thức: Chuyển khoản VietQR 24/7 Techcombank.`,
+        notes: `Hôn lễ ngày ${rentalSchedule.weddingDate}. Đã thanh toán trọn gói gồm tiền thuê và cọc bảo lãnh 50% giá trị váy (${formatCurrencyVND(depositCollateral)} - Hoàn trả khi trả váy). Phương thức: Chuyển khoản VietQR 24/7 Techcombank.`,
       };
 
       try {
@@ -2051,10 +2053,10 @@ export default function CheckoutPage() {
                             2.1. Tổng chi phí thuê váy cưới trọn gói: <strong className="text-[#2C2523]">{formatCurrencyVND(totalRentPrice)}</strong>.
                           </p>
                           <p className="m-0">
-                            2.2. Tiền đặt cọc giữ lịch độc quyền (50%): <strong className="text-[#733F49]">{formatCurrencyVND(amountToPayToday)}</strong> (Bên B hoàn tất thanh toán chuyển khoản tại Bước 3).
+                            2.2. Tiền cọc bảo lãnh (50% giá trị váy): <strong className="text-[#733F49]">{formatCurrencyVND(depositCollateral)}</strong> (Hoàn lại 100% khi trả váy).
                           </p>
                           <p className="m-0">
-                            2.3. Số tiền còn lại: <strong>{formatCurrencyVND(totalRentPrice - amountToPayToday)}</strong> sẽ được Bên B thanh toán khi nhận bàn giao lễ phục.
+                            2.3. Tổng thanh toán hôm nay (Tiền thuê + Cọc): <strong className="text-[#2C2523]">{formatCurrencyVND(amountToPayToday)}</strong> (thanh toán chuyển khoản VietQR tại Bước 3).
                           </p>
                         </div>
                       </div>
@@ -2659,6 +2661,10 @@ export default function CheckoutPage() {
                     </div>
                   )}
                   <div className="flex items-center justify-between text-[#6B5C5D]">
+                    <span>Cọc bảo lãnh (50% giá trị váy):</span>
+                    <span className="font-bold text-[#733F49]">{formatCurrencyVND(depositCollateral)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[#6B5C5D]">
                     <span>Dịch vụ giặt sấy tiệt trùng:</span>
                     <span className="font-bold text-[#2E7D32]">0₫ (Đặc quyền VIP)</span>
                   </div>
@@ -2671,9 +2677,9 @@ export default function CheckoutPage() {
                 {/* Amount to Pay Today */}
                 <div className="pt-3 border-t border-[#F5EDE8] flex items-center justify-between">
                   <div>
-                    <span className="text-[13px] font-bold text-[#2C2523] block">Số tiền cọc hôm nay:</span>
-                    <span className="text-[11px] text-[#847374]">
-                      {depositOption === 'deposit30' ? '(Tạm ứng cọc giữ lịch 50%)' : '(Thanh toán 100% trọn gói)'}
+                    <span className="text-[13px] font-bold text-[#2C2523] block">Tổng thanh toán hôm nay:</span>
+                    <span className="text-[10.5px] text-[#2E7D32] font-semibold block">
+                      (Hoàn lại {formatCurrencyVND(depositCollateral)} khi trả váy)
                     </span>
                   </div>
                   <span className="font-jakarta font-extrabold text-[23px] sm:text-[25px] text-[#733F49] tabular-nums tracking-tight">
