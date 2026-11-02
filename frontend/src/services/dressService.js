@@ -217,23 +217,28 @@ export async function getRelatedDresses(currentId) {
 export async function getAllDresses(params = {}) {
   try {
     const res = await axiosClient.get('/dresses', { params });
-    if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-      const mapped = res.data.map((d) => ({
-        ...d,
-        id: String(d._id || d.id),
-        name: d.name,
-        priceNumber: d.rentPrice || d.price,
-        price: d.rentPrice || d.price,
-        image: (d.images && d.images[0]) || d.image || '/assets/dresses/dress_01.jpg',
-        badgeMain: d.collectionTag || 'HAUTE COUTURE',
-        badgeSub: d.sizes?.length ? `Size: ${d.sizes.join(' - ')}` : 'Đủ size',
-        size: d.sizes?.length ? `Size: ${d.sizes.join(' - ')}` : 'Size: S - M',
-        sizes: d.sizes,
-        category: (d.silhouette || 'ballgown').toLowerCase().replace(/\s+/g, '-'),
-        categoryName: d.silhouette || 'Ballgown',
-      }));
-      return { success: true, data: mapped };
-    }
+    const rawList = Array.isArray(res?.data)
+      ? res.data
+      : Array.isArray(res)
+      ? res
+      : Array.isArray(res?.data?.data)
+      ? res.data.data
+      : [];
+    const mapped = rawList.map((d) => ({
+      ...d,
+      id: String(d._id || d.id),
+      name: d.name,
+      priceNumber: d.rentPrice || d.price,
+      price: d.rentPrice || d.price,
+      image: (d.images && d.images[0]) || d.image || '/assets/dresses/dress_01.jpg',
+      badgeMain: d.collectionTag || 'HAUTE COUTURE',
+      badgeSub: d.sizes?.length ? `Size: ${d.sizes.join(' - ')}` : 'Đủ size',
+      size: d.sizes?.length ? `Size: ${d.sizes.join(' - ')}` : 'Size: S - M',
+      sizes: d.sizes,
+      category: (d.silhouette || 'ballgown').toLowerCase().replace(/\s+/g, '-'),
+      categoryName: d.silhouette || 'Ballgown',
+    }));
+    return { success: true, data: mapped };
   } catch (error) {
     console.error('Error in getAllDresses from database:', error);
     return {

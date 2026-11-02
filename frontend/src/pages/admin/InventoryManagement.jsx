@@ -175,7 +175,6 @@ export default function InventoryManagement() {
       totalStock,
       availableStock,
       rentedCount,
-      inspectingCount,
       sizes: sizeList,
       totalUnits: `Tổng: ${String(totalStock).padStart(2, '0')} bộ`,
       description: override.description || d.description || 'Lễ phục cưới cao cấp UniBridal Haute Couture',
