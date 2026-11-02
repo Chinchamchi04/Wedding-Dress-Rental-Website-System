@@ -71,20 +71,22 @@ export function getProfile(user) {
 
 export async function updateProfile(user, data) {
   const name = String(data.name ?? '').trim();
-  const email = String(data.email ?? '').trim().toLowerCase();
+  const email = String(data.email ?? user.email ?? '').trim().toLowerCase();
   const phone = String(data.phone ?? '').trim();
 
-  if (!name || !emailPattern.test(email) || !phone) {
-    fail(400, 'Họ tên, email hợp lệ và số điện thoại là thông tin bắt buộc.');
+  // Validate không cho phép sửa email đã đăng ký
+  if (data.email && user.email && email !== user.email.toLowerCase()) {
+    fail(400, 'Không được phép thay đổi địa chỉ email đã đăng ký với tài khoản.');
   }
-  if (email !== user.email && await User.exists({ email, _id: { $ne: user._id } })) {
-    fail(400, 'Địa chỉ email mới đã được sử dụng bởi một tài khoản khác.');
+
+  if (!name || !phone) {
+    fail(400, 'Họ tên và số điện thoại là thông tin bắt buộc.');
   }
   if (data.avatar && (!/^data:image\/(png|jpeg|webp);base64,/.test(data.avatar) || data.avatar.length > 7_000_000)) {
     fail(400, 'Ảnh đại diện không đúng định dạng (PNG/JPEG/WEBP) hoặc dung lượng vượt quá 5MB.');
   }
 
-  Object.assign(user, { fullName: name, email, phone, avatar: data.avatar || user.avatar || '' });
+  Object.assign(user, { fullName: name, phone, avatar: data.avatar || user.avatar || '' });
   await user.save();
   return publicUser(user);
 }

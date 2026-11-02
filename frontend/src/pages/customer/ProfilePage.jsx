@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Alert, ConfigProvider, Form, Input } from 'antd';
-import { Camera, Ruler, Calendar, MapPin, IdCard, Sparkles, CheckCircle2, Info } from 'lucide-react';
+import { Camera, Ruler, Calendar, MapPin, IdCard, Sparkles, CheckCircle2, Info, Lock } from 'lucide-react';
 import AccountLayout from '../../components/layout/AccountLayout';
 import { getProfile, saveProfile } from '../../services/profileService';
 import { useAuth } from '../../contexts/AuthContext';
@@ -119,11 +119,17 @@ export default function ProfilePage() {
   };
 
   const submit = async (values) => {
+    // Validate không cho phép sửa email đã đăng ký
+    if (saved?.email && values.email && values.email.trim().toLowerCase() !== saved.email.trim().toLowerCase()) {
+      notify('error', 'Không được phép thay đổi địa chỉ email đã đăng ký tài khoản.');
+      return;
+    }
+
     const profile = {
       ...saved,
       ...values,
       name: values.name?.trim(),
-      email: values.email?.trim(),
+      email: saved?.email || values.email?.trim(), // Luôn bảo toàn email cố định
       phone: values.phone?.trim(),
       address: values.address?.trim(),
       idCard: values.idCard?.trim(),
@@ -292,14 +298,36 @@ export default function ProfilePage() {
 
               <div className="grid grid-cols-1 gap-x-5 sm:grid-cols-2">
                 <Form.Item
-                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Địa chỉ email *</span>}
+                  label={
+                    <span className="font-semibold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                      <span>Địa chỉ email *</span>
+                      <Lock size={12} className="text-[#874e57]" />
+                      <span className="text-[10px] lowercase text-[#8C7A7B] font-normal tracking-normal">
+                        (cố định theo tài khoản)
+                      </span>
+                    </span>
+                  }
                   name="email"
+                  tooltip="Địa chỉ email dùng để định danh tài khoản và nhận thông báo đơn hàng/biên bản, không thể thay đổi."
                   rules={[
                     { required: true, message: 'Vui lòng nhập địa chỉ email.' },
                     { type: 'email', message: 'Địa chỉ email không đúng định dạng.' },
+                    () => ({
+                      validator(_, value) {
+                        if (saved?.email && value && value.trim().toLowerCase() !== saved.email.trim().toLowerCase()) {
+                          return Promise.reject(new Error('Không được phép thay đổi địa chỉ email đã đăng ký.'));
+                        }
+                        return Promise.resolve();
+                      },
+                    }),
                   ]}
                 >
-                  <Input placeholder="email@domain.com" size="large" />
+                  <Input
+                    placeholder="email@domain.com"
+                    size="large"
+                    disabled
+                    className="!bg-[#F6EFEB] !text-[#6B5E5F] !cursor-not-allowed border-[#E5DAD4]"
+                  />
                 </Form.Item>
 
                 <Form.Item
