@@ -59,6 +59,15 @@ export default function ProfilePage() {
   const [form] = Form.useForm();
   const uploadRef = useRef(null);
   const readerRef = useRef(null);
+  const noticeTimerRef = useRef(null);
+
+  const notify = (type, text) => {
+    setNotice({ type, text });
+    if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+    noticeTimerRef.current = setTimeout(() => {
+      setNotice(null);
+    }, 4500);
+  };
 
   useEffect(() => {
     let active = true;
@@ -71,7 +80,7 @@ export default function ProfilePage() {
         updateUser(profile);
       })
       .catch((error) => {
-        if (active) setNotice({ type: 'error', text: error.message || 'Không tải được thông tin hồ sơ.' });
+        if (active) notify('error', error.message || 'Không tải được thông tin hồ sơ.');
       });
     return () => {
       active = false;
@@ -93,6 +102,7 @@ export default function ProfilePage() {
   useEffect(() => () => {
     readerRef.current?.abort();
     readerRef.current = null;
+    if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
   }, []);
 
   const today = new Date();
@@ -105,7 +115,7 @@ export default function ProfilePage() {
     form.setFieldsValue(saved);
     setAvatar(saved.avatar);
     setAvatarError('');
-    setNotice({ type: 'info', text: 'Đã khôi phục thông tin được lưu gần nhất.' });
+    notify('info', 'Đã khôi phục thông tin được lưu gần nhất.');
   };
 
   const submit = async (values) => {
@@ -124,9 +134,9 @@ export default function ProfilePage() {
       setSaved(updated);
       updateUser(updated);
       form.setFieldsValue(updated);
-      setNotice({ type: 'success', text: 'Đã cập nhật thông tin hồ sơ & số đo vóc dáng thành công.' });
+      notify('success', 'Đã cập nhật thông tin hồ sơ & số đo vóc dáng thành công.');
     } catch (error) {
-      setNotice({ type: 'error', text: error.message || 'Không thể cập nhật hồ sơ. Vui lòng thử lại.' });
+      notify('error', error.message || 'Không thể cập nhật hồ sơ. Vui lòng thử lại.');
     }
   };
 
@@ -150,7 +160,7 @@ export default function ProfilePage() {
     reader.onload = () => {
       setAvatar(reader.result);
       setReadingAvatar(false);
-      setNotice({ type: 'info', text: 'Ảnh mới đã sẵn sàng. Bấm "Lưu thay đổi" để hoàn tất.' });
+      notify('info', 'Ảnh mới đã sẵn sàng. Bấm "Lưu thay đổi" để hoàn tất.');
     };
     reader.onerror = () => {
       setAvatarError('Đọc file ảnh thất bại. Vui lòng thử lại.');
@@ -172,30 +182,46 @@ export default function ProfilePage() {
       }}
     >
       <style>{profileStyles}</style>
+
+      {/* Floating Notification Toast */}
+      {notice && (
+        <div className="fixed top-8 right-6 z-[9999] max-w-sm sm:max-w-md animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="shadow-[0_12px_36px_rgba(44,36,36,0.18)] rounded-xl overflow-hidden backdrop-blur-md">
+            <Alert
+              type={notice.type}
+              message={
+                <div className="flex flex-col pr-2">
+                  <span className="font-semibold text-[13px] text-[#2C2424]">
+                    {notice.type === 'success'
+                      ? 'Thành công'
+                      : notice.type === 'error'
+                      ? 'Lỗi'
+                      : 'Thông báo'}
+                  </span>
+                  <span className="text-[12px] text-[#554543] mt-0.5 leading-snug">
+                    {notice.text}
+                  </span>
+                </div>
+              }
+              showIcon
+              closable
+              onClose={() => setNotice(null)}
+              className="border border-[#EADBCE] bg-[#FFFBF9]/95 rounded-xl px-4 py-3"
+            />
+          </div>
+        </div>
+      )}
+
       <AccountLayout breadcrumb={[{ label: 'Hồ sơ cá nhân' }]}>
         <section className="profile-card rounded-2xl bg-white px-5 py-7 sm:px-8 border border-[#F0E5DC] shadow-[0_4px_24px_rgba(44,37,35,0.03)]" aria-labelledby="profile-title">
           <div className="flex items-center gap-2">
-            <span className="account-overline text-[#874e57] uppercase text-[11px] font-bold tracking-wider">Thông tin thành viên độc quyền</span>
+
           </div>
           <h1 id="profile-title" className="mt-1 font-playfair text-[26px] sm:text-[28px] font-semibold text-[#2C2523]">
-            Hồ Sơ & Số Đo Cô Dâu
+            Hồ Sơ Người Dùng
           </h1>
-          <p className="mt-2 text-[13.5px] leading-6 text-[#6c5b57]">
-            Quản lý thông tin liên hệ, ngày hôn lễ và thông số số đo riêng tư để xưởng may UniBridal Atelier căn chỉnh phom dáng hoàn mỹ nhất cho nàng.
-          </p>
-          <div className="account-heading-rule mt-3" />
 
-          {notice && (
-            <div className="mt-4">
-              <Alert
-                type={notice.type}
-                message={notice.text}
-                showIcon
-                closable
-                onClose={() => setNotice(null)}
-              />
-            </div>
-          )}
+          <div className="account-heading-rule mt-3" />
 
           {/* Avatar Upload */}
           <div className="profile-identity mt-6 flex flex-wrap items-center gap-5 border-b border-[#eee2df] pb-6">
@@ -242,11 +268,9 @@ export default function ProfilePage() {
             {/* 1. THÔNG TIN CƠ BẢN */}
             <div className="pb-3 mb-4">
               <h3 className="font-playfair text-[18px] font-semibold text-[#2C2523] mb-1">
-                1. Thông Tin Cá Nhân & Liên Hệ
+                1. Thông Tin  Liên Hệ
               </h3>
-              <p className="text-[12px] text-[#7A6B6A] mb-4">
-                Thông tin dùng để xưng hô và gửi thông báo lịch thử váy
-              </p>
+
 
               <div className="grid grid-cols-1 gap-x-5 sm:grid-cols-2">
                 <Form.Item
@@ -292,7 +316,7 @@ export default function ProfilePage() {
               <div className="flex items-center gap-2 mb-1">
                 <IdCard className="w-4 h-4 text-[#874e57]" />
                 <h3 className="font-playfair text-[18px] font-semibold text-[#2C2523] m-0">
-                  2. Thông Tin Pháp Lý & Giao Nhận Lễ Phục
+                  2. Thông Tin Pháp Lý
                 </h3>
               </div>
 
@@ -321,16 +345,14 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-2">
                   <Ruler className="w-4 h-4 text-[#874e57]" />
                   <h3 className="font-playfair text-[18px] font-semibold text-[#2C2523] m-0">
-                    3. Thông Số Vóc Dáng & Số Đo Haute Couture
+                    3. Thông Số Đo
                   </h3>
                 </div>
                 <span className="text-[11px] font-semibold text-[#2E7D32] bg-[#E8F5E9] px-2.5 py-0.5 rounded-full flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-[#2E7D32]" /> Tinh chỉnh may đo miễn phí
                 </span>
               </div>
-              <p className="text-[12px] text-[#7A6B6A] mb-4">
-                Thông số giúp hệ thống tính phom corset và hỗ trợ chuyên viên phòng VIP chuẩn bị váy vừa khít vóc dáng
-              </p>
+
 
               <div className="grid grid-cols-2 gap-x-4 sm:grid-cols-4">
                 <Form.Item
@@ -378,12 +400,7 @@ export default function ProfilePage() {
                 </Form.Item>
               </div>
 
-              <div className="bg-[#FAF7F5] rounded-xl p-3.5 border border-[#EEDECF] flex items-start gap-2.5 text-[12px] text-[#6E5D57]">
-                <Info className="w-4 h-4 text-[#874e57] shrink-0 mt-0.5" />
-                <span>
-                  <strong>Mẹo nhỏ:</strong> Nếu nàng chưa có thước dây hoặc chưa chắc chắn, nàng hoàn toàn có thể để trống. Chuyên viên UniBridal sẽ hỗ trợ đo trực tiếp và tư vấn tại phòng VIP khi nàng đến thử váy.
-                </span>
-              </div>
+
             </div>
 
             {/* Submit / Reset Actions */}
