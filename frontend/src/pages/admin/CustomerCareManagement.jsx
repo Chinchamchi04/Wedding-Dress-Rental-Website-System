@@ -766,14 +766,6 @@ export default function CustomerCareManagement() {
               >
                 <Pin size={16} className={isPinned ? 'fill-[#733F49]' : ''} />
               </button>
-              <button
-                type="button"
-                onClick={() => alert(`Đang kết nối cuộc gọi thoại hotline tư vấn với ${activeConv.name}...`)}
-                className="w-8 h-8 rounded-lg bg-[#FAF0EB] text-[#733F49] flex items-center justify-center hover:bg-[#F3E2DB] transition-colors border-0 cursor-pointer shadow-2xs"
-                title="Gọi điện tư vấn"
-              >
-                <Phone size={15} />
-              </button>
             </div>
           </div>
 
