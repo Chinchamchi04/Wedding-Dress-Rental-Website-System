@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Sparkles,
   CalendarCheck,
+  CalendarDays,
   Package,
   Headphones,
   BarChart3,
@@ -40,6 +41,7 @@ export default function AdminLayout({
       const lower = activeMenu.toLowerCase();
       if (lower.includes('tổng quan') || lower === 'dashboard') return 'dashboard';
       if (lower.includes('đơn thuê') || lower === 'don-thue') return 'don-thue';
+      if (lower.includes('lịch hẹn') || lower === 'appointments' || lower === 'lich-hen') return 'appointments';
       if (lower.includes('mẫu hợp đồng') || lower === 'contract-templates') return 'contract-templates';
       if (lower.includes('hợp đồng') || lower === 'contracts') return 'contracts';
       if (lower.includes('kho hàng') || lower === 'inventory') return 'inventory';
@@ -49,6 +51,7 @@ export default function AdminLayout({
     if (currentPath.includes('/dashboard')) return 'dashboard';
     if (currentPath.includes('/reports') || currentPath.includes('/revenue')) return 'revenue';
     if (currentPath.includes('/don-thue') || currentPath.includes('/orders')) return 'don-thue';
+    if (currentPath.includes('/lich-hen') || currentPath.includes('/appointments')) return 'appointments';
     if (currentPath.includes('/kho-hang') || currentPath.includes('/inventory')) return 'inventory';
     if (currentPath.includes('/cham-soc-khach-hang') || currentPath.includes('/customer-care')) return 'customer-care';
     if (currentPath.includes('/hop-dong') || currentPath.includes('/contracts')) return 'contracts';
@@ -70,6 +73,12 @@ export default function AdminLayout({
       label: 'Quản Lý Đơn Thuê',
       icon: CalendarCheck,
       to: isStaff ? '/staff/don-thue' : '/admin/don-thue'
+    },
+    {
+      key: 'appointments',
+      label: 'Quản Lý Lịch Hẹn',
+      icon: CalendarDays,
+      to: isStaff ? '/staff/lich-hen' : '/admin/lich-hen'
     },
     {
       key: 'contracts',
