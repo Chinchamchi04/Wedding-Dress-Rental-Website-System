@@ -599,25 +599,7 @@ export default function InventoryManagement() {
           )}
         </div>
 
-        <div className="flex justify-between items-center mt-3.5 flex-wrap gap-3">
-          <div className="flex flex-wrap items-center gap-2 text-[11.5px]">
-            <span className="font-bold text-[#3C3133] tracking-wider uppercase mr-1">
-              TIÊU CHUẨN KHO:
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F5EBE6] text-[#3A2E30] font-medium">
-              <span className="w-2 h-2 rounded-full bg-[#3B82F6]" />
-              Nhiệt độ 18°C – 21°C
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F5EBE6] text-[#3A2E30] font-medium">
-              <span className="w-2 h-2 rounded-full bg-[#10B981]" />
-              Độ ẩm 45% – 50%
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F5EBE6] text-[#3A2E30] font-medium">
-              <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
-              Khử khuẩn Ion Âm
-            </span>
-          </div>
-
+        <div className="flex justify-end items-center mt-3">
           <div className="relative">
             <button
               type="button"
