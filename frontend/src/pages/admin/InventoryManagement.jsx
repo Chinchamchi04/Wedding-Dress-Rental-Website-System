@@ -12,8 +12,6 @@ import {
   X,
   Wrench,
   MoreVertical,
-  Download,
-  FileSpreadsheet,
   Check,
   ClipboardCheck,
   ShieldAlert,
@@ -332,16 +330,6 @@ export default function InventoryManagement() {
 
         {/* Action buttons */}
         <div className="pt-2 shrink-0 flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleExportCsv}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#D9C4BD] bg-white text-[#733F49] hover:bg-[#FDF9F8] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-            title="Xuất danh sách kiểm kê kho ra file Excel"
-          >
-            <Download size={15} />
-            <span>Xuất Excel/CSV</span>
-          </button>
-
           <button
             type="button"
             onClick={() => setIsAddModalOpen(true)}
