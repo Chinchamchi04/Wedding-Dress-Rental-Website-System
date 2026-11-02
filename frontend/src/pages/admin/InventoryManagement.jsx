@@ -908,44 +908,37 @@ export default function InventoryManagement() {
 
                           {/* Action Popover Menu */}
                           {actionMenuOpenId === item.id && (
-                            <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-2xl shadow-xl border border-[#EFE5E1] py-2 z-30 text-left animate-fadeIn">
+                            <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-2xl shadow-xl border border-[#EFE5E1] py-2 z-30 text-left animate-fadeIn">
                               <div className="px-3.5 py-1 text-[10px] font-bold text-[#8C7A7B] uppercase tracking-wider bg-[#FCF8F5] mb-1">
-                                Chuyển trạng thái kho
+                                TRẠNG THÁI KHO
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateItemStatus(item.id, 'auto', 'TỰ ĐỘNG THEO ĐƠN THUÊ')}
-                                className="w-full px-3.5 py-2 text-xs text-[#733F49] hover:bg-[#FAF0EC] font-semibold block text-left transition-colors cursor-pointer border-0 bg-transparent"
-                              >
-                                ✦ Tự động (Theo Đơn Thuê)
-                              </button>
                               <button
                                 type="button"
                                 onClick={() => handleUpdateItemStatus(item.id, 'stored', 'CÒN HÀNG')}
                                 className="w-full px-3.5 py-2 text-xs text-[#1D4ED8] hover:bg-[#EFF6FF] font-semibold block text-left transition-colors cursor-pointer border-0 bg-transparent"
                               >
-                                ✨ Chuyển Còn Hàng
+                                ✨ Còn Hàng
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleUpdateItemStatus(item.id, 'ready', 'ĐÃ CHO THUÊ')}
                                 className="w-full px-3.5 py-2 text-xs text-[#1E8347] hover:bg-[#EAF8EE] font-semibold block text-left transition-colors cursor-pointer border-0 bg-transparent"
                               >
-                                ✓ Chuyển Đã Cho Thuê
+                                ✓ Đã Cho Thuê
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleUpdateItemStatus(item.id, 'drying', 'ĐANG BẢO DƯỠNG')}
                                 className="w-full px-3.5 py-2 text-xs text-[#C05621] hover:bg-[#FFF4E6] font-semibold block text-left transition-colors cursor-pointer border-0 bg-transparent"
                               >
-                                ♨ Chuyển Đang Bảo Dưỡng
+                                ♨ Đang Bảo Dưỡng
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleUpdateItemStatus(item.id, 'out_of_stock', 'HẾT HÀNG')}
                                 className="w-full px-3.5 py-2 text-xs text-[#DC2626] hover:bg-[#FEF2F2] font-semibold block text-left transition-colors cursor-pointer border-0 bg-transparent"
                               >
-                                ✕ Chuyển Hết Hàng
+                                ✕ Hết Hàng
                               </button>
 
                               <div className="border-t border-[#F2E5E0] my-1" />
@@ -1105,10 +1098,9 @@ export default function InventoryManagement() {
                     onChange={(e) => setEditStatusType(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] font-medium outline-none focus:border-[#B8737D] cursor-pointer"
                   >
-                    <option value="auto">✦ Tự Động Theo Đơn Thuê</option>
-                    <option value="stored">Còn Hàng (Sẵn Sàng)</option>
-                    <option value="drying">Đang Bảo Dưỡng / Giặt Hấp</option>
+                    <option value="stored">Còn Hàng</option>
                     <option value="ready">Đã Cho Thuê</option>
+                    <option value="drying">Đang Bảo Dưỡng</option>
                     <option value="out_of_stock">Hết Hàng</option>
                   </select>
                 </div>
