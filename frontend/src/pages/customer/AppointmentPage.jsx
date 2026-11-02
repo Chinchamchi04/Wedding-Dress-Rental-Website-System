@@ -184,9 +184,9 @@ export default function AppointmentPage() {
         if (initialDressId) {
           const matched = list.find(
             (d) => String(d.id) === String(initialDressId) ||
-                   String(d._id) === String(initialDressId) ||
-                   String(d.code) === String(initialDressId) ||
-                   Number(d.id) === Number(initialDressId)
+              String(d._id) === String(initialDressId) ||
+              String(d.code) === String(initialDressId) ||
+              Number(d.id) === Number(initialDressId)
           );
           if (matched) {
             setSelectedDressIds([matched.id]);
@@ -701,25 +701,6 @@ export default function AppointmentPage() {
           /* ================= MAIN BOOKING FORM INTERFACE ================= */
           <div className="space-y-10">
 
-            {/* Hero Banner */}
-            <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#2C2523] via-[#3D302E] to-[#4A3A37] text-white p-7 sm:p-10 shadow-xl border border-[#4A3A37]">
-              <div className="max-w-[760px] relative z-10">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#EEDECF] text-[11px] font-bold uppercase tracking-wider mb-3">
-                  <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  <span>TRẢI NGHIỆM ĐẶC QUYỀN PRIVATE SALON VIP 1:1</span>
-                </div>
-                <h1 className="font-playfair text-[28px] sm:text-[40px] font-bold leading-tight mb-3 text-[#FAF4EE]">
-                  Đặt Lịch Thử Váy Cưới Riêng Tư
-                </h1>
-                <p className="font-jakarta text-[14px] sm:text-[15px] text-[#D8C7B8] leading-relaxed m-0 max-w-[650px]">
-                  Không gian thử váy riêng tư tuyệt đối, cùng chuyên gia may đo cao cấp và trà chiều phong cách quý tộc Pháp dành riêng cho nàng dâu và người thân.
-                </p>
-              </div>
-
-              {/* Decorative Subtle Circles */}
-              <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-white/5 to-transparent pointer-events-none" />
-            </div>
-
             {/* Main Form Content */}
             <form onSubmit={handleSubmitBooking} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
@@ -806,11 +787,9 @@ export default function AppointmentPage() {
                     </span>
                     <div>
                       <h2 className="font-playfair text-[19px] sm:text-[21px] font-semibold text-[#2C2523] m-0">
-                        Chọn Ngày & Khung Giờ Hẹn Thử Váy
+                        Chọn Thời Gian Thử Váy
                       </h2>
-                      <p className="text-[12px] text-[#847374] m-0 mt-0.5">
-                        Mỗi buổi hẹn kéo dài 90 phút được chuẩn bị sẵn trang phục theo đúng số đo của nàng
-                      </p>
+
                     </div>
                   </div>
 
@@ -830,9 +809,7 @@ export default function AppointmentPage() {
                           className="w-full bg-[#FCF9F6] border border-[#EEDECF] rounded-xl pl-10 pr-3.5 py-2.5 text-[14px] text-[#2C2523] font-bold focus:outline-none focus:border-[#733F49] focus:bg-white"
                         />
                       </div>
-                      <div className="text-[11px] text-[#847374] mt-1 italic">
-                        {formatVietnameseDate(selectedDate)}
-                      </div>
+
                     </div>
 
                     <div className="md:col-span-7">
@@ -918,9 +895,7 @@ export default function AppointmentPage() {
                         <h2 className="font-playfair text-[19px] sm:text-[21px] font-semibold text-[#2C2523] m-0">
                           Chọn Mẫu Váy Cưới Nàng Muốn Thử
                         </h2>
-                        <p className="text-[12px] text-[#847374] m-0 mt-0.5">
-                          Mẫu váy chính đã chọn và các thiết kế đề xuất tương đồng (Tối đa 2 mẫu thử trong 1 buổi)
-                        </p>
+
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1003,10 +978,7 @@ export default function AppointmentPage() {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-1.5 text-[11.5px] font-semibold text-[#2E7D32] pt-2 border-t border-[#EEDECF]">
-                            <Check className="w-4 h-4 stroke-[2.5]" />
-                            <span>Mẫu váy chính được nghệ nhân chuẩn bị tinh chỉnh phom riêng cho nàng</span>
-                          </div>
+
                         </div>
                       </div>
                     ) : (
@@ -1048,9 +1020,7 @@ export default function AppointmentPage() {
                           <Sparkles className="w-3.5 h-3.5 text-[#B8737D]" />
                           Gợi Ý Thiết Kế Tương Đồng Dành Riêng Cho Nàng
                         </span>
-                        <p className="text-[11.5px] text-[#847374] m-0 mt-0.5">
-                          Nàng có thể chọn thêm 1 mẫu phù hợp để thử cùng trong buổi hẹn VIP Suite (Tối đa 2 mẫu thử)
-                        </p>
+
                       </div>
                       <span className="text-[11px] text-[#733F49] font-semibold">
                         {selectedDressIds.length === 2 ? '✓ Đã chọn đủ 2 mẫu' : '+ Có thể chọn thêm 1 mẫu'}
@@ -1066,11 +1036,10 @@ export default function AppointmentPage() {
                           <div
                             key={dress.id}
                             onClick={() => handleToggleSecondaryDress(dress.id)}
-                            className={`rounded-xl border overflow-hidden cursor-pointer transition-all flex flex-col justify-between relative group ${
-                              isChosenAsSecondary
-                                ? 'border-[#733F49] ring-2 ring-[#733F49]/30 bg-[#FAF4EE] shadow-sm'
-                                : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white hover:border-[#D8C7B8]'
-                            }`}
+                            className={`rounded-xl border overflow-hidden cursor-pointer transition-all flex flex-col justify-between relative group ${isChosenAsSecondary
+                              ? 'border-[#733F49] ring-2 ring-[#733F49]/30 bg-[#FAF4EE] shadow-sm'
+                              : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white hover:border-[#D8C7B8]'
+                              }`}
                           >
                             <div className="aspect-[3/4] w-full overflow-hidden relative">
                               <img
@@ -1104,11 +1073,10 @@ export default function AppointmentPage() {
 
                               <button
                                 type="button"
-                                className={`w-full py-1 text-[10.5px] font-bold rounded-lg border transition-colors cursor-pointer ${
-                                  isChosenAsSecondary
-                                    ? 'bg-[#733F49] text-white border-[#733F49]'
-                                    : 'bg-white text-[#733F49] border-[#EEDECF] hover:bg-[#FAF0EC]'
-                                }`}
+                                className={`w-full py-1 text-[10.5px] font-bold rounded-lg border transition-colors cursor-pointer ${isChosenAsSecondary
+                                  ? 'bg-[#733F49] text-white border-[#733F49]'
+                                  : 'bg-white text-[#733F49] border-[#EEDECF] hover:bg-[#FAF0EC]'
+                                  }`}
                               >
                                 {isChosenAsSecondary ? '✓ Đang chọn thử kèm' : '+ Thử mẫu này'}
                               </button>

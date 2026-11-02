@@ -78,35 +78,9 @@ export default function CustomerCareManagement() {
       const res = await getAppointmentsApi();
       const list = Array.isArray(res?.data) ? res.data : (res?.data?.data || []);
       setAppointments(list);
-      if (list.length > 0) {
-        const liveConvos = list.map((apt, idx) => ({
-          id: apt._id || apt.id || `apt_${idx + 1}`,
-          name: apt.customerName || apt.fullName || 'Khách hàng',
-          avatar: (apt.items && apt.items[0]?.image) || apt.avatar || '/assets/dresses/dress_01.jpg',
-          online: idx % 2 === 0,
-          time: apt.rentalStartDate ? new Date(apt.rentalStartDate).toLocaleDateString('vi-VN') : 'Gần đây',
-          lastMessage: `Lịch hẹn thử váy tại ${apt.branch || 'Showroom'} lúc ${apt.timeSlot || '09:00 - 10:30'}`,
-          unread: apt.status === 'pending',
-          messages: [
-            {
-              id: 1,
-              sender: 'customer',
-              text: `Chào Atelier, em muốn đặt lịch hẹn thử mẫu váy cưới ${apt.dressName || 'Haute Couture'} vào lúc ${apt.timeSlot || '09:00 - 10:30'} ngày ${apt.appointmentDate || apt.date || 'sắp tới'} ạ.`,
-              time: 'Gần đây',
-              status: apt.status === 'pending' ? 'Chưa đọc' : 'Đã xem',
-            },
-          ],
-        }));
-        setConversations(liveConvos);
-        setSelectedId((prev) => prev || liveConvos[0].id);
-        setActiveMessages(liveConvos[0].messages);
-      } else {
-        setConversations([]);
-      }
     } catch (err) {
       console.error('Error fetching appointments:', err);
       setAppointments([]);
-      setConversations([]);
       setAptError('Lỗi kết nối cơ sở dữ liệu: Không thể lấy danh sách lịch hẹn và chăm sóc khách hàng từ MongoDB.');
     } finally {
       setAptLoading(false);
@@ -157,6 +131,7 @@ export default function CustomerCareManagement() {
 
   const fileInputRef = useRef(null);
   const emojiPickerRef = useRef(null);
+  const messagesEndRef = useRef(null);
 
   // Avatar presets cho các hội thoại
   const AVATAR_LIST = [card1Elysian, card2Celeste, card3Lumiere, card4Monet, heroBride];
@@ -188,7 +163,14 @@ export default function CustomerCareManagement() {
         }));
 
         setConversations(mapped);
-        setSelectedId((current) => current || mapped[0].id);
+        setSelectedId((current) => {
+          if (current && mapped.some((m) => m.id === current)) return current;
+          return mapped[0].id;
+        });
+      } else {
+        setConversations([]);
+        setSelectedId(null);
+        setActiveMessages([]);
       }
     } catch (err) {
       console.warn('Lỗi tải danh sách hội thoại:', err);
@@ -249,6 +231,11 @@ export default function CustomerCareManagement() {
 
     return () => clearInterval(interval);
   }, [fetchConversationsList, fetchActiveMessages, selectedId]);
+
+  // Cuộn xuống tin nhắn mới nhất
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [activeMessages]);
 
   // Close emoji picker when clicking outside
   useEffect(() => {
@@ -747,9 +734,9 @@ export default function CustomerCareManagement() {
 
         {/* Right Card: Active Chat View */}
         {activeConv ? (
-          <div className="flex-1 bg-white rounded-2xl border border-[#EFE5E1] shadow-xs overflow-hidden flex flex-col justify-between">
+          <div className="flex-1 bg-white rounded-2xl border border-[#EFE5E1] shadow-xs overflow-hidden flex flex-col justify-between min-h-0">
             {/* Chat Header */}
-            <div className="p-3.5 px-5 bg-[#FAF2EE] border-b border-[#F0E4DF] flex items-center justify-between">
+            <div className="p-3.5 px-5 bg-[#FAF2EE] border-b border-[#F0E4DF] flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
               <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 shadow-xs border-2 border-white ring-1 ring-[#E8D8D0]">
                 <img
@@ -812,58 +799,69 @@ export default function CustomerCareManagement() {
           )}
 
           {/* Messages Stream */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-white">
-            {((activeMessages.length > 0 ? activeMessages : activeConv.messages) || []).map((msg) => {
-              const isStaff = msg.sender === 'staff';
-              if (isStaff) {
-                return (
-                  <div key={msg.id} className="flex flex-col items-end">
-                    <div className="bg-[#733F49] text-white text-[13.5px] leading-relaxed p-4 rounded-2xl rounded-tr-xs max-w-lg shadow-2xs">
-                      {msg.image && (
-                        <img
-                          src={msg.image}
-                          alt="Ảnh đính kèm"
-                          className="rounded-xl max-w-full max-h-56 object-cover mb-2 border border-white/20"
-                        />
-                      )}
-                      {msg.text && <div>{msg.text}</div>}
+          <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4 bg-white">
+            {activeMessages.length === 0 ? (
+              <div className="h-full min-h-[220px] flex flex-col items-center justify-center text-center text-[#9A8B8C] py-8">
+                <div className="w-12 h-12 rounded-full bg-[#FAF2EE] flex items-center justify-center text-[#BA7A83] mb-3">
+                  <Sparkles size={20} />
+                </div>
+                <p className="text-xs font-semibold text-[#7A6B6C]">Chưa có tin nhắn trong cuộc hội thoại này.</p>
+                <p className="text-[11px] text-[#A89899] mt-0.5">Nhập phản hồi hoặc bấm câu trả lời nhanh bên dưới để tư vấn nàng dâu.</p>
+              </div>
+            ) : (
+              activeMessages.map((msg) => {
+                const isStaff = msg.sender === 'staff';
+                if (isStaff) {
+                  return (
+                    <div key={msg.id} className="flex flex-col items-end">
+                      <div className="bg-[#733F49] text-white text-[13.5px] leading-relaxed p-4 rounded-2xl rounded-tr-xs max-w-lg shadow-2xs">
+                        {msg.image && (
+                          <img
+                            src={msg.image}
+                            alt="Ảnh đính kèm"
+                            className="rounded-xl max-w-full max-h-56 object-cover mb-2 border border-white/20"
+                          />
+                        )}
+                        {msg.text && <div>{msg.text}</div>}
+                      </div>
+                      <span className="text-[11px] text-[#9A8B8C] mt-1 mr-1">
+                        {msg.time} • {msg.status}
+                      </span>
                     </div>
-                    <span className="text-[11px] text-[#9A8B8C] mt-1 mr-1">
-                      {msg.time} • {msg.status}
-                    </span>
+                  );
+                }
+
+                return (
+                  <div key={msg.id} className="flex items-start gap-3">
+                    <img
+                      src={activeConv.avatar}
+                      alt={activeConv.name}
+                      className="w-10 h-10 rounded-xl object-cover shrink-0 ring-1 ring-[#EFE5E1] shadow-2xs"
+                    />
+                    <div className="flex flex-col items-start max-w-xl">
+                      <div className="bg-[#FAF5F2] text-[#2C2523] text-[13.5px] leading-relaxed p-4 rounded-2xl rounded-tl-xs border border-[#F0E6E2]">
+                        {msg.image && (
+                          <img
+                            src={msg.image}
+                            alt="Ảnh đính kèm"
+                            className="rounded-xl max-w-full max-h-56 object-cover mb-2 border border-[#EFE5E1]"
+                          />
+                        )}
+                        {msg.text && <div>{msg.text}</div>}
+                      </div>
+                      <span className="text-[11px] text-[#9A8B8C] mt-1 ml-1">
+                        {msg.time} • {msg.status}
+                      </span>
+                    </div>
                   </div>
                 );
-              }
-
-              return (
-                <div key={msg.id} className="flex items-start gap-3">
-                  <img
-                    src={activeConv.avatar}
-                    alt={activeConv.name}
-                    className="w-10 h-10 rounded-xl object-cover shrink-0 ring-1 ring-[#EFE5E1] shadow-2xs"
-                  />
-                  <div className="flex flex-col items-start max-w-xl">
-                    <div className="bg-[#FAF5F2] text-[#2C2523] text-[13.5px] leading-relaxed p-4 rounded-2xl rounded-tl-xs border border-[#F0E6E2]">
-                      {msg.image && (
-                        <img
-                          src={msg.image}
-                          alt="Ảnh đính kèm"
-                          className="rounded-xl max-w-full max-h-56 object-cover mb-2 border border-[#EFE5E1]"
-                        />
-                      )}
-                      {msg.text && <div>{msg.text}</div>}
-                    </div>
-                    <span className="text-[11px] text-[#9A8B8C] mt-1 ml-1">
-                      {msg.time} • {msg.status}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
+              })
+            )}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* Chat Footer & Input */}
-          <div className="border-t border-[#F0E6E2] p-4 bg-white space-y-3">
+          <div className="border-t border-[#F0E6E2] p-4 bg-white space-y-3 shrink-0">
             {/* Quick Replies Row */}
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[10px] font-bold tracking-wider text-[#8C7D7E] uppercase flex items-center gap-1 shrink-0">
