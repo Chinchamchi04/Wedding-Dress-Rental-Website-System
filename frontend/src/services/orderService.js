@@ -56,18 +56,23 @@ export function mapOrder(order) {
  * @param {Object} params - { status, customerId, page, limit }
  */
 export async function getOrders(params = {}) {
+  // Dọn dẹp cache fake cũ trong localStorage nếu có
+  try {
+    localStorage.removeItem('unibridal-orders');
+  } catch {}
+
   try {
     const res = await axiosClient.get('/orders/my', { params });
     const list = Array.isArray(res.data) ? res.data : (Array.isArray(res) ? res : res.data?.data || []);
-    if (list && list.length >= 0) {
+    if (Array.isArray(list)) {
       return list.map(mapOrder);
     }
   } catch (error) {
-    // Không ném lỗi nếu là lỗi xác thực
+    // Không đăng nhập hoặc lỗi kết nối -> trả về mảng rỗng, không tự tạo mock
+    return [];
   }
 
-  const cached = localStorage.getItem('unibridal-orders');
-  return (cached ? JSON.parse(cached) : []).map(mapOrder);
+  return [];
 }
 
 /**
@@ -77,7 +82,8 @@ export async function getOrders(params = {}) {
 export async function getOrder(idOrCode) {
   try {
     const res = await axiosClient.get(`/orders/my/${encodeURIComponent(idOrCode)}`);
-    if (res?.data) return mapOrder(res.data);
+    const raw = res?.data?.data || res?.data;
+    if (raw) return mapOrder(raw);
   } catch (error) {
     // Thử endpoint chung
   }
@@ -87,12 +93,10 @@ export async function getOrder(idOrCode) {
     const raw = res?.data?.data || res?.data;
     if (raw) return mapOrder(raw);
   } catch (error) {
-    // Fallback demo
+    // Lỗi
   }
 
-  const cached = JSON.parse(localStorage.getItem('unibridal-orders') || '[]');
-  if (found) return mapOrder(found);
-    throw new Error('Không tìm thấy đơn hàng trong cơ sở dữ liệu.');
+  throw new Error('Không tìm thấy đơn hàng trong cơ sở dữ liệu.');
 }
 
 export const getOrderById = getOrder;
@@ -105,24 +109,7 @@ export async function createOrder(orderData) {
   try {
     return await axiosClient.post('/orders', orderData);
   } catch (error) {
-    const newOrder = {
-      id: `UB-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`,
-      _id: `ord_${Date.now()}`,
-      orderCode: `UB-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`,
-      status: 'pending',
-      statusLabel: 'Chờ Xác Nhận',
-      date: new Date().toLocaleDateString('vi-VN'),
-      createdAt: new Date().toISOString(),
-      ...orderData,
-    };
-    const cached = JSON.parse(localStorage.getItem('unibridal-orders') || '[]');
-    cached.unshift(newOrder);
-    localStorage.setItem('unibridal-orders', JSON.stringify(cached));
-    return {
-      success: true,
-      message: 'Đặt đơn thuê thành công (Offline Demo)',
-      data: newOrder,
-    };
+    throw new Error(error.response?.data?.message || error.message || 'Không thể tạo đơn thuê, vui lòng thử lại.');
   }
 }
 

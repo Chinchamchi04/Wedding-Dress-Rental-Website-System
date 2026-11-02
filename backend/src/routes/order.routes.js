@@ -7,8 +7,8 @@ const router = Router();
 // 1. Tạo đơn thuê mới (Hỗ trợ cả khách đăng nhập lẫn guest checkout)
 router.post('/', optionalAuthenticate, orderController.createOrder);
 
-// 2. Khách hàng xem lịch sử đơn thuê cá nhân
-router.get('/my', optionalAuthenticate, orderController.getMyOrders);
+// 2. Khách hàng xem lịch sử đơn thuê cá nhân (Yêu cầu đăng nhập tài khoản)
+router.get('/my', authenticate, orderController.getMyOrders);
 
 // 3. Nhân viên / Quản trị viên xem tất cả đơn thuê (kết nối trực tiếp MongoDB)
 router.get('/', optionalAuthenticate, orderController.getAllOrders);

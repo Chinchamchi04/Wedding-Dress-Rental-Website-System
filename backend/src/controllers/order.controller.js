@@ -15,6 +15,13 @@ export const createOrder = async (req, res, next) => {
 
 export const getMyOrders = async (req, res, next) => {
   try {
+    if (!req.user?._id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Vui lòng đăng nhập để xem lịch sử đơn hàng.',
+        data: [],
+      });
+    }
     const orders = await orderService.getMyOrders(req.user._id);
     res.status(200).json({
       success: true,

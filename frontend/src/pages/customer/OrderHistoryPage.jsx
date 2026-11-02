@@ -21,6 +21,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import AccountLayout from '../../components/layout/AccountLayout';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   formatVnd,
   getDemoOrders,
@@ -710,6 +711,7 @@ function OrderCard({ order, onOpenInspection }) {
 }
 
 export default function OrderHistoryPage() {
+  const { user, token } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -717,12 +719,28 @@ export default function OrderHistoryPage() {
   const [query, setQuery] = useState('');
   const [selectedInspectionOrder, setSelectedInspectionOrder] = useState(null);
 
+  // Xóa bỏ triệt để dữ liệu đơn hàng giả lập (fake) lưu trong localStorage của trình duyệt
+  useEffect(() => {
+    try {
+      localStorage.removeItem('unibridal-orders');
+      localStorage.removeItem('unibridal-last-order');
+    } catch {}
+  }, []);
+
   const fetchOrders = () => {
+    if (!token && !user) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     getOrders()
       .then((data) => {
         if (Array.isArray(data)) {
           setOrders(data);
+        } else {
+          setOrders([]);
         }
       })
       .catch((issue) => {
@@ -735,7 +753,7 @@ export default function OrderHistoryPage() {
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [token, user]);
 
   const filtered = useMemo(
     () =>
@@ -757,66 +775,96 @@ export default function OrderHistoryPage() {
           Theo dõi tiến độ may đo, lịch trình thử váy và tình trạng giao nhận các kiệt tác lễ phục Haute Couture của nàng.
         </p>
         <div className="account-heading-rule mt-3" />
-        {error && (
-          <p role="alert" className="mt-4 text-sm text-red-700">
-            {error}
-          </p>
-        )}
-        <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Lọc trạng thái đơn hàng">
-          {tabs.map(({ id, label }) => (
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === id}
-              key={id}
-              onClick={() => setTab(id)}
-              className={`account-tab ${tab === id ? 'account-tab-active' : ''}`}
-            >
-              {label} ({id === 'all' ? orders.length : orders.filter((order) => order.status === id).length})
-            </button>
-          ))}
-        </div>
-        <div className="mt-5 border-b border-[#eee2df] pb-5">
-          <label className="account-search relative block w-full">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#967c79]" />
-            <span className="sr-only">Tìm mã đơn hàng hoặc tên váy</span>
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Tìm theo mã đơn hàng, tên váy cưới..."
-              className="w-full rounded-xl border border-[#eee2df] bg-[#fff8f6] py-2.5 pl-10 pr-4 text-sm outline-none focus:border-[#874e57] focus:bg-white transition-colors"
-            />
-          </label>
-        </div>
-        <div className="mt-5 space-y-5">
-          {loading ? (
-            <p className="py-8 text-center text-sm text-[#766966]">Đang tải đơn hàng...</p>
-          ) : filtered.length ? (
-            filtered.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onOpenInspection={(ord) => setSelectedInspectionOrder(ord)}
-              />
-            ))
-          ) : (
-            <div className="py-16 text-center">
-              <Heart size={30} className="mx-auto text-[#b8737d]" />
-              <h2 className="mt-4 font-playfair text-xl">Không tìm thấy đơn hàng</h2>
-              <p className="mt-2 text-sm text-[#766966]">Thử bộ lọc khác hoặc xóa từ khóa tìm kiếm.</p>
-              <button
-                type="button"
-                onClick={() => {
-                  setTab('all');
-                  setQuery('');
-                }}
-                className="account-button-secondary mt-5"
-              >
-                XÓA BỘ LỌC
-              </button>
+
+        {!user && !token ? (
+          <div className="py-16 text-center">
+            <div className="w-16 h-16 rounded-full bg-[#FAF0EC] text-[#733F49] flex items-center justify-center mx-auto mb-4">
+              <FileText size={28} />
             </div>
-          )}
-        </div>
+            <h2 className="font-playfair text-2xl font-bold text-[#5F2B36]">Chưa Đăng Nhập Tài Khoản</h2>
+            <p className="mt-2 text-sm text-[#7A6B6C] max-w-md mx-auto">
+              Vui lòng đăng nhập tài khoản của nàng để theo dõi lịch sử thuê váy cưới, tiến độ giao nhận và biên bản kiểm định cọc.
+            </p>
+            <Link to="/login" className="account-button-primary mt-6 inline-flex items-center gap-2 rounded-xl px-6 py-2.5 text-xs font-bold uppercase tracking-wider">
+              Đăng Nhập Ngay
+            </Link>
+          </div>
+        ) : (
+          <>
+            {error && (
+              <p role="alert" className="mt-4 text-sm text-red-700">
+                {error}
+              </p>
+            )}
+            <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Lọc trạng thái đơn hàng">
+              {tabs.map(({ id, label }) => (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === id}
+                  key={id}
+                  onClick={() => setTab(id)}
+                  className={`account-tab ${tab === id ? 'account-tab-active' : ''}`}
+                >
+                  {label} ({id === 'all' ? orders.length : orders.filter((order) => order.status === id).length})
+                </button>
+              ))}
+            </div>
+            <div className="mt-5 border-b border-[#eee2df] pb-5">
+              <label className="account-search relative block w-full">
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#967c79]" />
+                <span className="sr-only">Tìm mã đơn hàng hoặc tên váy</span>
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Tìm theo mã đơn hàng, tên váy cưới..."
+                  className="w-full rounded-xl border border-[#eee2df] bg-[#fff8f6] py-2.5 pl-10 pr-4 text-sm outline-none focus:border-[#874e57] focus:bg-white transition-colors"
+                />
+              </label>
+            </div>
+            <div className="mt-5 space-y-5">
+              {loading ? (
+                <p className="py-8 text-center text-sm text-[#766966]">Đang tải đơn hàng...</p>
+              ) : filtered.length ? (
+                filtered.map((order) => (
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    onOpenInspection={(ord) => setSelectedInspectionOrder(ord)}
+                  />
+                ))
+              ) : (
+                <div className="py-16 text-center">
+                  <Heart size={30} className="mx-auto text-[#b8737d]" />
+                  <h2 className="mt-4 font-playfair text-xl font-bold text-[#5F2B36]">
+                    {orders.length === 0 ? 'Nàng chưa có đơn thuê nào' : 'Không tìm thấy đơn hàng phù hợp'}
+                  </h2>
+                  <p className="mt-2 text-sm text-[#766966]">
+                    {orders.length === 0
+                      ? 'Hãy khám phá các mẫu thiết kế Haute Couture mới nhất của UniBridal.'
+                      : 'Thử bộ lọc khác hoặc xóa từ khóa tìm kiếm.'}
+                  </p>
+                  {orders.length === 0 ? (
+                    <Link to="/collections" className="account-button-primary mt-5 inline-flex items-center gap-2 rounded-xl px-5 py-2 text-xs font-bold">
+                      KHÁM PHÁ BỘ SƯU TẬP
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTab('all');
+                        setQuery('');
+                      }}
+                      className="account-button-secondary mt-5"
+                    >
+                      XÓA BỘ LỌC
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </section>
 
       {/* Modal Kiểm Định & Hoàn Cọc (Khách Hàng) */}

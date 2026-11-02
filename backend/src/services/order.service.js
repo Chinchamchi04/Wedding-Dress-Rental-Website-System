@@ -114,7 +114,18 @@ export const createOrder = async (orderData, currentUser = null) => {
 };
 
 export const getMyOrders = async (userId) => {
-  const orders = await Order.find({ customerId: userId }).sort({ createdAt: -1 }).lean();
+  if (!userId) return [];
+  const user = await User.findById(userId).lean();
+  const conditions = [{ customerId: userId }];
+  if (user?.email) {
+    conditions.push({ customerEmail: user.email });
+    conditions.push({ email: user.email });
+  }
+  if (user?.phone) {
+    conditions.push({ customerPhone: user.phone });
+    conditions.push({ phone: user.phone });
+  }
+  const orders = await Order.find({ $or: conditions }).sort({ createdAt: -1 }).lean();
   const orderIds = orders.map((o) => o._id);
   const inspections = await ReturnInspection.find({ orderId: { $in: orderIds } }).lean();
   const inspectionMap = new Map(inspections.map((i) => [String(i.orderId), i]));
