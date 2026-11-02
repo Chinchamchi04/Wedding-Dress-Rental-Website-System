@@ -79,10 +79,10 @@ export default function InventoryManagement() {
             const code = d.code || `UB-${(index + 1).toString().padStart(3, '0')}`;
             const cabinet = cabinets[index % cabinets.length];
             const statusType = index % 8 === 0 ? 'drying' : index % 7 === 0 ? 'pending' : index % 3 === 0 ? 'ready' : 'stored';
-            const statusText = statusType === 'stored' ? 'ĐẠT CHUẨN LƯU KHO'
-              : statusType === 'ready' ? 'SẴN SÀNG XUẤT GIAO'
-                : statusType === 'drying' ? 'GIẶT SẤY NHIỆT THẤP'
-                  : 'CHỜ KIỂM ĐỊNH';
+            const statusText = statusType === 'stored' ? 'CÒN HÀNG'
+              : statusType === 'ready' ? 'ĐÃ CHO THUÊ'
+                : statusType === 'drying' ? 'ĐANG BẢO DƯỠNG'
+                  : 'ĐANG HẬU KIỂM';
 
             const rawSizes = Array.isArray(d.sizes) && d.sizes.length > 0 ? d.sizes : ['S', 'M'];
             const mappedSizes = rawSizes.map((sz) => ({
@@ -90,12 +90,12 @@ export default function InventoryManagement() {
             }));
 
             const inspectNote = statusType === 'ready'
-              ? 'Phom dáng 100% nguyên vẹn'
+              ? 'Đang phục vụ hợp đồng thuê'
               : statusType === 'drying'
-                ? 'Đang giặt sấy vi khí hậu'
+                ? 'Đang giặt hấp vi khí hậu'
                 : statusType === 'pending'
-                  ? 'Cần kiểm định ren & gọng'
-                  : 'Đạt chuẩn bảo quản 10/10';
+                  ? 'Kiểm tra hiện trạng sau hoàn trả'
+                  : 'Sẵn sàng phục vụ thử váy';
 
             return {
               id: d._id || d.id || `inv_${index + 1}`,
@@ -137,10 +137,10 @@ export default function InventoryManagement() {
 
   const statusOptions = [
     { value: 'all', label: 'Tất Cả Tình Trạng' },
-    { value: 'stored', label: 'Đạt chuẩn lưu kho' },
-    { value: 'ready', label: 'Sẵn sàng xuất giao' },
-    { value: 'drying', label: 'Giặt sấy nhiệt thấp' },
-    { value: 'pending', label: 'Chờ kiểm định sau thuê' },
+    { value: 'stored', label: 'Còn hàng' },
+    { value: 'ready', label: 'Đã cho thuê' },
+    { value: 'drying', label: 'Đang bảo dưỡng' },
+    { value: 'pending', label: 'Đang hậu kiểm' },
   ];
 
   const filteredItems = useMemo(() => {
@@ -348,7 +348,7 @@ export default function InventoryManagement() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#736364] uppercase">
-                TỔNG LỄ PHỤC TRONG KHO
+                CÒN HÀNG
               </span>
               <div className="w-11 h-11 rounded-2xl bg-[#FDECEE] flex items-center justify-center text-[#B8737D]">
                 <HangerIcon size={20} strokeWidth={1.8} />
@@ -356,15 +356,15 @@ export default function InventoryManagement() {
             </div>
             <div className="flex items-baseline">
               <span className="text-[34px] font-bold text-[#2C2523] leading-none">
-                {totalCount}
+                {storedCount}
               </span>
               <span className="text-[13px] font-medium text-[#8C7D7E] ml-2">
-                mẫu váy lưu kho
+                thiết kế có sẵn
               </span>
             </div>
           </div>
           <div className="mt-5 flex items-center gap-1.5 text-[12px] text-[#1E8347] font-medium">
-            <span>{storedCount} thiết kế đạt chuẩn lưu kho</span>
+            <span>Sẵn sàng phục vụ thử váy &amp; ký thuê</span>
           </div>
         </div>
 
@@ -373,7 +373,7 @@ export default function InventoryManagement() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#736364] uppercase">
-                SẴN SÀNG XUẤT GIAO
+                ĐÃ CHO THUÊ
               </span>
               <div className="w-11 h-11 rounded-2xl bg-[#EAF7EE] flex items-center justify-center text-[#229A53]">
                 <CheckCircle2 size={20} />
@@ -390,7 +390,7 @@ export default function InventoryManagement() {
           </div>
           <div className="mt-5 flex items-center gap-1.5 text-[12px] text-[#6A5B5C]">
             <Check size={14} className="text-[#229A53]" />
-            <span>Đạt chuẩn vệ sinh tơ tằm &amp; hấp phom</span>
+            <span>Đang phục vụ hợp đồng của cô dâu</span>
           </div>
         </div>
 
@@ -399,7 +399,7 @@ export default function InventoryManagement() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#736364] uppercase">
-                ĐANG BẢO DƯỠNG / GIẶT HẤP
+                ĐANG BẢO DƯỠNG
               </span>
               <div className="w-11 h-11 rounded-2xl bg-[#FEF2E6] flex items-center justify-center text-[#D97706]">
                 <HangerIcon size={20} strokeWidth={1.8} />
@@ -416,7 +416,7 @@ export default function InventoryManagement() {
           </div>
           <div className="mt-5 flex items-center gap-1.5 text-[12px] text-[#6A5B5C]">
             <Clock size={14} className="text-[#D97706]" />
-            <span>Xử lý giặt sấy nhiệt thấp vi khí hậu</span>
+            <span>Giặt khô, là hơi vi khí hậu phục hồi phom</span>
           </div>
         </div>
 
@@ -425,7 +425,7 @@ export default function InventoryManagement() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#736364] uppercase">
-                CHỜ KIỂM ĐỊNH SAU THUÊ
+                ĐANG HẬU KIỂM
               </span>
               <div className="w-11 h-11 rounded-2xl bg-[#FDECEE] flex items-center justify-center text-[#D03B3B]">
                 <AlertTriangle size={20} />
@@ -441,7 +441,7 @@ export default function InventoryManagement() {
             </div>
           </div>
           <div className="mt-5 flex items-center gap-1 text-[12px] text-[#C93B3B] font-medium">
-            <span>Cần kiểm định ren &amp; gọng siết eo</span>
+            <span>Kiểm tra hiện trạng &amp; đối soát hoàn cọc</span>
           </div>
         </div>
       </div>
@@ -641,28 +641,28 @@ export default function InventoryManagement() {
 
                       {/* Col 4: Tình trạng (Capsule badge đồng bộ với 4 card tổng quan) */}
                       <td className="py-4 px-4 text-center whitespace-nowrap">
-                        {item.statusType === 'ready' && (
-                          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase whitespace-nowrap bg-[#EAF7EE] text-[#1E8347] border border-[#BCE7C7]">
-                            <CheckCircle2 size={13} className="text-[#1E8347]" />
-                            <span>Sẵn Sàng Xuất Giao</span>
-                          </span>
-                        )}
                         {item.statusType === 'stored' && (
                           <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase whitespace-nowrap bg-[#EFF6FF] text-[#1D4ED8] border border-[#BFDBFE]">
                             <Sparkles size={13} className="text-[#1D4ED8]" />
-                            <span>Đạt Chuẩn Lưu Kho</span>
+                            <span>Còn Hàng</span>
+                          </span>
+                        )}
+                        {item.statusType === 'ready' && (
+                          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase whitespace-nowrap bg-[#EAF7EE] text-[#1E8347] border border-[#BCE7C7]">
+                            <CheckCircle2 size={13} className="text-[#1E8347]" />
+                            <span>Đã Cho Thuê</span>
                           </span>
                         )}
                         {item.statusType === 'drying' && (
                           <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase whitespace-nowrap bg-[#FEF2E6] text-[#D97706] border border-[#FED7AA]">
                             <Clock size={13} className="text-[#D97706]" />
-                            <span>Giặt Sấy Nhiệt Thấp</span>
+                            <span>Đang Bảo Dưỡng</span>
                           </span>
                         )}
                         {item.statusType === 'pending' && (
                           <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase whitespace-nowrap bg-[#FDECEE] text-[#D03B3B] border border-[#FCA5A5]">
                             <AlertTriangle size={13} className="text-[#D03B3B]" />
-                            <span>Chờ Kiểm Định</span>
+                            <span>Đang Hậu Kiểm</span>
                           </span>
                         )}
                       </td>
@@ -728,24 +728,31 @@ export default function InventoryManagement() {
                             <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl shadow-xl border border-[#EFE5E1] py-1.5 z-30 text-left">
                               <button
                                 type="button"
-                                onClick={() => handleUpdateItemStatus(item.id, 'ready', 'SẴN SÀNG XUẤT GIAO')}
+                                onClick={() => handleUpdateItemStatus(item.id, 'stored', 'CÒN HÀNG')}
+                                className="w-full px-3.5 py-2 text-xs text-[#1D4ED8] hover:bg-[#EFF6FF] font-semibold block text-left transition-colors cursor-pointer"
+                              >
+                                ✨ Chuyển Còn Hàng
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateItemStatus(item.id, 'ready', 'ĐÃ CHO THUÊ')}
                                 className="w-full px-3.5 py-2 text-xs text-[#1E8347] hover:bg-[#EAF8EE] font-semibold block text-left transition-colors cursor-pointer"
                               >
-                                ✓ Chuyển Sẵn Sàng Xuất Giao
+                                ✓ Chuyển Đã Cho Thuê
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleUpdateItemStatus(item.id, 'drying', 'GIẶT SẤY NHIỆT THẤP')}
+                                onClick={() => handleUpdateItemStatus(item.id, 'drying', 'ĐANG BẢO DƯỠNG')}
                                 className="w-full px-3.5 py-2 text-xs text-[#C05621] hover:bg-[#FFF4E6] font-semibold block text-left transition-colors cursor-pointer"
                               >
-                                ♨ Chuyển Giặt Hấp Nhiệt Thấp
+                                ♨ Chuyển Đang Bảo Dưỡng
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleUpdateItemStatus(item.id, 'pending', 'CHỜ KIỂM ĐỊNH SAU THUÊ')}
-                                className="w-full px-3.5 py-2 text-xs text-[#7E3AF2] hover:bg-[#F5EEFA] font-semibold block text-left transition-colors cursor-pointer"
+                                onClick={() => handleUpdateItemStatus(item.id, 'pending', 'ĐANG HẬU KIỂM')}
+                                className="w-full px-3.5 py-2 text-xs text-[#D03B3B] hover:bg-[#FDECEE] font-semibold block text-left transition-colors cursor-pointer"
                               >
-                                ⏱ Đưa Vào Hàng Đợi Kiểm Định
+                                ⏱ Chuyển Đang Hậu Kiểm
                               </button>
                               <div className="h-px bg-[#F0E6E2] my-1" />
                               <button
@@ -887,7 +894,7 @@ export default function InventoryManagement() {
                   <div>
                     <span className="text-[#8C7D7E] block">Tình trạng kiểm kê:</span>
                     <span className="font-bold text-[#1E8347]">
-                      {selectedItem.statusText || 'ĐẠT CHUẨN LƯU KHO'}
+                      {selectedItem.statusText || 'CÒN HÀNG'}
                     </span>
                   </div>
                   <div className="text-right">
