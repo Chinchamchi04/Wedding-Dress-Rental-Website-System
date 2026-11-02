@@ -683,8 +683,8 @@ export default function AppointmentPage() {
                           key={branch.id}
                           onClick={() => setSelectedBranchId(branch.id)}
                           className={`rounded-2xl border overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${isSelected
-                              ? 'border-[#733F49] ring-2 ring-[#733F49]/20 bg-[#FAF4EE] shadow-sm'
-                              : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white hover:border-[#D8C7B8]'
+                            ? 'border-[#733F49] ring-2 ring-[#733F49]/20 bg-[#FAF4EE] shadow-sm'
+                            : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white hover:border-[#D8C7B8]'
                             }`}
                         >
                           <div className="h-32 w-full overflow-hidden relative">
@@ -784,8 +784,8 @@ export default function AppointmentPage() {
                             type="button"
                             onClick={() => setPeriodFilter(p.id)}
                             className={`flex-1 py-1.5 rounded-lg text-[12px] font-bold transition-all border-0 cursor-pointer ${periodFilter === p.id
-                                ? 'bg-[#733F49] text-white shadow-2xs'
-                                : 'bg-transparent text-[#6B5C5D] hover:text-[#2C2523]'
+                              ? 'bg-[#733F49] text-white shadow-2xs'
+                              : 'bg-transparent text-[#6B5C5D] hover:text-[#2C2523]'
                               }`}
                           >
                             {p.label}
@@ -809,10 +809,10 @@ export default function AppointmentPage() {
                             key={slot.id}
                             onClick={() => !isDisabled && setSelectedTimeSlotId(slot.id)}
                             className={`rounded-xl p-3 border transition-all text-left ${isDisabled
-                                ? 'bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed'
-                                : isSelected
-                                  ? 'border-[#733F49] bg-[#FAF3F0] ring-1 ring-[#733F49] shadow-2xs cursor-pointer'
-                                  : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white cursor-pointer'
+                              ? 'bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed'
+                              : isSelected
+                                ? 'border-[#733F49] bg-[#FAF3F0] ring-1 ring-[#733F49] shadow-2xs cursor-pointer'
+                                : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white cursor-pointer'
                               }`}
                           >
                             <div className="flex items-center justify-between mb-1">
@@ -821,10 +821,10 @@ export default function AppointmentPage() {
                               </span>
                               <span
                                 className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isDisabled
-                                    ? 'bg-gray-200 text-gray-500'
-                                    : slot.available === 1
-                                      ? 'bg-[#FFEBEE] text-[#C62828]'
-                                      : 'bg-[#E8F5E9] text-[#2E7D32]'
+                                  ? 'bg-gray-200 text-gray-500'
+                                  : slot.available === 1
+                                    ? 'bg-[#FFEBEE] text-[#C62828]'
+                                    : 'bg-[#E8F5E9] text-[#2E7D32]'
                                   }`}
                               >
                                 {isDisabled ? 'Hết chỗ' : `Còn ${slot.available} chỗ`}
@@ -875,8 +875,8 @@ export default function AppointmentPage() {
                           key={dress.id}
                           onClick={() => handleToggleDress(dress.id)}
                           className={`rounded-xl border overflow-hidden cursor-pointer transition-all relative flex flex-col justify-between ${isSelected
-                              ? 'border-[#733F49] ring-2 ring-[#733F49]/30 bg-[#FAF4EE] shadow-sm'
-                              : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white hover:border-[#D8C7B8]'
+                            ? 'border-[#733F49] ring-2 ring-[#733F49]/30 bg-[#FAF4EE] shadow-sm'
+                            : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white hover:border-[#D8C7B8]'
                             }`}
                         >
                           <div className="aspect-[3/4] w-full overflow-hidden relative">
@@ -937,8 +937,8 @@ export default function AppointmentPage() {
                           key={srv.id}
                           onClick={() => handleToggleService(srv.id)}
                           className={`rounded-xl p-4 border cursor-pointer transition-all flex items-start gap-3.5 ${isSelected
-                              ? 'border-[#733F49] bg-[#FAF3F0] shadow-2xs'
-                              : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white'
+                            ? 'border-[#733F49] bg-[#FAF3F0] shadow-2xs'
+                            : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white'
                             }`}
                         >
                           <input
@@ -1055,26 +1055,7 @@ export default function AppointmentPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block font-jakarta text-[11px] font-bold uppercase tracking-wider text-[#733F49] mb-1.5">
-                          SỐ LƯỢNG NGƯỜI ĐI CÙNG (CHÚ RỂ / GIA ĐÌNH)
-                        </label>
-                        <div className="flex items-center gap-2">
-                          {[1, 2, 3, 4].map((num) => (
-                            <button
-                              key={num}
-                              type="button"
-                              onClick={() => setGuestsCount(num)}
-                              className={`flex-1 py-2 rounded-xl text-[13px] font-bold transition-all border cursor-pointer ${guestsCount === num
-                                  ? 'bg-[#733F49] text-white border-[#733F49]'
-                                  : 'bg-[#FCF9F6] text-[#2C2523] border-[#EEDECF] hover:bg-white'
-                                }`}
-                            >
-                              {num} người
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+
 
                       <div>
                         <label className="block font-jakarta text-[11px] font-bold uppercase tracking-wider text-[#733F49] mb-1.5">
