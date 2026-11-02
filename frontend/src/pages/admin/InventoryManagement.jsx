@@ -17,9 +17,10 @@ import {
   Sparkles,
   RefreshCw,
   Layers,
+  Trash2,
 } from 'lucide-react';
 import HangerIcon from '../../components/common/HangerIcon';
-import { getAllDresses } from '../../services/dressService';
+import { getAllDresses, deleteDress } from '../../services/dressService';
 import { getAllOrdersAdmin } from '../../services/orderService';
 import { formatCurrencyVND } from '../../utils/formatCurrency';
 
@@ -208,10 +209,20 @@ export default function InventoryManagement() {
       const dressList = Array.isArray(dressesRes?.data) ? dressesRes.data : [];
       const orderList = Array.isArray(ordersRes?.orders) ? ordersRes.orders : [];
 
-      setRawDresses(dressList);
+      // Lấy danh sách ID đã xóa từ localStorage (nếu có) để lọc bỏ
+      let deletedIds = [];
+      try {
+        deletedIds = JSON.parse(localStorage.getItem('unibridal_deleted_dress_ids') || '[]');
+      } catch {}
+
+      const activeDressList = dressList.filter(
+        (d) => !deletedIds.includes(d._id || d.id) && d.status !== 'retired'
+      );
+
+      setRawDresses(activeDressList);
       setOrders(orderList);
 
-      const computed = dressList.map((d, index) =>
+      const computed = activeDressList.map((d, index) =>
         computeItemData(d, index, orderList, manualOverrides)
       );
       setItems(computed);
@@ -250,13 +261,32 @@ export default function InventoryManagement() {
         statusFilter === 'all' ||
         item.statusType === statusFilter ||
         (statusFilter === 'stored' && item.statusType === 'partially_rented') ||
-        (statusFilter === 'ready' && item.statusType === 'out_of_stock');
+        (statusFilter === 'ready' &&
+          (item.statusType === 'out_of_stock' ||
+            item.statusType === 'partially_rented' ||
+            (item.rentedCount && item.rentedCount > 0)));
 
       return matchSearch && matchStatus;
     });
   }, [items, searchTerm, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
+
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 6) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    if (activePage < 3) {
+      return [1, 2, 3, '...', totalPages - 1, totalPages];
+    }
+    if (activePage >= totalPages - 2) {
+      return ['...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+    if (activePage + 2 >= totalPages - 1) {
+      return ['...', activePage - 1, activePage, activePage + 1, totalPages - 1, totalPages];
+    }
+    return ['...', activePage - 1, activePage, activePage + 1, '...', totalPages - 1, totalPages];
+  }, [activePage, totalPages]);
 
   const paginatedItems = useMemo(() => {
     const start = (activePage - 1) * PAGE_SIZE;
@@ -414,11 +444,79 @@ export default function InventoryManagement() {
     showToast(`Đã nhập kho thành công mẫu váy: ${newItem.name}`);
   };
 
-  // Đếm các số liệu tổng quan
-  const totalCount = items.length;
+  // Quản lý xóa mẫu váy khỏi kho
+  const [deletingItem, setDeletingItem] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const handleConfirmDeleteItem = (item) => {
+    setActionMenuOpenId(null);
+    setDeletingItem(item);
+  };
+
+  const handleExecuteDelete = async () => {
+    if (!deletingItem) return;
+    setDeleteLoading(true);
+    try {
+      // 1. Gọi API Backend nếu là mẫu váy có ID trong database
+      if (deletingItem.id && !String(deletingItem.id).startsWith('new_')) {
+        try {
+          await deleteDress(deletingItem.id);
+        } catch (apiErr) {
+          console.warn('API delete dress warning:', apiErr);
+        }
+      }
+
+      // 2. Ghi nhận ID đã xóa vào localStorage để không bị tải lại khi reload
+      try {
+        const deletedIds = JSON.parse(localStorage.getItem('unibridal_deleted_dress_ids') || '[]');
+        if (!deletedIds.includes(deletingItem.id)) {
+          deletedIds.push(deletingItem.id);
+          localStorage.setItem('unibridal_deleted_dress_ids', JSON.stringify(deletedIds));
+        }
+      } catch {}
+
+      // 3. Xóa override nếu có
+      if (manualOverrides[deletingItem.id]) {
+        const nextOverrides = { ...manualOverrides };
+        delete nextOverrides[deletingItem.id];
+        setManualOverrides(nextOverrides);
+        try {
+          localStorage.setItem('unibridal_inventory_overrides', JSON.stringify(nextOverrides));
+        } catch {}
+      }
+
+      // 4. Cập nhật state UI ngay lập tức
+      setItems((prev) => prev.filter((it) => it.id !== deletingItem.id));
+      setRawDresses((prev) => prev.filter((d) => (d._id || d.id) !== deletingItem.id));
+
+      showToast(`Đã xóa thành công mẫu váy "${deletingItem.name}" khỏi kho!`);
+      setDeletingItem(null);
+    } catch (err) {
+      console.error('Lỗi khi xóa mẫu váy khỏi kho:', err);
+      showToast('Có lỗi xảy ra khi xóa mẫu váy khỏi kho.');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  // Đếm các số liệu tổng quan theo yêu cầu quản lý kho:
+  // 1. Tổng số váy (tính tổng chiếc/bộ váy trên mọi size)
   const totalUnitsAll = items.reduce((sum, item) => sum + (item.totalStock || 0), 0);
-  const storedCount = items.filter((i) => i.statusType === 'stored' || i.statusType === 'partially_rented').length;
-  const maintenanceCount = items.filter((i) => i.statusType === 'drying' || i.statusType === 'inspecting').length;
+
+  // 2. Tổng số mẫu (tổng số mẫu thiết kế lưu kho)
+  const totalCount = items.length;
+
+  // 3. Tổng số mẫu đang cho thuê (có đơn thuê hoặc trạng thái đã cho thuê)
+  const rentedModelsCount = items.filter(
+    (i) =>
+      (i.rentedCount && i.rentedCount > 0) ||
+      i.statusType === 'ready' ||
+      i.statusType === 'partially_rented' ||
+      i.statusType === 'out_of_stock'
+  ).length;
+
+  // 4. Tổng số mẫu đang bảo dưỡng (giặt khô, là hơi phục hồi vi khí hậu)
+  const maintenanceCount = items.filter((i) => i.statusType === 'drying').length;
 
   const selectedFilterLabel =
     statusOptions.find((o) => o.value === statusFilter)?.label || 'Tất Cả Tình Trạng';
@@ -483,13 +581,38 @@ export default function InventoryManagement() {
         </div>
       </div>
 
-      {/* 4 Top Metric Cards */}
+      {/* 4 Top Metric Cards: Tổng số váy, Tổng số mẫu, Tổng số mẫu đang cho thuê, Tổng số mẫu đang bảo dưỡng */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {/* Card 1: TỔNG SỐ VÁY */}
+        <div className="bg-white rounded-2xl border border-[#C6EED1] p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-bold tracking-[1.2px] text-[#1E8347] uppercase">
+                TỔNG SỐ VÁY
+              </span>
+              <div className="w-10 h-10 rounded-xl bg-[#EAF8EE] flex items-center justify-center text-[#1E8347]">
+                <HangerIcon size={18} />
+              </div>
+            </div>
+            <div className="flex items-baseline">
+              <span className="text-[32px] font-bold text-[#1E8347] leading-none">
+                {totalUnitsAll}
+              </span>
+              <span className="text-[12px] font-medium text-[#736364] ml-2">chiếc váy</span>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-1.5 text-[11.5px] text-[#1E8347] font-medium">
+            <Check size={13} />
+            <span>Tổng số lượng tính theo tất cả size</span>
+          </div>
+        </div>
+
+        {/* Card 2: TỔNG SỐ MẪU */}
         <div className="bg-white rounded-2xl border border-[#EFE5E1] p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-bold tracking-[1.2px] text-[#736364] uppercase">
-                TỔNG MẪU LỄ PHỤC
+              <span className="text-[11px] font-bold tracking-[1.2px] text-[#733F49] uppercase">
+                TỔNG SỐ MẪU
               </span>
               <div className="w-10 h-10 rounded-xl bg-[#FAF0EC] flex items-center justify-center text-[#733F49]">
                 <Layers size={18} />
@@ -503,38 +626,16 @@ export default function InventoryManagement() {
             </div>
           </div>
           <div className="mt-4 flex items-center gap-1.5 text-[11.5px] text-[#733F49] font-medium">
-            <span>Bộ sưu tập Haute Couture 2026</span>
+            <span>Toàn bộ mẫu váy đang lưu trữ</span>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-[#EFE5E1] p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-bold tracking-[1.2px] text-[#736364] uppercase">
-                TỔNG BỘ VÁY TRONG KHO
-              </span>
-              <div className="w-10 h-10 rounded-xl bg-[#EAF8EE] flex items-center justify-center text-[#1E8347]">
-                <HangerIcon size={18} />
-              </div>
-            </div>
-            <div className="flex items-baseline">
-              <span className="text-[32px] font-bold text-[#2C2523] leading-none">
-                {totalUnitsAll}
-              </span>
-              <span className="text-[12px] font-medium text-[#8C7D7E] ml-2">chiếc váy</span>
-            </div>
-          </div>
-          <div className="mt-4 flex items-center gap-1.5 text-[11.5px] text-[#1E8347] font-medium">
-            <Check size={13} />
-            <span>Tính tổng trên tất cả kích cỡ size</span>
-          </div>
-        </div>
-
+        {/* Card 3: MẪU ĐANG CHO THUÊ */}
         <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EFF6FF_0%,_transparent_70%)] rounded-2xl border border-[#BFDBFE] p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#1D4ED8] uppercase">
-                MẪU CÒN HÀNG
+                MẪU ĐANG CHO THUÊ
               </span>
               <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] flex items-center justify-center text-[#1D4ED8]">
                 <Sparkles size={18} />
@@ -542,23 +643,24 @@ export default function InventoryManagement() {
             </div>
             <div className="flex items-baseline">
               <span className="text-[32px] font-bold text-[#1E3A8A] leading-none">
-                {storedCount}
+                {rentedModelsCount}
               </span>
               <span className="text-[12px] font-medium text-[#60A5FA] ml-2">
-                mẫu sẵn sàng ({totalCount > 0 ? Math.round((storedCount / totalCount) * 100) : 0}%)
+                mẫu ({totalCount > 0 ? Math.round((rentedModelsCount / totalCount) * 100) : 0}%)
               </span>
             </div>
           </div>
           <div className="mt-4 flex items-center gap-1.5 text-[11.5px] text-[#1D4ED8] font-medium">
-            <span>Sẵn sàng phục vụ thử váy &amp; giao khách</span>
+            <span>Đang có khách thuê &amp; xuất giao cưới</span>
           </div>
         </div>
 
+        {/* Card 4: MẪU ĐANG BẢO DƯỠNG */}
         <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FEF3C7_0%,_transparent_70%)] rounded-2xl border border-[#FDE68A] p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#92400E] uppercase">
-                BẢO DƯỠNG &amp; HẬU KIỂM
+                MẪU ĐANG BẢO DƯỠNG
               </span>
               <div className="w-10 h-10 rounded-xl bg-[#FEF2E6] flex items-center justify-center text-[#D97706]">
                 <Clock size={18} />
@@ -572,7 +674,7 @@ export default function InventoryManagement() {
             </div>
           </div>
           <div className="mt-4 flex items-center gap-1.5 text-[11.5px] text-[#B45309] font-medium">
-            <span>Giặt sấy vi khí hậu hoặc kiểm định sau thuê</span>
+            <span>Giặt khô, là hơi vi khí hậu phục hồi</span>
           </div>
         </div>
       </div>
@@ -792,7 +894,7 @@ export default function InventoryManagement() {
                         </div>
                       </td>
 
-                      {/* Col 6: Thao tác (Nút SỬA + Menu Dropdown) */}
+                      {/* Col 6: Thao tác (Nút SỬA + NÚT XÓA + Menu Dropdown) */}
                       <td className="py-4 px-4 text-center whitespace-nowrap">
                         <div className="relative inline-flex items-center justify-center gap-1.5 text-[#736364]">
                           {/* Nút Sửa thay thế nút Xem Chi Tiết */}
@@ -804,6 +906,17 @@ export default function InventoryManagement() {
                           >
                             <Pencil size={13} />
                             <span>Sửa</span>
+                          </button>
+
+                          {/* Nút Xóa hàng ở kho */}
+                          <button
+                            type="button"
+                            onClick={() => handleConfirmDeleteItem(item)}
+                            title="Xóa mẫu váy khỏi kho"
+                            className="px-2.5 py-1.5 rounded-xl bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800 transition-colors cursor-pointer flex items-center gap-1 text-[11.5px] font-bold border border-red-200 shadow-2xs"
+                          >
+                            <Trash2 size={13} />
+                            <span>Xóa</span>
                           </button>
 
                           {/* Dropdown 3 chấm chuyển nhanh trạng thái */}
@@ -861,6 +974,16 @@ export default function InventoryManagement() {
                               >
                                 🛡️ Chuyển Đang Hậu Kiểm
                               </button>
+
+                              <div className="border-t border-[#F2E5E0] my-1" />
+                              <button
+                                type="button"
+                                onClick={() => handleConfirmDeleteItem(item)}
+                                className="w-full px-3.5 py-2 text-xs text-red-600 hover:bg-red-50 font-semibold flex items-center gap-2 text-left transition-colors cursor-pointer border-0 bg-transparent"
+                              >
+                                <Trash2 size={13} />
+                                <span>Xóa mẫu khỏi kho</span>
+                              </button>
                             </div>
                           )}
                         </div>
@@ -892,18 +1015,46 @@ export default function InventoryManagement() {
               type="button"
               disabled={activePage === 1}
               onClick={() => setActivePage((p) => Math.max(1, p - 1))}
-              className="p-1.5 rounded-lg border border-[#EFE2DC] bg-white text-[#7A6B6C] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#FAF2EE] cursor-pointer"
+              className="w-8 h-8 rounded-lg bg-white border border-[#EFE5E1] shadow-2xs flex items-center justify-center text-[#7A6B6C] hover:bg-[#F5ECE8] disabled:opacity-40 transition-colors cursor-pointer"
             >
               <ChevronLeft size={16} />
             </button>
-            <span className="px-3 py-1 rounded-lg bg-[#FAF0EC] font-bold text-xs text-[#733F49]">
-              {activePage} / {totalPages}
-            </span>
+
+            {pageNumbers.map((p, idx) =>
+              p === '...' ? (
+                <button
+                  key={`ellipsis-${idx}`}
+                  type="button"
+                  title={idx === 0 ? 'Về các trang trước' : 'Đến các trang sau'}
+                  onClick={() => {
+                    if (idx === 0) setActivePage((prev) => Math.max(1, prev - 3));
+                    else setActivePage((prev) => Math.min(totalPages, prev + 3));
+                  }}
+                  className="px-2 h-8 text-[#8C7D7E] text-xs font-bold hover:text-[#78434D] transition-colors cursor-pointer"
+                >
+                  ...
+                </button>
+              ) : (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setActivePage(p)}
+                  className={`w-8 h-8 rounded-lg font-bold flex items-center justify-center transition-colors cursor-pointer ${
+                    activePage === p
+                      ? 'bg-[#733F49] text-white shadow-xs'
+                      : 'bg-white border border-[#EFE5E1] shadow-2xs text-[#4A3B3D] hover:bg-[#F5ECE8]'
+                  }`}
+                >
+                  {p}
+                </button>
+              )
+            )}
+
             <button
               type="button"
               disabled={activePage >= totalPages}
               onClick={() => setActivePage((p) => Math.min(totalPages, p + 1))}
-              className="p-1.5 rounded-lg border border-[#EFE2DC] bg-white text-[#7A6B6C] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#FAF2EE] cursor-pointer"
+              className="w-8 h-8 rounded-lg bg-white border border-[#EFE5E1] shadow-2xs flex items-center justify-center text-[#7A6B6C] hover:bg-[#F5ECE8] disabled:opacity-40 transition-colors cursor-pointer"
             >
               <ChevronRight size={16} />
             </button>
@@ -1074,20 +1225,35 @@ export default function InventoryManagement() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#F0E6E2]">
+              <div className="flex items-center justify-between pt-3 border-t border-[#F0E6E2]">
                 <button
                   type="button"
-                  onClick={() => setEditingItem(null)}
-                  className="px-5 py-2.5 rounded-xl border border-[#EFE2DC] bg-white text-[#7A6B6C] font-bold hover:bg-[#FAF2EE] cursor-pointer transition-colors"
+                  onClick={() => {
+                    const itemToDelete = editingItem;
+                    setEditingItem(null);
+                    handleConfirmDeleteItem(itemToDelete);
+                  }}
+                  className="px-4 py-2.5 rounded-xl border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 cursor-pointer transition-colors flex items-center gap-1.5 text-xs"
                 >
-                  Hủy
+                  <Trash2 size={14} />
+                  <span>Xóa Khỏi Kho</span>
                 </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#733F49] to-[#8C4654] hover:from-[#5A2D35] hover:to-[#733F49] text-white font-bold cursor-pointer transition-all shadow-md border-0"
-                >
-                  Lưu Thay Đổi
-                </button>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEditingItem(null)}
+                    className="px-5 py-2.5 rounded-xl border border-[#EFE2DC] bg-white text-[#7A6B6C] font-bold hover:bg-[#FAF2EE] cursor-pointer transition-colors"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#733F49] to-[#8C4654] hover:from-[#5A2D35] hover:to-[#733F49] text-white font-bold cursor-pointer transition-all shadow-md border-0"
+                  >
+                    Lưu Thay Đổi
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -1242,6 +1408,73 @@ export default function InventoryManagement() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Modal Xác Nhận Xóa Mẫu Váy Khỏi Kho */}
+      {deletingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fadeIn font-jakarta">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-[#EFE5E1] animate-scaleUp">
+            <div className="flex items-center gap-3.5 mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center shrink-0 border border-red-100">
+                <Trash2 size={22} />
+              </div>
+              <div>
+                <h3 className="font-playfair text-[20px] font-bold text-[#2C2523] leading-tight">
+                  Xác Nhận Xóa Khỏi Kho
+                </h3>
+                <p className="text-xs text-[#8C7D7E] mt-0.5">
+                  Thao tác sẽ loại bỏ mẫu lễ phục khỏi danh mục quản lý kho
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-[#FFF9F8] border border-[#FDE2DF] rounded-2xl p-4 mb-5 text-xs text-[#4A3B3D] space-y-2">
+              <div className="flex items-center justify-between pb-2 border-b border-[#F7D8D4]">
+                <span className="text-[#8C7D7E]">Mã váy:</span>
+                <span className="font-bold text-[#733F49] font-mono">{deletingItem.code}</span>
+              </div>
+              <div className="flex items-center justify-between pb-2 border-b border-[#F7D8D4]">
+                <span className="text-[#8C7D7E]">Tên mẫu váy:</span>
+                <span className="font-bold text-[#2C2523] text-right">{deletingItem.name}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#8C7D7E]">Số lượng lưu kho:</span>
+                <span className="font-bold text-[#1E8347]">{deletingItem.totalStock} bộ</span>
+              </div>
+              <p className="text-[11px] text-red-600 mt-2 italic">
+                * Lưu ý: Mẫu váy này sẽ ngừng hiển thị trong danh mục cho thuê và quản lý tồn kho.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setDeletingItem(null)}
+                disabled={deleteLoading}
+                className="px-4 py-2.5 rounded-xl border border-[#D5C7C2] text-[#4A3B3D] text-xs font-bold hover:bg-[#F5ECE8] transition-colors cursor-pointer bg-white"
+              >
+                Hủy Bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteDelete}
+                disabled={deleteLoading}
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs border-0 flex items-center gap-1.5 disabled:opacity-50"
+              >
+                {deleteLoading ? (
+                  <>
+                    <RefreshCw size={13} className="animate-spin" />
+                    <span>Đang xóa...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={13} />
+                    <span>Xác Nhận Xóa</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
