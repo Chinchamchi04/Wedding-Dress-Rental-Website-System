@@ -404,7 +404,7 @@ export default function AppointmentPage() {
                 <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
                 XÁC NHẬN ĐẶT LỊCH HẸN PRIVATE SUITE THÀNH CÔNG
               </span>
-              <h1 className="font-playfair text-[28px] sm:text-[38px] font-bold text-[#2C2523] mt-2 mb-2 leading-tight">
+              <h1 className="font-jakarta text-[26px] sm:text-[34px] font-extrabold text-[#2C2523] mt-2 mb-2 leading-tight tracking-tight">
                 Hẹn Gặp Nàng Tại UniBridal Private Suite
               </h1>
               <p className="text-[14px] sm:text-[15px] text-[#6B5C5D] max-w-[620px] mx-auto leading-relaxed">
@@ -432,7 +432,7 @@ export default function AppointmentPage() {
                       <span>VIP PRIVATE ATELIER INVITATION</span>
                       <Crown className="w-3.5 h-3.5 text-[#D4AF37]" />
                     </div>
-                    <h2 className="font-playfair text-[22px] sm:text-[26px] font-bold text-[#2C2523] m-0 tracking-tight">
+                    <h2 className="font-jakarta text-[20px] sm:text-[24px] font-extrabold text-[#2C2523] m-0 tracking-tight">
                       GIẤY MỜI DANH DỰ THỬ LỄ PHỤC CƯỚI
                     </h2>
                     <p className="text-[12px] text-[#847374] m-0">
@@ -458,7 +458,7 @@ export default function AppointmentPage() {
                       <span className="text-[10.5px] font-bold text-[#847374] tracking-wider uppercase block mb-1">
                         CÔ DÂU VINH DỰ & ĐOÀN ĐỒNG HÀNH
                       </span>
-                      <div className="font-playfair font-bold text-[20px] text-[#2C2523] leading-snug">
+                      <div className="font-jakarta font-bold text-[18px] text-[#2C2523] leading-snug">
                         {confirmedBooking.fullName}
                       </div>
                       <div className="text-[12.5px] text-[#733F49] font-medium mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -519,7 +519,7 @@ export default function AppointmentPage() {
                       <span className="text-[10.5px] font-bold uppercase tracking-wider text-[#733F49] block mb-0.5">
                         ĐỊA ĐIỂM SHOWROOM ATELIER ĐÓN TIẾP
                       </span>
-                      <div className="font-playfair font-bold text-[16px] text-[#2C2523]">
+                      <div className="font-jakarta font-bold text-[16px] text-[#2C2523]">
                         {confirmedBooking.branchName}
                       </div>
                       <div className="text-[12.5px] text-[#6B5C5D] mt-1">
@@ -569,7 +569,7 @@ export default function AppointmentPage() {
                           />
                         )}
                         <div className="min-w-0 flex-1">
-                          <div className="font-playfair font-bold text-[14.5px] text-[#2C2523] truncate">
+                          <div className="font-jakarta font-bold text-[14.5px] text-[#2C2523] truncate">
                             {dress.name}
                           </div>
                           <div className="text-[11.5px] text-[#847374] mt-0.5">
@@ -699,7 +699,21 @@ export default function AppointmentPage() {
           </div>
         ) : (
           /* ================= MAIN BOOKING FORM INTERFACE ================= */
-          <div className="space-y-10">
+          <div className="space-y-7 sm:space-y-8 font-jakarta">
+
+            {/* Page Header */}
+            <div className="mb-2 sm:mb-4">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF0EC] text-[#733F49] text-[11px] font-bold tracking-[1.5px] uppercase border border-[#F2D8D4] mb-2">
+                <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+                TRẢI NGHIỆM THỬ VÁY RIÊNG TƯ 1:1
+              </span>
+              <h1 className="font-jakarta text-[24px] sm:text-[30px] font-extrabold text-[#2C2523] m-0 tracking-tight leading-tight">
+                Đặt Lịch Hẹn Thử Váy Cưới Private Suite
+              </h1>
+              <p className="text-[13px] sm:text-[14px] text-[#6B5C5D] mt-1.5 max-w-2xl leading-relaxed">
+                Không gian Atelier chuẩn bị riêng cho nàng và người thân, cùng chuyên viên tư vấn phục trang cao cấp hoàn toàn miễn phí.
+              </p>
+            </div>
 
             {/* Main Form Content */}
             <form onSubmit={handleSubmitBooking} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -714,7 +728,7 @@ export default function AppointmentPage() {
                       1
                     </span>
                     <div>
-                      <h2 className="font-playfair text-[19px] sm:text-[21px] font-semibold text-[#2C2523] m-0">
+                      <h2 className="font-jakarta text-[18px] sm:text-[20px] font-bold text-[#2C2523] m-0">
                         Chọn Showroom Atelier Trải Nghiệm
                       </h2>
                       <p className="text-[12px] text-[#847374] m-0 mt-0.5">
@@ -750,7 +764,7 @@ export default function AppointmentPage() {
 
                           <div className="p-3.5 flex-1 flex flex-col justify-between">
                             <div>
-                              <h3 className="font-playfair font-bold text-[15px] text-[#2C2523] m-0 mb-1 leading-snug">
+                              <h3 className="font-jakarta font-bold text-[15px] text-[#2C2523] m-0 mb-1 leading-snug">
                                 {branch.name}
                               </h3>
                               <p className="text-[11.5px] text-[#6B5C5D] leading-relaxed mb-2.5 m-0 line-clamp-2">
@@ -786,10 +800,12 @@ export default function AppointmentPage() {
                       2
                     </span>
                     <div>
-                      <h2 className="font-playfair text-[19px] sm:text-[21px] font-semibold text-[#2C2523] m-0">
+                      <h2 className="font-jakarta text-[18px] sm:text-[20px] font-bold text-[#2C2523] m-0">
                         Chọn Thời Gian Thử Váy
                       </h2>
-
+                      <p className="text-[12px] text-[#847374] m-0 mt-0.5">
+                        Thời lượng 90 phút riêng tư, chuyên viên tư vấn phục vụ 1:1 trọn vẹn
+                      </p>
                     </div>
                   </div>
 
@@ -892,10 +908,12 @@ export default function AppointmentPage() {
                         3
                       </span>
                       <div>
-                        <h2 className="font-playfair text-[19px] sm:text-[21px] font-semibold text-[#2C2523] m-0">
+                        <h2 className="font-jakarta text-[18px] sm:text-[20px] font-bold text-[#2C2523] m-0">
                           Chọn Mẫu Váy Cưới Nàng Muốn Thử
                         </h2>
-
+                        <p className="text-[12px] text-[#847374] m-0 mt-0.5">
+                          1 mẫu thiết kế chính và tối đa 1 mẫu tương đồng thử kèm
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -954,7 +972,7 @@ export default function AppointmentPage() {
                               )}
                             </div>
 
-                            <h3 className="font-playfair text-[20px] sm:text-[22px] font-bold text-[#2C2523] m-0 mb-1 leading-snug">
+                            <h3 className="font-jakarta text-[19px] sm:text-[21px] font-bold text-[#2C2523] m-0 mb-1 leading-snug">
                               {primaryDress?.name}
                             </h3>
 
@@ -1002,7 +1020,7 @@ export default function AppointmentPage() {
                                     </div>
                                   )}
                                 </div>
-                                <h4 className="font-playfair text-[11.5px] font-bold text-[#2C2523] truncate m-0">{dress.name}</h4>
+                                <h4 className="font-jakarta text-[12px] font-bold text-[#2C2523] truncate m-0">{dress.name}</h4>
                                 <span className="text-[10.5px] text-[#733F49] font-bold">{formatCurrencyVND(dress.price || dress.rentPrice)}</span>
                               </div>
                             );
@@ -1047,15 +1065,7 @@ export default function AppointmentPage() {
                                 alt={dress.name}
                                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                               />
-                              {isChosenAsSecondary ? (
-                                <div className="absolute top-2 right-2 bg-[#733F49] text-white text-[9.5px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
-                                  <Check className="w-3 h-3 stroke-[2.5]" /> Thử cùng
-                                </div>
-                              ) : (
-                                <div className="absolute top-2 right-2 bg-white/90 text-[#733F49] hover:bg-[#733F49] hover:text-white text-[9.5px] font-bold px-2 py-0.5 rounded-full border border-[#EEDECF] shadow-xs transition-colors">
-                                  + Chọn thử
-                                </div>
-                              )}
+
                               <span className="absolute bottom-1.5 left-1.5 text-[8.5px] font-bold px-1.5 py-0.5 rounded-md bg-black/60 text-white backdrop-blur-xs">
                                 {dress.silhouette}
                               </span>
@@ -1063,7 +1073,7 @@ export default function AppointmentPage() {
 
                             <div className="p-2.5 flex-1 flex flex-col justify-between">
                               <div>
-                                <h4 className="font-playfair font-bold text-[12.5px] text-[#2C2523] m-0 mb-0.5 truncate leading-tight">
+                                <h4 className="font-jakarta font-bold text-[13px] text-[#2C2523] m-0 mb-0.5 truncate leading-tight">
                                   {dress.name}
                                 </h4>
                                 <div className="text-[11px] font-bold text-[#733F49] mb-2">
@@ -1095,12 +1105,13 @@ export default function AppointmentPage() {
                       4
                     </span>
                     <div>
-                      <h2 className="font-playfair text-[19px] sm:text-[21px] font-semibold text-[#2C2523] m-0">
+                      <h2 className="font-jakarta text-[18px] sm:text-[20px] font-bold text-[#2C2523] m-0">
                         Thông Tin Đón Tiếp Cô Dâu
                       </h2>
                       <p className="text-[12px] text-[#847374] m-0 mt-0.5">
-                        Chuyên viên tư vấn sẽ liên hệ xác nhận lịch và hỗ trợ chu đáo nhất
+                        Chuyên viên tư vấn sẽ liên hệ xác nhận lịch và chuẩn bị chu đáo nhất
                       </p>
+
                       {isLoggedIn && (
                         <p className="text-[12px] text-[#2E7D32] font-semibold m-0 mt-1 flex items-center gap-1">
                           <CheckCircle2 className="w-3.5 h-3.5 text-[#2E7D32]" />
@@ -1219,8 +1230,8 @@ export default function AppointmentPage() {
                     <span className="text-[11px] font-bold uppercase tracking-wider text-[#B8737D] block mb-1">
                       TÓM TẮT LỊCH HẸN PRIVATE SUITE
                     </span>
-                    <h3 className="font-playfair text-[20px] font-bold text-[#2C2523] m-0">
-                      Thông tin thử lễ phục
+                    <h3 className="font-jakarta text-[18px] sm:text-[19px] font-bold text-[#2C2523] m-0">
+                      Thông Tin Thử Lễ Phục
                     </h3>
                   </div>
 
@@ -1277,7 +1288,7 @@ export default function AppointmentPage() {
                     {/* Cost summary: Free appointment */}
                     <div className="pt-3 border-t border-[#F5EDE8] flex items-center justify-between">
                       <span className="text-[#6B5C5D] font-medium">Chi phí buổi thử váy VIP:</span>
-                      <span className="font-playfair font-bold text-[18px] text-[#2E7D32]">
+                      <span className="font-jakarta font-extrabold text-[17px] text-[#2E7D32]">
                         0₫ (Miễn Phí)
                       </span>
                     </div>
