@@ -845,7 +845,7 @@ export default function OrderHistoryPage() {
                       : 'Thử bộ lọc khác hoặc xóa từ khóa tìm kiếm.'}
                   </p>
                   {orders.length === 0 ? (
-                    <Link to="/collections" className="account-button-primary mt-5 inline-flex items-center gap-2 rounded-xl px-5 py-2 text-xs font-bold">
+                    <Link to="/collection" className="account-button-primary mt-5 inline-flex items-center gap-2 rounded-xl px-5 py-2 text-xs font-bold">
                       KHÁM PHÁ BỘ SƯU TẬP
                     </Link>
                   ) : (

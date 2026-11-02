@@ -46,6 +46,7 @@ export default function App() {
               <Route path="/wishlist" element={<ProtectedRoute allowedRoles={['customer', 'staff', 'admin']}><WishlistPage /></ProtectedRoute>} />
               <Route path="/yeu-thich" element={<ProtectedRoute allowedRoles={['customer', 'staff', 'admin']}><WishlistPage /></ProtectedRoute>} />
               <Route path="/collection" element={<CollectionPage />} />
+              <Route path="/collections" element={<CollectionPage />} />
               <Route path="/bo-suu-tap" element={<CollectionPage />} />
               <Route path="/cart" element={<ProtectedRoute allowedRoles={['customer', 'staff', 'admin']}><CartPage /></ProtectedRoute>} />
               <Route path="/checkout" element={<CheckoutPage />} />
