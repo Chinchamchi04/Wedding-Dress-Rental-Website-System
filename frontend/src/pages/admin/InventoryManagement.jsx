@@ -183,9 +183,9 @@ export default function InventoryManagement() {
 
     return {
       id: dressId,
-      code: `KHO-${code}`,
+      code,
       name: override.name || d.name,
-      collection: d.collection || 'ATELIER HAUTE COUTURE 2026',
+      collection: d.collection || '',
       rfid: `#RF-2026-${(index + 1).toString().padStart(4, '0')}`,
       location,
       statusType,
@@ -831,9 +831,11 @@ export default function InventoryManagement() {
                                 </span>
                               )}
                             </div>
-                            <div className="text-[10px] font-bold text-[#A39293] tracking-wider uppercase leading-none">
-                              {item.collection}
-                            </div>
+                            {item.collection ? (
+                              <div className="text-[10px] font-bold text-[#A39293] tracking-wider uppercase leading-none">
+                                {item.collection}
+                              </div>
+                            ) : null}
                           </div>
                         </div>
                       </td>
