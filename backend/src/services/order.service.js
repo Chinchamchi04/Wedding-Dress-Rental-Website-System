@@ -157,6 +157,14 @@ export const updateOrderStatus = async (idOrCode, status) => {
   const order = await getOrderByIdOrCode(idOrCode);
   order.status = status;
   await order.save();
+
+  if (status === 'completed') {
+    await ReturnInspection.findOneAndUpdate(
+      { orderId: order._id },
+      { isRefunded: true, refundedAt: new Date() }
+    );
+  }
+
   return order;
 };
 

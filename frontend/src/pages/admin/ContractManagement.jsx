@@ -158,7 +158,7 @@ export default function ContractManagement() {
           const ids = new Set(liveContracts.map((c) => c.id));
           const uniquePrev = prev.filter((p) => !ids.has(p.id));
           const combined = [...liveContracts, ...uniquePrev];
-          try { localStorage.setItem('unibridal_contracts_local', JSON.stringify(combined)); } catch {}
+          try { localStorage.setItem('unibridal_contracts_local', JSON.stringify(combined)); } catch { }
           return combined;
         });
         setError('');
@@ -256,7 +256,7 @@ export default function ContractManagement() {
     });
 
     setContracts(updated);
-    try { localStorage.setItem('unibridal_contracts_local', JSON.stringify(updated)); } catch {}
+    try { localStorage.setItem('unibridal_contracts_local', JSON.stringify(updated)); } catch { }
 
     if (selectedContract && selectedContract.id === contractId) {
       setSelectedContract((prev) => ({
@@ -273,7 +273,7 @@ export default function ContractManagement() {
         if (newStatus === 'completed') orderBackendStatus = 'completed';
         if (newStatus === 'disputed') orderBackendStatus = 'returned';
         await updateOrderStatus(target.orderId, orderBackendStatus);
-      } catch {}
+      } catch { }
     }
 
     const labels = {
@@ -340,11 +340,11 @@ export default function ContractManagement() {
         contractSignature: newContractObj.customerName,
         status: 'active'
       });
-    } catch {}
+    } catch { }
 
     const updatedList = [newContractObj, ...contracts];
     setContracts(updatedList);
-    try { localStorage.setItem('unibridal_contracts_local', JSON.stringify(updatedList)); } catch {}
+    try { localStorage.setItem('unibridal_contracts_local', JSON.stringify(updatedList)); } catch { }
 
     setIsCreateOpen(false);
     setNewCustomerName('');
@@ -385,11 +385,11 @@ export default function ContractManagement() {
 
       <div className="space-y-6">
         {error && (
-        <div role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-          <span className="font-semibold">⚠️ Lỗi kết nối Cơ sở dữ liệu:</span> {error}
-        </div>
-      )}
-      {/* Toast Notification */}
+          <div role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+            <span className="font-semibold">⚠️ Lỗi kết nối Cơ sở dữ liệu:</span> {error}
+          </div>
+        )}
+        {/* Toast Notification */}
         {toastMsg && (
           <div className="fixed bottom-6 right-6 z-50 bg-[#302626] text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-sm animate-fade-in border border-amber-900/30">
             <Sparkles size={16} className="text-amber-400" />
@@ -400,11 +400,7 @@ export default function ContractManagement() {
         {/* Top Header & Breadcrumb */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#EFE5E1] pb-5">
           <div>
-            <div className="flex items-center gap-2 text-xs text-[#9E8B89] mb-1">
-              <span>Quản trị UniBridal</span>
-              <span>/</span>
-              <span className="text-[#733F49] font-medium">Hợp đồng điện tử</span>
-            </div>
+
             <h1 className="text-2xl lg:text-3xl font-serif font-bold text-[#302626]">
               Quản Lý Hợp Đồng Thuê Váy Cưới
             </h1>
@@ -500,11 +496,10 @@ export default function ContractManagement() {
                 key={tab.id}
                 type="button"
                 onClick={() => setSelectedStatus(tab.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                  selectedStatus === tab.id
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${selectedStatus === tab.id
                     ? 'bg-[#733F49] text-white shadow-xs'
                     : 'bg-[#F9ECE8] text-[#6E5957] hover:bg-[#F2DFD9]'
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
