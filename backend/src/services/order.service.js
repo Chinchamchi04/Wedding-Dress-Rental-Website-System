@@ -109,7 +109,14 @@ export const createOrder = async (orderData, currentUser = null) => {
 };
 
 export const getMyOrders = async (userId) => {
-  return await Order.find({ customerId: userId }).sort({ createdAt: -1 });
+  const orders = await Order.find({ customerId: userId }).sort({ createdAt: -1 }).lean();
+  const orderIds = orders.map((o) => o._id);
+  const inspections = await ReturnInspection.find({ orderId: { $in: orderIds } }).lean();
+  const inspectionMap = new Map(inspections.map((i) => [String(i.orderId), i]));
+  return orders.map((o) => ({
+    ...o,
+    inspection: inspectionMap.get(String(o._id)) || null,
+  }));
 };
 
 export const getAllOrders = async (filters = {}) => {
@@ -132,10 +139,20 @@ export const getAllOrders = async (filters = {}) => {
   const orders = await Order.find(query)
     .sort({ createdAt: -1 })
     .skip(skip)
-    .limit(limit);
+    .limit(limit)
+    .lean();
+
+  const orderIds = orders.map((o) => o._id);
+  const inspections = await ReturnInspection.find({ orderId: { $in: orderIds } }).lean();
+  const inspectionMap = new Map(inspections.map((i) => [String(i.orderId), i]));
+
+  const enrichedOrders = orders.map((o) => ({
+    ...o,
+    inspection: inspectionMap.get(String(o._id)) || null,
+  }));
 
   return {
-    orders,
+    orders: enrichedOrders,
     total,
     page,
     totalPages: Math.ceil(total / limit),
@@ -146,22 +163,30 @@ export const getOrderByIdOrCode = async (idOrCode) => {
   const isObjectId = idOrCode.match(/^[0-9a-fA-F]{24}$/);
   const query = isObjectId ? { _id: idOrCode } : { orderCode: idOrCode.toUpperCase() };
 
-  const order = await Order.findOne(query);
+  const order = await Order.findOne(query).lean();
   if (!order) {
     throw new Error('Không tìm thấy thông tin đơn thuê.');
   }
-  return order;
+  const inspection = await ReturnInspection.findOne({ orderId: order._id }).lean();
+  return {
+    ...order,
+    inspection: inspection || null,
+  };
 };
 
 export const updateOrderStatus = async (idOrCode, status) => {
-  const order = await getOrderByIdOrCode(idOrCode);
+  const isObjectId = idOrCode.match(/^[0-9a-fA-F]{24}$/);
+  const query = isObjectId ? { _id: idOrCode } : { orderCode: idOrCode.toUpperCase() };
+  const order = await Order.findOne(query);
+  if (!order) throw new Error('Không tìm thấy đơn hàng.');
+
   order.status = status;
   await order.save();
 
-  if (status === 'completed') {
+  if (status === 'completed' || status === 'complete') {
     await ReturnInspection.findOneAndUpdate(
       { orderId: order._id },
-      { isRefunded: true, refundedAt: new Date() }
+      { isRefunded: true, refundedAt: new Date(), customerStatus: 'approved', customerConfirmedAt: new Date() }
     );
   }
 
@@ -198,9 +223,6 @@ export const submitReturnInspection = async (orderId, data, staffUser) => {
     throw new Error('Đơn thuê chưa ở trạng thái có thể kiểm định. Vui lòng xác nhận khách đã nhận váy trước.');
   }
 
-  const existingInspection = await ReturnInspection.findOne({ orderId });
-  if (existingInspection) throw new Error('Đơn thuê này đã có biên bản kiểm định rồi.');
-
   // Tính số ngày trễ
   const today = new Date();
   const dueDate = new Date(order.rentalEndDate);
@@ -218,21 +240,40 @@ export const submitReturnInspection = async (orderId, data, staffUser) => {
 
   const totalDeduction = latePenaltyFee + damageTotal;
   const finalRefundAmount = Math.max(0, order.totalDeposit - totalDeduction);
+  const evidencePhotos = Array.isArray(data.evidencePhotos) ? data.evidencePhotos : [];
 
-  const inspection = new ReturnInspection({
-    orderId: order._id,
-    staffId: staffUser?._id,
-    returnedAt: new Date(),
-    lateDays,
-    latePenaltyFee,
-    itemsCondition,
-    totalDeduction,
-    initialDeposit: order.totalDeposit,
-    finalRefundAmount,
-    isRefunded: false,
-  });
-
-  await inspection.save();
+  // Upsert: nếu đã có biên bản kiểm định thì cập nhật lại biên bản và số tiền trừ
+  let inspection = await ReturnInspection.findOne({ orderId });
+  if (inspection) {
+    inspection.staffId = staffUser?._id || inspection.staffId;
+    inspection.returnedAt = new Date();
+    inspection.lateDays = lateDays;
+    inspection.latePenaltyFee = latePenaltyFee;
+    inspection.itemsCondition = itemsCondition;
+    inspection.evidencePhotos = evidencePhotos.length > 0 ? evidencePhotos : inspection.evidencePhotos;
+    inspection.totalDeduction = totalDeduction;
+    inspection.initialDeposit = order.totalDeposit;
+    inspection.finalRefundAmount = finalRefundAmount;
+    inspection.customerStatus = 'pending'; // Đưa về chờ khách duyệt
+    inspection.disputeReason = '';
+    await inspection.save();
+  } else {
+    inspection = new ReturnInspection({
+      orderId: order._id,
+      staffId: staffUser?._id,
+      returnedAt: new Date(),
+      lateDays,
+      latePenaltyFee,
+      itemsCondition,
+      evidencePhotos,
+      totalDeduction,
+      initialDeposit: order.totalDeposit,
+      finalRefundAmount,
+      isRefunded: false,
+      customerStatus: 'pending',
+    });
+    await inspection.save();
+  }
 
   // Cập nhật trạng thái đơn
   order.status = 'returned';
@@ -250,5 +291,58 @@ export const getReturnInspection = async (orderId) => {
   const inspection = await ReturnInspection.findOne({ orderId }).lean();
   if (!inspection) return null;
   return inspection;
+};
+
+/**
+ * Khách hàng đồng ý biên bản kiểm định -> Hệ thống tự động hoàn cọc và hoàn tất đơn hàng
+ * @param {string} orderId
+ * @param {Object} customerUser
+ */
+export const approveReturnInspection = async (orderId, customerUser) => {
+  const order = await Order.findById(orderId);
+  if (!order) throw new Error('Không tìm thấy đơn hàng.');
+
+  const inspection = await ReturnInspection.findOne({ orderId });
+  if (!inspection) throw new Error('Chưa có biên bản kiểm định cho đơn hàng này.');
+
+  if (inspection.customerStatus === 'approved') {
+    return { order, inspection, message: 'Biên bản đã được xác nhận trước đó.' };
+  }
+
+  inspection.customerStatus = 'approved';
+  inspection.customerConfirmedAt = new Date();
+  inspection.isRefunded = true;
+  inspection.refundedAt = new Date();
+  await inspection.save();
+
+  order.status = 'completed';
+  await order.save();
+
+  return { order, inspection };
+};
+
+/**
+ * Khách hàng không đồng ý và gửi khiếu nại biên bản kiểm định
+ * @param {string} orderId
+ * @param {Object} param1 - { reason }
+ * @param {Object} customerUser
+ */
+export const disputeReturnInspection = async (orderId, { reason }, customerUser) => {
+  const order = await Order.findById(orderId);
+  if (!order) throw new Error('Không tìm thấy đơn hàng.');
+
+  const inspection = await ReturnInspection.findOne({ orderId });
+  if (!inspection) throw new Error('Chưa có biên bản kiểm định cho đơn hàng này.');
+
+  if (!reason || !reason.trim()) {
+    throw new Error('Vui lòng nhập lý do khiếu nại biên bản.');
+  }
+
+  inspection.customerStatus = 'disputed';
+  inspection.disputeReason = reason.trim();
+  inspection.disputeCreatedAt = new Date();
+  await inspection.save();
+
+  return { order, inspection };
 };
 

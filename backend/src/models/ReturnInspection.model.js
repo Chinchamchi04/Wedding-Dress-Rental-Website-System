@@ -73,6 +73,23 @@ const returnInspectionSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    customerStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'disputed'],
+      default: 'pending',
+    },
+    customerConfirmedAt: {
+      type: Date,
+      default: null,
+    },
+    disputeReason: {
+      type: String,
+      default: '',
+    },
+    disputeCreatedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

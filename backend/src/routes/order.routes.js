@@ -28,4 +28,10 @@ router.post('/:id/inspection', optionalAuthenticate, orderController.submitRetur
 // 7. Lấy biên bản kiểm định của đơn thuê
 router.get('/:id/inspection', optionalAuthenticate, orderController.getReturnInspection);
 
+// 8. Khách hàng đồng ý biên bản kiểm định -> Tự động hoàn cọc
+router.post('/:id/inspection/approve', optionalAuthenticate, orderController.approveReturnInspection);
+
+// 9. Khách hàng gửi khiếu nại biên bản kiểm định
+router.post('/:id/inspection/dispute', optionalAuthenticate, orderController.disputeReturnInspection);
+
 export default router;

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import AccountLayout from '../../components/layout/AccountLayout';
 import { formatVnd, getOrder, updateOrderStatus } from '../../services/orderService';
+import { CustomerInspectionModal } from './OrderHistoryPage';
 
 /* ─────────────────────────────────────────────
    STATUS TIMELINE CONFIG
@@ -237,6 +238,17 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [cancelling, setCancelling] = useState(false);
+  const [isInspectionOpen, setIsInspectionOpen] = useState(false);
+
+  const fetchOrderDetail = () => {
+    getOrder(orderId)
+      .then((data) => {
+        setOrder(data);
+      })
+      .catch((issue) => {
+        setError(issue.message || 'Không tìm thấy thông tin đơn hàng.');
+      });
+  };
 
   const handleCancelOrder = () => {
     Modal.confirm({
@@ -320,6 +332,30 @@ export default function OrderDetailPage() {
                 Lịch thuê: {order.rentalDates}
               </p>
             </div>
+
+            {/* ── BANNER BIÊN BẢN KIỂM ĐỊNH NẾU ĐÃ TRẢ VÁY ── */}
+            {(order.rawStatus === 'returned' || order.inspection) && (
+              <div className="mt-4 p-4 rounded-2xl bg-[#FFF6F3] border border-[#F3DDD7] text-xs space-y-2 font-jakarta">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#B8737D] animate-ping" />
+                    <span className="font-bold text-[#5F2B36] text-[13px]">
+                      Biên Bản Kiểm Định Trả Váy &amp; Quyết Toán Hoàn Cọc
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsInspectionOpen(true)}
+                    className="px-4 py-2 rounded-xl bg-[#733F49] text-white text-xs font-bold hover:bg-[#5C3038] transition-colors cursor-pointer shadow-xs"
+                  >
+                    Xem Biên Bản &amp; Xác Nhận Hoàn Cọc
+                  </button>
+                </div>
+                <p className="text-[12px] text-[#7A6B6C] m-0">
+                  Showroom đã lập biên bản kiểm định hiện trạng váy và bảng tính tiền hoàn cọc. Nàng có thể xem chi tiết để đồng ý nhận hoàn cọc tự động hoặc gửi khiếu nại nếu chưa hài lòng.
+                </p>
+              </div>
+            )}
 
             {/* ── STATUS TIMELINE ── */}
             <OrderStatusTimeline rawStatus={order.rawStatus} />
@@ -420,6 +456,15 @@ export default function OrderDetailPage() {
                 </button>
               </div>
             </div>
+
+            {/* Modal Biên Bản Kiểm Định & Quyết Toán Hoàn Cọc */}
+            {isInspectionOpen && (
+              <CustomerInspectionModal
+                order={order}
+                onClose={() => setIsInspectionOpen(false)}
+                onUpdated={fetchOrderDetail}
+              />
+            )}
           </>
         )}
       </div>

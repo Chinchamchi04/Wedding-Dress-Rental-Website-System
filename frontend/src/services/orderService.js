@@ -38,10 +38,16 @@ export function mapOrder(order) {
     style: order.style || 'Theo đơn hàng',
     amount: order.totalRentPrice || order.amount || 0,
     deposit: order.totalDeposit || order.deposit || 0,
+    totalDeposit: order.totalDeposit || order.deposit || 0,
+    totalRentPrice: order.totalRentPrice || order.amount || 0,
+    rentalStartDate: order.rentalStartDate,
+    rentalEndDate: order.rentalEndDate,
+    actualReturnDate: order.actualReturnDate,
     rentalDates: order.rentalDates || `${fmtDate(order.rentalStartDate)} – ${fmtDate(order.rentalEndDate)}`,
     fitting: order.fitting || 'Liên hệ showroom để xác nhận',
     shippingAddress: order.shippingAddress,
     items: order.items || [],
+    inspection: order.inspection || null,
   };
 }
 
@@ -136,13 +142,40 @@ export async function updateOrderStatus(orderId, status) {
 /**
  * Lập biên bản kiểm định tình trạng váy khi trả (Return Inspection)
  * @param {string} orderId
- * @param {Object} inspectionData - { condition, damageNotes, penaltyFee, refundDepositAmount, inspectorStaffId }
+ * @param {Object} inspectionData - { itemsCondition, evidencePhotos }
  */
 export async function submitReturnInspection(orderId, inspectionData) {
   try {
     return await axiosClient.post(`/orders/${orderId}/inspection`, inspectionData);
   } catch (error) {
     return { success: true, message: 'Lập biên bản hoàn trả thành công (Offline Demo)' };
+  }
+}
+
+/**
+ * Khách hàng đồng ý biên bản kiểm định -> Tự động hoàn cọc
+ * @param {string} orderId
+ */
+export async function approveReturnInspection(orderId) {
+  try {
+    const res = await axiosClient.post(`/orders/${orderId}/inspection/approve`);
+    return res.data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+/**
+ * Khách hàng khiếu nại biên bản kiểm định
+ * @param {string} orderId
+ * @param {Object} data - { reason }
+ */
+export async function disputeReturnInspection(orderId, data) {
+  try {
+    const res = await axiosClient.post(`/orders/${orderId}/inspection/dispute`, data);
+    return res.data;
+  } catch (error) {
+    throw error;
   }
 }
 

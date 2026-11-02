@@ -104,7 +104,30 @@ function calcLate(rentalEndDate) {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function StatusBadge({ status }) {
+function StatusBadge({ status, order }) {
+  if (status === 'returned') {
+    const custStatus = order?.inspection?.customerStatus;
+    if (custStatus === 'disputed') {
+      return (
+        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#FEE2E2] text-[#991B1B] border border-[#FECACA]">
+          Khách Khiếu Nại
+        </span>
+      );
+    }
+    if (custStatus === 'approved') {
+      return (
+        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]">
+          Khách Đã Duyệt
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#FEF3C7] text-[#B45309]">
+        Chờ Khách Duyệt
+      </span>
+    );
+  }
+
   const cfg = STATUS_CONFIG[status] || { label: status, bg: 'bg-gray-100', text: 'text-gray-600' };
   return (
     <span
@@ -202,7 +225,11 @@ function UpdateStatusDropdown({ order, onUpdated }) {
 function InspectionModal({ order, onClose, onSuccess }) {
   const isCompletedOrder = order.status === 'completed' || order.status === 'complete';
   const isReturnedOrder = order.status === 'returned';
-  const isReadOnly = isCompletedOrder || isReturnedOrder;
+  const [isEditing, setIsEditing] = useState(!isReturnedOrder);
+  const isReadOnly = isCompletedOrder || (!isEditing && isReturnedOrder);
+
+  const [customerStatus, setCustomerStatus] = useState('pending');
+  const [disputeReason, setDisputeReason] = useState('');
 
   const [itemsCondition, setItemsCondition] = useState(
     () =>
@@ -218,38 +245,38 @@ function InspectionModal({ order, onClose, onSuccess }) {
   const [evidencePhotos, setEvidencePhotos] = useState([]);
   const [submitting, setSubmitting] = useState(false);
 
-  // Nếu đơn đã kiểm định hoặc đã hoàn tất, tự động tải biên bản đã lưu
+  // Luôn luôn tải biên bản kiểm định đã lưu từ trước (nếu có)
   useEffect(() => {
-    if (isReadOnly) {
-      getReturnInspection(order._id)
-        .then((res) => {
-          const insp = res?.data;
-          if (insp) {
-            if (insp.evidencePhotos?.length) {
-              setEvidencePhotos(insp.evidencePhotos);
-            }
-            if (insp.itemsCondition?.length) {
-              setItemsCondition((prev) =>
-                prev.map((it, idx) => {
-                  const match =
-                    insp.itemsCondition[idx] ||
-                    insp.itemsCondition.find((c) => String(c.dressId) === String(it.dressId));
-                  return match
-                    ? {
-                        ...it,
-                        condition: match.condition || it.condition,
-                        damageNotes: match.note || match.damageNotes || '',
-                        compensation: match.repairFee ?? match.compensation ?? 0,
-                      }
-                    : it;
-                })
-              );
-            }
+    getReturnInspection(order._id)
+      .then((res) => {
+        const insp = res?.data || res;
+        if (insp && (insp.itemsCondition || insp.totalDeduction !== undefined)) {
+          if (insp.customerStatus) setCustomerStatus(insp.customerStatus);
+          if (insp.disputeReason) setDisputeReason(insp.disputeReason);
+          if (insp.evidencePhotos?.length) {
+            setEvidencePhotos(insp.evidencePhotos);
           }
-        })
-        .catch(() => {});
-    }
-  }, [order._id, isReadOnly]);
+          if (insp.itemsCondition?.length) {
+            setItemsCondition((prev) =>
+              prev.map((it, idx) => {
+                const match =
+                  insp.itemsCondition[idx] ||
+                  insp.itemsCondition.find((c) => String(c.dressId) === String(it.dressId));
+                return match
+                  ? {
+                      ...it,
+                      condition: match.condition || it.condition,
+                      damageNotes: match.note || match.damageNotes || '',
+                      compensation: match.repairFee ?? match.compensation ?? 0,
+                    }
+                  : it;
+              })
+            );
+          }
+        }
+      })
+      .catch(() => {});
+  }, [order._id]);
 
   // Xử lý chụp ảnh / tải ảnh bằng chứng hiện trạng váy
   const handlePhotoUpload = (e) => {
@@ -307,7 +334,8 @@ function InspectionModal({ order, onClose, onSuccess }) {
         evidencePhotos,
       });
 
-      message.success(`Kiểm định trả váy thành công! Đơn hàng đã chuyển sang trạng thái "Chờ Hoàn Cọc".`);
+      message.success(`Đã lưu biên bản kiểm định thành công! Biên bản đã được chuyển đến khách hàng trong phần Lịch sử đơn hàng để xác nhận.`);
+      setIsEditing(false);
       onSuccess();
     } catch {
       message.error('Gửi biên bản kiểm định thất bại. Vui lòng thử lại.');
@@ -346,6 +374,40 @@ function InspectionModal({ order, onClose, onSuccess }) {
         </div>
 
         <div className="p-5 space-y-5">
+          {/* Status banner nếu khách đã phản hồi */}
+          {customerStatus === 'disputed' && (
+            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800 space-y-1">
+              <div className="font-bold flex items-center gap-1.5 text-red-900">
+                <AlertTriangle size={15} />
+                <span>Khách hàng đã gửi khiếu nại về biên bản:</span>
+              </div>
+              <p className="italic bg-white p-2 rounded-lg border border-red-100 text-[#4A3B3D]">
+                "{disputeReason || 'Khách hàng không đồng ý với mức bồi thường khấu trừ cọc'}"
+              </p>
+              <p className="text-[11px] text-red-700">
+                Showroom có thể chỉnh sửa lại số tiền bồi thường bên dưới và bấm "Lưu &amp; Cập Nhật Biên Bản" để khách xác nhận lại.
+              </p>
+            </div>
+          )}
+
+          {customerStatus === 'approved' && (
+            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2">
+              <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+              <span>
+                <strong>Khách hàng đã đồng ý biên bản này.</strong> Hệ thống đã tự động quyết toán và hoàn cọc cho khách.
+              </span>
+            </div>
+          )}
+
+          {customerStatus === 'pending' && isReturnedOrder && (
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-center gap-2">
+              <Clock size={16} className="text-amber-600 shrink-0" />
+              <span>
+                <strong>Đang chờ khách hàng xác nhận.</strong> Biên bản đã hiển thị trong trang Lịch sử đơn hàng của khách. Khách bấm đồng ý thì hệ thống tự động hoàn cọc; nếu không đồng ý thì khách có quyền khiếu nại.
+              </span>
+            </div>
+          )}
+
           {/* Order info */}
           <div className="grid grid-cols-2 gap-3 text-[12.5px]">
             <div className="p-3 rounded-xl bg-[#FAF5F2] border border-[#F0E6E2]">
@@ -499,19 +561,32 @@ function InspectionModal({ order, onClose, onSuccess }) {
           {/* Actions */}
           <div className="flex gap-3 pt-1">
             {isReadOnly ? (
-              <button
-                type="button"
-                onClick={onClose}
-                className="w-full py-2.5 rounded-xl bg-[#733F49] text-[12px] font-bold text-white hover:bg-[#5C3038] transition-colors border-0 cursor-pointer flex items-center justify-center gap-2"
-              >
-                <CheckCircle2 size={14} />
-                <span>{isCompletedOrder ? 'Đóng Hồ Sơ Lưu Trữ' : 'Đóng Biên Bản Kiểm Định'}</span>
-              </button>
+              <div className="flex w-full gap-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 py-2.5 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
+                >
+                  {isCompletedOrder ? 'Đóng Hồ Sơ Lưu Trữ' : 'Đóng'}
+                </button>
+                {!isCompletedOrder && (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    className="flex-1 py-2.5 rounded-xl bg-[#733F49] text-[12px] font-bold text-white hover:bg-[#5C3038] transition-colors border-0 cursor-pointer shadow-xs"
+                  >
+                    Chỉnh Sửa Số Tiền Trừ / Bồi Thường
+                  </button>
+                )}
+              </div>
             ) : (
               <>
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={() => {
+                    if (isReturnedOrder) setIsEditing(false);
+                    else onClose();
+                  }}
                   className="flex-1 py-2.5 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
                 >
                   Hủy
@@ -527,7 +602,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
                   ) : (
                     <ShieldCheck size={14} />
                   )}
-                  <span>Xác Nhận Đạt Kiểm Định (Chuyển Sang Bước Hoàn Cọc)</span>
+                  <span>Lưu &amp; Gửi Biên Bản Cho Khách Hàng</span>
                 </button>
               </>
             )}
@@ -547,7 +622,10 @@ function RefundModal({ order, onClose, onSuccess }) {
   useEffect(() => {
     getReturnInspection(order._id)
       .then((res) => {
-        if (res?.data) setInspectionData(res.data);
+        const insp = res?.data || res;
+        if (insp && (insp.itemsCondition || insp.totalDeduction !== undefined)) {
+          setInspectionData(insp);
+        }
       })
       .catch(() => {});
   }, [order._id]);
@@ -1173,7 +1251,7 @@ export default function OrderRentalManagement() {
 
                       {/* Trạng thái */}
                       <td className="py-4 px-4 text-center whitespace-nowrap">
-                        <StatusBadge status={order.status} />
+                        <StatusBadge status={order.status} order={order} />
                       </td>
 
                       {/* Thao tác */}
