@@ -25,6 +25,7 @@ import CustomerCareManagement from './pages/admin/CustomerCareManagement';
 import AppointmentManagement from './pages/admin/AppointmentManagement';
 import ContractManagement from './pages/admin/ContractManagement';
 import ContractTemplateManagement from './pages/admin/ContractTemplateManagement';
+import AccountManagement from './pages/admin/AccountManagement';
 import NotFoundPage from './pages/common/NotFoundPage';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import ScrollToTop from './components/common/ScrollToTop';
@@ -110,8 +111,12 @@ export default function App() {
               <Route path="/admin/contracts" element={<ProtectedRoute allowedRoles={['admin']}><ContractManagement /></ProtectedRoute>} />
               <Route path="/admin/mau-hop-dong" element={<ProtectedRoute allowedRoles={['admin']}><ContractTemplateManagement /></ProtectedRoute>} />
               <Route path="/admin/contract-templates" element={<ProtectedRoute allowedRoles={['admin']}><ContractTemplateManagement /></ProtectedRoute>} />
+              <Route path="/admin/accounts" element={<ProtectedRoute allowedRoles={['admin']}><AccountManagement /></ProtectedRoute>} />
+              <Route path="/admin/users" element={<Navigate to="/admin/accounts" replace />} />
+              <Route path="/admin/tai-khoan" element={<Navigate to="/admin/accounts" replace />} />
               
               {/* Common Aliases */}
+              <Route path="/quan-ly-tai-khoan" element={<ProtectedRoute allowedRoles={['admin']}><AccountManagement /></ProtectedRoute>} />
               <Route path="/quan-ly-don-thue" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><OrderRentalManagement /></ProtectedRoute>} />
               <Route path="/quan-ly-lich-hen" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><AppointmentManagement /></ProtectedRoute>} />
               <Route path="/quan-ly-kho-hang" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><InventoryManagement /></ProtectedRoute>} />
