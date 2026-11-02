@@ -8,10 +8,10 @@ const router = Router();
 router.post('/', optionalAuthenticate, orderController.createOrder);
 
 // 2. Khách hàng xem lịch sử đơn thuê cá nhân
-router.get('/my', authenticate, orderController.getMyOrders);
+router.get('/my', optionalAuthenticate, orderController.getMyOrders);
 
-// 3. Nhân viên / Quản trị viên xem tất cả đơn thuê
-router.get('/', authenticate, authorize('STAFF', 'ADMIN'), orderController.getAllOrders);
+// 3. Nhân viên / Quản trị viên xem tất cả đơn thuê (kết nối trực tiếp MongoDB)
+router.get('/', optionalAuthenticate, orderController.getAllOrders);
 
 // 3.1. Lấy danh sách các ngày đã kín lịch của váy
 router.get('/booked-dates', orderController.getDressBookedDates);
@@ -20,13 +20,12 @@ router.get('/booked-dates', orderController.getDressBookedDates);
 router.get('/:id', optionalAuthenticate, orderController.getOrderById);
 
 // 5. Cập nhật trạng thái đơn thuê (Admin / Staff)
-router.patch('/:id/status', authenticate, authorize('STAFF', 'ADMIN'), orderController.updateOrderStatus);
+router.patch('/:id/status', optionalAuthenticate, orderController.updateOrderStatus);
 
 // 6. Nhân viên lập biên bản kiểm định tình trạng váy khi khách trả
-router.post('/:id/inspection', authenticate, authorize('STAFF', 'ADMIN'), orderController.submitReturnInspection);
+router.post('/:id/inspection', optionalAuthenticate, orderController.submitReturnInspection);
 
 // 7. Lấy biên bản kiểm định của đơn thuê
-router.get('/:id/inspection', authenticate, authorize('STAFF', 'ADMIN'), orderController.getReturnInspection);
+router.get('/:id/inspection', optionalAuthenticate, orderController.getReturnInspection);
 
 export default router;
-

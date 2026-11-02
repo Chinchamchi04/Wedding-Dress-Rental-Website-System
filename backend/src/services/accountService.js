@@ -144,3 +144,50 @@ export async function getDressDetail(idOrSlug) {
   if (!dress) fail(404, 'Không tìm thấy thông tin sản phẩm yêu cầu.');
   return dress;
 }
+
+export async function createDress(data) {
+  if (!data?.name) fail(400, 'Tên váy cưới không được để trống.');
+  const count = await Dress.countDocuments();
+  const code = data.code || `UB-${(count + 1).toString().padStart(3, '0')}`;
+  const slug = (data.slug || data.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now().toString().slice(-4);
+
+  let categoryId = data.categoryId;
+  if (!categoryId || !mongoose.isValidObjectId(categoryId)) {
+    const Category = mongoose.model('Category');
+    let defaultCat = await Category.findOne();
+    if (!defaultCat) {
+      defaultCat = await Category.create({ name: 'Váy Cưới Cao Cấp', slug: 'vay-cuoi-cao-cap' });
+    }
+    categoryId = defaultCat._id;
+  }
+
+  const dress = await Dress.create({
+    code,
+    name: data.name,
+    slug,
+    categoryId,
+    silhouette: data.silhouette || 'Ballgown',
+    material: data.material || 'Lụa tơ tằm Ý & Ren Pháp',
+    sizes: data.sizes || ['S', 'M'],
+    rentPrice: Number(data.rentPrice || data.price || 5000000),
+    depositAmount: Number(data.depositAmount || 15000000),
+    originalPrice: Number(data.originalPrice || 30000000),
+    description: data.description || '',
+    images: data.images || [data.image || '/assets/dresses/dress_01.jpg'],
+    status: data.status || 'available',
+    collectionTag: data.collectionTag || 'ATELIER COUTURE 2026',
+  });
+  return dress;
+}
+
+export async function updateDress(id, data) {
+  const dress = await Dress.findByIdAndUpdate(id, { $set: data }, { new: true, runValidators: true });
+  if (!dress) fail(404, 'Không tìm thấy mẫu váy cưới cần cập nhật.');
+  return dress;
+}
+
+export async function deleteDress(id) {
+  const dress = await Dress.findByIdAndUpdate(id, { $set: { status: 'retired' } }, { new: true });
+  if (!dress) fail(404, 'Không tìm thấy mẫu váy cưới.');
+  return dress;
+}
