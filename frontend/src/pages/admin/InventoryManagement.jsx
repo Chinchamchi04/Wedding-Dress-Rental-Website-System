@@ -548,17 +548,6 @@ export default function InventoryManagement() {
         <div className="flex items-center gap-2.5">
           <button
             type="button"
-            onClick={loadInventory}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white border border-[#EFE2DC] text-[#733F49] hover:bg-[#FAF2EE] text-xs font-bold transition-all cursor-pointer shadow-2xs"
-            title="Đồng bộ lại dữ liệu váy & đơn thuê từ máy chủ"
-          >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-            <span className="hidden sm:inline">Đồng bộ</span>
-          </button>
-
-          <button
-            type="button"
             onClick={() => setIsAddModalOpen(true)}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#733F49] to-[#8C4654] hover:from-[#5A2D35] hover:to-[#733F49] text-white text-xs font-bold transition-all cursor-pointer shadow-xs border-0"
           >
