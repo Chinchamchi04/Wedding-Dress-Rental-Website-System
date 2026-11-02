@@ -66,7 +66,7 @@ function OrderCard({ order }) {
 }
 
 export default function OrderHistoryPage() {
-  const [orders, setOrders] = useState(() => getDemoOrders());
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [tab, setTab] = useState('all');
@@ -79,7 +79,7 @@ export default function OrderHistoryPage() {
     getOrders()
       .then((data) => {
         if (!active) return;
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setOrders(data);
         }
       })
@@ -100,7 +100,7 @@ export default function OrderHistoryPage() {
       orders.filter(
         (order) =>
           (tab === 'all' || order.status === tab) &&
-          `${order.id} ${order.dress}`.toLocaleLowerCase('vi').includes(query.toLocaleLowerCase('vi').trim()) &&
+          `${order.id || ''} ${order.dress || ''}`.toLocaleLowerCase('vi').includes(query.toLocaleLowerCase('vi').trim()) &&
           (!date || (order.date && order.date.slice(3).split('/').reverse().join('-') === date.slice(0, 7)))
       ),
     [orders, tab, query, date]

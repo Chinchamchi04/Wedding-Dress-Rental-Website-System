@@ -265,7 +265,7 @@ export default function CustomerCareManagement() {
     };
   }, [showEmojiPicker]);
 
-  const activeConv = conversations.find((c) => c.id === selectedId) || conversations[0];
+  const activeConv = conversations.find((c) => c.id === selectedId) || conversations[0] || null;
 
   const filteredConversations = conversations.filter((c) => {
     if (filterTab === 'unread' && !c.unread) return false;
@@ -350,6 +350,11 @@ export default function CustomerCareManagement() {
 
   return (
     <AdminLayout activeMenu="customer-care">
+      {aptError && (
+        <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <span className="font-semibold">⚠️ Lỗi kết nối Cơ sở dữ liệu:</span> {aptError}
+        </div>
+      )}
       {/* Page Title & Main Tabs */}
       <div className="mb-4 -mt-5 lg:-mt-6 flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -741,9 +746,10 @@ export default function CustomerCareManagement() {
         </div>
 
         {/* Right Card: Active Chat View */}
-        <div className="flex-1 bg-white rounded-2xl border border-[#EFE5E1] shadow-xs overflow-hidden flex flex-col justify-between">
-          {/* Chat Header */}
-          <div className="p-3.5 px-5 bg-[#FAF2EE] border-b border-[#F0E4DF] flex items-center justify-between">
+        {activeConv ? (
+          <div className="flex-1 bg-white rounded-2xl border border-[#EFE5E1] shadow-xs overflow-hidden flex flex-col justify-between">
+            {/* Chat Header */}
+            <div className="p-3.5 px-5 bg-[#FAF2EE] border-b border-[#F0E4DF] flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 shadow-xs border-2 border-white ring-1 ring-[#E8D8D0]">
                 <img
@@ -995,6 +1001,17 @@ export default function CustomerCareManagement() {
             </form>
           </div>
         </div>
+        ) : (
+          <div className="flex-1 bg-white rounded-2xl border border-[#EFE5E1] shadow-xs p-12 flex flex-col items-center justify-center text-center">
+            <div className="w-16 h-16 rounded-2xl bg-[#FAF2EE] flex items-center justify-center text-[#BA7A83] mb-4 shadow-2xs">
+              <MessageSquare size={28} />
+            </div>
+            <h3 className="font-serif text-lg font-bold text-[#2C2523] mb-1">Chưa có hội thoại tư vấn</h3>
+            <p className="text-xs text-[#7A6B6C] max-w-sm leading-relaxed">
+              Khi khách hàng nhắn tin hoặc đặt lịch hẹn thử váy qua hệ thống, các cuộc trò chuyện tư vấn trực tiếp sẽ hiển thị tại đây.
+            </p>
+          </div>
+        )}
       </div>
       )}
     </AdminLayout>

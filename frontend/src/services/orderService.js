@@ -162,7 +162,7 @@ export async function getDressBookedDates(dressId) {
 }
 
 export function getDemoOrders() {
-  throw new Error('Lỗi kết nối cơ sở dữ liệu: Không thể lấy danh sách đơn hàng.');
+  return [];
 }
 
 export function getDemoOrder(id) { return null; }

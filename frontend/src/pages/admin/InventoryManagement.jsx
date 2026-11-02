@@ -80,30 +80,47 @@ export default function InventoryManagement() {
         const dbDresses = res?.data;
         if (Array.isArray(dbDresses) && dbDresses.length > 0) {
           const shelves = ['KỆ A1 - TẦNG 2', 'KỆ B2 - TẦNG 1', 'KỆ C1 - TẦNG 3', 'KỆ VIP - SẢNH TRƯỚC', 'KỆ D3 - TẦNG 2'];
+          const conditions = [
+            { type: 'cold', text: 'Kho Lạnh Tơ Tằm (19°C)' },
+            { type: 'humidity', text: 'Kho Chống Ẩm Cao Cấp' },
+            { type: 'diamond', text: 'Kho Kim Hoàn & Đính Kết VIP' }
+          ];
           const mapped = dbDresses.map((d, index) => {
             const num = (index + 1).toString().padStart(2, '0');
             const code = d.code || `UB-${(index + 1).toString().padStart(3, '0')}`;
             const shelf = shelves[index % shelves.length];
+            const cond = conditions[index % conditions.length];
             const statusType = index % 8 === 0 ? 'drying' : index % 7 === 0 ? 'pending' : index % 3 === 0 ? 'ready' : 'stored';
             const statusText = statusType === 'stored' ? 'ĐẠT CHUẨN LƯU KHO'
               : statusType === 'ready' ? 'SẴN SÀNG XUẤT GIAO'
               : statusType === 'drying' ? 'GIẶT SẤY NHIỆT THẤP'
               : 'CHỜ KIỂM ĐỊNH';
+
+            const rawSizes = Array.isArray(d.sizes) && d.sizes.length > 0 ? d.sizes : ['S', 'M'];
+            const mappedSizes = rawSizes.map((sz) => ({
+              label: typeof sz === 'object' && sz?.label ? sz.label : `Size ${typeof sz === 'object' ? (sz?.size || 'S') : sz} (2 bộ)`
+            }));
             
             return {
               id: d._id || d.id || `inv_${index + 1}`,
               code: `KHÔ-${code}`,
               name: d.name,
+              collection: d.collection || 'ATELIER HAUTE COUTURE 2026',
               rfid: `#RF-2026-${(index + 1).toString().padStart(4, '0')}`,
               location: shelf,
+              conditionType: cond.type,
+              conditionText: cond.text,
               statusType,
               statusText,
-              stock: (d.sizes?.length || 2) * 2,
-              sizes: Array.isArray(d.sizes) ? d.sizes.join(', ') : 'S, M',
+              stock: mappedSizes.length * 2,
+              sizes: mappedSizes,
+              totalUnits: `Tổng: ${String(mappedSizes.length * 2).padStart(2, '0')} bộ`,
               description: d.description || 'Lễ phục cưới cao cấp UniBridal Haute Couture',
               price: d.rentPrice || d.price || 5000000,
               inspector: `Bởi: ${currentInspectorName}`,
               inspectDate: 'Hôm nay',
+              inspectNote: 'Phom dáng 100% nguyên vẹn',
+              inspectNoteColor: 'green',
               image: (d.images && d.images[0]) || d.image || `/assets/dresses/dress_${num}.jpg`,
             };
           });
@@ -640,12 +657,12 @@ export default function InventoryManagement() {
                       {/* Col 3: Phân loại & Tồn size (Căn giữa) */}
                       <td className="py-4 px-4 text-center whitespace-nowrap">
                         <div className="flex flex-col items-center gap-1 mb-1">
-                          {item.sizes.map((s, idx) => (
+                          {(Array.isArray(item.sizes) ? item.sizes : []).map((s, idx) => (
                             <span
                               key={idx}
                               className="inline-block px-2.5 py-0.5 rounded bg-[#FBEBE7] text-[#8A4650] font-semibold text-[11px] text-center"
                             >
-                              {s.label}
+                              {typeof s === 'object' && s?.label ? s.label : `Size ${s}`}
                             </span>
                           ))}
                           {item.outOfStockSize && (
