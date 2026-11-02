@@ -234,14 +234,20 @@ function InspectionModal({ order, onClose, onSuccess }) {
 
   const [itemsCondition, setItemsCondition] = useState(
     () =>
-      (order.items || []).map((item) => ({
-        dressId: item.dressId || item.id || item._id || 'item_default',
-        name: item.name,
-        condition: 'good',
-        damageNotes: '',
-        compensation: 0,
-        rentPrice: item.rentPrice ?? order.totalRentPrice ?? 0,
-      }))
+      (order.items || []).map((item) => {
+        const itemDeposit = item.depositAmount ?? (order.totalDeposit ? Math.round(order.totalDeposit / Math.max(1, (order.items || []).length)) : 0);
+        const itemRent = item.rentPrice ?? (order.totalRentPrice ? Math.round(order.totalRentPrice / Math.max(1, (order.items || []).length)) : 0);
+        return {
+          dressId: item.dressId || item.id || item._id || 'item_default',
+          name: item.name,
+          condition: 'good',
+          damageNotes: '',
+          compensation: 0,
+          rentPrice: itemRent,
+          depositAmount: itemDeposit,
+          maxPrice: Math.max(itemDeposit, itemRent, order.totalDeposit || 0),
+        };
+      })
   );
   const [evidencePhotos, setEvidencePhotos] = useState([]);
   const [submitting, setSubmitting] = useState(false);
@@ -310,7 +316,18 @@ function InspectionModal({ order, onClose, onSuccess }) {
     if (isReadOnly) return;
     setItemsCondition((prev) => {
       const next = [...prev];
-      next[idx] = { ...next[idx], [field]: value };
+      let val = value;
+      if (field === 'compensation') {
+        const numVal = Math.max(0, Number(val || 0));
+        const maxLimit = next[idx]?.maxPrice || order.totalDeposit || order.totalRentPrice || 0;
+        if (numVal > maxLimit && maxLimit > 0) {
+          message.warning(`Số tiền bồi thường không được lớn hơn giá trị váy (Tối đa ${fmtVnd(maxLimit)})`);
+          val = maxLimit;
+        } else {
+          val = numVal;
+        }
+      }
+      next[idx] = { ...next[idx], [field]: val };
       if (field === 'condition' && value === 'good') {
         next[idx].damageNotes = '';
         next[idx].compensation = 0;
@@ -320,6 +337,15 @@ function InspectionModal({ order, onClose, onSuccess }) {
   };
 
   const handleSubmit = async () => {
+    // Validate không được nhập số tiền lớn hơn váy
+    for (const ic of itemsCondition) {
+      const maxLimit = ic.maxPrice || order.totalDeposit || order.totalRentPrice || 0;
+      if (Number(ic.compensation || 0) > maxLimit && maxLimit > 0) {
+        message.error(`Số tiền bồi thường của váy "${ic.name}" không được vượt quá giá trị của váy (${fmtVnd(maxLimit)})`);
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
       const payload = itemsCondition.map((ic) => ({
@@ -347,65 +373,59 @@ function InspectionModal({ order, onClose, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-[#EFE5E1]">
-        {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-[#F0E6E2] bg-[#FFF6F3] rounded-t-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[94vh] overflow-y-auto shadow-2xl border border-[#EFE5E1]">
+        {/* Header - Thu gọn chiều cao */}
+        <div className="flex items-center justify-between py-2.5 px-4 border-b border-[#F0E6E2] bg-[#FFF6F3] rounded-t-2xl">
           <div className="flex items-center gap-2">
-            <ShieldCheck size={20} className="text-[#B8737D]" />
+            <ShieldCheck size={18} className="text-[#B8737D]" />
             <div>
-              <h3 className="font-playfair text-[17px] font-bold text-[#5F2B36]">
+              <h3 className="font-playfair text-[15px] font-bold text-[#5F2B36] m-0">
                 {isCompletedOrder
                   ? 'Hồ Sơ Lưu Trữ Đơn Thuê & Quyết Toán Cọc'
                   : isReturnedOrder
-                  ? 'Biên Bản Kiểm Định Trả Váy (Đã Hoàn Tất Kiểm Định)'
-                  : 'Kiểm Định Trả Váy (Bước 1: Giám Định Hiện Trạng)'}
+                  ? 'Biên Bản Kiểm Định Trả Váy (Đã Kiểm Định)'
+                  : 'Kiểm Định Trả Váy & Giám Định Hiện Trạng'}
               </h3>
-              <p className="text-[11.5px] text-[#8C7D7E]">
-                Đơn #{order.orderCode} {isCompletedOrder ? '• Đã Hoàn Tất Lưu Kho' : isReturnedOrder ? '• Sẵn sàng cho Bước 2 (Hoàn Cọc)' : '• Nhân viên kiểm tra phom dáng & phụ kiện khi nhận váy trả'}
+              <p className="text-[10.5px] text-[#8C7D7E] m-0">
+                Đơn #{order.orderCode} • Showroom Atelier kiểm tra phom dáng &amp; phụ kiện
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[#F2E3DC] text-[#7A6B6C] hover:text-[#733F49] flex items-center justify-center transition-colors cursor-pointer border-0"
+            className="w-7 h-7 rounded-full bg-[#F2E3DC] text-[#7A6B6C] hover:text-[#733F49] flex items-center justify-center transition-colors cursor-pointer border-0"
           >
-            <X size={15} />
+            <X size={14} />
           </button>
         </div>
 
-        <div className="p-5 space-y-5">
+        <div className="p-3.5 space-y-2.5 text-xs">
           {/* Status banner nếu khách đã phản hồi */}
           {customerStatus === 'disputed' && (
-            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800 space-y-1">
-              <div className="font-bold flex items-center gap-1.5 text-red-900">
-                <AlertTriangle size={15} />
+            <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800 space-y-1">
+              <div className="font-bold flex items-center gap-1.5 text-red-900 text-[11.5px]">
+                <AlertTriangle size={13} />
                 <span>Khách hàng đã gửi khiếu nại về biên bản:</span>
               </div>
-              <p className="italic bg-white p-2 rounded-lg border border-red-100 text-[#4A3B3D]">
+              <p className="italic bg-white p-1.5 rounded-lg border border-red-100 text-[#4A3B3D] text-[11px] m-0">
                 "{disputeReason || 'Khách hàng không đồng ý với mức bồi thường khấu trừ cọc'}"
-              </p>
-              <p className="text-[11px] text-red-700">
-                Showroom có thể chỉnh sửa lại số tiền bồi thường bên dưới và bấm "Lưu &amp; Cập Nhật Biên Bản" để khách xác nhận lại.
               </p>
             </div>
           )}
 
           {customerStatus === 'approved' && (
-            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 space-y-1.5">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+            <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 space-y-1">
+              <div className="flex items-center gap-1.5 text-[11.5px]">
+                <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
                 <span>
-                  <strong>Khách hàng đã đồng ý biên bản.</strong> Hệ thống đã tự động quyết toán và hoàn cọc cho khách.
+                  <strong>Khách hàng đã đồng ý biên bản.</strong> Hệ thống đã tự động hoàn cọc cho khách.
                 </span>
               </div>
               {refundBankDetails?.accountNumber && (
-                <div className="p-2.5 rounded-lg bg-white/90 border border-emerald-200 text-[11.5px] text-[#2C2523] space-y-0.5">
-                  <div className="font-bold text-emerald-900 mb-1">Tài khoản nhận tiền hoàn cọc của khách:</div>
-                  <div>• Ngân hàng: <strong>{refundBankDetails.bankName || 'Ngân hàng nội địa'}</strong></div>
-                  <div>• Số tài khoản (STK): <strong className="font-mono text-[12px]">{refundBankDetails.accountNumber}</strong></div>
-                  <div>• Chủ tài khoản: <strong>{refundBankDetails.accountHolder}</strong></div>
+                <div className="p-2 rounded-lg bg-white/90 border border-emerald-200 text-[11px] text-[#2C2523] space-y-0.5">
+                  <div>• Ngân hàng: <strong>{refundBankDetails.bankName || 'Ngân hàng nội địa'}</strong> • STK: <strong className="font-mono">{refundBankDetails.accountNumber}</strong> • Chủ TK: <strong>{refundBankDetails.accountHolder}</strong></div>
                   {refundBankDetails.notes && <div>• Ghi chú: <em>{refundBankDetails.notes}</em></div>}
                 </div>
               )}
@@ -413,95 +433,107 @@ function InspectionModal({ order, onClose, onSuccess }) {
           )}
 
           {customerStatus === 'pending' && isReturnedOrder && (
-            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-center gap-2">
-              <Clock size={16} className="text-amber-600 shrink-0" />
+            <div className="p-2 px-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800 flex items-center gap-1.5">
+              <Clock size={13} className="text-amber-600 shrink-0" />
               <span>
-                <strong>Đang chờ khách hàng xác nhận.</strong> Biên bản đã hiển thị trong trang Lịch sử đơn hàng của khách. Khách bấm đồng ý thì hệ thống tự động hoàn cọc; nếu không đồng ý thì khách có quyền khiếu nại.
+                <strong>Đang chờ khách duyệt &amp; điền STK:</strong> Khách xác nhận thì hệ thống sẽ tự động hoàn cọc ngay.
               </span>
             </div>
           )}
 
-          {/* Order info */}
-          <div className="grid grid-cols-2 gap-3 text-[12.5px]">
-            <div className="p-3 rounded-xl bg-[#FAF5F2] border border-[#F0E6E2]">
-              <span className="text-[#8C7D7E] block mb-0.5">Khách hàng</span>
-              <span className="font-semibold text-[#2C2523]">{order.customerName}</span>
+          {/* Dải thông tin tóm tắt đơn hàng gọn gàng 1 dòng */}
+          <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-lg bg-[#FAF5F2] border border-[#F0E6E2] text-[11.5px]">
+            <div>
+              <span className="text-[#8C7D7E]">Khách hàng: </span>
+              <strong className="text-[#2C2523]">{order.customerName}</strong>
             </div>
-            <div className="p-3 rounded-xl bg-[#FAF5F2] border border-[#F0E6E2]">
-              <span className="text-[#8C7D7E] block mb-0.5">Ngày thuê</span>
-              <span className="font-semibold text-[#2C2523]">
+            <div>
+              <span className="text-[#8C7D7E]">Ngày thuê: </span>
+              <strong className="text-[#2C2523]">
                 {fmtDate(order.rentalStartDate)} – {fmtDate(order.rentalEndDate)}
-              </span>
+              </strong>
             </div>
+            {lateDays > 0 && (
+              <span className="text-amber-800 font-bold bg-amber-100 px-2 py-0.5 rounded text-[11px]">
+                Trễ {lateDays} ngày (+{fmtVnd(lateFee)})
+              </span>
+            )}
           </div>
 
-          {/* Late fee info */}
-          {lateDays > 0 && (
-            <div className="flex items-start gap-2 p-3 rounded-xl bg-[#FEF3C7] border border-[#FDE68A] text-[12px]">
-              <AlertTriangle size={15} className="text-[#92400E] shrink-0 mt-0.5" />
-              <div className="text-[#92400E]">
-                <span className="font-bold">Trễ {lateDays} ngày!</span> Phí trễ:{' '}
-                <span className="font-bold">{fmtVnd(lateFee)}</span> (5%/ngày × số item)
-              </div>
-            </div>
-          )}
-
-          {/* Items inspection */}
-          {itemsCondition.map((ic, idx) => (
-            <div key={idx} className="p-4 rounded-xl border border-[#EFE5E1] bg-white space-y-3">
-              <div className="font-semibold text-[13.5px] text-[#5F2B36]">
-                {ic.name}
-              </div>
-              <div>
-                <p className="text-[11.5px] text-[#8C7D7E] mb-2">Tình trạng váy:</p>
-                <Radio.Group
-                  disabled={isReadOnly}
-                  value={ic.condition}
-                  onChange={(e) => updateItem(idx, 'condition', e.target.value)}
-                  className="flex flex-wrap gap-2"
-                >
-                  {CONDITION_OPTIONS.map((opt) => (
-                    <Radio key={opt.value} value={opt.value}>
-                      <span className="text-[12.5px]">{opt.label}</span>
-                    </Radio>
-                  ))}
-                </Radio.Group>
-              </div>
-              {ic.condition !== 'good' && (
-                <div className="space-y-2">
-                  <Input
-                    disabled={isReadOnly}
-                    placeholder="Ghi chú hư hỏng..."
-                    value={ic.damageNotes}
-                    onChange={(e) => updateItem(idx, 'damageNotes', e.target.value)}
-                    className="text-[12.5px]"
-                  />
-                  <Input
-                    disabled={isReadOnly}
-                    type="number"
-                    min={0}
-                    placeholder="Số tiền bồi thường (₫)"
-                    value={ic.compensation}
-                    onChange={(e) => updateItem(idx, 'compensation', e.target.value)}
-                    className="text-[12.5px]"
-                  />
+          {/* Items inspection - Kiểm định váy */}
+          {itemsCondition.map((ic, idx) => {
+            const maxLimit = ic.maxPrice || order.totalDeposit || order.totalRentPrice || 0;
+            return (
+              <div key={idx} className="p-2.5 px-3 rounded-xl border border-[#EFE5E1] bg-white space-y-1.5">
+                <div className="flex items-center justify-between flex-wrap gap-1">
+                  <span className="font-bold text-[12.5px] text-[#5F2B36]">
+                    {ic.name}
+                  </span>
+                  <span className="text-[10.5px] text-[#8C7D7E]">
+                    (Giá trị/Cọc: <strong className="text-[#5F2B36]">{fmtVnd(maxLimit)}</strong>)
+                  </span>
                 </div>
-              )}
-            </div>
-          ))}
 
-          {/* CHỤP ẢNH & LƯU BẰNG CHỨNG HIỆN TRẠNG VÁY */}
-          <div className="p-4 rounded-xl border border-[#EFE5E1] bg-[#FCF8F5] space-y-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] text-[#8C7D7E]">Tình trạng:</span>
+                  <Radio.Group
+                    disabled={isReadOnly}
+                    value={ic.condition}
+                    onChange={(e) => updateItem(idx, 'condition', e.target.value)}
+                    className="flex flex-wrap gap-1.5 text-[11px]"
+                  >
+                    {CONDITION_OPTIONS.map((opt) => (
+                      <Radio key={opt.value} value={opt.value}>
+                        <span className="text-[11.5px]">{opt.label}</span>
+                      </Radio>
+                    ))}
+                  </Radio.Group>
+                </div>
+
+                {ic.condition !== 'good' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 animate-fadeIn">
+                    <Input
+                      disabled={isReadOnly}
+                      placeholder="Ghi chú hư hỏng (ren, khóa, gấu...)"
+                      value={ic.damageNotes}
+                      onChange={(e) => updateItem(idx, 'damageNotes', e.target.value)}
+                      className="text-xs"
+                      size="middle"
+                    />
+                    <div>
+                      <Input
+                        disabled={isReadOnly}
+                        type="number"
+                        min={0}
+                        max={maxLimit}
+                        placeholder={`Số tiền bồi thường (tối đa ${fmtVnd(maxLimit)})`}
+                        value={ic.compensation}
+                        onChange={(e) => updateItem(idx, 'compensation', e.target.value)}
+                        className="text-xs"
+                        size="middle"
+                      />
+                      <span className="text-[10px] text-amber-800 block mt-0.5">
+                        * Tối đa không vượt quá váy: {fmtVnd(maxLimit)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* CHỤP ẢNH & LƯU BẰNG CHỨNG HIỆN TRẠNG VÁY - Thu gọn thanh mảnh */}
+          <div className="p-2 px-3 rounded-xl border border-[#EFE5E1] bg-[#FCF8F5] space-y-1.5">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <Camera size={16} className="text-[#733F49]" />
-                <span className="font-bold text-[13px] text-[#2C2523]">
-                  Ảnh Chụp Bằng Chứng Hiện Trạng Váy ({evidencePhotos.length} ảnh)
+              <div className="flex items-center gap-1.5">
+                <Camera size={14} className="text-[#733F49]" />
+                <span className="font-bold text-[12px] text-[#2C2523]">
+                  Ảnh Bằng Chứng Đối Soát ({evidencePhotos.length})
                 </span>
               </div>
               {!isReadOnly && (
-                <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#733F49] text-white text-[11.5px] font-bold cursor-pointer hover:bg-[#5C3038] transition-colors shadow-2xs">
-                  <Camera size={13} />
+                <label className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#733F49] text-white text-[11px] font-bold cursor-pointer hover:bg-[#5C3038] transition-colors shadow-2xs">
+                  <Camera size={12} />
                   <span>+ Chụp / Tải ảnh</span>
                   <input
                     type="file"
@@ -516,24 +548,22 @@ function InspectionModal({ order, onClose, onSuccess }) {
             </div>
 
             {evidencePhotos.length === 0 ? (
-              <div className="p-4 rounded-lg border border-dashed border-[#DDC6C0] text-center bg-white">
-                <Camera size={22} className="text-[#A38D91] mx-auto mb-1 opacity-70" />
-                <p className="text-[12px] text-[#7A6B6C] m-0">
-                  Nhân viên chụp ảnh cận cảnh hiện trạng váy (ren, khóa, gấu váy) để lưu hồ sơ đối soát
-                </p>
+              <div className="py-1.5 px-3 rounded-lg border border-dashed border-[#DDC6C0] text-center bg-white text-[11px] text-[#8C7D7E] flex items-center justify-center gap-1.5">
+                <Camera size={13} className="text-[#A38D91]" />
+                <span>Chưa có ảnh bằng chứng (nhấn nút "+ Chụp / Tải ảnh" để thêm ảnh đối soát)</span>
               </div>
             ) : (
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
+              <div className="flex flex-wrap gap-2 pt-0.5">
                 {evidencePhotos.map((photo, pIdx) => (
-                  <div key={pIdx} className="relative aspect-square rounded-lg overflow-hidden border border-[#E5D7D0] group">
+                  <div key={pIdx} className="relative w-12 h-12 rounded-lg overflow-hidden border border-[#E5D7D0] group">
                     <img src={photo} alt={`Bằng chứng ${pIdx + 1}`} className="w-full h-full object-cover" />
                     {!isReadOnly && (
                       <button
                         type="button"
                         onClick={() => removePhoto(pIdx)}
-                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-red-600 transition-colors cursor-pointer border-0"
+                        className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-red-600 transition-colors cursor-pointer border-0"
                       >
-                        <X size={12} />
+                        <X size={10} />
                       </button>
                     )}
                   </div>
@@ -542,43 +572,27 @@ function InspectionModal({ order, onClose, onSuccess }) {
             )}
           </div>
 
-          {/* Summary */}
-          <div className="p-4 rounded-xl bg-[#FFF6F3] border border-[#EFE5E1] space-y-2 text-[12.5px]">
-            <div className="flex justify-between">
-              <span className="text-[#8C7D7E]">Tiền cọc ban đầu</span>
-              <span className="font-semibold">{fmtVnd(order.totalDeposit)}</span>
+          {/* Summary - Bảng quyết toán thu gọn 1 hàng */}
+          <div className="p-2.5 px-3.5 rounded-xl bg-[#FFF6F3] border border-[#EFE5E1] text-[11.5px] flex items-center justify-between flex-wrap gap-2">
+            <div className="space-x-2 text-[#7A6B6C]">
+              <span>Cọc ban đầu: <strong className="text-[#2C2523]">{fmtVnd(order.totalDeposit)}</strong></span>
+              {lateDays > 0 && <span className="text-[#92400E]">• Trễ: <strong>-{fmtVnd(lateFee)}</strong></span>}
+              {totalCompensation > 0 && <span className="text-[#B84E5D]">• Bồi thường: <strong>-{fmtVnd(totalCompensation)}</strong></span>}
             </div>
-            {lateDays > 0 && (
-              <div className="flex justify-between text-[#92400E]">
-                <span>Phí trễ ({lateDays} ngày)</span>
-                <span className="font-semibold">-{fmtVnd(lateFee)}</span>
-              </div>
-            )}
-            {totalCompensation > 0 && (
-              <div className="flex justify-between text-[#B84E5D]">
-                <span>Tiền bồi thường hư hỏng</span>
-                <span className="font-semibold">-{fmtVnd(totalCompensation)}</span>
-              </div>
-            )}
-            <div className="flex justify-between items-baseline font-bold text-[#5F2B36] border-t border-[#EFE5E1] pt-2 mt-2">
-              <div>
-                <span>Dự kiến hoàn trả khách:</span>
-                <span className="block text-[10.5px] font-normal text-[#8C7D7E]">
-                  {isReadOnly ? 'Đã được tính toán theo biên bản' : 'Thực hiện quyết toán ở Bước 2 (Hoàn Cọc)'}
-                </span>
-              </div>
-              <span className="text-[16px] text-[#1E8347]">{fmtVnd(finalRefund)}</span>
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-[#5F2B36]">Dự kiến hoàn trả:</span>
+              <span className="text-[15px] font-bold text-[#1E8347]">{fmtVnd(finalRefund)}</span>
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-1">
+          {/* Actions - Nút bấm thu gọn */}
+          <div className="flex gap-2.5 pt-1">
             {isReadOnly ? (
-              <div className="flex w-full gap-3">
+              <div className="flex w-full gap-2.5">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 py-2.5 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
+                  className="flex-1 py-2 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
                 >
                   {isCompletedOrder ? 'Đóng Hồ Sơ Lưu Trữ' : 'Đóng'}
                 </button>
@@ -586,7 +600,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
                   <button
                     type="button"
                     onClick={() => setIsEditing(true)}
-                    className="flex-1 py-2.5 rounded-xl bg-[#733F49] text-[12px] font-bold text-white hover:bg-[#5C3038] transition-colors border-0 cursor-pointer shadow-xs"
+                    className="flex-1 py-2 rounded-xl bg-[#733F49] text-[12px] font-bold text-white hover:bg-[#5C3038] transition-colors border-0 cursor-pointer shadow-xs"
                   >
                     Chỉnh Sửa Số Tiền Trừ / Bồi Thường
                   </button>
@@ -600,7 +614,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
                     if (isReturnedOrder) setIsEditing(false);
                     else onClose();
                   }}
-                  className="flex-1 py-2.5 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
+                  className="flex-1 py-2 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
                 >
                   Hủy
                 </button>
@@ -608,10 +622,10 @@ function InspectionModal({ order, onClose, onSuccess }) {
                   type="button"
                   disabled={submitting}
                   onClick={handleSubmit}
-                  className="flex-1 py-2.5 rounded-xl bg-[#733F49] text-[12px] font-bold text-white hover:bg-[#5C3038] transition-colors border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
+                  className="flex-1 py-2 rounded-xl bg-[#733F49] text-[12px] font-bold text-white hover:bg-[#5C3038] transition-colors border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
                 >
                   {submitting ? (
-                    <RefreshCw size={14} className="animate-spin" />
+                    <RefreshCw size={13} className="animate-spin" />
                   ) : (
                     <ShieldCheck size={14} />
                   )}

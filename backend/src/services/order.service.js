@@ -235,12 +235,19 @@ export const submitReturnInspection = async (orderId, data, staffUser) => {
   const latePenaltyFee = lateDays * Math.round(order.totalRentPrice * 0.05); // 5% mỗi ngày trễ
 
   // Tổng khấu trừ từ hư hỏng
-  const itemsCondition = (data.itemsCondition || []).map((item) => ({
-    dressId: item.dressId || item.id || null,
-    condition: item.condition || 'good',
-    note: item.note || item.damageNotes || '',
-    repairFee: Number(item.repairFee ?? item.compensation ?? 0),
-  }));
+  const maxAllowed = order.totalDeposit || order.totalRentPrice || 0;
+  const itemsCondition = (data.itemsCondition || []).map((item) => {
+    const fee = Number(item.repairFee ?? item.compensation ?? 0);
+    if (fee > maxAllowed && maxAllowed > 0) {
+      throw new Error(`Số tiền bồi thường không được lớn hơn giá trị của váy (Tối đa: ${maxAllowed.toLocaleString('vi-VN')} đ)`);
+    }
+    return {
+      dressId: item.dressId || item.id || null,
+      condition: item.condition || 'good',
+      note: item.note || item.damageNotes || '',
+      repairFee: Math.max(0, fee),
+    };
+  });
   const damageTotal = itemsCondition.reduce((sum, i) => sum + i.repairFee, 0);
 
   const totalDeduction = latePenaltyFee + damageTotal;
