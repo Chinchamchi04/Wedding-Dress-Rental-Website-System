@@ -596,58 +596,58 @@ export default function ContractTemplateManagement() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[760px]">
               <thead className="bg-[#FAF7F2] text-[#8C7A6B] uppercase font-semibold text-[10px] tracking-wider border-b border-[#EFE5E1]">
                 <tr>
-                  <th className="py-3 px-5">Mức độ hư tổn</th>
+                  <th className="py-3 px-5 whitespace-nowrap w-[240px]">Mức độ hư tổn</th>
                   <th className="py-3 px-5">Mô tả chi tiết sự cố</th>
                   <th className="py-3 px-5">Quy trình xử lý tại Atelier</th>
-                  <th className="py-3 px-5 text-right">Mức phí áp dụng</th>
+                  <th className="py-3 px-5 text-right whitespace-nowrap w-[180px]">Mức phí áp dụng</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F4ECE7] text-[#2C2523]">
                 <tr className="hover:bg-[#FDFBF9]">
-                  <td className="py-4 px-5">
-                    <span className="font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                  <td className="py-4 px-5 whitespace-nowrap align-middle">
+                    <span className="inline-flex items-center text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 whitespace-nowrap shadow-2xs">
                       Cấp độ 1: Bẩn nhẹ
                     </span>
                   </td>
                   <td className="py-4 px-5">Bụi đất bám tà dưới do di chuyển sân khấu hoặc chụp studio thông thường.</td>
                   <td className="py-4 px-5 text-[#8C7A6B]">Giặt hấp Dry-cleaning công nghệ Ozone tiêu chuẩn showroom.</td>
-                  <td className="py-4 px-5 text-right font-bold text-emerald-600">MIỄN PHÍ</td>
+                  <td className="py-4 px-5 text-right font-bold text-emerald-600 whitespace-nowrap">MIỄN PHÍ</td>
                 </tr>
 
                 <tr className="hover:bg-[#FDFBF9]">
-                  <td className="py-4 px-5">
-                    <span className="font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                  <td className="py-4 px-5 whitespace-nowrap align-middle">
+                    <span className="inline-flex items-center text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 whitespace-nowrap shadow-2xs">
                       Cấp độ 2: Ố bẩn cứng đầu
                     </span>
                   </td>
                   <td className="py-4 px-5">Vết vang đỏ, son môi, thức ăn dầu mỡ dính diện rộng lên lụa Mikado hoặc Tulle.</td>
                   <td className="py-4 px-5 text-[#8C7A6B]">Hóa chất tẩy sinh học Pháp chuyên dụng bảo vệ sợi tơ tằm.</td>
-                  <td className="py-4 px-5 text-right font-bold text-amber-600">300.000 - 600.000 VNĐ</td>
+                  <td className="py-4 px-5 text-right font-bold text-amber-600 whitespace-nowrap">300.000 – 600.000 VNĐ</td>
                 </tr>
 
                 <tr className="hover:bg-[#FDFBF9]">
-                  <td className="py-4 px-5">
-                    <span className="font-semibold text-orange-700 bg-orange-50 px-2.5 py-1 rounded-full border border-orange-200">
+                  <td className="py-4 px-5 whitespace-nowrap align-middle">
+                    <span className="inline-flex items-center text-xs font-semibold text-orange-700 bg-orange-50 px-3 py-1 rounded-full border border-orange-200 whitespace-nowrap shadow-2xs">
                       Cấp độ 3: Rách ren / Rơi hạt
                     </span>
                   </td>
                   <td className="py-4 px-5">Rách voan tà ngoài &lt; 10cm, đứt chuỗi pha lê Swarovski, tuột cúc ngọc trai.</td>
                   <td className="py-4 px-5 text-[#8C7A6B]">Nghệ nhân đính kết may phục hồi thủ công theo bản vẽ gốc.</td>
-                  <td className="py-4 px-5 text-right font-bold text-orange-600">800.000 - 2.500.000 VNĐ</td>
+                  <td className="py-4 px-5 text-right font-bold text-orange-600 whitespace-nowrap">800.000 – 2.500.000 VNĐ</td>
                 </tr>
 
                 <tr className="hover:bg-[#FDFBF9]">
-                  <td className="py-4 px-5">
-                    <span className="font-semibold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200">
+                  <td className="py-4 px-5 whitespace-nowrap align-middle">
+                    <span className="inline-flex items-center text-xs font-semibold text-rose-700 bg-rose-50 px-3 py-1 rounded-full border border-rose-200 whitespace-nowrap shadow-2xs">
                       Cấp độ 4: Hư hỏng nghiêm trọng
                     </span>
                   </td>
                   <td className="py-4 px-5">Cháy sém do pháo hoa, biến dạng gọng corset không thể nắn, mất hẳn phụ kiện đi kèm.</td>
                   <td className="py-4 px-5 text-[#8C7A6B]">Váy bị loại bỏ hoàn toàn khỏi bộ sưu tập cho thuê.</td>
-                  <td className="py-4 px-5 text-right font-bold text-rose-600">100% Giá trị váy niêm yết</td>
+                  <td className="py-4 px-5 text-right font-bold text-rose-600 whitespace-nowrap">100% Giá trị váy niêm yết</td>
                 </tr>
               </tbody>
             </table>
