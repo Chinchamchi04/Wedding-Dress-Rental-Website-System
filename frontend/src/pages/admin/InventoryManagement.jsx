@@ -549,25 +549,25 @@ export default function InventoryManagement() {
       {/* Main Table */}
       <div className="bg-white rounded-2xl border border-[#EFE5E1] shadow-xs overflow-hidden mb-6">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1100px] text-left border-collapse">
+          <table className="w-full min-w-[940px] text-left border-collapse">
             <thead>
               <tr className="border-b border-[#F2E5E0] bg-[#FFF6F3]">
-                <th className="py-4 px-5 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[24%] whitespace-nowrap">
+                <th className="py-4 px-4 sm:px-5 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[22%] min-w-[190px]">
                   SẢN PHẨM &amp; MÃ LỄ PHỤC
                 </th>
-                <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[28%] whitespace-nowrap">
+                <th className="py-4 px-3 sm:px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[23%] min-w-[200px]">
                   VỊ TRÍ KHO &amp; KỆ TREO
                 </th>
-                <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[16%] whitespace-nowrap">
+                <th className="py-4 px-3 sm:px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[14%] min-w-[130px]">
                   PHÂN LOẠI &amp; TỒN SIZE
                 </th>
-                <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[16%] whitespace-nowrap">
+                <th className="py-4 px-3 sm:px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[15%] min-w-[140px]">
                   TÌNH TRẠNG LƯU KHO
                 </th>
-                <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[12%] whitespace-nowrap">
+                <th className="py-4 px-3 sm:px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[15%] min-w-[140px]">
                   LẦN KIỂM KÊ
                 </th>
-                <th className="py-4 px-5 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[4%] whitespace-nowrap">
+                <th className="py-4 px-3 pr-5 sm:pr-6 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[11%] min-w-[110px]">
                   THAO TÁC
                 </th>
               </tr>
@@ -598,7 +598,7 @@ export default function InventoryManagement() {
                           <div className="flex flex-col gap-1 items-start">
                             <div
                               onClick={() => setSelectedItem(item)}
-                              className="font-playfair text-[15px] font-bold text-[#2C2523] hover:text-[#B8737D] cursor-pointer transition-colors leading-tight"
+                              className="font-jakarta text-[14.5px] font-bold text-[#2C2523] hover:text-[#B8737D] cursor-pointer transition-colors leading-tight"
                             >
                               {item.name}
                             </div>
@@ -724,7 +724,7 @@ export default function InventoryManagement() {
                       </td>
 
                       {/* Col 6: Thao tác */}
-                      <td className="py-4 px-5 text-center whitespace-nowrap">
+                      <td className="py-4 px-3 pr-5 sm:pr-6 text-center whitespace-nowrap">
                         <div className="relative inline-flex items-center justify-center gap-1.5 text-[#736364]">
                           <button
                             type="button"
