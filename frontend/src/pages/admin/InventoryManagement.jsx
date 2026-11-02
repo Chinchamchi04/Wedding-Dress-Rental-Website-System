@@ -111,11 +111,18 @@ export default function InventoryManagement() {
       const hasItem = (o.items || []).some((it) => {
         const itId = it.dressId || it.id || it._id;
         const itName = (it.name || '').trim().toLowerCase();
-        return (itId && String(itId) === String(dressId)) || (itName && itName === dressName);
+        return (
+          (itId && String(itId) === String(dressId)) ||
+          (itName && (itName === dressName || itName.includes(dressName) || dressName.includes(itName)))
+        );
       });
-      const mainMatch = (o.dress && o.dress.trim().toLowerCase() === dressName);
+      const mainMatch = (o.dress && (o.dress.trim().toLowerCase() === dressName || o.dress.trim().toLowerCase().includes(dressName)));
       return hasItem || mainMatch;
     });
+
+    const relatedOrderCodes = matchedOrders.map((o) =>
+      String(o.orderCode || o.id || o._id || '').toLowerCase()
+    );
 
     // 1. Số lượng đơn đang trong chu trình kiểm định & bảo dưỡng sau thuê
     const maintenanceOrders = matchedOrders.filter((o) =>
@@ -189,6 +196,8 @@ export default function InventoryManagement() {
       availableStock,
       rentedCount,
       maintenanceCount,
+      relatedOrderCodes,
+      matchedOrders,
       sizes: sizeList,
       totalUnits: `Tổng: ${String(totalStock).padStart(2, '0')} bộ`,
       description: override.description || d.description || 'Lễ phục cưới cao cấp UniBridal Haute Couture',
@@ -210,6 +219,24 @@ export default function InventoryManagement() {
       const dressList = Array.isArray(dressesRes?.data) ? dressesRes.data : [];
       const orderList = Array.isArray(ordersRes?.orders) ? ordersRes.orders : [];
 
+      // Gộp thêm các đơn từ localStorage nếu có (ví dụ đơn khách hàng vừa đặt hoặc offline)
+      let localOrders = [];
+      try {
+        localOrders = JSON.parse(localStorage.getItem('unibridal-orders') || '[]');
+      } catch {}
+      try {
+        const lastOrder = JSON.parse(localStorage.getItem('unibridal-last-order') || 'null');
+        if (lastOrder) localOrders.push(lastOrder);
+      } catch {}
+
+      const combinedOrders = [...orderList];
+      localOrders.forEach((lo) => {
+        const loCode = String(lo.orderCode || lo.id || lo._id || '');
+        if (loCode && !combinedOrders.some((co) => String(co.orderCode || co.id || co._id) === loCode)) {
+          combinedOrders.push(lo);
+        }
+      });
+
       // Lấy danh sách ID đã xóa từ localStorage (nếu có) để lọc bỏ
       let deletedIds = [];
       try {
@@ -221,10 +248,10 @@ export default function InventoryManagement() {
       );
 
       setRawDresses(activeDressList);
-      setOrders(orderList);
+      setOrders(combinedOrders);
 
       const computed = activeDressList.map((d, index) =>
-        computeItemData(d, index, orderList, manualOverrides)
+        computeItemData(d, index, combinedOrders, manualOverrides)
       );
       setItems(computed);
       setError('');
@@ -251,11 +278,14 @@ export default function InventoryManagement() {
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
+      const q = searchTerm.trim().toLowerCase();
       const matchSearch =
-        (item.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.code || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.location || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.description || '').toLowerCase().includes(searchTerm.toLowerCase());
+        !q ||
+        (item.name || '').toLowerCase().includes(q) ||
+        (item.code || '').toLowerCase().includes(q) ||
+        (item.location || '').toLowerCase().includes(q) ||
+        (item.description || '').toLowerCase().includes(q) ||
+        (item.relatedOrderCodes || []).some((code) => code.includes(q));
 
       const matchStatus =
         statusFilter === 'all' ||
@@ -680,7 +710,7 @@ export default function InventoryManagement() {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Tìm theo mã váy, tên thiết kế, vị trí tủ, chất liệu..."
+            placeholder="Tìm theo mã đơn (VD: UB-2026-505), mã váy, tên thiết kế, vị trí tủ..."
             className="w-full pl-11 pr-4 py-3 rounded-xl bg-[#FFF6F3] border border-[#F4E8E3] focus:border-[#B8737D] focus:bg-white text-[13px] text-[#2C2523] placeholder-[#A39293] outline-none transition-all"
           />
           {searchTerm && (
@@ -787,9 +817,20 @@ export default function InventoryManagement() {
                             >
                               {item.name}
                             </div>
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#FAF0EC] text-[#733F49] font-mono text-[10.5px] font-bold border border-[#F2D8D4] leading-none">
-                              {item.code}
-                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#FAF0EC] text-[#733F49] font-mono text-[10.5px] font-bold border border-[#F2D8D4] leading-none">
+                                {item.code}
+                              </span>
+                              {item.relatedOrderCodes?.length > 0 && (
+                                <span
+                                  title={`Đơn thuê liên quan: ${item.relatedOrderCodes.join(', ')}`}
+                                  className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-[#FDF0EE] text-[#8C3A48] font-mono text-[10px] font-bold border border-[#F5CED3] leading-none"
+                                >
+                                  #{item.relatedOrderCodes[0].toUpperCase()}
+                                  {item.relatedOrderCodes.length > 1 ? ` (+${item.relatedOrderCodes.length - 1})` : ''}
+                                </span>
+                              )}
+                            </div>
                             <div className="text-[10px] font-bold text-[#A39293] tracking-wider uppercase leading-none">
                               {item.collection}
                             </div>
