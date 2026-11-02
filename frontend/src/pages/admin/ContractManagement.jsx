@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { getAllOrdersAdmin, createOrder, updateOrderStatus } from '../../services/orderService';
+import { formatCurrencyVND } from '../../utils/formatCurrency';
 import AdminLayout from '../../components/layout/AdminLayout';
 import {
   Search,
@@ -160,9 +161,12 @@ export default function ContractManagement() {
           try { localStorage.setItem('unibridal_contracts_local', JSON.stringify(combined)); } catch {}
           return combined;
         });
+        setError('');
+      } else {
+        setContracts([]);
       }
-    } catch {
-      // Giữ nguyên contracts hiện có
+    } catch (err) {
+      setError('Lỗi kết nối cơ sở dữ liệu: Không thể tải danh sách hợp đồng từ hệ thống.');
     } finally {
       setLoading(false);
     }

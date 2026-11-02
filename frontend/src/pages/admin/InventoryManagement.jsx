@@ -118,7 +118,7 @@ export default function InventoryManagement() {
         if (!active) return;
         setItems([]);
         setError('Lỗi kết nối cơ sở dữ liệu: Không thể tải danh sách kho hàng từ máy chủ MongoDB.');
-      })(() => {});
+      });
     return () => { active = false; };
   }, [currentInspectorName]);
 
