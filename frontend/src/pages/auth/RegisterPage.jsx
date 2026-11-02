@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { CheckCircle2, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { register as apiRegister, verifyEmailOtp, resendVerificationOtp } from '../../services/authService';
+import { register as apiRegister, registerAccount, verifyEmailOtp, resendVerificationOtp } from '../../services/authService';
 import { Sparkles, Lock, Mail, Phone, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import Logo from '../../components/common/Logo';
 
@@ -236,6 +236,7 @@ export default function RegisterPage() {
       setIsLoading(false);
       if (res?.data?.user && res?.data?.token) {
         setAuth(res.data.user, res.data.token);
+        sessionStorage.setItem('unibridal_show_onboarding', 'true');
       }
       setStep(3);
     } catch (err) {
@@ -1429,7 +1430,10 @@ export default function RegisterPage() {
 
                 <button
                   type="button"
-                  onClick={() => navigate('/', { replace: true })}
+                  onClick={() => {
+                    sessionStorage.setItem('unibridal_show_onboarding', 'true');
+                    navigate('/', { replace: true, state: { isNewRegister: true } });
+                  }}
                   className="ub-submit-btn"
                   style={{ width: '100%', cursor: 'pointer' }}
                 >

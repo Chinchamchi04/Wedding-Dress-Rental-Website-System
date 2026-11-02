@@ -1,4 +1,5 @@
 import Order from '../models/Order.model.js';
+import ReturnInspection from '../models/ReturnInspection.model.js';
 
 /**
  * Service xử lý nghiệp vụ Đơn Thuê Váy & Hợp Đồng (Orders)
@@ -172,5 +173,73 @@ export const getDressBookedDates = async (dressId) => {
     startDate: o.rentalStartDate,
     endDate: o.rentalEndDate,
   }));
+};
+
+/**
+ * Lập biên bản kiểm định tình trạng váy khi khách trả
+ * @param {string} orderId - ID đơn thuê
+ * @param {Object} data - { itemsCondition, lateDays, staffId }
+ * @param {Object} staffUser - user object của nhân viên
+ */
+export const submitReturnInspection = async (orderId, data, staffUser) => {
+  const order = await Order.findById(orderId);
+  if (!order) throw new Error('Không tìm thấy đơn thuê.');
+
+  if (!['renting', 'delivered', 'returned'].includes(order.status)) {
+    throw new Error('Đơn thuê chưa ở trạng thái có thể kiểm định. Vui lòng xác nhận khách đã nhận váy trước.');
+  }
+
+  const existingInspection = await ReturnInspection.findOne({ orderId });
+  if (existingInspection) throw new Error('Đơn thuê này đã có biên bản kiểm định rồi.');
+
+  // Tính số ngày trễ
+  const today = new Date();
+  const dueDate = new Date(order.rentalEndDate);
+  const lateDays = Math.max(0, Math.floor((today - dueDate) / (1000 * 60 * 60 * 24)));
+  const latePenaltyFee = lateDays * Math.round(order.totalRentPrice * 0.05); // 5% mỗi ngày trễ
+
+  // Tổng khấu trừ từ hư hỏng
+  const itemsCondition = (data.itemsCondition || []).map((item) => ({
+    dressId: item.dressId || item.id || null,
+    condition: item.condition || 'good',
+    note: item.note || item.damageNotes || '',
+    repairFee: Number(item.repairFee ?? item.compensation ?? 0),
+  }));
+  const damageTotal = itemsCondition.reduce((sum, i) => sum + i.repairFee, 0);
+
+  const totalDeduction = latePenaltyFee + damageTotal;
+  const finalRefundAmount = Math.max(0, order.totalDeposit - totalDeduction);
+
+  const inspection = new ReturnInspection({
+    orderId: order._id,
+    staffId: staffUser?._id,
+    returnedAt: new Date(),
+    lateDays,
+    latePenaltyFee,
+    itemsCondition,
+    totalDeduction,
+    initialDeposit: order.totalDeposit,
+    finalRefundAmount,
+    isRefunded: false,
+  });
+
+  await inspection.save();
+
+  // Cập nhật trạng thái đơn
+  order.status = 'returned';
+  order.actualReturnDate = new Date();
+  await order.save();
+
+  return { order, inspection };
+};
+
+/**
+ * Lấy biên bản kiểm định của một đơn thuê
+ * @param {string} orderId
+ */
+export const getReturnInspection = async (orderId) => {
+  const inspection = await ReturnInspection.findOne({ orderId }).lean();
+  if (!inspection) return null;
+  return inspection;
 };
 

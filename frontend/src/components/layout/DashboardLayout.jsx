@@ -1,20 +1,22 @@
 import React from 'react';
 import AdminLayout from './AdminLayout';
+import './Dashboard.css';
 
 export default function DashboardLayout({
-  role = 'admin',
+  role = 'staff',
   children,
   controls,
-  title = 'Tổng Quan',
-  subtitle = 'Tổng quan các số liệu',
+  title,
+  subtitle,
   activeNav
 }) {
   return (
     <AdminLayout
       role={role}
+      controls={controls}
       title={title}
       subtitle={subtitle}
-      controls={controls}
+      activeMenu={activeNav}
     >
       {children}
     </AdminLayout>

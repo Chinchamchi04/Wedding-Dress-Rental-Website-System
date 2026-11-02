@@ -28,7 +28,6 @@ import {
 import { message, Modal } from 'antd';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
-import BookingModal from '../../components/common/BookingModal';
 import { addToCart } from '../../services/cartService';
 
 // Assets
@@ -489,7 +488,7 @@ export default function MessagesPage() {
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#2C2523] flex flex-col font-jakarta selection:bg-[#FCEEE9] selection:text-[#B8737D]">
       {/* 1. Header Navigation */}
-      <Header onOpenBooking={() => setIsBookingOpen(true)} />
+      <Header onOpenBooking={() => navigate('/dat-lich')} />
 
       {/* 2. Top Ribbon Subheader */}
       <div className="border-b border-[#F0E6DE] bg-[#FFF9F7] py-2.5 px-4 sm:px-6">
@@ -746,7 +745,7 @@ export default function MessagesPage() {
                         type="button"
                         onClick={() => {
                           setShowMoreMenu(false);
-                          setIsBookingOpen(true);
+                          navigate('/dat-lich');
                         }}
                         className="w-full text-left px-3.5 py-2 hover:bg-[#FAF7F3] text-[#2C2523] flex items-center gap-2 border-0 bg-transparent cursor-pointer"
                       >
@@ -1163,11 +1162,7 @@ export default function MessagesPage() {
         </div>
       )}
 
-      {/* 5. Booking Modal Integration */}
-      <BookingModal
-        isOpen={isBookingOpen}
-        onClose={() => setIsBookingOpen(false)}
-      />
+
 
       {/* 6. Footer Navigation */}
       <Footer />

@@ -2,7 +2,7 @@
  * Middleware bắt lỗi tập trung (Centralized Error Handler)
  */
 export const errorHandler = (err, req, res, next) => {
-  const statusCode = err.statusCode || (res.statusCode === 200 ? 500 : res.statusCode);
+  const statusCode = err.statusCode || err.status || (res.statusCode === 200 ? 500 : res.statusCode);
 
   // Xử lý lỗi trùng lặp MongoDB (Unique index)
   if (err.code === 11000) {
@@ -30,4 +30,3 @@ export const errorHandler = (err, req, res, next) => {
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 };
-

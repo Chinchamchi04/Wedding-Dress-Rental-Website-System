@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { login as apiLogin } from '../../services/authService';
+import { login as apiLogin, loginAccount } from '../../services/authService';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, Sparkles, Gem, Crown, UserCheck, User } from 'lucide-react';
 import Logo from '../../components/common/Logo';
 
@@ -19,7 +19,6 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login: setAuth } = useAuth();
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -35,7 +34,7 @@ export default function LoginPage() {
     try {
       const res = await apiLogin({ email, password });
       if (res?.data?.user && res?.data?.token) {
-        setAuth(res.data.user, res.data.token);
+        setAuth(res.data.user, res.data.token, rememberMe);
 
         const userRole = (res.data.user.role || res.data.user.roleId?.code || '').toLowerCase();
         if (userRole === 'admin') {
@@ -43,7 +42,9 @@ export default function LoginPage() {
         } else if (userRole === 'staff') {
           navigate('/staff/dashboard', { replace: true });
         } else {
-          const from = location.state?.from?.pathname || '/';
+          const from = (location.state?.from?.pathname && location.state.from.pathname !== '/profile')
+            ? location.state.from.pathname
+            : '/';
           navigate(from, { replace: true });
         }
       }
@@ -75,7 +76,7 @@ export default function LoginPage() {
     try {
       const res = await apiLogin(credentials);
       if (res?.data?.user && res?.data?.token) {
-        setAuth(res.data.user, res.data.token);
+        setAuth(res.data.user, res.data.token, true);
 
         const userRole = (res.data.user.role || res.data.user.roleId?.code || '').toLowerCase();
         if (userRole === 'admin') {
@@ -83,7 +84,9 @@ export default function LoginPage() {
         } else if (userRole === 'staff') {
           navigate('/staff/dashboard', { replace: true });
         } else {
-          const from = location.state?.from?.pathname || '/';
+          const from = (location.state?.from?.pathname && location.state.from.pathname !== '/profile')
+            ? location.state.from.pathname
+            : '/';
           navigate(from, { replace: true });
         }
       }
@@ -1059,8 +1062,9 @@ export default function LoginPage() {
               </div>
 
               {/* Submit Button */}
-              <button type="submit" className="ub-submit-btn" id="login-submit-btn">
-                <span className="ub-submit-btn__text">{isLoading ? "ĐANG ĐĂNG NHẬP..." : "ĐĂNG NHẬP TÀI KHOẢN"}</span>
+                {error && <p role="alert" className="text-sm text-red-700 mb-3 text-center">{error}</p>}
+                <button type="submit" disabled={isLoading} className="ub-submit-btn" id="login-submit-btn">
+                  <span className="ub-submit-btn__text">{isLoading ? "ĐANG ĐĂNG NHẬP..." : "ĐĂNG NHẬP TÀI KHOẢN"}</span>
                 <span className="ub-submit-btn__arrow">→</span>
               </button>
             </form>

@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import logoImg from '../../assets/logo.png';
 import heroBride from '../../assets/hero_bride.jpg';
-import HangerIcon from '../common/HangerIcon';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function AdminLayout({
   children,
@@ -28,14 +28,24 @@ export default function AdminLayout({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Tự động nhận diện menu đang active nếu không truyền chủ động
   const currentPath = location.pathname;
-  const isStaff = role === 'staff' || currentPath.startsWith('/staff');
+  const isStaff = role === 'staff' || user?.role === 'staff' || currentPath.startsWith('/staff');
 
   const getActiveKey = () => {
-    if (activeMenu) return activeMenu;
+    if (activeMenu) {
+      const lower = activeMenu.toLowerCase();
+      if (lower.includes('tổng quan') || lower === 'dashboard') return 'dashboard';
+      if (lower.includes('đơn thuê') || lower === 'don-thue') return 'don-thue';
+      if (lower.includes('mẫu hợp đồng') || lower === 'contract-templates') return 'contract-templates';
+      if (lower.includes('hợp đồng') || lower === 'contracts') return 'contracts';
+      if (lower.includes('kho hàng') || lower === 'inventory') return 'inventory';
+      if (lower.includes('chăm sóc') || lower === 'customer-care') return 'customer-care';
+      if (lower.includes('doanh thu') || lower === 'revenue') return 'revenue';
+    }
     if (currentPath.includes('/dashboard')) return 'dashboard';
     if (currentPath.includes('/reports') || currentPath.includes('/revenue')) return 'revenue';
     if (currentPath.includes('/don-thue') || currentPath.includes('/orders')) return 'don-thue';
@@ -94,6 +104,15 @@ export default function AdminLayout({
       }
     ] : [])
   ];
+
+  const userName = user?.fullName || user?.name || (isStaff ? 'Chuyên Viên Atelier' : 'Quản Trị Viên');
+  const userAvatar = user?.avatar || heroBride;
+  const userRoleText = isStaff ? 'STAFF MODE' : 'ADMIN MODE';
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] font-jakarta text-[#2C2523] flex">
@@ -187,8 +206,8 @@ export default function AdminLayout({
           <div className="h-px bg-[#EADBCE] my-0.5" />
           <button
             type="button"
-            onClick={() => navigate('/login')}
-            className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-bold text-[#C93B3B] bg-transparent hover:bg-[#FADBD8] transition-colors w-full text-left"
+            onClick={handleLogout}
+            className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-bold text-[#C93B3B] bg-transparent hover:bg-[#FADBD8] transition-colors w-full text-left cursor-pointer"
           >
             <LogOut size={16} />
             <span>ĐĂNG XUẤT</span>
@@ -218,18 +237,18 @@ export default function AdminLayout({
             <div className="flex items-center gap-3">
               <div className="text-right">
                 <div className="text-[13.5px] font-bold text-[#2C2523] leading-tight">
-                  Trần Bích Ngọc
+                  {userName}
                 </div>
                 <div className={`inline-block mt-0.5 px-2 py-0.5 rounded-sm text-[9.5px] font-bold tracking-wider uppercase ${
                   isStaff ? 'bg-[#FDECEE] text-[#B8737D]' : 'bg-[#EBF5EE] text-[#2F6F4E]'
                 }`}>
-                  {isStaff ? 'STAFF MODE' : 'ADMIN MODE'}
+                  {userRoleText}
                 </div>
               </div>
               <div className="relative">
                 <img
-                  src={heroBride}
-                  alt="Trần Bích Ngọc"
+                  src={userAvatar}
+                  alt={userName}
                   className="w-10 h-10 rounded-full object-cover border-2 border-[#EFE5E1]"
                 />
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white" />

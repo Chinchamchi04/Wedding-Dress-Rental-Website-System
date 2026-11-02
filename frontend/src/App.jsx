@@ -15,7 +15,6 @@ import DressDetailPage from './pages/customer/DressDetailPage';
 import CartPage from './pages/customer/CartPage';
 import CheckoutPage from './pages/customer/CheckoutPage';
 import AppointmentPage from './pages/customer/AppointmentPage';
-import GuestBookingPage from './pages/customer/GuestBookingPage';
 import MessagesPage from './pages/customer/MessagesPage';
 import StaffDashboardPage from './pages/staff/StaffDashboardPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -43,11 +42,11 @@ export default function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/about" element={<AboutUsPage />} />
               <Route path="/ve-chung-toi" element={<AboutUsPage />} />
-              <Route path="/wishlist" element={<WishlistPage />} />
-              <Route path="/yeu-thich" element={<WishlistPage />} />
+              <Route path="/wishlist" element={<ProtectedRoute allowedRoles={['customer', 'staff', 'admin']}><WishlistPage /></ProtectedRoute>} />
+              <Route path="/yeu-thich" element={<ProtectedRoute allowedRoles={['customer', 'staff', 'admin']}><WishlistPage /></ProtectedRoute>} />
               <Route path="/collection" element={<CollectionPage />} />
               <Route path="/bo-suu-tap" element={<CollectionPage />} />
-              <Route path="/cart" element={<CartPage />} />
+              <Route path="/cart" element={<ProtectedRoute allowedRoles={['customer', 'staff', 'admin']}><CartPage /></ProtectedRoute>} />
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/dat-coc" element={<CheckoutPage />} />
               <Route path="/thanh-toan" element={<CheckoutPage />} />
@@ -55,12 +54,12 @@ export default function App() {
               <Route path="/dat-lich" element={<AppointmentPage />} />
               <Route path="/appointment" element={<AppointmentPage />} />
               <Route path="/booking" element={<AppointmentPage />} />
-              <Route path="/thue-nhanh" element={<GuestBookingPage />} />
-              <Route path="/guest-booking" element={<GuestBookingPage />} />
-              <Route path="/thue-vay-guest" element={<GuestBookingPage />} />
-              <Route path="/thu-vay-guest" element={<GuestBookingPage />} />
-              <Route path="/dat-lich-guest" element={<GuestBookingPage />} />
-              <Route path="/dang-ky-guest" element={<GuestBookingPage />} />
+              <Route path="/thue-nhanh" element={<Navigate to="/dat-lich" replace />} />
+              <Route path="/guest-booking" element={<Navigate to="/dat-lich" replace />} />
+              <Route path="/thue-vay-guest" element={<Navigate to="/dat-lich" replace />} />
+              <Route path="/thu-vay-guest" element={<Navigate to="/dat-lich" replace />} />
+              <Route path="/dat-lich-guest" element={<Navigate to="/dat-lich" replace />} />
+              <Route path="/dang-ky-guest" element={<Navigate to="/dat-lich" replace />} />
               <Route path="/tin-nhan" element={<MessagesPage />} />
               <Route path="/messages" element={<MessagesPage />} />
               <Route path="/chat" element={<MessagesPage />} />

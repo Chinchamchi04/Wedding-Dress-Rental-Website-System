@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
-import BookingModal from '../../components/common/BookingModal';
 
 import aboutAtelierImg from '../../assets/about_atelier_hero.jpg';
 import aboutFounderImg from '../../assets/about_founder_portrait.jpg';
@@ -32,7 +31,7 @@ export default function AboutUsPage() {
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#2C2523] flex flex-col font-jakarta selection:bg-[#FCEEE9] selection:text-[#B8737D]">
       {/* 1. Header Navigation */}
-      <Header onOpenBooking={() => setIsBookingOpen(true)} />
+      <Header onOpenBooking={() => navigate('/dat-lich')} />
 
       {/* 2. Main Content */}
       <main className="flex-1 w-full pb-20">
@@ -516,11 +515,7 @@ export default function AboutUsPage() {
       {/* 3. Footer */}
       <Footer />
 
-      {/* 4. Booking Consultation Modal */}
-      <BookingModal
-        isOpen={isBookingOpen}
-        onClose={() => setIsBookingOpen(false)}
-      />
+
     </div>
   );
 }

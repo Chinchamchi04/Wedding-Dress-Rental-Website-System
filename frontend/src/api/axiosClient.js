@@ -13,7 +13,7 @@ const axiosClient = axios.create({
 // Interceptor tự động gán JWT Token hoặc Guest Session ID từ localStorage
 axiosClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

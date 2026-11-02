@@ -2,9 +2,8 @@ import mongoose from 'mongoose';
 
 const itemConditionSchema = new mongoose.Schema({
   dressId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Dress',
-    required: true,
+    type: mongoose.Schema.Types.Mixed,
+    default: null,
   },
   condition: {
     type: String,
@@ -34,7 +33,7 @@ const returnInspectionSchema = new mongoose.Schema(
     staffId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      default: null,
     },
     returnedAt: {
       type: Date,

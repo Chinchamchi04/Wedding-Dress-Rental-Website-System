@@ -11,7 +11,7 @@ import ChatWidget from '../common/ChatWidget';
 const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCount: propWishlistCount }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isLoggedIn, logout, isAdmin, isStaff } = useAuth();
+  const { user, isLoggedIn, logout, isAdmin, isStaff, role } = useAuth();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -79,7 +79,7 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
     },
   ];
 
-  const userAccountItems = [
+  const accountLinks = [
     {
       title: 'Trang cá nhân',
       subtitle: 'Quản lý thông tin và hồ sơ',
@@ -112,12 +112,31 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
       subtitle: 'Bảo mật tài khoản',
       href: '/profile/password',
     },
+  ];
+
+  const guestLinks = [
     {
-      title: 'Đăng xuất',
-      subtitle: 'Thoát phiên đăng nhập hiện tại',
-      isLogout: true,
+      title: 'Đăng nhập',
+      subtitle: 'Đăng nhập tài khoản thành viên',
+      href: '/login',
+    },
+    {
+      title: 'Đăng ký thành viên',
+      subtitle: 'Tạo tài khoản UniBridal mới',
+      href: '/register',
     },
   ];
+
+  const userAccountItems = isLoggedIn
+    ? [
+        ...accountLinks,
+        {
+          title: 'Đăng xuất',
+          subtitle: 'Thoát phiên đăng nhập hiện tại',
+          isLogout: true,
+        },
+      ]
+    : guestLinks;
 
   // Điều hướng thông minh: Nếu đang ở trang chủ thì cuộn mượt mà; nếu đang ở trang khác thì chuyển về trang chủ + hash
   const handleNavClick = (hash = '') => {
@@ -242,50 +261,54 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
 
         {/* Action Elements Right */}
         <div className="flex items-center gap-2.5 sm:gap-3.5">
-          {/* Shopping Bag with badge */}
-          <Link
-            to="/cart"
-            className={`relative w-[36px] h-[36px] sm:w-[38px] sm:h-[38px] flex items-center justify-center rounded-[12px] transition-all duration-300 cursor-pointer no-underline active:scale-95 ${
-              isCartPage
-                ? 'bg-[#FFF2F0] border border-[#D498A0] text-[#2C2523] shadow-[0_0_14px_rgba(218,142,150,0.55)]'
-                : 'text-[#2C2523] hover:text-[#B8737D] hover:bg-[#FFF5F3] hover:border hover:border-[#D498A0]/50 hover:shadow-[0_0_10px_rgba(218,142,150,0.35)] border border-transparent'
-            }`}
-            style={
-              isCartPage
-                ? {
-                    boxShadow: '0 0 14px rgba(218, 142, 150, 0.55), 0 1px 6px rgba(186, 122, 131, 0.25)',
-                  }
-                : undefined
-            }
-            title="Giỏ thuê váy"
-          >
-            <ShoppingBag className="w-[18px] h-[18px] stroke-[1.8] text-[#2C2523]" />
-            {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-[#B8737D] text-white font-jakarta text-[9.5px] font-bold flex items-center justify-center leading-none shadow-xs">
-                {cartCount}
-              </span>
-            )}
-          </Link>
+          {/* Shopping Bag with badge - Chỉ hiển thị khi đã đăng nhập */}
+          {isLoggedIn && (
+            <Link
+              to="/cart"
+              className={`relative w-[36px] h-[36px] sm:w-[38px] sm:h-[38px] flex items-center justify-center rounded-[12px] transition-all duration-300 cursor-pointer no-underline active:scale-95 ${
+                isCartPage
+                  ? 'bg-[#FFF2F0] border border-[#D498A0] text-[#2C2523] shadow-[0_0_14px_rgba(218,142,150,0.55)]'
+                  : 'text-[#2C2523] hover:text-[#B8737D] hover:bg-[#FFF5F3] hover:border hover:border-[#D498A0]/50 hover:shadow-[0_0_10px_rgba(218,142,150,0.35)] border border-transparent'
+              }`}
+              style={
+                isCartPage
+                  ? {
+                      boxShadow: '0 0 14px rgba(218, 142, 150, 0.55), 0 1px 6px rgba(186, 122, 131, 0.25)',
+                    }
+                  : undefined
+              }
+              title="Giỏ thuê váy"
+            >
+              <ShoppingBag className="w-[18px] h-[18px] stroke-[1.8] text-[#2C2523]" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-[#B8737D] text-white font-jakarta text-[9.5px] font-bold flex items-center justify-center leading-none shadow-xs">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+          )}
 
-          {/* Wishlist Heart */}
-          <Link
-            to="/wishlist"
-            className={`relative w-[36px] h-[36px] sm:w-[38px] sm:h-[38px] flex items-center justify-center rounded-[12px] transition-all duration-300 cursor-pointer no-underline active:scale-95 ${
-              isWishlistPage
-                ? 'bg-[#FFF2F0] border border-[#D498A0] text-[#2C2523] shadow-[0_0_14px_rgba(218,142,150,0.55)]'
-                : 'text-[#2C2523] hover:text-[#B8737D] hover:bg-[#FFF5F3] hover:border hover:border-[#D498A0]/50 hover:shadow-[0_0_10px_rgba(218,142,150,0.35)] border border-transparent'
-            }`}
-            style={
-              isWishlistPage
-                ? {
-                    boxShadow: '0 0 14px rgba(218, 142, 150, 0.55), 0 1px 6px rgba(186, 122, 131, 0.25)',
-                  }
-                : undefined
-            }
-            title="Tủ đồ trong mơ (Danh sách yêu thích)"
-          >
-            <Heart className="w-[18px] h-[18px] stroke-[1.8] text-[#2C2523]" />
-          </Link>
+          {/* Wishlist Heart - Chỉ hiển thị khi đã đăng nhập */}
+          {isLoggedIn && (
+            <Link
+              to="/wishlist"
+              className={`relative w-[36px] h-[36px] sm:w-[38px] sm:h-[38px] flex items-center justify-center rounded-[12px] transition-all duration-300 cursor-pointer no-underline active:scale-95 ${
+                isWishlistPage
+                  ? 'bg-[#FFF2F0] border border-[#D498A0] text-[#2C2523] shadow-[0_0_14px_rgba(218,142,150,0.55)]'
+                  : 'text-[#2C2523] hover:text-[#B8737D] hover:bg-[#FFF5F3] hover:border hover:border-[#D498A0]/50 hover:shadow-[0_0_10px_rgba(218,142,150,0.35)] border border-transparent'
+              }`}
+              style={
+                isWishlistPage
+                  ? {
+                      boxShadow: '0 0 14px rgba(218, 142, 150, 0.55), 0 1px 6px rgba(186, 122, 131, 0.25)',
+                    }
+                  : undefined
+              }
+              title="Tủ đồ trong mơ (Danh sách yêu thích)"
+            >
+              <Heart className="w-[18px] h-[18px] stroke-[1.8] text-[#2C2523]" />
+            </Link>
+          )}
 
           {/* User Profile / Auth Actions */}
           {isLoggedIn ? (
@@ -409,7 +432,7 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
           {/* Đặt Lịch Thử Váy CTA Button */}
           <button
             type="button"
-            onClick={onOpenBooking || (() => navigate('/thue-nhanh'))}
+            onClick={onOpenBooking || (() => navigate('/dat-lich'))}
             className="hidden sm:inline-flex items-center gap-2 bg-[#B8737D] hover:bg-[#a6626c] text-white font-jakarta text-[13.5px] font-semibold px-4 py-2 sm:px-4.5 sm:py-2.5 rounded-xl sm:rounded-2xl transition-all shadow-sm hover:shadow-md cursor-pointer border-0 select-none ml-1 active:scale-95"
           >
             <Calendar className="w-4 h-4 stroke-[2]" />
@@ -533,7 +556,7 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
               onClick={() => {
                 setMobileMenuOpen(false);
                 if (onOpenBooking) onOpenBooking();
-                else handleNavClick('#home');
+                else navigate('/dat-lich');
               }}
               className="w-full inline-flex items-center justify-center gap-2 bg-[#B8737D] hover:bg-[#a6626c] text-white font-jakarta text-[14px] font-semibold px-4 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer border-0"
             >

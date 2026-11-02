@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
-import BookingModal from '../../components/common/BookingModal';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   getWishlistDresses,
   getWishlistIds,
@@ -19,6 +19,7 @@ import { addToCart } from '../../services/cartService';
 
 export default function WishlistPage() {
   const navigate = useNavigate();
+  const { isLoggedIn } = useAuth();
 
   const [wishlistItems, setWishlistItems] = useState(() => getWishlistDresses());
   const [wishlistIds, setWishlistIds] = useState(() => getWishlistIds());
@@ -106,7 +107,7 @@ export default function WishlistPage() {
       {/* 1. Header */}
       <Header
         wishlistCount={wishlistItems.length}
-        onOpenBooking={() => setIsBookingOpen(true)}
+        onOpenBooking={() => navigate('/dat-lich')}
       />
 
       {/* Floating Toast Notification */}
@@ -287,31 +288,46 @@ export default function WishlistPage() {
                       </div>
                     </div>
 
-                    {/* 2 Nút Bấm: Thêm Vào Giỏ & Thuê Ngay */}
-                    <div className="grid grid-cols-2 gap-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAddToCart(dress);
-                        }}
-                        className="w-full py-2 rounded-[8px] bg-white border border-[#804E55]/60 text-[#804E55] font-jakarta text-[11px] font-semibold tracking-wide hover:bg-[#FFF9F6] transition-all cursor-pointer shadow-xs active:scale-[0.98] flex items-center justify-center gap-1"
-                      >
-                        <ShoppingBag className="w-3 h-3" />
-                        <span className="truncate">Thêm Giỏ</span>
-                      </button>
+                    {/* Nút Bấm: Thêm Vào Giỏ & Thuê Ngay (Chỉ hiện khi đã đăng nhập) */}
+                    {isLoggedIn ? (
+                      <div className="grid grid-cols-2 gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddToCart(dress);
+                          }}
+                          className="w-full py-2 rounded-[8px] bg-white border border-[#804E55]/60 text-[#804E55] font-jakarta text-[11px] font-semibold tracking-wide hover:bg-[#FFF9F6] transition-all cursor-pointer shadow-xs active:scale-[0.98] flex items-center justify-center gap-1"
+                        >
+                          <ShoppingBag className="w-3 h-3" />
+                          <span className="truncate">Thêm Giỏ</span>
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRentNow(dress);
-                        }}
-                        className="w-full py-2 rounded-[8px] bg-[#804E55] hover:bg-[#6D3940] text-white font-jakarta text-[11px] font-semibold tracking-wide transition-all cursor-pointer border-0 shadow-xs active:scale-[0.98] text-center"
-                      >
-                        Thuê Ngay
-                      </button>
-                    </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRentNow(dress);
+                          }}
+                          className="w-full py-2 rounded-[8px] bg-[#804E55] hover:bg-[#6D3940] text-white font-jakarta text-[11px] font-semibold tracking-wide transition-all cursor-pointer border-0 shadow-xs active:scale-[0.98] text-center"
+                        >
+                          Thuê Ngay
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRentNow(dress);
+                          }}
+                          className="w-full py-2 rounded-[8px] bg-[#804E55] hover:bg-[#6D3940] text-white font-jakarta text-[11px] font-semibold tracking-wide transition-all cursor-pointer border-0 shadow-xs active:scale-[0.98] text-center"
+                        >
+                          Thuê Ngay
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -410,31 +426,46 @@ export default function WishlistPage() {
                         </div>
                       </div>
 
-                      {/* 2 Nút Bấm */}
-                      <div className="grid grid-cols-2 gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAddToCart(recDress);
-                          }}
-                          className="w-full py-2 rounded-[8px] bg-white border border-[#804E55]/60 text-[#804E55] font-jakarta text-[11px] font-semibold tracking-wide hover:bg-[#FFF9F6] transition-all cursor-pointer shadow-xs active:scale-[0.98] flex items-center justify-center gap-1"
-                        >
-                          <ShoppingBag className="w-3 h-3" />
-                          <span className="truncate">Thêm Giỏ</span>
-                        </button>
+                      {/* 2 Nút Bấm - Chỉ hiện giỏ hàng khi đã đăng nhập */}
+                      {isLoggedIn ? (
+                        <div className="grid grid-cols-2 gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddToCart(recDress);
+                            }}
+                            className="w-full py-2 rounded-[8px] bg-white border border-[#804E55]/60 text-[#804E55] font-jakarta text-[11px] font-semibold tracking-wide hover:bg-[#FFF9F6] transition-all cursor-pointer shadow-xs active:scale-[0.98] flex items-center justify-center gap-1"
+                          >
+                            <ShoppingBag className="w-3 h-3" />
+                            <span className="truncate">Thêm Giỏ</span>
+                          </button>
 
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRentNow(recDress);
-                          }}
-                          className="w-full py-2 rounded-[8px] bg-[#804E55] hover:bg-[#6D3940] text-white font-jakarta text-[11px] font-semibold tracking-wide transition-all cursor-pointer border-0 shadow-xs active:scale-[0.98] text-center"
-                        >
-                          Thuê Ngay
-                        </button>
-                      </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRentNow(recDress);
+                            }}
+                            className="w-full py-2 rounded-[8px] bg-[#804E55] hover:bg-[#6D3940] text-white font-jakarta text-[11px] font-semibold tracking-wide transition-all cursor-pointer border-0 shadow-xs active:scale-[0.98] text-center"
+                          >
+                            Thuê Ngay
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRentNow(recDress);
+                            }}
+                            className="w-full py-2 rounded-[8px] bg-[#804E55] hover:bg-[#6D3940] text-white font-jakarta text-[11px] font-semibold tracking-wide transition-all cursor-pointer border-0 shadow-xs active:scale-[0.98] text-center"
+                          >
+                            Thuê Ngay
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -445,10 +476,7 @@ export default function WishlistPage() {
       </main>
 
       {/* 3. Booking Modal */}
-      <BookingModal
-        isOpen={isBookingOpen}
-        onClose={() => setIsBookingOpen(false)}
-      />
+
 
       {/* 4. Footer */}
       <Footer />

@@ -510,43 +510,75 @@ export function convertCatalogItemToDress(item) {
 /**
  * Lấy chi tiết mẫu váy cưới theo ID hoặc Slug
  */
+
+const SIZE_MAP = {
+  XS: { id: 'XS', label: 'XS', note: 'Dưới 46kg', bust: '80-82cm', waist: '58-62cm' },
+  S: { id: 'S', label: 'S', note: '46 - 52kg', bust: '83-86cm', waist: '63-67cm' },
+  M: { id: 'M', label: 'M', note: '52 - 58kg', bust: '87-90cm', waist: '68-73cm' },
+  L: { id: 'L', label: 'L', note: '58 - 65kg', bust: '91-95cm', waist: '74-78cm' },
+  XL: { id: 'XL', label: 'XL', note: '65 - 72kg', bust: '96-102cm', waist: '79-85cm' },
+  FreeSize: { id: 'FreeSize', label: 'FreeSize', note: 'Dây đan corset linh hoạt', bust: '82-96cm', waist: '60-80cm' },
+};
+
+function formatDressSizes(rawSizes) {
+  if (Array.isArray(rawSizes) && rawSizes.length > 0) {
+    return rawSizes.map(s => {
+      const key = typeof s === 'string' ? s : s?.id || s?.label;
+      return SIZE_MAP[key] || { id: key, label: key, note: 'Chuẩn dáng UniBridal' };
+    });
+  }
+  return [SIZE_MAP.S, SIZE_MAP.M];
+}
+
+
+/**
+ * Lấy chi tiết mẫu váy cưới theo ID hoặc Slug (Ưu tiên API Backend, fallback Catalog)
+ */
 export async function getDressById(idOrSlug) {
   try {
     const res = await axiosClient.get(`/dresses/${idOrSlug}`);
-    if (res?.data) return res;
+    if (res?.data) {
+      const d = res.data;
+      return {
+        success: true,
+        data: {
+          ...d,
+          id: String(d._id || d.id),
+          code: d.code || 'UB-001',
+          name: d.name,
+          slug: d.slug,
+          price: d.rentPrice || d.price,
+          priceNumber: d.rentPrice || d.price,
+          depositAmount: d.depositAmount || 15000000,
+          image: (d.images && d.images[0]) || d.image || '/assets/dresses/dress_01.jpg',
+          sizes: formatDressSizes(d.sizes),
+          colors: d.colorOptions && d.colorOptions.length > 0 ? d.colorOptions : [
+            { name: d.color || 'Trắng Tinh Khôi', hex: '#FFFFFF', border: '#D9D9D9' },
+            { name: 'Trắng Kem Ivory', hex: '#FDFBF7', border: '#E7DEC8' },
+          ],
+        },
+      };
+    }
   } catch (error) {
     // Fallback
   }
   const target = String(idOrSlug || '1').trim().toLowerCase();
 
-  // 1. Tìm trong MOCK_DRESSES (mục 1-5 có chi tiết thủ công)
-  let found = MOCK_DRESSES.find(
+  // Tìm trong DRESS_CATALOG (50 mẫu)
+  let found = DRESS_CATALOG.find(
     (d) =>
       String(d.id).toLowerCase() === target ||
       String(d.code).toLowerCase() === target ||
-      String(d.slug).toLowerCase() === target
+      String(d.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') === target
   );
 
-  // 2. Tìm trong DRESS_CATALOG (toàn bộ 72 thiết kế)
   if (!found) {
-    const catalogItem = DRESS_CATALOG.find(
-      (item) =>
-        String(item.id).toLowerCase() === target ||
-        String(item.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') === target
-    );
-    if (catalogItem) {
-      found = convertCatalogItemToDress(catalogItem);
-    }
-  }
-
-  // 3. Dự phòng mặc định
-  if (!found) {
-    found = convertCatalogItemToDress(DRESS_CATALOG[0]) || MOCK_DRESSES[0];
+    found = DRESS_CATALOG[0];
   }
 
   return {
     success: true,
-    data: found,
+    data: convertCatalogItemToDress(found),
   };
 }
 
@@ -554,26 +586,22 @@ export async function getDressById(idOrSlug) {
  * Lấy danh sách mẫu váy tương tự
  */
 export async function getRelatedDresses(currentId) {
-  const targetId = Number(currentId) || 1;
-  const currentItem = DRESS_CATALOG.find((d) => d.id === targetId);
+  const targetId = String(currentId || '');
+  const currentItem = DRESS_CATALOG.find((d) => String(d.id) === targetId || String(d.code) === targetId);
   const currentCategory = currentItem?.category;
 
-  // Lọc sản phẩm cùng phom dáng trước
   let related = DRESS_CATALOG.filter(
-    (d) => d.id !== targetId && (!currentCategory || d.category === currentCategory)
+    (d) => String(d.id) !== targetId && String(d.code) !== targetId && (!currentCategory || d.category === currentCategory)
   );
 
   if (related.length < 4) {
     const remaining = DRESS_CATALOG.filter(
-      (d) => d.id !== targetId && !related.some((r) => r.id === d.id)
+      (d) => String(d.id) !== targetId && String(d.code) !== targetId && !related.some((r) => String(r.id) === String(d.id))
     );
     related = [...related, ...remaining];
   }
 
-  const selected = related.slice(0, 4).map((item) => {
-    const mock = MOCK_DRESSES.find((m) => m.id === item.id);
-    return mock || convertCatalogItemToDress(item);
-  });
+  const selected = related.slice(0, 4).map((item) => convertCatalogItemToDress(item));
 
   return {
     success: true,
@@ -582,28 +610,38 @@ export async function getRelatedDresses(currentId) {
 }
 
 /**
- * Lấy tất cả mẫu váy cưới (toàn bộ 72 thiết kế)
+ * Lấy tất cả mẫu váy cưới (toàn bộ 50 thiết kế từ API / DB)
  */
 export async function getAllDresses(params = {}) {
   try {
     const res = await axiosClient.get('/dresses', { params });
-    if (res?.data?.length) return res;
+    if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+      const mapped = res.data.map((d) => ({
+        ...d,
+        id: String(d._id || d.id),
+        name: d.name,
+        priceNumber: d.rentPrice || d.price,
+        price: d.rentPrice || d.price,
+        image: (d.images && d.images[0]) || d.image || '/assets/dresses/dress_01.jpg',
+        badgeMain: d.collectionTag || 'HAUTE COUTURE',
+        badgeSub: d.sizes?.length ? `Size: ${d.sizes.join(' - ')}` : 'Đủ size',
+        size: d.sizes?.length ? `Size: ${d.sizes.join(' - ')}` : 'Size: S - M',
+        sizes: d.sizes,
+        category: (d.silhouette || 'ballgown').toLowerCase().replace(/\s+/g, '-'),
+        categoryName: d.silhouette || 'Ballgown',
+      }));
+      return { success: true, data: mapped };
+    }
   } catch (error) {
-    // Fallback
+    // Fallback to DRESS_CATALOG
   }
-  const all = DRESS_CATALOG.map((item) => {
-    const mock = MOCK_DRESSES.find((m) => m.id === item.id);
-    return mock || convertCatalogItemToDress(item);
-  });
+  const all = DRESS_CATALOG.map((item) => convertCatalogItemToDress(item));
   return {
     success: true,
     data: all,
   };
 }
 
-/**
- * Định dạng tiền tệ VND chuẩn Việt Nam
- */
 export function formatCurrencyVND(amount) {
   if (typeof amount !== 'number') return amount;
   return new Intl.NumberFormat('vi-VN').format(amount) + '₫';

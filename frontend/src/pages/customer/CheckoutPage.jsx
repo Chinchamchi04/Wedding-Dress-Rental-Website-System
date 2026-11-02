@@ -1122,6 +1122,13 @@ export default function CheckoutPage() {
         const savedOrder = res?.data || orderPayload;
         setCreatedOrder(savedOrder);
 
+        // Lưu đơn hàng vừa tạo vào localStorage để trang xác nhận / đơn hàng có thể đọc
+        try {
+          localStorage.setItem('unibridal-last-order', JSON.stringify(savedOrder));
+        } catch (err) {
+          // ignore storage errors
+        }
+
         // Xóa giỏ hàng sau khi đặt thuê thành công
         try {
           localStorage.removeItem('unibridal_cart');

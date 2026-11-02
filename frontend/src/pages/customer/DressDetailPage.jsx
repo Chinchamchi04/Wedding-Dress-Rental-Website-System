@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
-import BookingModal from '../../components/common/BookingModal';
+import { useAuth } from '../../contexts/AuthContext';
 import { getDressById, getRelatedDresses, formatCurrencyVND } from '../../services/dressService';
 import { addToCart } from '../../services/cartService';
 import { isWishlisted as checkWishlisted, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
@@ -110,6 +110,7 @@ const getPaginationItems = (current, total) => {
 export default function DressDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isLoggedIn } = useAuth();
 
   const [dress, setDress] = useState(null);
   const [relatedDresses, setRelatedDresses] = useState([]);
@@ -463,7 +464,9 @@ export default function DressDetailPage() {
                       <Star key={i} className="w-4 h-4 fill-current" />
                     ))}
                   </div>
-                  <span className="font-bold ml-1 text-[#231A19]">{dress.rating}</span>
+                  <span className="font-bold ml-1 text-[#231A19]">
+                    {Number(dress.rating || 5).toFixed(1)}
+                  </span>
                   <span className="text-[#8A7978]">({dress.rentCount})</span>
                 </div>
                 <div className="text-[#8A7978] tracking-wider text-[12px] font-medium">
@@ -639,48 +642,43 @@ export default function DressDetailPage() {
                   ĐẶT THUÊ NGAY (KÝ HỢP ĐỒNG & CỌC)
                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleToggleWishlist}
-                  className={`w-[48px] h-[48px] rounded-[4px] border flex items-center justify-center transition-colors cursor-pointer ${isWishlisted
-                    ? 'bg-[#FFF2F0] border-[#70484E] text-[#70484E]'
-                    : 'bg-white border-[#D6C7C3] text-[#70484E] hover:border-[#70484E]'
-                    }`}
-                  title={isWishlisted ? 'Đã yêu thích' : 'Lưu vào danh sách yêu thích'}
-                >
-                  <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} strokeWidth={1.75} />
-                </button>
+                {isLoggedIn && (
+                  <button
+                    type="button"
+                    onClick={handleToggleWishlist}
+                    className={`w-[48px] h-[48px] rounded-[4px] border flex items-center justify-center transition-colors cursor-pointer ${isWishlisted
+                      ? 'bg-[#FFF2F0] border-[#70484E] text-[#70484E]'
+                      : 'bg-white border-[#D6C7C3] text-[#70484E] hover:border-[#70484E]'
+                      }`}
+                    title={isWishlisted ? 'Đã yêu thích' : 'Lưu vào danh sách yêu thích'}
+                  >
+                    <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} strokeWidth={1.75} />
+                  </button>
+                )}
               </div>
 
-              {/* Row 2: ĐIỀN PHIẾU THUÊ & THỬ VÁY (GUEST) */}
-              <button
-                type="button"
-                onClick={() => navigate(`/thue-nhanh?dressId=${dress.id}`)}
-                className="w-full h-[48px] px-5 rounded-[4px] bg-[#FAF4EE] hover:bg-[#F2E8DF] border border-[#E0D0C4] text-[#70484E] font-jakarta text-[13px] font-semibold tracking-[0.8px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
-              >
-                <Calendar className="w-4 h-4 text-[#70484E]" />
-                ĐIỀN PHIẾU THUÊ & THỬ VÁY (DÀNH CHO GUEST)
-              </button>
-
-              {/* Row 3: ĐẶT LỊCH THỬ VÁY TẠI SHOWROOM */}
+              {/* Row 2: ĐẶT LỊCH THỬ VÁY PRIVATE SUITE (MIỄN PHÍ) */}
               <button
                 type="button"
                 onClick={() => navigate(`/dat-lich?dressId=${dress.id}`)}
-                className="w-full h-[46px] px-5 rounded-[4px] bg-white hover:bg-[#FAF4F3] border border-[#D6C7C3] text-[#5A4848] font-jakarta text-[12.5px] font-medium tracking-[0.5px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+                className="w-full h-[48px] px-5 rounded-[4px] bg-[#FAF4EE] hover:bg-[#F2E8DF] border border-[#E0D0C4] text-[#70484E] font-jakarta text-[13px] font-semibold tracking-[0.8px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
               >
-                <Clock className="w-4 h-4 text-[#70484E]" />
-                CHỈ ĐẶT LỊCH THỬ VÁY PRIVATE SUITE (MIỄN PHÍ)
+                <Calendar className="w-4 h-4 text-[#70484E]" />
+                ĐẶT LỊCH THỬ VÁY PRIVATE SUITE (MIỄN PHÍ)
               </button>
 
               {/* Row 3: THÊM VÀO GIỎ HÀNG */}
-              <button
-                type="button"
-                onClick={handleOnlineRent}
-                className="w-full h-[48px] px-5 rounded-[4px] bg-white hover:bg-[#FAF4F3] border border-[#70484E] text-[#70484E] font-jakarta text-[13px] font-semibold tracking-[0.8px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
-              >
-                <ShoppingBag className="w-4 h-4" strokeWidth={1.8} />
-                THÊM VÀO GIỎ HÀNG
-              </button>
+              {isLoggedIn && (
+                <button
+                  type="button"
+                  onClick={handleOnlineRent}
+                  className="w-full h-[48px] px-5 rounded-[4px] bg-white hover:bg-[#FAF4F3] border border-[#70484E] text-[#70484E] font-jakarta text-[13px] font-semibold tracking-[0.8px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+                >
+                  <ShoppingBag className="w-4 h-4" strokeWidth={1.8} />
+                  THÊM VÀO GIỎ HÀNG
+                </button>
+
+              )}
 
               {/* Row 4: TƯ VẤN TRỰC TIẾP VỚI CHUYÊN VIÊN ATELIER */}
               <button
@@ -835,8 +833,8 @@ export default function DressDetailPage() {
                     document.getElementById('feedback-section')?.scrollIntoView({ behavior: 'smooth' });
                   }}
                   className={`w-9 h-9 rounded-[8px] flex items-center justify-center border transition-colors ${feedbackPage === 1
-                      ? 'border-[#EAE0DC] text-[#C4B4B0] cursor-not-allowed bg-transparent'
-                      : 'border-[#EAE0DC] bg-white text-[#70484E] hover:border-[#70484E] cursor-pointer'
+                    ? 'border-[#EAE0DC] text-[#C4B4B0] cursor-not-allowed bg-transparent'
+                    : 'border-[#EAE0DC] bg-white text-[#70484E] hover:border-[#70484E] cursor-pointer'
                     }`}
                   aria-label="Trang trước"
                 >
@@ -865,8 +863,8 @@ export default function DressDetailPage() {
                         document.getElementById('feedback-section')?.scrollIntoView({ behavior: 'smooth' });
                       }}
                       className={`w-9 h-9 rounded-[8px] flex items-center justify-center font-jakarta text-[13px] font-medium transition-colors cursor-pointer ${isActive
-                          ? 'bg-[#70484E] text-white shadow-xs'
-                          : 'bg-white border border-[#EAE0DC] text-[#5A4848] hover:border-[#70484E] hover:text-[#70484E]'
+                        ? 'bg-[#70484E] text-white shadow-xs'
+                        : 'bg-white border border-[#EAE0DC] text-[#5A4848] hover:border-[#70484E] hover:text-[#70484E]'
                         }`}
                     >
                       {pNum}
@@ -882,8 +880,8 @@ export default function DressDetailPage() {
                     document.getElementById('feedback-section')?.scrollIntoView({ behavior: 'smooth' });
                   }}
                   className={`w-9 h-9 rounded-[8px] flex items-center justify-center border transition-colors ${feedbackPage === totalFeedbackPages
-                      ? 'border-[#EAE0DC] text-[#C4B4B0] cursor-not-allowed bg-transparent'
-                      : 'border-[#EAE0DC] bg-white text-[#70484E] hover:border-[#70484E] cursor-pointer'
+                    ? 'border-[#EAE0DC] text-[#C4B4B0] cursor-not-allowed bg-transparent'
+                    : 'border-[#EAE0DC] bg-white text-[#70484E] hover:border-[#70484E] cursor-pointer'
                     }`}
                   aria-label="Trang kế tiếp"
                 >
@@ -1032,12 +1030,7 @@ export default function DressDetailPage() {
         </div>
       )}
 
-      {/* 5. Booking Modal */}
-      <BookingModal
-        isOpen={isBookingOpen}
-        onClose={() => setIsBookingOpen(false)}
-        preselectedProduct={dress}
-      />
+
 
       {/* 6. Footer */}
       <Footer />

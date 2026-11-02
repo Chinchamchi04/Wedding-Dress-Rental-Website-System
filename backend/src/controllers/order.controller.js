@@ -84,3 +84,29 @@ export const getDressBookedDates = async (req, res, next) => {
   }
 };
 
+export const submitReturnInspection = async (req, res, next) => {
+  try {
+    const result = await orderService.submitReturnInspection(req.params.id, req.body, req.user);
+    res.status(201).json({
+      success: true,
+      message: 'Lập biên bản kiểm định tình trạng váy thành công!',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getReturnInspection = async (req, res, next) => {
+  try {
+    const inspection = await orderService.getReturnInspection(req.params.id);
+    res.status(200).json({
+      success: true,
+      message: inspection ? 'Lấy biên bản kiểm định thành công' : 'Đơn này chưa có biên bản kiểm định',
+      data: inspection,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

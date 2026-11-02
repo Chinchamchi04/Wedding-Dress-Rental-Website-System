@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
+import { message } from 'antd';
 import {
   Search,
   Pin,
@@ -8,8 +9,25 @@ import {
   Smile,
   Send,
   Sparkles,
-  X
+  X,
+  MessageSquare,
+  Calendar,
+  Clock,
+  Check,
+  CheckCircle2,
+  CalendarDays,
+  Users,
+  Building2,
+  RefreshCw,
+  Mail,
+  Filter,
 } from 'lucide-react';
+import {
+  getAppointmentsApi,
+  updateAppointmentStatusApi,
+  APPOINTMENT_EVENT,
+  SHOWROOM_BRANCHES,
+} from '../../services/appointmentService';
 import {
   getConversations,
   getMessages,
@@ -143,6 +161,69 @@ export default function CustomerCareManagement() {
   const [pinnedMessage, setPinnedMessage] = useState(
     'Chốt lưu số đo chỉnh hạ eo thêm 1.5cm cho mẫu Elysian Rose vào hợp đồng. (Hôm 15/11 em đến thử trực tiếp nha)'
   );
+
+  // State quản lý Lịch Hẹn Thử Váy (Appointments)
+  const [mainTab, setMainTab] = useState('chat'); // 'chat' | 'appointments'
+  const [appointments, setAppointments] = useState([]);
+  const [aptLoading, setAptLoading] = useState(false);
+  const [aptSearch, setAptSearch] = useState('');
+  const [aptBranchFilter, setAptBranchFilter] = useState('all');
+  const [aptStatusFilter, setAptStatusFilter] = useState('all');
+
+  const fetchAppointments = useCallback(async () => {
+    setAptLoading(true);
+    try {
+      const res = await getAppointmentsApi();
+      const list = Array.isArray(res?.data) ? res.data : (res?.data?.data || []);
+      setAppointments(list);
+    } catch {
+      // ignore
+    } finally {
+      setAptLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAppointments();
+    window.addEventListener(APPOINTMENT_EVENT, fetchAppointments);
+    return () => window.removeEventListener(APPOINTMENT_EVENT, fetchAppointments);
+  }, [fetchAppointments]);
+
+  const handleUpdateAptStatus = async (id, newStatus) => {
+    try {
+      await updateAppointmentStatusApi(id, newStatus);
+      message.success(`Đã cập nhật trạng thái lịch hẹn thành "${newStatus === 'confirmed' ? 'Đã xác nhận' : newStatus === 'completed' ? 'Hoàn tất' : 'Đã hủy'}"`);
+      fetchAppointments();
+    } catch {
+      message.error('Cập nhật thất bại. Vui lòng thử lại.');
+    }
+  };
+
+  const filteredAppointments = useMemo(() => {
+    return appointments.filter((apt) => {
+      const matchSearch =
+        !aptSearch.trim() ||
+        (apt.customerName || apt.fullName || '').toLowerCase().includes(aptSearch.toLowerCase()) ||
+        (apt.customerPhone || apt.phone || '').includes(aptSearch) ||
+        (apt.appointmentCode || apt.id || '').toLowerCase().includes(aptSearch.toLowerCase());
+
+      const matchBranch =
+        aptBranchFilter === 'all' ||
+        apt.branch === aptBranchFilter ||
+        apt.branchId === aptBranchFilter;
+
+      const currentStatus = (apt.status || 'pending').toLowerCase();
+      const matchStatus =
+        aptStatusFilter === 'all' ||
+        currentStatus === aptStatusFilter.toLowerCase();
+
+      return matchSearch && matchBranch && matchStatus;
+    });
+  }, [appointments, aptSearch, aptBranchFilter, aptStatusFilter]);
+
+  const pendingAptsCount = useMemo(() => {
+    return appointments.filter((a) => (a.status || 'pending').toLowerCase() === 'pending').length;
+  }, [appointments]);
 
   const fileInputRef = useRef(null);
   const emojiPickerRef = useRef(null);
@@ -339,15 +420,298 @@ export default function CustomerCareManagement() {
 
   return (
     <AdminLayout activeMenu="customer-care">
-      {/* Page Title - Đẩy sát lên trên */}
-      <div className="mb-2 -mt-5 lg:-mt-6 flex items-center justify-between">
-        <h1 className="font-serif text-[28px] sm:text-[32px] font-normal text-[#844F5A] tracking-normal select-none">
-          Chăm Sóc Khách Hàng
-        </h1>
+      {/* Page Title & Main Tabs */}
+      <div className="mb-4 -mt-5 lg:-mt-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-serif text-[28px] sm:text-[32px] font-normal text-[#844F5A] tracking-normal select-none">
+            Chăm Sóc Khách Hàng
+          </h1>
+          <p className="text-[12.5px] text-[#7A6B6C]">
+            Trung tâm kết nối nàng dâu: Tư vấn 1:1 qua tin nhắn & Quản lý lịch hẹn thử váy Private Suite.
+          </p>
+        </div>
+
+        {/* Tab Switcher */}
+        <div className="flex items-center gap-1.5 p-1 bg-[#FAF2EE] rounded-xl border border-[#EFE2DC]">
+          <button
+            type="button"
+            onClick={() => setMainTab('chat')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer border-0 ${
+              mainTab === 'chat'
+                ? 'bg-[#733F49] text-white shadow-xs'
+                : 'bg-transparent text-[#7A6B6C] hover:text-[#2C2523]'
+            }`}
+          >
+            <MessageSquare size={14} />
+            <span>Tư Vấn Trực Tuyến</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMainTab('appointments')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer border-0 ${
+              mainTab === 'appointments'
+                ? 'bg-[#733F49] text-white shadow-xs'
+                : 'bg-transparent text-[#7A6B6C] hover:text-[#2C2523]'
+            }`}
+          >
+            <Calendar size={14} />
+            <span>Lịch Hẹn Thử Váy</span>
+            {pendingAptsCount > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-[#BA7A83] text-white text-[10px] font-bold">
+                {pendingAptsCount}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* Main Container - Tách thành 2 card riêng biệt có khoảng cách */}
-      <div className="flex flex-col lg:flex-row gap-5 h-[calc(100vh-120px)] min-h-[620px]">
+      {mainTab === 'appointments' ? (
+        <div className="space-y-6">
+          {/* 4 Metric Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white rounded-2xl border border-[#EFE5E1] p-4.5 shadow-xs">
+              <span className="text-[11px] font-bold tracking-wider text-[#7A6B6C] uppercase">TỔNG LỊCH HẸN</span>
+              <div className="text-[28px] font-bold text-[#2C2523] mt-1">{appointments.length}</div>
+              <div className="text-[11.5px] text-[#8C7D7E] mt-1">Toàn bộ các chi nhánh</div>
+            </div>
+            <div className="bg-white rounded-2xl border border-[#EFE5E1] p-4.5 shadow-xs bg-[radial-gradient(ellipse_at_top_right,_#FEF3C7_0%,_transparent_70%)]">
+              <span className="text-[11px] font-bold tracking-wider text-[#92400E] uppercase">CHỜ DUYỆT (PENDING)</span>
+              <div className="text-[28px] font-bold text-[#B45309] mt-1">{pendingAptsCount}</div>
+              <div className="text-[11.5px] text-[#A16207] mt-1">Cần gọi điện xác nhận</div>
+            </div>
+            <div className="bg-white rounded-2xl border border-[#EFE5E1] p-4.5 shadow-xs bg-[radial-gradient(ellipse_at_top_right,_#DEF5E7_0%,_transparent_70%)]">
+              <span className="text-[11px] font-bold tracking-wider text-[#166534] uppercase">ĐÃ XÁC NHẬN</span>
+              <div className="text-[28px] font-bold text-[#1E8347] mt-1">
+                {appointments.filter((a) => (a.status || '').toLowerCase() === 'confirmed').length}
+              </div>
+              <div className="text-[11.5px] text-[#15803D] mt-1">Phòng Suite đã khóa giờ</div>
+            </div>
+            <div className="bg-white rounded-2xl border border-[#EFE5E1] p-4.5 shadow-xs bg-[radial-gradient(ellipse_at_top_right,_#EDE9FE_0%,_transparent_70%)]">
+              <span className="text-[11px] font-bold tracking-wider text-[#6D28D9] uppercase">HOÀN TẤT THỬ VÁY</span>
+              <div className="text-[28px] font-bold text-[#7C3AED] mt-1">
+                {appointments.filter((a) => (a.status || '').toLowerCase() === 'completed').length}
+              </div>
+              <div className="text-[11.5px] text-[#6D28D9] mt-1">Đã trải nghiệm dịch vụ</div>
+            </div>
+          </div>
+
+          {/* Filters Bar */}
+          <div className="bg-white rounded-2xl border border-[#EFE5E1] p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="relative flex-1 min-w-[240px] max-w-md">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9A8B8C]" />
+              <input
+                type="text"
+                value={aptSearch}
+                onChange={(e) => setAptSearch(e.target.value)}
+                placeholder="Tìm mã lịch, tên cô dâu, số điện thoại..."
+                className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[#FFF9F6] border border-[#EFE2DC] text-xs text-[#2C2523] outline-none focus:border-[#BA7A83] focus:bg-white"
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 text-xs">
+              {/* Branch filter */}
+              <select
+                value={aptBranchFilter}
+                onChange={(e) => setAptBranchFilter(e.target.value)}
+                className="px-3 py-2 rounded-xl bg-[#FAF2EE] border border-[#EFE2DC] text-[#554748] font-medium outline-none cursor-pointer"
+              >
+                <option value="all">Tất cả chi nhánh showroom</option>
+                <option value="hcm-q1">UniBridal Q.1 TP.HCM</option>
+                <option value="hn-hoankiem">UniBridal Hoàn Kiếm, HN</option>
+                <option value="dn-haichau">UniBridal Hải Châu, Đà Nẵng</option>
+              </select>
+
+              {/* Status filter */}
+              <select
+                value={aptStatusFilter}
+                onChange={(e) => setAptStatusFilter(e.target.value)}
+                className="px-3 py-2 rounded-xl bg-[#FAF2EE] border border-[#EFE2DC] text-[#554748] font-medium outline-none cursor-pointer"
+              >
+                <option value="all">Tất cả trạng thái</option>
+                <option value="pending">Chờ duyệt (Pending)</option>
+                <option value="confirmed">Đã xác nhận (Confirmed)</option>
+                <option value="completed">Đã hoàn tất (Completed)</option>
+                <option value="cancelled">Đã hủy (Cancelled)</option>
+              </select>
+
+              <button
+                type="button"
+                onClick={fetchAppointments}
+                disabled={aptLoading}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#733F49] text-white font-semibold hover:bg-[#5C3038] transition-colors cursor-pointer border-0"
+              >
+                <RefreshCw size={13} className={aptLoading ? 'animate-spin' : ''} />
+                <span>Làm mới</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Appointments Table */}
+          <div className="bg-white rounded-2xl border border-[#EFE5E1] shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[850px]">
+                <thead>
+                  <tr className="border-b border-[#F2E5E0] bg-[#FFF6F3] text-[11px] font-bold text-[#7A696B] uppercase tracking-wider">
+                    <th className="py-3.5 px-5">MÃ & KHÁCH HÀNG</th>
+                    <th className="py-3.5 px-4">SHOWROOM & KHUNG GIỜ</th>
+                    <th className="py-3.5 px-4">LỄ PHỤC QUAN TÂM</th>
+                    <th className="py-3.5 px-4 text-center">TRẠNG THÁI</th>
+                    <th className="py-3.5 px-5 text-right">THAO TÁC</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#F6EDE9] text-[12.5px]">
+                  {filteredAppointments.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-[#8C7D7E] text-[13px]">
+                        Không tìm thấy lịch hẹn thử váy nào phù hợp với bộ lọc.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredAppointments.map((apt) => {
+                      const aptId = apt._id || apt.id || apt.appointmentCode;
+                      const name = apt.customerName || apt.fullName || 'Cô dâu';
+                      const phone = apt.customerPhone || apt.phone || '—';
+                      const email = apt.customerEmail || apt.email || '';
+                      const dateStr = apt.appointmentDate
+                        ? new Date(apt.appointmentDate).toLocaleDateString('vi-VN')
+                        : apt.date || '—';
+                      const time = apt.timeSlot || '—';
+                      const dresses = apt.interestedDresses || apt.selectedDresses || [];
+                      const status = (apt.status || 'pending').toLowerCase();
+                      const branchLabel =
+                        apt.branch === 'hn-hoankiem'
+                          ? 'Hoàn Kiếm, HN'
+                          : apt.branch === 'dn-haichau'
+                          ? 'Hải Châu, Đà Nẵng'
+                          : 'Q.1, TP. HCM';
+
+                      return (
+                        <tr key={aptId} className="hover:bg-[#FCF9F7] transition-colors">
+                          <td className="py-4 px-5">
+                            <div className="inline-block px-1.5 py-0.5 rounded bg-[#F6EDE8] text-[#846E63] font-mono text-[10.5px] font-bold mb-1">
+                              {apt.appointmentCode || aptId}
+                            </div>
+                            <div className="font-semibold text-[#2C2523] text-[13.5px]">{name}</div>
+                            <div className="text-[12px] text-[#7A6B6C] flex items-center gap-1.5 mt-0.5">
+                              <Phone size={12} className="text-[#BA7A83]" />
+                              <a href={`tel:${phone}`} className="hover:text-[#BA7A83] hover:underline text-[#7A6B6C]">
+                                {phone}
+                              </a>
+                            </div>
+                            {email && (
+                              <div className="text-[11px] text-[#9A8B8C] flex items-center gap-1 mt-0.5">
+                                <Mail size={11} className="text-[#BA7A83]" />
+                                <span>{email}</span>
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#FAF2EE] text-[#7A6B6C] text-[11px] font-semibold mb-1">
+                              <Building2 size={11} className="text-[#BA7A83]" />
+                              <span>{branchLabel}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 font-medium text-[#2C2523]">
+                              <Calendar size={13} className="text-[#BA7A83]" />
+                              <span>{dateStr}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[11.5px] text-[#7A6B6C] mt-0.5">
+                              <Clock size={12} className="text-[#BA7A83]" />
+                              <span>{time}</span>
+                            </div>
+                            {apt.guestsCount && (
+                              <div className="text-[11px] text-[#8C7D7E] mt-1 flex items-center gap-1">
+                                <Users size={12} />
+                                <span>Số khách đi cùng: {apt.guestsCount} người</span>
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="py-4 px-4 max-w-[280px]">
+                            {dresses.length > 0 ? (
+                              <div className="space-y-1">
+                                {dresses.map((d, i) => (
+                                  <div
+                                    key={i}
+                                    className="inline-block px-2.5 py-1 rounded-lg bg-[#FFF2EE] text-[#804E55] text-[11px] font-medium mr-1.5 mb-1 border border-[#F3DBD4]"
+                                  >
+                                    {d.name || d}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-[#998889] italic text-[12px]">Tư vấn trực tiếp tại Showroom</span>
+                            )}
+                            {apt.notes && (
+                              <div className="text-[11px] text-[#7A6B6C] mt-1 bg-[#FAF5F2] p-2 rounded-lg border border-[#F0E6E2]" title={apt.notes}>
+                                <span className="font-semibold text-[#804E55]">Ghi chú:</span> {apt.notes}
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="py-4 px-4 text-center whitespace-nowrap">
+                            {status === 'confirmed' ? (
+                              <span className="inline-block px-3 py-1 rounded-full text-[11px] font-semibold bg-[#EAF8EE] text-[#1E8347]">
+                                Đã xác nhận
+                              </span>
+                            ) : status === 'completed' ? (
+                              <span className="inline-block px-3 py-1 rounded-full text-[11px] font-semibold bg-[#F0FDF4] text-[#166534]">
+                                Hoàn tất
+                              </span>
+                            ) : status === 'cancelled' ? (
+                              <span className="inline-block px-3 py-1 rounded-full text-[11px] font-semibold bg-[#F3F4F6] text-[#6B7280]">
+                                Đã hủy
+                              </span>
+                            ) : (
+                              <span className="inline-block px-3 py-1 rounded-full text-[11px] font-semibold bg-[#FEF3C7] text-[#92400E]">
+                                Chờ duyệt
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="py-4 px-5 text-right whitespace-nowrap">
+                            <div className="inline-flex items-center gap-1.5">
+                              {status !== 'confirmed' && status !== 'completed' && status !== 'cancelled' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateAptStatus(aptId, 'confirmed')}
+                                  className="px-3 py-1.5 rounded-lg bg-[#1E8347] hover:bg-[#166534] text-white text-[11px] font-semibold transition-colors cursor-pointer border-0 shadow-2xs"
+                                >
+                                  Xác nhận lịch
+                                </button>
+                              )}
+                              {status === 'confirmed' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateAptStatus(aptId, 'completed')}
+                                  className="px-3 py-1.5 rounded-lg bg-[#BA7A83] hover:bg-[#a86a73] text-white text-[11px] font-semibold transition-colors cursor-pointer border-0 shadow-2xs"
+                                >
+                                  Đã thử xong
+                                </button>
+                              )}
+                              {status !== 'cancelled' && status !== 'completed' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateAptStatus(aptId, 'cancelled')}
+                                  className="px-2.5 py-1.5 rounded-lg bg-[#FAF5F2] hover:bg-[#FCEEEA] text-[#847374] hover:text-[#BA7A83] text-[11px] transition-colors cursor-pointer border border-[#EEDECF]"
+                                >
+                                  Hủy
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Main Container Chat */
+        <div className="flex flex-col lg:flex-row gap-5 h-[calc(100vh-160px)] min-h-[620px]">
         {/* Left Card: Conversation List Panel */}
         <div className="w-full lg:w-[350px] shrink-0 bg-white rounded-2xl border border-[#EFE5E1] shadow-xs overflow-hidden flex flex-col">
           {/* Search & Filter Header */}
@@ -705,6 +1069,7 @@ export default function CustomerCareManagement() {
           </div>
         </div>
       </div>
+      )}
     </AdminLayout>
   );
 }
