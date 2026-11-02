@@ -279,11 +279,11 @@ export default function InventoryManagement() {
       let localOrders = [];
       try {
         localOrders = JSON.parse(localStorage.getItem('unibridal-orders') || '[]');
-      } catch {}
+      } catch { }
       try {
         const lastOrder = JSON.parse(localStorage.getItem('unibridal-last-order') || 'null');
         if (lastOrder) localOrders.push(lastOrder);
-      } catch {}
+      } catch { }
 
       const combinedOrders = [...orderList];
       localOrders.forEach((lo) => {
@@ -297,7 +297,7 @@ export default function InventoryManagement() {
       let deletedIds = [];
       try {
         deletedIds = JSON.parse(localStorage.getItem('unibridal_deleted_dress_ids') || '[]');
-      } catch {}
+      } catch { }
 
       const activeDressList = dressList.filter(
         (d) => !deletedIds.includes(d._id || d.id) && d.status !== 'retired'
@@ -404,7 +404,7 @@ export default function InventoryManagement() {
     setManualOverrides(updatedOverrides);
     try {
       localStorage.setItem('unibridal_inventory_overrides', JSON.stringify(updatedOverrides));
-    } catch {}
+    } catch { }
 
     // Cập nhật lại state items tức thời
     setItems((prev) =>
@@ -477,7 +477,7 @@ export default function InventoryManagement() {
     setManualOverrides(updatedOverrides);
     try {
       localStorage.setItem('unibridal_inventory_overrides', JSON.stringify(updatedOverrides));
-    } catch {}
+    } catch { }
 
     setItems((prev) =>
       prev.map((it) => {
@@ -568,7 +568,7 @@ export default function InventoryManagement() {
           deletedIds.push(deletingItem.id);
           localStorage.setItem('unibridal_deleted_dress_ids', JSON.stringify(deletedIds));
         }
-      } catch {}
+      } catch { }
 
       // 3. Xóa override nếu có
       if (manualOverrides[deletingItem.id]) {
@@ -577,7 +577,7 @@ export default function InventoryManagement() {
         setManualOverrides(nextOverrides);
         try {
           localStorage.setItem('unibridal_inventory_overrides', JSON.stringify(nextOverrides));
-        } catch {}
+        } catch { }
       }
 
       // 4. Cập nhật state UI ngay lập tức
@@ -687,9 +687,7 @@ export default function InventoryManagement() {
               <span className="text-[12px] font-medium text-[#8C7D7E] ml-2">mẫu thiết kế</span>
             </div>
           </div>
-          <div className="mt-4 flex items-center gap-1.5 text-[11.5px] text-[#733F49] font-medium">
-            <span>Toàn bộ mẫu váy đang lưu trữ</span>
-          </div>
+
         </div>
 
         {/* Card 2: TỔNG SỐ VÁY (Ánh xanh lá dịu mát) */}
@@ -710,10 +708,7 @@ export default function InventoryManagement() {
               <span className="text-[12px] font-medium text-[#736364] ml-2">chiếc váy</span>
             </div>
           </div>
-          <div className="mt-4 flex items-center gap-1.5 text-[11.5px] text-[#1E8347] font-medium">
-            <Check size={13} />
-            <span>Tính tổng trên tất cả kích cỡ size</span>
-          </div>
+
         </div>
 
         {/* Card 3: MẪU ĐANG CHO THUÊ */}
@@ -736,9 +731,7 @@ export default function InventoryManagement() {
               </span>
             </div>
           </div>
-          <div className="mt-4 flex items-center gap-1.5 text-[11.5px] text-[#1D4ED8] font-medium">
-            <span>Đang có khách thuê &amp; xuất giao cưới</span>
-          </div>
+
         </div>
 
         {/* Card 4: MẪU ĐANG BẢO DƯỠNG */}
@@ -759,9 +752,7 @@ export default function InventoryManagement() {
               <span className="text-[12px] font-medium text-[#D97706] ml-2">mẫu đang xử lý</span>
             </div>
           </div>
-          <div className="mt-4 flex items-center gap-1.5 text-[11.5px] text-[#B45309] font-medium">
-            <span>Kiểm định sau thuê &amp; bảo dưỡng giặt hấp</span>
-          </div>
+
         </div>
       </div>
 
@@ -773,7 +764,7 @@ export default function InventoryManagement() {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Tìm theo mã đơn (VD: UB-2026-505), mã váy, tên thiết kế, vị trí tủ..."
+            placeholder="Tìm theo mã váy, tên thiết kế, vị trí tủ..."
             className="w-full pl-11 pr-4 py-3 rounded-xl bg-[#FFF6F3] border border-[#F4E8E3] focus:border-[#B8737D] focus:bg-white text-[13px] text-[#2C2523] placeholder-[#A39293] outline-none transition-all"
           />
           {searchTerm && (
@@ -811,11 +802,10 @@ export default function InventoryManagement() {
                       setStatusFilter(opt.value);
                       setFilterDropdownOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between px-4 py-2 text-left text-[13px] transition-colors cursor-pointer ${
-                      statusFilter === opt.value
-                        ? 'bg-[#F9EDE9] text-[#733F49] font-bold'
-                        : 'bg-transparent text-[#5F4E50] hover:bg-[#FAF5F2]'
-                    }`}
+                    className={`w-full flex items-center justify-between px-4 py-2 text-left text-[13px] transition-colors cursor-pointer ${statusFilter === opt.value
+                      ? 'bg-[#F9EDE9] text-[#733F49] font-bold'
+                      : 'bg-transparent text-[#5F4E50] hover:bg-[#FAF5F2]'
+                      }`}
                   >
                     <span>{opt.label}</span>
                     {statusFilter === opt.value && <Check size={14} />}
@@ -981,13 +971,12 @@ export default function InventoryManagement() {
                                 <span
                                   key={idx}
                                   title={sMaint > 0 ? `Đang có ${sMaint} bộ size ${sName} kiểm định sau thuê` : sRented > 0 ? `Đang có ${sRented} bộ size ${sName} đang được khách thuê` : `Sẵn sàng phục vụ: ${sAvail} bộ`}
-                                  className={`inline-flex items-center px-1.5 py-0.5 rounded-md border font-semibold text-[10.5px] ${
-                                    sMaint > 0
-                                      ? 'bg-[#FEF2E6] text-[#B45309] border-[#FED7AA]'
-                                      : sRented > 0
+                                  className={`inline-flex items-center px-1.5 py-0.5 rounded-md border font-semibold text-[10.5px] ${sMaint > 0
+                                    ? 'bg-[#FEF2E6] text-[#B45309] border-[#FED7AA]'
+                                    : sRented > 0
                                       ? 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]'
                                       : 'bg-[#FAF5F2] text-[#733F49] border-[#EFE2DC]'
-                                  }`}
+                                    }`}
                                 >
                                   {sName}: <span className="font-bold ml-1 text-[#2C2523]">{sAvail}/{sQty}</span>
                                   {sMaint > 0 && <span className="ml-1 text-[9px] text-[#D97706] font-bold">({sMaint} bảo dưỡng)</span>}
@@ -1173,11 +1162,10 @@ export default function InventoryManagement() {
                   key={p}
                   type="button"
                   onClick={() => setActivePage(p)}
-                  className={`w-8 h-8 rounded-lg font-bold flex items-center justify-center transition-colors cursor-pointer ${
-                    activePage === p
-                      ? 'bg-[#733F49] text-white shadow-xs'
-                      : 'bg-white border border-[#EFE5E1] shadow-2xs text-[#4A3B3D] hover:bg-[#F5ECE8]'
-                  }`}
+                  className={`w-8 h-8 rounded-lg font-bold flex items-center justify-center transition-colors cursor-pointer ${activePage === p
+                    ? 'bg-[#733F49] text-white shadow-xs'
+                    : 'bg-white border border-[#EFE5E1] shadow-2xs text-[#4A3B3D] hover:bg-[#F5ECE8]'
+                    }`}
                 >
                   {p}
                 </button>
@@ -1660,24 +1648,23 @@ export default function InventoryManagement() {
                 <div className="flex justify-between items-center pt-1 border-t border-[#F2E5E0]">
                   <span className="text-[#8C7D7E]">Trạng thái đơn:</span>
                   <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border ${
-                      ['returned', 'inspecting', 'maintenance'].includes(selectedOrderView.rawStatus || selectedOrderView.status)
-                        ? 'bg-[#FEF2E6] text-[#B45309] border-[#FED7AA]'
-                        : ['renting', 'delivered', 'preparing', 'deposit_paid'].includes(selectedOrderView.rawStatus || selectedOrderView.status)
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border ${['returned', 'inspecting', 'maintenance'].includes(selectedOrderView.rawStatus || selectedOrderView.status)
+                      ? 'bg-[#FEF2E6] text-[#B45309] border-[#FED7AA]'
+                      : ['renting', 'delivered', 'preparing', 'deposit_paid'].includes(selectedOrderView.rawStatus || selectedOrderView.status)
                         ? 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]'
                         : selectedOrderView.status === 'completed'
-                        ? 'bg-[#F0FDF4] text-[#166534] border-[#BBF7D0]'
-                        : 'bg-[#FAF5F2] text-[#733F49] border-[#EFE2DC]'
-                    }`}
+                          ? 'bg-[#F0FDF4] text-[#166534] border-[#BBF7D0]'
+                          : 'bg-[#FAF5F2] text-[#733F49] border-[#EFE2DC]'
+                      }`}
                   >
                     {selectedOrderView.statusLabel ||
                       (selectedOrderView.status === 'returned'
                         ? 'Đã trả váy (Chờ kiểm định & hoàn cọc)'
                         : selectedOrderView.status === 'completed'
-                        ? 'Hoàn tất (Váy đã về kho sẵn sàng)'
-                        : selectedOrderView.status === 'renting'
-                        ? 'Đang cho thuê'
-                        : selectedOrderView.status)}
+                          ? 'Hoàn tất (Váy đã về kho sẵn sàng)'
+                          : selectedOrderView.status === 'renting'
+                            ? 'Đang cho thuê'
+                            : selectedOrderView.status)}
                   </span>
                 </div>
               </div>
@@ -1711,19 +1698,18 @@ export default function InventoryManagement() {
                       Biên Bản Kiểm Định Trả Váy
                     </span>
                     <span
-                      className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full border ${
-                        selectedOrderView.inspection.customerStatus === 'approved'
-                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                          : selectedOrderView.inspection.customerStatus === 'disputed'
+                      className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full border ${selectedOrderView.inspection.customerStatus === 'approved'
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        : selectedOrderView.inspection.customerStatus === 'disputed'
                           ? 'bg-amber-50 text-amber-800 border-amber-200'
                           : 'bg-rose-50 text-rose-800 border-rose-200'
-                      }`}
+                        }`}
                     >
                       {selectedOrderView.inspection.customerStatus === 'approved'
                         ? 'Khách đã duyệt hoàn cọc'
                         : selectedOrderView.inspection.customerStatus === 'disputed'
-                        ? 'Khách khiếu nại'
-                        : 'Chờ khách xác nhận'}
+                          ? 'Khách khiếu nại'
+                          : 'Chờ khách xác nhận'}
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-[12px]">

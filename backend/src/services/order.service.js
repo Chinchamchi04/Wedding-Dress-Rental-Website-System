@@ -139,11 +139,13 @@ export const getAllOrders = async (filters = {}) => {
   const query = {};
   if (filters.status) query.status = filters.status;
   if (filters.search) {
+    const rawSearch = String(filters.search).trim();
+    const cleanSearch = rawSearch.replace(/^[#\s]+/, ''); // Loại bỏ ký tự # nếu người dùng nhập "#UB-2026-0012"
     query.$or = [
-      { orderCode: { $regex: filters.search, $options: 'i' } },
-      { customerName: { $regex: filters.search, $options: 'i' } },
-      { customerPhone: { $regex: filters.search, $options: 'i' } },
-      { 'items.name': { $regex: filters.search, $options: 'i' } },
+      { orderCode: { $regex: cleanSearch, $options: 'i' } },
+      { customerName: { $regex: rawSearch, $options: 'i' } },
+      { customerPhone: { $regex: cleanSearch, $options: 'i' } },
+      { 'items.name': { $regex: rawSearch, $options: 'i' } },
     ];
   }
 
@@ -151,12 +153,19 @@ export const getAllOrders = async (filters = {}) => {
   const limit = parseInt(filters.limit, 10) || 20;
   const skip = (page - 1) * limit;
 
-  const total = await Order.countDocuments(query);
-  const orders = await Order.find(query)
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .lean();
+  // Lấy tổng quan số liệu toàn hệ thống showroom (không bị phụ thuộc vào từ khóa tìm kiếm)
+  const [totalAll, rentingCount, completedCount, cancelledCount, total, orders] = await Promise.all([
+    Order.countDocuments({}),
+    Order.countDocuments({ status: 'renting' }),
+    Order.countDocuments({ status: { $in: ['completed', 'complete'] } }),
+    Order.countDocuments({ status: 'cancelled' }),
+    Order.countDocuments(query),
+    Order.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+  ]);
 
   const orderIds = orders.map((o) => o._id);
   const inspections = await ReturnInspection.find({ orderId: { $in: orderIds } }).lean();
@@ -172,6 +181,13 @@ export const getAllOrders = async (filters = {}) => {
     total,
     page,
     totalPages: Math.ceil(total / limit),
+    stats: {
+      total: totalAll,
+      renting: rentingCount,
+      completed: completedCount,
+      cancelled: cancelledCount,
+      active: Math.max(0, totalAll - completedCount - cancelledCount),
+    },
   };
 };
 

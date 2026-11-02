@@ -40,6 +40,7 @@ export const getAllOrders = async (req, res, next) => {
       success: true,
       message: 'Lấy danh sách đơn thuê hệ thống thành công',
       data: result.orders,
+      stats: result.stats,
       pagination: {
         total: result.total,
         page: result.page,

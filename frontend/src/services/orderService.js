@@ -199,14 +199,16 @@ export async function getAllOrdersAdmin(params = {}) {
     const total = res.pagination?.total ?? res.total ?? list.length;
     const page = res.pagination?.page ?? res.page ?? 1;
     const totalPages = res.pagination?.totalPages ?? res.totalPages ?? 1;
+    const stats = res.stats || null;
     return {
       orders: list,
       total,
       page,
       totalPages,
+      stats,
     };
   } catch (error) {
-    return { orders: [], total: 0, page: 1, totalPages: 1 };
+    return { orders: [], total: 0, page: 1, totalPages: 1, stats: null };
   }
 }
 

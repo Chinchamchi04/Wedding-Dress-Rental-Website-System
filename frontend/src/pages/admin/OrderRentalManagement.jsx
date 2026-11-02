@@ -825,6 +825,15 @@ export default function OrderRentalManagement() {
   const [totalPages, setTotalPages] = useState(1);
   const [activePage, setActivePage] = useState(1);
 
+  // Lưu trữ chỉ số thống kê toàn hệ thống showroom (không bị nhảy về 0 khi tìm kiếm)
+  const [globalStats, setGlobalStats] = useState({
+    total: 0,
+    renting: 0,
+    completed: 0,
+    cancelled: 0,
+    active: 0,
+  });
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
@@ -835,8 +844,19 @@ export default function OrderRentalManagement() {
   const [statusMenuId, setStatusMenuId] = useState(null); // row dropdown open id
 
   const isArchived = (order) => order.status === 'completed' || order.status === 'complete' || order.status === 'cancelled';
-  const activeOrdersCount = useMemo(() => orders.filter((o) => !isArchived(o)).length, [orders]);
-  const archivedOrdersCount = useMemo(() => orders.filter(isArchived).length, [orders]);
+  const activeOrdersCount = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return globalStats.active || orders.filter((o) => !isArchived(o)).length;
+    }
+    return orders.filter((o) => !isArchived(o)).length;
+  }, [orders, globalStats, searchTerm]);
+
+  const archivedOrdersCount = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return (globalStats.completed + globalStats.cancelled) || orders.filter(isArchived).length;
+    }
+    return orders.filter(isArchived).length;
+  }, [orders, globalStats, searchTerm]);
 
   // ── Load orders ──────────────────────────────────────────────────────────
   const loadOrders = useCallback(async () => {
@@ -852,6 +872,9 @@ export default function OrderRentalManagement() {
       setOrders(rawList);
       setTotal(result.total || rawList.length);
       setTotalPages(result.totalPages || Math.ceil((result.total || rawList.length) / PAGE_SIZE));
+      if (result.stats) {
+        setGlobalStats(result.stats);
+      }
       setError('');
     } catch (err) {
       console.error('Database connection error in OrderRentalManagement:', err);
@@ -884,27 +907,39 @@ export default function OrderRentalManagement() {
 
   // ── Stats derived from orders ────────────────────────────────────────────
   const stats = useMemo(() => {
-    const renting = orders.filter((o) => o.status === 'renting').length;
-    const completed = orders.filter((o) => o.status === 'completed').length;
-    const cancelled = orders.filter((o) => o.status === 'cancelled').length;
-    return { total: orders.length, renting, completed, cancelled };
-  }, [orders]);
+    return {
+      total: globalStats.total || orders.length,
+      renting: globalStats.renting || orders.filter((o) => o.status === 'renting').length,
+      completed: globalStats.completed || orders.filter((o) => o.status === 'completed' || o.status === 'complete').length,
+      cancelled: globalStats.cancelled || orders.filter((o) => o.status === 'cancelled').length,
+    };
+  }, [globalStats, orders]);
 
-  // ── Client-side filter (for demo fallback) ───────────────────────────────
+  // ── Client-side filter (for demo fallback & search) ───────────────────────
   const filteredOrders = useMemo(() => {
+    const qRaw = searchTerm.trim().toLowerCase();
+    const cleanQ = qRaw.replace(/^[#\s]+/, '');
+
     return orders.filter((o) => {
-      // Phân tách đơn đang xử lý và kho lưu trữ
+      const matchSearch =
+        !cleanQ ||
+        (o.orderCode || '').toLowerCase().includes(cleanQ) ||
+        `#${(o.orderCode || '').toLowerCase()}`.includes(qRaw) ||
+        (o.customerName || '').toLowerCase().includes(qRaw) ||
+        (o.customerPhone || '').includes(cleanQ) ||
+        (o.items || []).some((it) => (it.name || '').toLowerCase().includes(qRaw));
+
+      const matchStatus = statusFilter === 'all' || o.status === statusFilter;
+
+      // Khi người dùng đang tìm kiếm cụ thể: Hiển thị ngay kết quả kể cả đơn nằm ở Kho Lưu Trữ
+      if (cleanQ) {
+        return matchSearch && matchStatus;
+      }
+
+      // Khi không tìm kiếm: Phân tách rõ ràng giữa Đơn Đang Xử Lý và Kho Lưu Trữ
       if (viewMode === 'active' && isArchived(o)) return false;
       if (viewMode === 'archived' && !isArchived(o)) return false;
 
-      const q = searchTerm.toLowerCase();
-      const matchSearch =
-        !q ||
-        (o.orderCode || '').toLowerCase().includes(q) ||
-        (o.customerName || '').toLowerCase().includes(q) ||
-        (o.customerPhone || '').includes(q) ||
-        (o.items?.[0]?.name || '').toLowerCase().includes(q);
-      const matchStatus = statusFilter === 'all' || o.status === statusFilter;
       return matchSearch && matchStatus;
     });
   }, [orders, searchTerm, statusFilter, viewMode]);
@@ -964,7 +999,7 @@ export default function OrderRentalManagement() {
             </div>
             <div className="flex items-baseline">
               <span className="text-[34px] font-bold text-[#2C2523] leading-none">
-                {loading ? '—' : total}
+                {loading && !stats.total ? '—' : stats.total}
               </span>
               <span className="text-[13px] font-medium text-[#8C7D7E] ml-2">đơn</span>
             </div>
@@ -991,7 +1026,7 @@ export default function OrderRentalManagement() {
             </div>
             <div className="flex items-baseline">
               <span className="text-[34px] font-bold text-[#6D28D9] leading-none">
-                {loading ? '—' : stats.renting}
+                {loading && !stats.total ? '—' : stats.renting}
               </span>
               <span className="text-[13px] font-medium text-[#8C7D7E] ml-2">đơn</span>
             </div>
@@ -1018,7 +1053,7 @@ export default function OrderRentalManagement() {
             </div>
             <div className="flex items-baseline">
               <span className="text-[34px] font-bold text-[#1E8347] leading-none">
-                {loading ? '—' : stats.completed}
+                {loading && !stats.total ? '—' : stats.completed}
               </span>
               <span className="text-[13px] font-medium text-[#8C7D7E] ml-2">đơn</span>
             </div>
@@ -1045,7 +1080,7 @@ export default function OrderRentalManagement() {
             </div>
             <div className="flex items-baseline">
               <span className="text-[34px] font-bold text-[#A84A58] leading-none">
-                {loading ? '—' : stats.cancelled}
+                {loading && !stats.total ? '—' : stats.cancelled}
               </span>
               <span className="text-[13px] font-medium text-[#8C7D7E] ml-2">đơn</span>
             </div>
@@ -1237,9 +1272,16 @@ export default function OrderRentalManagement() {
                     <tr key={order._id || order.orderCode} className="hover:bg-[#FCF9F7] transition-colors">
                       {/* Mã đơn */}
                       <td className="py-4 px-5">
-                        <span className="inline-block px-2 py-0.5 rounded bg-[#F6EDE8] text-[#846E63] font-mono text-[11px] font-semibold tracking-wider">
-                          {order.orderCode || order._id}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="inline-block px-2 py-0.5 rounded bg-[#F6EDE8] text-[#846E63] font-mono text-[11px] font-semibold tracking-wider">
+                            {order.orderCode || order._id}
+                          </span>
+                          {isArchived(order) && (
+                            <span className="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-[#EAF7EE] text-[#1E8347] border border-[#C6F0D4]">
+                              Kho Lưu Trữ
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Khách hàng */}
