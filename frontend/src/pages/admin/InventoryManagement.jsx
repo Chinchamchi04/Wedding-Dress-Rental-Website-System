@@ -13,17 +13,20 @@ import {
   Wrench,
   MoreVertical,
   Check,
-  ClipboardCheck,
   ShieldAlert,
   Sparkles,
   RefreshCw,
   Eye,
   SlidersHorizontal,
-  CheckCheck
+  CheckCheck,
+  Layers,
 } from 'lucide-react';
 import HangerIcon from '../../components/common/HangerIcon';
 import { useAuth } from '../../contexts/AuthContext';
 import { getAllDresses } from '../../services/dressService';
+import { formatCurrencyVND } from '../../utils/formatCurrency';
+
+const fmtVnd = (v) => formatCurrencyVND(v ?? 0);
 
 import card1Elysian from '../../assets/card1_elysian.jpg';
 import card2Celeste from '../../assets/card2_celeste.jpg';
@@ -35,9 +38,6 @@ import card6Seraphina from '../../assets/card6_seraphina.jpg';
 const PAGE_SIZE = 6;
 
 export default function InventoryManagement() {
-  const { user } = useAuth();
-  const currentInspectorName = user?.fullName || user?.name || 'Bích Ngọc';
-
   const [items, setItems] = useState([]);
   const [error, setError] = useState('');
 
@@ -55,10 +55,12 @@ export default function InventoryManagement() {
   const [newCollection, setNewCollection] = useState('ATELIER COUTURE 2026');
   const [newLocation, setNewLocation] = useState('Tủ A1');
   const [newRfid, setNewRfid] = useState('');
+  const [newRentPrice, setNewRentPrice] = useState(5000000);
+  const [newDepositAmount, setNewDepositAmount] = useState(15000000);
   const [newConditionType, setNewConditionType] = useState('cold');
   const [newDescription, setNewDescription] = useState('');
-  const [newSizeS, setNewSizeS] = useState(1);
-  const [newSizeM, setNewSizeM] = useState(1);
+  const [newSizeS, setNewSizeS] = useState(2);
+  const [newSizeM, setNewSizeM] = useState(2);
 
   const showToast = (msg) => {
     setToastMsg(msg);
@@ -78,24 +80,15 @@ export default function InventoryManagement() {
             const num = (index + 1).toString().padStart(2, '0');
             const code = d.code || `UB-${(index + 1).toString().padStart(3, '0')}`;
             const cabinet = cabinets[index % cabinets.length];
-            const statusType = index % 8 === 0 ? 'drying' : index % 7 === 0 ? 'pending' : index % 3 === 0 ? 'ready' : 'stored';
+            const statusType = index % 5 === 0 ? 'drying' : index % 3 === 0 ? 'ready' : 'stored';
             const statusText = statusType === 'stored' ? 'CÒN HÀNG'
               : statusType === 'ready' ? 'ĐÃ CHO THUÊ'
-                : statusType === 'drying' ? 'ĐANG BẢO DƯỠNG'
-                  : 'ĐANG HẬU KIỂM';
+              : 'ĐANG BẢO DƯỠNG';
 
             const rawSizes = Array.isArray(d.sizes) && d.sizes.length > 0 ? d.sizes : ['S', 'M'];
             const mappedSizes = rawSizes.map((sz) => ({
               label: typeof sz === 'object' && sz?.label ? sz.label : `Size ${typeof sz === 'object' ? (sz?.size || 'S') : sz} (2 bộ)`
             }));
-
-            const inspectNote = statusType === 'ready'
-              ? 'Đang phục vụ hợp đồng thuê'
-              : statusType === 'drying'
-                ? 'Đang giặt hấp vi khí hậu'
-                : statusType === 'pending'
-                  ? 'Kiểm tra hiện trạng sau hoàn trả'
-                  : 'Sẵn sàng phục vụ thử váy';
 
             return {
               id: d._id || d.id || `inv_${index + 1}`,
@@ -104,19 +97,14 @@ export default function InventoryManagement() {
               collection: d.collection || 'ATELIER HAUTE COUTURE 2026',
               rfid: `#RF-2026-${(index + 1).toString().padStart(4, '0')}`,
               location: cabinet,
-              conditionType: 'cold',
-              conditionText: 'Tiêu chuẩn bảo quản vi khí hậu',
               statusType,
               statusText,
               stock: mappedSizes.length * 2,
               sizes: mappedSizes,
               totalUnits: `Tổng: ${String(mappedSizes.length * 2).padStart(2, '0')} bộ`,
               description: d.description || 'Lễ phục cưới cao cấp UniBridal Haute Couture',
-              price: d.rentPrice || d.price || 5000000,
-              inspector: `Bởi: ${currentInspectorName}`,
-              inspectDate: 'Hôm nay (02/11/2026)',
-              inspectNote,
-              inspectNoteColor: statusType === 'ready' ? 'green' : statusType === 'drying' ? 'orange' : statusType === 'pending' ? 'red' : 'blue',
+              rentPrice: d.rentPrice || d.price || 5000000,
+              depositAmount: d.depositAmount || d.deposit || 15000000,
               image: (d.images && d.images[0]) || d.image || `/assets/dresses/dress_${num}.jpg`,
             };
           });
@@ -133,14 +121,13 @@ export default function InventoryManagement() {
         setError('Lỗi kết nối cơ sở dữ liệu: Không thể tải danh sách kho hàng từ máy chủ MongoDB.');
       });
     return () => { active = false; };
-  }, [currentInspectorName]);
+  }, []);
 
   const statusOptions = [
     { value: 'all', label: 'Tất Cả Tình Trạng' },
     { value: 'stored', label: 'Còn hàng' },
     { value: 'ready', label: 'Đã cho thuê' },
     { value: 'drying', label: 'Đang bảo dưỡng' },
-    { value: 'pending', label: 'Đang hậu kiểm' },
   ];
 
   const filteredItems = useMemo(() => {
@@ -170,15 +157,12 @@ export default function InventoryManagement() {
 
   // Cập nhật tình trạng của một váy trong kho
   const handleUpdateItemStatus = (itemId, newStatusType, newStatusText) => {
-    const todayStr = `Hôm nay (${new Date().toLocaleDateString('vi-VN')})`;
     const updated = items.map((it) => {
       if (it.id === itemId) {
         return {
           ...it,
           statusType: newStatusType,
           statusText: newStatusText,
-          inspectDate: todayStr,
-          inspector: `Bởi: ${currentInspectorName}`
         };
       }
       return it;
@@ -191,17 +175,9 @@ export default function InventoryManagement() {
         ...prev,
         statusType: newStatusType,
         statusText: newStatusText,
-        inspectDate: todayStr,
-        inspector: `Bởi: ${currentInspectorName}`
       }));
     }
     showToast(`Đã cập nhật trạng thái kho: ${newStatusText}`);
-  };
-
-  // Xác nhận kiểm kê đạt chuẩn
-  const handleConfirmInspection = (item) => {
-    handleUpdateItemStatus(item.id, 'stored', 'ĐẠT CHUẨN LƯU KHO');
-    showToast(`Đã hoàn tất kiểm định phom dáng & sợi vải cho tác phẩm: ${item.name}!`);
   };
 
   // Xử lý nộp phiếu nhập kho mới
@@ -235,17 +211,16 @@ export default function InventoryManagement() {
       conditionType: newConditionType,
       conditionText: conditionMap[newConditionType] || 'Kho Lạnh Tơ Tằm (19°C)',
       description: newDescription.trim() || 'Lễ phục cưới cao cấp bảo quản tiêu chuẩn vi khí hậu.',
+      rentPrice: Number(newRentPrice || 5000000),
+      depositAmount: Number(newDepositAmount || 15000000),
+      stock: totalCount,
       sizes: [
-        { label: `Size S: ${String(newSizeS).padStart(2, '0')}` },
-        { label: `Size M: ${String(newSizeM).padStart(2, '0')}` },
+        { label: `Size S (${String(newSizeS).padStart(2, '0')} bộ)` },
+        { label: `Size M (${String(newSizeM).padStart(2, '0')} bộ)` },
       ],
       totalUnits: `Tổng: ${String(totalCount).padStart(2, '0')} bộ`,
-      statusText: 'ĐẠT CHUẨN LƯU KHO',
+      statusText: 'CÒN HÀNG',
       statusType: 'stored',
-      inspectDate: `Hôm nay (${new Date().toLocaleDateString('vi-VN')})`,
-      inspector: `Bởi: ${currentInspectorName}`,
-      inspectNote: 'Nhập kho mới 10/10',
-      inspectNoteColor: 'green',
     };
 
     const updated = [newItem, ...items];
@@ -259,37 +234,6 @@ export default function InventoryManagement() {
     showToast(`Đã nhập kho thành công thiết kế ${newItem.name} với mã ${newItem.code}!`);
   };
 
-  // Xuất file bảng kiểm kê CSV
-  const handleExportCsv = () => {
-    try {
-      const headers = ['Mã Kho', 'Tên Váy', 'Bộ Sưu Tập', 'Vị Trí Tủ', 'Thẻ RFID', 'Điều Kiện Bảo Quản', 'Tình Trạng', 'Lần Kiểm Kê Gần Nhất', 'Người Kiểm Định'];
-      const rows = items.map((it) => [
-        `"${it.code}"`,
-        `"${it.name}"`,
-        `"${it.collection}"`,
-        `"${it.location}"`,
-        `"${it.rfid}"`,
-        `"${it.conditionText}"`,
-        `"${it.statusText}"`,
-        `"${it.inspectDate}"`,
-        `"${it.inspector}"`
-      ]);
-
-      const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', `Bang_Kiem_Ke_Kho_UniBridal_${new Date().toISOString().split('T')[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      showToast('Đã xuất thành công file kiểm kê kho UniBridal (.csv)!');
-    } catch {
-      showToast('Có lỗi xảy ra khi xuất file.');
-    }
-  };
-
   const selectedFilterLabel =
     statusOptions.find((opt) => opt.value === statusFilter)?.label ||
     'Tất Cả Tình Trạng';
@@ -299,7 +243,7 @@ export default function InventoryManagement() {
   const readyCount = items.filter((i) => i.statusType === 'ready').length;
   const storedCount = items.filter((i) => i.statusType === 'stored').length;
   const dryingCount = items.filter((i) => i.statusType === 'drying').length;
-  const pendingCount = items.filter((i) => i.statusType === 'pending').length;
+  const totalStockUnits = useMemo(() => items.reduce((sum, i) => sum + (i.stock || 4), 0), [items]);
 
   return (
     <AdminLayout activeMenu="inventory">
@@ -321,10 +265,10 @@ export default function InventoryManagement() {
         <div>
           <div className="w-2.5 h-2.5 rounded-full bg-[#B8737D] mb-3" />
           <h1 className="font-playfair text-[32px] md:text-[38px] font-bold text-[#5F2B36] tracking-tight mb-2">
-            Quản Lý Kho Hàng
+            Quản Lý Sản Phẩm Kho
           </h1>
           <p className="text-[13.5px] text-[#7A6B6C] font-normal leading-relaxed max-w-4xl">
-            Giám sát kiểm định phom dáng, điều phối tủ treo bảo quản lạnh/chống ẩm vi khí hậu chuyên dụng, theo dõi lịch sử giặt hấp phục hồi xơ sợi tơ tằm và kiểm kê vật tư phụ kiện hạt cườm, pha lê thủ công.
+            Quản lý số lượng tồn kho theo từng size, vị trí tủ lưu trữ, giá thuê và tiền đặt cọc của từng mẫu thiết kế lễ phục cưới cao cấp.
           </p>
         </div>
 
@@ -343,15 +287,66 @@ export default function InventoryManagement() {
 
       {/* 4 Summary Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
-        {/* Card 1 */}
+        {/* Card 1: Tổng mẫu thiết kế */}
         <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FCDCE1_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] p-5 shadow-xs flex flex-col justify-between overflow-hidden">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#736364] uppercase">
-                CÒN HÀNG
+                TỔNG MẪU THIẾT KẾ
               </span>
               <div className="w-11 h-11 rounded-2xl bg-[#FDECEE] flex items-center justify-center text-[#B8737D]">
+                <Layers size={20} />
+              </div>
+            </div>
+            <div className="flex items-baseline">
+              <span className="text-[34px] font-bold text-[#2C2523] leading-none">
+                {totalCount}
+              </span>
+              <span className="text-[13px] font-medium text-[#8C7D7E] ml-2">
+                mẫu danh mục
+              </span>
+            </div>
+          </div>
+          <div className="mt-5 flex items-center gap-1.5 text-[12px] text-[#733F49] font-medium">
+            <span>Toàn bộ mẫu váy đang lưu trữ</span>
+          </div>
+        </div>
+
+        {/* Card 2: Tổng lễ phục lưu kho */}
+        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#DEF5E7_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] p-5 shadow-xs flex flex-col justify-between overflow-hidden">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-bold tracking-[1.2px] text-[#736364] uppercase">
+                TỔNG LỄ PHỤC LƯU KHO
+              </span>
+              <div className="w-11 h-11 rounded-2xl bg-[#EAF7EE] flex items-center justify-center text-[#229A53]">
                 <HangerIcon size={20} strokeWidth={1.8} />
+              </div>
+            </div>
+            <div className="flex items-baseline">
+              <span className="text-[34px] font-bold text-[#2C2523] leading-none">
+                {totalStockUnits}
+              </span>
+              <span className="text-[13px] font-medium text-[#8C7D7E] ml-2">
+                bộ váy sẵn có
+              </span>
+            </div>
+          </div>
+          <div className="mt-5 flex items-center gap-1.5 text-[12px] text-[#229A53] font-medium">
+            <Check size={14} className="text-[#229A53]" />
+            <span>Tổng số lượng tính theo tất cả size</span>
+          </div>
+        </div>
+
+        {/* Card 3: Mẫu Còn Hàng */}
+        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EFF6FF_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] p-5 shadow-xs flex flex-col justify-between overflow-hidden">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-bold tracking-[1.2px] text-[#736364] uppercase">
+                MẪU CÒN HÀNG
+              </span>
+              <div className="w-11 h-11 rounded-2xl bg-[#EFF6FF] flex items-center justify-center text-[#1D4ED8]">
+                <Sparkles size={20} />
               </div>
             </div>
             <div className="flex items-baseline">
@@ -359,42 +354,16 @@ export default function InventoryManagement() {
                 {storedCount}
               </span>
               <span className="text-[13px] font-medium text-[#8C7D7E] ml-2">
-                thiết kế có sẵn
+                mẫu sẵn sàng ({totalCount > 0 ? Math.round((storedCount / totalCount) * 100) : 0}%)
               </span>
             </div>
           </div>
-          <div className="mt-5 flex items-center gap-1.5 text-[12px] text-[#1E8347] font-medium">
+          <div className="mt-5 flex items-center gap-1.5 text-[12px] text-[#1D4ED8] font-medium">
             <span>Sẵn sàng phục vụ thử váy &amp; ký thuê</span>
           </div>
         </div>
 
-        {/* Card 2 */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#DEF5E7_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] p-5 shadow-xs flex flex-col justify-between overflow-hidden">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-bold tracking-[1.2px] text-[#736364] uppercase">
-                ĐÃ CHO THUÊ
-              </span>
-              <div className="w-11 h-11 rounded-2xl bg-[#EAF7EE] flex items-center justify-center text-[#229A53]">
-                <CheckCircle2 size={20} />
-              </div>
-            </div>
-            <div className="flex items-baseline">
-              <span className="text-[34px] font-bold text-[#2C2523] leading-none">
-                {readyCount}
-              </span>
-              <span className="text-[13px] font-medium text-[#8C7D7E] ml-2">
-                thiết kế ({totalCount > 0 ? Math.round((readyCount / totalCount) * 100) : 0}%)
-              </span>
-            </div>
-          </div>
-          <div className="mt-5 flex items-center gap-1.5 text-[12px] text-[#6A5B5C]">
-            <Check size={14} className="text-[#229A53]" />
-            <span>Đang phục vụ hợp đồng của cô dâu</span>
-          </div>
-        </div>
-
-        {/* Card 3 */}
+        {/* Card 4: Đang Bảo Dưỡng */}
         <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FEEBD0_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] p-5 shadow-xs flex flex-col justify-between overflow-hidden">
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -402,7 +371,7 @@ export default function InventoryManagement() {
                 ĐANG BẢO DƯỠNG
               </span>
               <div className="w-11 h-11 rounded-2xl bg-[#FEF2E6] flex items-center justify-center text-[#D97706]">
-                <HangerIcon size={20} strokeWidth={1.8} />
+                <Clock size={20} />
               </div>
             </div>
             <div className="flex items-baseline">
@@ -410,38 +379,12 @@ export default function InventoryManagement() {
                 {dryingCount}
               </span>
               <span className="text-[13px] font-medium text-[#8C7D7E] ml-2">
-                bộ đang xử lý
+                mẫu đang xử lý
               </span>
             </div>
           </div>
-          <div className="mt-5 flex items-center gap-1.5 text-[12px] text-[#6A5B5C]">
-            <Clock size={14} className="text-[#D97706]" />
-            <span>Giặt khô, là hơi vi khí hậu phục hồi phom</span>
-          </div>
-        </div>
-
-        {/* Card 4 */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FCDFD9_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] p-5 shadow-xs flex flex-col justify-between overflow-hidden">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-bold tracking-[1.2px] text-[#736364] uppercase">
-                ĐANG HẬU KIỂM
-              </span>
-              <div className="w-11 h-11 rounded-2xl bg-[#FDECEE] flex items-center justify-center text-[#D03B3B]">
-                <AlertTriangle size={20} />
-              </div>
-            </div>
-            <div className="flex items-baseline">
-              <span className="text-[34px] font-bold text-[#D03B3B] leading-none">
-                {pendingCount}
-              </span>
-              <span className="text-[13px] font-medium text-[#8C7D7E] ml-2">
-                váy mới thu hồi
-              </span>
-            </div>
-          </div>
-          <div className="mt-5 flex items-center gap-1 text-[12px] text-[#C93B3B] font-medium">
-            <span>Kiểm tra hiện trạng &amp; đối soát hoàn cọc</span>
+          <div className="mt-5 flex items-center gap-1.5 text-[12px] text-[#D97706] font-medium">
+            <span>Giặt khô, là hơi vi khí hậu phục hồi</span>
           </div>
         </div>
       </div>
@@ -537,22 +480,22 @@ export default function InventoryManagement() {
           <table className="w-full min-w-[940px] text-left border-collapse">
             <thead>
               <tr className="border-b border-[#F2E5E0] bg-[#FFF6F3]">
-                <th className="py-4 px-4 sm:px-5 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[22%] min-w-[190px]">
-                  SẢN PHẨM &amp; MÃ LỄ PHỤC
+                <th className="py-4 px-4 sm:px-5 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[24%] min-w-[200px]">
+                  SẢN PHẨM &amp; MÃ VÁY
                 </th>
-                <th className="py-4 px-3 sm:px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[23%] min-w-[200px]">
+                <th className="py-4 px-3 sm:px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[18%] min-w-[160px]">
                   VỊ TRÍ TỦ
                 </th>
-                <th className="py-4 px-3 sm:px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[14%] min-w-[130px]">
-                  PHÂN LOẠI &amp; TỒN SIZE
+                <th className="py-4 px-3 sm:px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[18%] min-w-[160px]">
+                  GIÁ THUÊ &amp; CỌC
                 </th>
-                <th className="py-4 px-3 sm:px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[15%] min-w-[140px]">
-                  TÌNH TRẠNG LƯU KHO
+                <th className="py-4 px-3 sm:px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[18%] min-w-[160px]">
+                  TỒN KHO THEO SIZE
                 </th>
-                <th className="py-4 px-3 sm:px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[15%] min-w-[140px]">
-                  LẦN KIỂM KÊ
+                <th className="py-4 px-3 sm:px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[13%] min-w-[130px]">
+                  TÌNH TRẠNG KHO
                 </th>
-                <th className="py-4 px-3 pr-5 sm:pr-6 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[11%] min-w-[110px]">
+                <th className="py-4 px-3 pr-5 sm:pr-6 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[9%] min-w-[90px]">
                   THAO TÁC
                 </th>
               </tr>
@@ -608,12 +551,22 @@ export default function InventoryManagement() {
                             {item.rfid}
                           </span>
                         </div>
-                        <div className="text-[11.5px] text-[#8A797A] line-clamp-2 max-w-[280px]">
+                        <div className="text-[11.5px] text-[#8A797A] line-clamp-2 max-w-[260px]">
                           {item.description}
                         </div>
                       </td>
 
-                      {/* Col 3: Phân loại & Tồn size (Căn giữa) */}
+                      {/* Col 3: Giá thuê & Cọc */}
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <div className="font-bold text-[#733F49] text-[13.5px] leading-tight">
+                          {fmtVnd(item.rentPrice)}
+                        </div>
+                        <div className="text-[11px] text-[#8C7D7E] mt-1 font-medium">
+                          Cọc: <span className="font-semibold text-[#5F4E50]">{fmtVnd(item.depositAmount)}</span>
+                        </div>
+                      </td>
+
+                      {/* Col 4: Tồn kho theo size (Căn giữa) */}
                       <td className="py-4 px-4 text-center whitespace-nowrap">
                         <div className="flex flex-col items-center gap-1.5 mb-1">
                           <div className="flex flex-wrap items-center justify-center gap-1">
@@ -626,20 +579,15 @@ export default function InventoryManagement() {
                               </span>
                             ))}
                           </div>
-                          {item.outOfStockSize && (
-                            <span className="text-[11px] font-semibold text-[#D03B3B] text-center">
-                              {item.outOfStockSize}
-                            </span>
-                          )}
                           {item.totalUnits && (
-                            <span className="text-[11px] text-[#8C7D7E] text-center font-medium">
+                            <span className="text-[11.5px] text-[#5F4E50] text-center font-bold">
                               {item.totalUnits}
                             </span>
                           )}
                         </div>
                       </td>
 
-                      {/* Col 4: Tình trạng (Capsule badge đồng bộ với 4 card tổng quan) */}
+                      {/* Col 5: Tình trạng kho */}
                       <td className="py-4 px-4 text-center whitespace-nowrap">
                         {item.statusType === 'stored' && (
                           <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase whitespace-nowrap bg-[#EFF6FF] text-[#1D4ED8] border border-[#BFDBFE]">
@@ -659,34 +607,6 @@ export default function InventoryManagement() {
                             <span>Đang Bảo Dưỡng</span>
                           </span>
                         )}
-                        {item.statusType === 'pending' && (
-                          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase whitespace-nowrap bg-[#FDECEE] text-[#D03B3B] border border-[#FCA5A5]">
-                            <AlertTriangle size={13} className="text-[#D03B3B]" />
-                            <span>Đang Hậu Kiểm</span>
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Col 5: Lần kiểm kê */}
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        <div className="font-bold text-[#2C2523] text-[12.5px] leading-tight whitespace-nowrap">
-                          {item.inspectDate}
-                        </div>
-                        <div className="text-[11px] text-[#8C7D7E] mt-0.5 whitespace-nowrap">
-                          {item.inspector}
-                        </div>
-                        <div
-                          className={`text-[11.5px] font-semibold mt-0.5 whitespace-nowrap ${item.statusType === 'ready'
-                              ? 'text-[#1E8347]'
-                              : item.statusType === 'drying'
-                                ? 'text-[#D97706]'
-                                : item.statusType === 'pending'
-                                  ? 'text-[#D03B3B]'
-                                  : 'text-[#1D4ED8]'
-                            }`}
-                        >
-                          {item.inspectNote}
-                        </div>
                       </td>
 
                       {/* Col 6: Thao tác */}
@@ -694,17 +614,8 @@ export default function InventoryManagement() {
                         <div className="relative inline-flex items-center justify-center gap-1.5 text-[#736364]">
                           <button
                             type="button"
-                            onClick={() => handleConfirmInspection(item)}
-                            title="Xác nhận kiểm kê đạt chuẩn 10/10"
-                            className="p-1.5 rounded-lg hover:bg-[#F3E7E3] hover:text-[#733F49] transition-colors cursor-pointer"
-                          >
-                            <ClipboardCheck size={17} />
-                          </button>
-
-                          <button
-                            type="button"
                             onClick={() => setSelectedItem(item)}
-                            title="Xem chi tiết hồ sơ bảo quản"
+                            title="Xem chi tiết sản phẩm & tồn kho"
                             className="p-1.5 rounded-lg hover:bg-[#F3E7E3] hover:text-[#733F49] transition-colors cursor-pointer"
                           >
                             <Eye size={17} />
@@ -717,7 +628,7 @@ export default function InventoryManagement() {
                                 actionMenuOpenId === item.id ? null : item.id
                               )
                             }
-                            title="Chuyển trạng thái quy trình"
+                            title="Chuyển trạng thái kho"
                             className="p-1.5 rounded-lg hover:bg-[#F3E7E3] hover:text-[#733F49] transition-colors cursor-pointer"
                           >
                             <MoreVertical size={17} />
@@ -746,13 +657,6 @@ export default function InventoryManagement() {
                                 className="w-full px-3.5 py-2 text-xs text-[#C05621] hover:bg-[#FFF4E6] font-semibold block text-left transition-colors cursor-pointer"
                               >
                                 ♨ Chuyển Đang Bảo Dưỡng
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateItemStatus(item.id, 'pending', 'ĐANG HẬU KIỂM')}
-                                className="w-full px-3.5 py-2 text-xs text-[#D03B3B] hover:bg-[#FDECEE] font-semibold block text-left transition-colors cursor-pointer"
-                              >
-                                ⏱ Chuyển Đang Hậu Kiểm
                               </button>
                               <div className="h-px bg-[#F0E6E2] my-1" />
                               <button
@@ -829,7 +733,7 @@ export default function InventoryManagement() {
         </div>
       </div>
 
-      {/* Quick Details / Inspection Modal */}
+      {/* Quick Details / Product Inventory Modal */}
       {selectedItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-2xl lg:max-w-3xl w-full overflow-hidden shadow-2xl border border-[#EFE5E1] flex flex-col sm:flex-row relative">
@@ -868,10 +772,11 @@ export default function InventoryManagement() {
                   {selectedItem.description}
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 text-xs">
+                {/* Grid info: Tủ & Vi khí hậu */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 text-xs">
                   <div className="p-3 rounded-xl bg-[#FAF5F2] border border-[#F0E6E2]">
-                    <span className="text-[#8C7D7E] block mb-1">Vị trí tủ:</span>
-                    <div className="font-bold text-[#2C2523]">
+                    <span className="text-[#8C7D7E] block mb-1">Vị trí tủ lưu kho:</span>
+                    <div className="font-bold text-[#2C2523] text-[13px]">
                       {selectedItem.location}
                     </div>
                     <div className="text-[10.5px] text-[#8C7D7E] mt-0.5 font-mono">
@@ -880,9 +785,9 @@ export default function InventoryManagement() {
                   </div>
 
                   <div className="p-3 rounded-xl bg-[#FAF5F2] border border-[#F0E6E2]">
-                    <span className="text-[#8C7D7E] block mb-1">Chế độ vi khí hậu:</span>
-                    <div className="font-bold text-[#2563EB]">
-                      {selectedItem.conditionText}
+                    <span className="text-[#8C7D7E] block mb-1">Tiêu chuẩn bảo quản:</span>
+                    <div className="font-bold text-[#2563EB] text-[13px]">
+                      {selectedItem.conditionText || 'Kho Lạnh Tơ Tằm (19°C)'}
                     </div>
                     <div className="text-[10.5px] text-[#1E8347] mt-0.5 font-semibold">
                       Kiểm soát tự động 24/7
@@ -890,39 +795,57 @@ export default function InventoryManagement() {
                   </div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-[#FAF5F2] border border-[#F0E6E2] mb-5 text-xs flex items-center justify-between">
-                  <div>
-                    <span className="text-[#8C7D7E] block">Tình trạng kiểm kê:</span>
-                    <span className="font-bold text-[#1E8347]">
-                      {selectedItem.statusText || 'CÒN HÀNG'}
-                    </span>
+                {/* Bảng giá thuê & cọc */}
+                <div className="grid grid-cols-2 gap-3 mb-3 text-xs">
+                  <div className="p-3 rounded-xl bg-[#FFF6F3] border border-[#F5DDD8]">
+                    <span className="text-[#8C7D7E] block mb-0.5">Giá thuê trọn gói:</span>
+                    <div className="font-bold text-[#733F49] text-[14px]">
+                      {fmtVnd(selectedItem.rentPrice)}
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-[#8C7D7E] block">Kiểm định gần nhất:</span>
-                    <span className="font-semibold text-[#2C2523]">
-                      {selectedItem.inspectDate} ({selectedItem.inspector})
+                  <div className="p-3 rounded-xl bg-[#FFF6F3] border border-[#F5DDD8]">
+                    <span className="text-[#8C7D7E] block mb-0.5">Mức đặt cọc bảo chứng:</span>
+                    <div className="font-bold text-[#5F4E50] text-[14px]">
+                      {fmtVnd(selectedItem.depositAmount)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tồn kho theo size & Trạng thái */}
+                <div className="p-3 rounded-xl bg-[#FAF5F2] border border-[#F0E6E2] mb-4 text-xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[#8C7D7E] font-medium">Phân bổ tồn kho theo size:</span>
+                    <span className="font-bold text-[#2C2523]">{selectedItem.totalUnits}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {(Array.isArray(selectedItem.sizes) ? selectedItem.sizes : []).map((s, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center px-2 py-0.5 rounded-md bg-white border border-[#E8DCD7] text-[#733F49] font-bold text-[11px]"
+                      >
+                        {typeof s === 'object' && s?.label ? s.label : `Size ${s}`}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="pt-2 border-t border-[#EFE5E1] flex items-center justify-between">
+                    <span className="text-[#8C7D7E]">Tình trạng sản phẩm:</span>
+                    <span className={`font-bold uppercase text-[11px] ${
+                      selectedItem.statusType === 'stored' ? 'text-[#1D4ED8]' :
+                      selectedItem.statusType === 'ready' ? 'text-[#1E8347]' : 'text-[#D97706]'
+                    }`}>
+                      {selectedItem.statusText || 'CÒN HÀNG'}
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="pt-1">
                 <button
                   type="button"
                   onClick={() => setSelectedItem(null)}
-                  className="flex-1 py-2.5 rounded-xl border border-[#EFE5E1] text-xs font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
+                  className="w-full py-2.5 rounded-xl bg-[#733F49] text-xs font-bold text-white hover:bg-[#5C3038] shadow-xs transition-colors border-0 cursor-pointer"
                 >
-                  Đóng
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleConfirmInspection(selectedItem);
-                    setSelectedItem(null);
-                  }}
-                  className="flex-1 py-2.5 rounded-xl bg-[#733F49] text-xs font-bold text-white hover:bg-[#5C3038] shadow-xs transition-colors border-0 cursor-pointer"
-                >
-                  Xác Nhận Đạt Chuẩn 10/10
+                  Đóng Chi Tiết
                 </button>
               </div>
             </div>
@@ -933,7 +856,7 @@ export default function InventoryManagement() {
       {/* Modal Nhập Kho Mới */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-[#EFE5E1]">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-[#EFE5E1] max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#F0E6E2]">
               <div className="flex items-center gap-2">
                 <Plus size={18} className="text-[#733F49]" />
@@ -987,6 +910,35 @@ export default function InventoryManagement() {
                     placeholder="VD: Tủ A1, Tủ B2, Tủ VIP..."
                     value={newLocation}
                     onChange={(e) => setNewLocation(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-[#5F4E50] mb-1">
+                    Đơn Giá Thuê (VNĐ) *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="500000"
+                    value={newRentPrice}
+                    onChange={(e) => setNewRentPrice(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-[#5F4E50] mb-1">
+                    Tiền Đặt Cọc (VNĐ) *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="500000"
+                    value={newDepositAmount}
+                    onChange={(e) => setNewDepositAmount(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D]"
                   />
                 </div>
