@@ -117,14 +117,20 @@ export default function InventoryManagement() {
       return hasItem || mainMatch;
     });
 
-    // 1. Số lượng đang được khách thuê / chuẩn bị giao
+    // 1. Số lượng đơn đang trong chu trình kiểm định & bảo dưỡng sau thuê
+    const maintenanceOrders = matchedOrders.filter((o) =>
+      ['returned', 'inspecting', 'maintenance'].includes(o.rawStatus || o.status)
+    );
+    const maintenanceCount = maintenanceOrders.length;
+
+    // 2. Số lượng đang được khách thuê / chuẩn bị giao
     const rentingOrders = matchedOrders.filter((o) =>
       ['renting', 'delivered', 'preparing', 'deposit_paid'].includes(o.rawStatus || o.status)
     );
     const rentedCount = rentingOrders.length;
 
-    // 2. Số lượng khả dụng sẵn sàng phục vụ trong kho
-    const availableStock = Math.max(0, totalStock - rentedCount);
+    // 3. Số lượng khả dụng sẵn sàng phục vụ trong kho
+    const availableStock = Math.max(0, totalStock - rentedCount - maintenanceCount);
 
     // Xử lý trạng thái: Tự động vs Thủ công
     const manualStatus = override.statusType || null;
@@ -133,7 +139,14 @@ export default function InventoryManagement() {
     let statusSubNote = '';
 
     if (statusType === 'auto') {
-      if (availableStock <= 0 && totalStock > 0) {
+      if (maintenanceCount > 0) {
+        statusType = 'drying';
+        statusText = 'ĐANG BẢO DƯỠNG';
+        statusSubNote =
+          availableStock > 0
+            ? `Kiểm định sau thuê (${maintenanceCount} bộ) • Khả dụng: ${availableStock}`
+            : `Đang kiểm định & bảo dưỡng (${maintenanceCount} bộ)`;
+      } else if (availableStock <= 0 && totalStock > 0) {
         statusType = 'out_of_stock';
         statusText = 'HẾT HÀNG';
         statusSubNote = `Đã xuất thuê toàn bộ (${totalStock} bộ)`;
@@ -148,7 +161,7 @@ export default function InventoryManagement() {
       }
     } else if (statusType === 'drying') {
       statusText = 'ĐANG BẢO DƯỠNG';
-      statusSubNote = 'Giặt khô, là hơi phục hồi';
+      statusSubNote = maintenanceCount > 0 ? `Đang kiểm định & bảo dưỡng (${maintenanceCount} bộ)` : 'Giặt khô, là hơi phục hồi';
     } else if (statusType === 'ready') {
       statusText = 'ĐÃ CHO THUÊ';
       statusSubNote = 'Đang phục vụ cô dâu';
@@ -175,6 +188,7 @@ export default function InventoryManagement() {
       totalStock,
       availableStock,
       rentedCount,
+      maintenanceCount,
       sizes: sizeList,
       totalUnits: `Tổng: ${String(totalStock).padStart(2, '0')} bộ`,
       description: override.description || d.description || 'Lễ phục cưới cao cấp UniBridal Haute Couture',
@@ -246,6 +260,8 @@ export default function InventoryManagement() {
       const matchStatus =
         statusFilter === 'all' ||
         item.statusType === statusFilter ||
+        (statusFilter === 'drying' &&
+          (item.statusType === 'drying' || (item.maintenanceCount && item.maintenanceCount > 0))) ||
         (statusFilter === 'stored' && item.statusType === 'partially_rented') ||
         (statusFilter === 'ready' &&
           (item.statusType === 'out_of_stock' ||
@@ -501,8 +517,10 @@ export default function InventoryManagement() {
       i.statusType === 'out_of_stock'
   ).length;
 
-  // 4. Tổng số mẫu đang bảo dưỡng (giặt khô, là hơi phục hồi vi khí hậu)
-  const maintenanceCount = items.filter((i) => i.statusType === 'drying').length;
+  // 4. Tổng số mẫu đang bảo dưỡng (giặt khô, là hơi hoặc váy của các đơn đang kiểm định sau thuê)
+  const maintenanceCount = items.filter(
+    (i) => i.statusType === 'drying' || (i.maintenanceCount && i.maintenanceCount > 0)
+  ).length;
 
   const selectedFilterLabel =
     statusOptions.find((o) => o.value === statusFilter)?.label || 'Tất Cả Tình Trạng';
@@ -649,7 +667,7 @@ export default function InventoryManagement() {
             </div>
           </div>
           <div className="mt-4 flex items-center gap-1.5 text-[11.5px] text-[#B45309] font-medium">
-            <span>Giặt khô, là hơi vi khí hậu phục hồi</span>
+            <span>Kiểm định sau thuê &amp; bảo dưỡng giặt hấp</span>
           </div>
         </div>
       </div>
