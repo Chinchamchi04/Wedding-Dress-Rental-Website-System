@@ -153,12 +153,13 @@ export async function submitReturnInspection(orderId, inspectionData) {
 }
 
 /**
- * Khách hàng đồng ý biên bản kiểm định -> Tự động hoàn cọc
+ * Khách hàng đồng ý biên bản kiểm định -> Tự động hoàn cọc và cập nhật STK ngân hàng
  * @param {string} orderId
+ * @param {Object} bankData - { bankName, accountNumber, accountHolder, notes }
  */
-export async function approveReturnInspection(orderId) {
+export async function approveReturnInspection(orderId, bankData = {}) {
   try {
-    const res = await axiosClient.post(`/orders/${orderId}/inspection/approve`);
+    const res = await axiosClient.post(`/orders/${orderId}/inspection/approve`, bankData);
     return res.data;
   } catch (error) {
     throw error;

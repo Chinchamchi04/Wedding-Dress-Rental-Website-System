@@ -65,6 +65,12 @@ const returnInspectionSchema = new mongoose.Schema(
       type: Number,
       required: true, // Tiền hoàn trả khách = Cọc ban đầu - Tổng khấu trừ
     },
+    refundBankDetails: {
+      bankName: { type: String, default: '' },
+      accountNumber: { type: String, default: '' },
+      accountHolder: { type: String, default: '' },
+      notes: { type: String, default: '' },
+    },
     isRefunded: {
       type: Boolean,
       default: false,

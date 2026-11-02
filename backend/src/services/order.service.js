@@ -330,9 +330,10 @@ export const getReturnInspection = async (orderId) => {
 /**
  * Khách hàng đồng ý biên bản kiểm định -> Hệ thống tự động hoàn cọc và hoàn tất đơn hàng
  * @param {string} orderId
+ * @param {Object} bankData - { bankName, accountNumber, accountHolder, notes }
  * @param {Object} customerUser
  */
-export const approveReturnInspection = async (orderId, customerUser) => {
+export const approveReturnInspection = async (orderId, bankData = {}, customerUser) => {
   const order = await Order.findById(orderId);
   if (!order) throw new Error('Không tìm thấy đơn hàng.');
 
@@ -343,10 +344,20 @@ export const approveReturnInspection = async (orderId, customerUser) => {
     return { order, inspection, message: 'Biên bản đã được xác nhận trước đó.' };
   }
 
+  const { bankName, accountNumber, accountHolder, notes } = bankData || {};
+
   inspection.customerStatus = 'approved';
   inspection.customerConfirmedAt = new Date();
   inspection.isRefunded = true;
   inspection.refundedAt = new Date();
+  if (bankName || accountNumber || accountHolder) {
+    inspection.refundBankDetails = {
+      bankName: bankName ? String(bankName).trim() : '',
+      accountNumber: accountNumber ? String(accountNumber).trim() : '',
+      accountHolder: accountHolder ? String(accountHolder).trim().toUpperCase() : '',
+      notes: notes ? String(notes).trim() : '',
+    };
+  }
   await inspection.save();
 
   order.status = 'completed';
@@ -371,6 +382,7 @@ export const approveReturnInspection = async (orderId, customerUser) => {
         fullName: customerName,
         orderCode: order.orderCode,
         finalRefundAmount: inspection.finalRefundAmount,
+        bankDetails: inspection.refundBankDetails,
       }).catch((err) => console.error('[EMAIL REFUND SEND ERROR]', err.message));
     }
   } catch (err) {

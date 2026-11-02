@@ -253,9 +253,22 @@ export async function sendRefundConfirmationEmail({
   fullName = 'Quý khách',
   orderCode,
   finalRefundAmount = 0,
+  bankDetails = null,
 }) {
   const transporter = createTransporter();
   const formatMoney = (amount) => Number(amount || 0).toLocaleString('vi-VN') + ' đ';
+
+  const bankHtml = bankDetails?.accountNumber
+    ? `
+      <div style="background: #F8F5F2; border: 1px dashed #D5C2B9; border-radius: 10px; padding: 14px 18px; margin: 18px 0; font-size: 13px; line-height: 1.6;">
+        <strong style="color: #5F2B36; display: block; margin-bottom: 6px; font-size: 13.5px;">Thông tin tài khoản nhận hoàn cọc:</strong>
+        <div>• Ngân hàng thụ hưởng: <strong>${bankDetails.bankName || 'Ngân hàng nội địa'}</strong></div>
+        <div>• Số tài khoản (STK): <strong style="letter-spacing: 1px;">${bankDetails.accountNumber}</strong></div>
+        <div>• Chủ tài khoản: <strong>${bankDetails.accountHolder || fullName}</strong></div>
+        ${bankDetails.notes ? `<div>• Ghi chú: <em>${bankDetails.notes}</em></div>` : ''}
+      </div>
+    `
+    : '';
 
   const html = `
     <div style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #FDFBF7; border: 1px solid #E6DAC8; border-radius: 16px; overflow: hidden; color: #2C2523;">
@@ -276,8 +289,10 @@ export async function sendRefundConfirmationEmail({
 
         <p style="font-size: 14px; line-height: 1.7; color: #514344;">
           Kính chào <strong>${fullName}</strong>,<br>
-          Cảm ơn nàng đã xác nhận biên bản kiểm định. Hệ thống UniBridal đã tiến hành hoàn trả khoản tiền cọc <strong>${formatMoney(finalRefundAmount)}</strong> theo đúng quy chuẩn hợp đồng thuê váy.
+          Cảm ơn nàng đã xác nhận biên bản kiểm định. Hệ thống UniBridal đã tiến hành quyết toán và hoàn trả khoản tiền cọc <strong>${formatMoney(finalRefundAmount)}</strong> theo đúng quy chuẩn hợp đồng thuê váy.
         </p>
+
+        ${bankHtml}
 
         <p style="font-size: 13.5px; line-height: 1.7; color: #514344;">
           UniBridal xin gửi lời chúc phúc sâu sắc và trân trọng cảm ơn nàng đã tin tưởng đồng hành cùng chúng tôi trong ngày trọng đại nhất cuộc đời!

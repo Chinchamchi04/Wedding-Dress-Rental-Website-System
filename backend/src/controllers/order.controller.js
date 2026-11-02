@@ -112,7 +112,7 @@ export const getReturnInspection = async (req, res, next) => {
 
 export const approveReturnInspection = async (req, res, next) => {
   try {
-    const result = await orderService.approveReturnInspection(req.params.id, req.user);
+    const result = await orderService.approveReturnInspection(req.params.id, req.body, req.user);
     res.status(200).json({
       success: true,
       message: 'Khách hàng đã đồng ý biên bản kiểm định. Hệ thống đã tự động hoàn cọc và hoàn tất đơn hàng!',

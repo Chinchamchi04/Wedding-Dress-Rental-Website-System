@@ -230,6 +230,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
 
   const [customerStatus, setCustomerStatus] = useState('pending');
   const [disputeReason, setDisputeReason] = useState('');
+  const [refundBankDetails, setRefundBankDetails] = useState(null);
 
   const [itemsCondition, setItemsCondition] = useState(
     () =>
@@ -253,6 +254,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
         if (insp && (insp.itemsCondition || insp.totalDeduction !== undefined)) {
           if (insp.customerStatus) setCustomerStatus(insp.customerStatus);
           if (insp.disputeReason) setDisputeReason(insp.disputeReason);
+          if (insp.refundBankDetails) setRefundBankDetails(insp.refundBankDetails);
           if (insp.evidencePhotos?.length) {
             setEvidencePhotos(insp.evidencePhotos);
           }
@@ -391,11 +393,22 @@ function InspectionModal({ order, onClose, onSuccess }) {
           )}
 
           {customerStatus === 'approved' && (
-            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2">
-              <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-              <span>
-                <strong>Khách hàng đã đồng ý biên bản này.</strong> Hệ thống đã tự động quyết toán và hoàn cọc cho khách.
-              </span>
+            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 space-y-1.5">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                <span>
+                  <strong>Khách hàng đã đồng ý biên bản.</strong> Hệ thống đã tự động quyết toán và hoàn cọc cho khách.
+                </span>
+              </div>
+              {refundBankDetails?.accountNumber && (
+                <div className="p-2.5 rounded-lg bg-white/90 border border-emerald-200 text-[11.5px] text-[#2C2523] space-y-0.5">
+                  <div className="font-bold text-emerald-900 mb-1">Tài khoản nhận tiền hoàn cọc của khách:</div>
+                  <div>• Ngân hàng: <strong>{refundBankDetails.bankName || 'Ngân hàng nội địa'}</strong></div>
+                  <div>• Số tài khoản (STK): <strong className="font-mono text-[12px]">{refundBankDetails.accountNumber}</strong></div>
+                  <div>• Chủ tài khoản: <strong>{refundBankDetails.accountHolder}</strong></div>
+                  {refundBankDetails.notes && <div>• Ghi chú: <em>{refundBankDetails.notes}</em></div>}
+                </div>
+              )}
             </div>
           )}
 
@@ -1290,26 +1303,15 @@ export default function OrderRentalManagement() {
                               <span>Kiểm Định Trả Váy</span>
                             </button>
                           ) : order.status === 'returned' ? (
-                            <div className="inline-flex items-center gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => setInspectionOrder(order)}
-                                title="Xem lại biên bản kiểm định hiện trạng"
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#FAF0EB] text-[#733F49] text-[11.5px] font-bold hover:bg-[#F3E2DB] transition-all cursor-pointer border border-[#ECD9D3]"
-                              >
-                                <Eye size={12} />
-                                <span>Xem Kiểm Định</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setRefundOrder(order)}
-                                title="Bước 2: Quyết toán & Hoàn trả tiền cọc cho khách"
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1E8347] text-white text-[12px] font-bold hover:bg-[#166534] shadow-xs transition-all cursor-pointer"
-                              >
-                                <Banknote size={13} />
-                                <span>Hoàn Cọc</span>
-                              </button>
-                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setInspectionOrder(order)}
+                              title="Xem biên bản kiểm định hiện trạng (Chờ khách duyệt & nhận hoàn cọc tự động)"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF0EB] text-[#733F49] text-[12px] font-bold hover:bg-[#F3E2DB] transition-all cursor-pointer border border-[#ECD9D3]"
+                            >
+                              <Eye size={13} />
+                              <span>Xem Kiểm Định</span>
+                            </button>
                           ) : (
                             <UpdateStatusDropdown
                               order={order}
