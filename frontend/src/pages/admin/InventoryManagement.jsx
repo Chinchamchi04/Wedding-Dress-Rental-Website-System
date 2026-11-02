@@ -570,8 +570,31 @@ export default function InventoryManagement() {
 
       {/* 4 Top Metric Cards: Tổng số váy, Tổng số mẫu, Tổng số mẫu đang cho thuê, Tổng số mẫu đang bảo dưỡng */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {/* Card 1: TỔNG SỐ VÁY */}
-        <div className="bg-white rounded-2xl border border-[#C6EED1] p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+        {/* Card 1: TỔNG MẪU THIẾT KẾ (Ánh hồng thanh lịch) */}
+        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FDE8EC_0%,_transparent_70%)] rounded-2xl border border-[#FAD2DA] p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-bold tracking-[1.2px] text-[#733F49] uppercase">
+                TỔNG MẪU THIẾT KẾ
+              </span>
+              <div className="w-10 h-10 rounded-xl bg-[#FAF0EC] flex items-center justify-center text-[#733F49]">
+                <Layers size={18} />
+              </div>
+            </div>
+            <div className="flex items-baseline">
+              <span className="text-[32px] font-bold text-[#2C2523] leading-none">
+                {totalCount}
+              </span>
+              <span className="text-[12px] font-medium text-[#8C7D7E] ml-2">mẫu thiết kế</span>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-1.5 text-[11.5px] text-[#733F49] font-medium">
+            <span>Toàn bộ mẫu váy đang lưu trữ</span>
+          </div>
+        </div>
+
+        {/* Card 2: TỔNG SỐ VÁY (Ánh xanh lá dịu mát) */}
+        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EAF8EE_0%,_transparent_70%)] rounded-2xl border border-[#C6EED1] p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#1E8347] uppercase">
@@ -590,30 +613,7 @@ export default function InventoryManagement() {
           </div>
           <div className="mt-4 flex items-center gap-1.5 text-[11.5px] text-[#1E8347] font-medium">
             <Check size={13} />
-            <span>Tổng số lượng tính theo tất cả size</span>
-          </div>
-        </div>
-
-        {/* Card 2: TỔNG SỐ MẪU */}
-        <div className="bg-white rounded-2xl border border-[#EFE5E1] p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-bold tracking-[1.2px] text-[#733F49] uppercase">
-                TỔNG SỐ MẪU
-              </span>
-              <div className="w-10 h-10 rounded-xl bg-[#FAF0EC] flex items-center justify-center text-[#733F49]">
-                <Layers size={18} />
-              </div>
-            </div>
-            <div className="flex items-baseline">
-              <span className="text-[32px] font-bold text-[#2C2523] leading-none">
-                {totalCount}
-              </span>
-              <span className="text-[12px] font-medium text-[#8C7D7E] ml-2">mẫu thiết kế</span>
-            </div>
-          </div>
-          <div className="mt-4 flex items-center gap-1.5 text-[11.5px] text-[#733F49] font-medium">
-            <span>Toàn bộ mẫu váy đang lưu trữ</span>
+            <span>Tính tổng trên tất cả kích cỡ size</span>
           </div>
         </div>
 
