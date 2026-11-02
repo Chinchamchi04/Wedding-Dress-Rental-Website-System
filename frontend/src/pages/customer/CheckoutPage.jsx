@@ -44,7 +44,7 @@ import { message } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
-import { MOCK_DRESSES } from '../../services/dressService';
+import { getDressById } from '../../services/dressService';
 import { getCart } from '../../services/cartService';
 import { getDressBookedDates } from '../../services/orderService';
 import { HIEU_SIGNATURE_BASE64 } from '../../assets/images/signatureHieuBase64';
@@ -150,19 +150,36 @@ export default function CheckoutPage() {
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
   const [qrImgError, setQrImgError] = useState(false);
 
-  // Dynamic Selected Dress
-  const activeDress = useMemo(() => {
-    if (dressIdParam) {
-      const found = MOCK_DRESSES.find((d) => String(d.id) === String(dressIdParam));
-      if (found) return found;
-    }
+  // Dynamic Selected Dress from Cart or Database
+  const [activeDress, setActiveDress] = useState(() => {
     const cart = getCart();
-    if (cart && cart.length > 0) {
-      const first = cart[0];
-      const found = MOCK_DRESSES.find((d) => String(d.id) === String(first.id));
-      if (found) return found;
+    if (cart && cart.length > 0) return cart[0];
+    return null;
+  });
+  const [dbError, setDbError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    if (dressIdParam) {
+      getDressById(dressIdParam)
+        .then((res) => {
+          if (!active) return;
+          if (res?.data) setActiveDress(res.data);
+          else if (res?.success === false) setDbError(res.message || 'Lỗi kết nối cơ sở dữ liệu.');
+        })
+        .catch(() => {
+          if (!active) return;
+          setDbError('Lỗi kết nối cơ sở dữ liệu: Không thể tải thông tin lễ phục từ MongoDB.');
+        });
+    } else {
+      const cart = getCart();
+      if (cart && cart.length > 0) {
+        setActiveDress(cart[0]);
+      } else {
+        setActiveDress(null);
+      }
     }
-    return MOCK_DRESSES[0];
+    return () => { active = false; };
   }, [dressIdParam]);
 
   // Current Active Wizard Step: 1 = Thông Tin & Số Đo, 2 = Ký Hợp Đồng Điện Tử, 3 = Đặt Cọc & Thanh Toán

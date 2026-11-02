@@ -323,11 +323,33 @@ export default function DressDetailPage() {
     }, 3800);
   };
 
-  if (loading || !dress) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#FDFBF7] flex flex-col justify-center items-center font-jakarta">
         <div className="w-12 h-12 border-3 border-[#B8737D] border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-[#5A4B4B] text-[15px] tracking-wide">Đang tải tuyệt tác váy cưới...</p>
+        <p className="text-[#5A4B4B] text-[15px] tracking-wide">Đang tải tuyệt tác váy cưới từ cơ sở dữ liệu...</p>
+      </div>
+    );
+  }
+
+  if (!dress) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF7] flex flex-col justify-between font-jakarta">
+        <Header />
+        <div className="max-w-md w-full mx-auto my-16 bg-white p-8 rounded-2xl border border-red-100 shadow-xl text-center">
+          <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 text-xl">⚠️</div>
+          <h2 className="text-xl font-bold text-[#2C2424] mb-2 font-playfair">Lỗi kết nối Cơ sở dữ liệu</h2>
+          <p className="text-sm text-stone-600 mb-6">
+            Không thể tải thông tin mẫu váy cưới từ máy chủ MongoDB. Vui lòng kiểm tra kết nối mạng và dịch vụ cơ sở dữ liệu.
+          </p>
+          <button
+            onClick={() => navigate('/collection')}
+            className="px-6 py-2.5 rounded-xl bg-[#733F49] text-white text-xs font-bold tracking-wider uppercase hover:bg-[#5C3038] transition-colors"
+          >
+            Quay lại Bộ Sưu Tập
+          </button>
+        </div>
+        <Footer />
       </div>
     );
   }

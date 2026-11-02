@@ -74,42 +74,34 @@ export default function CollectionPage() {
   const [toastMessage, setToastMessage] = useState(null);
 
   // Danh mục sản phẩm (kết hợp dữ liệu chuẩn Figma 72 mẫu + backend API nếu có)
-  const [catalogItems, setCatalogItems] = useState(DRESS_CATALOG);
+  const [catalogItems, setCatalogItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
+    setError('');
     getAllDresses()
       .then((res) => {
         if (!active) return;
-        const apiDresses = res?.data;
-        if (Array.isArray(apiDresses) && apiDresses.length > 0) {
-          // Kết nối backend nếu có dữ liệu mới
-          const merged = [...DRESS_CATALOG];
-          apiDresses.forEach((d) => {
-            const foundIndex = merged.findIndex(
-              (m) => String(m.id) === String(d.id || d._id) || String(m.code) === String(d.code)
-            );
-            if (foundIndex >= 0) {
-              const priceNum = d.price || d.rentPrice || merged[foundIndex].priceNumber || 5200000;
-              const depositNum = d.depositAmount || merged[foundIndex].depositAmount || 15000000;
-              merged[foundIndex] = {
-                ...merged[foundIndex],
-                ...d,
-                name: d.name || merged[foundIndex].name,
-                priceNumber: priceNum,
-                price: formatCurrencyVND(priceNum),
-                depositAmount: formatCurrencyVND(depositNum),
-                depositPolicy: '(Hoàn cọc tức thì)',
-                status: d.status || merged[foundIndex].status,
-                image: (d.images && d.images[0]) || merged[foundIndex].image,
-              };
-            }
-          });
-          setCatalogItems(merged);
+        if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
+          setCatalogItems(res.data);
+          setError('');
+        } else if (res?.success === false) {
+          setCatalogItems([]);
+          setError(res.message || 'Lỗi kết nối cơ sở dữ liệu: Không thể tải sản phẩm từ MongoDB.');
+        } else {
+          setCatalogItems([]);
+          setError('Không có sản phẩm nào trong cơ sở dữ liệu.');
         }
+        setLoading(false);
       })
-      .catch(() => {
-        // Fallback giữ nguyên 72 mẫu thiết kế độc bản
+      .catch((err) => {
+        if (!active) return;
+        setCatalogItems([]);
+        setError('Lỗi kết nối cơ sở dữ liệu: Không thể kết nối đến máy chủ MongoDB.');
+        setLoading(false);
       });
 
     return () => {

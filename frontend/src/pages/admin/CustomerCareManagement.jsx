@@ -48,108 +48,9 @@ const WEDDING_EMOJIS = [
   '🕊️', '🌹', '❤️', '👏', '🙏', '👍', '😍', '😘'
 ];
 
-const INITIAL_CONVERSATIONS = [
-  {
-    id: 'init_1',
-    name: 'Nguyễn Thảo Linh',
-    avatar: card1Elysian,
-    online: true,
-    time: '14:32',
-    lastMessage: 'Em muốn chỉnh hạ eo thêm 1.5cm cho mẫu Elysian Rose...',
-    unread: false,
-    messages: [
-      {
-        id: 101,
-        sender: 'staff',
-        text: 'Chị gửi Linh ảnh cận cảnh mũi thêu đính kết cườm hoa hồng 3D xưởng vừa lên khung xong trưa nay nhé!',
-        time: '14:25',
-        status: 'Đã xem',
-      },
-      {
-        id: 102,
-        sender: 'customer',
-        text: 'Dạ tuyệt quá chị ơi! Vậy chị chốt lưu số đo chỉnh hạ eo thêm 1.5cm cho mẫu Elysian Rose giúp em vào hợp đồng nhé ạ! Hôm 15/11 em đến thử trực tiếp nha.',
-        time: '14:32',
-        status: 'Vừa nhận',
-      },
-    ],
-  },
-  {
-    id: 'init_2',
-    name: 'Lê Hoàng Yến',
-    avatar: card2Celeste,
-    online: false,
-    time: '14:15',
-    lastMessage: 'Cho em xin thông tin chuyển cọc hợp đồng #HD-2025-089',
-    unread: true,
-    messages: [
-      {
-        id: 201,
-        sender: 'customer',
-        text: 'Cho em xin thông tin chuyển cọc hợp đồng #HD-2025-089 với ạ, em chuyển khoản qua Vietcombank nha chị.',
-        time: '14:15',
-        status: 'Chưa đọc',
-      },
-    ],
-  },
-  {
-    id: 'init_3',
-    name: 'Trần Mai Phương',
-    avatar: card3Lumiere,
-    online: false,
-    time: '13:40',
-    lastMessage: 'Bộ voan cài đầu Cathedral có sẵn ở showroom Nam Kỳ...',
-    unread: true,
-    messages: [
-      {
-        id: 301,
-        sender: 'customer',
-        text: 'Bộ voan cài đầu Cathedral có sẵn ở showroom Nam Kỳ Khởi Nghĩa không chị ơi?',
-        time: '13:40',
-        status: 'Chưa đọc',
-      },
-    ],
-  },
-  {
-    id: 'init_4',
-    name: 'Đặng Ngọc Hà',
-    avatar: card4Monet,
-    online: false,
-    time: '11:20',
-    lastMessage: 'Lịch fitting ngày 20/11 em có thể đổi sang buổi chiều...',
-    unread: true,
-    messages: [
-      {
-        id: 401,
-        sender: 'customer',
-        text: 'Lịch fitting ngày 20/11 em có thể đổi sang buổi chiều khoảng 15h được không ạ?',
-        time: '11:20',
-        status: 'Chưa đọc',
-      },
-    ],
-  },
-  {
-    id: 'init_5',
-    name: 'Bùi Phương Anh',
-    avatar: heroBride,
-    online: false,
-    time: 'Hôm qua',
-    lastMessage: 'Dạ em đã nhận được vali váy cưới rồi, đẹp xuất sắc luôn ạ!',
-    unread: false,
-    messages: [
-      {
-        id: 501,
-        sender: 'customer',
-        text: 'Dạ em đã nhận được vali váy cưới rồi, đẹp xuất sắc luôn ạ! Cảm ơn đội ngũ UniBridal rất nhiều!',
-        time: 'Hôm qua',
-        status: 'Đã xem',
-      },
-    ],
-  },
-];
-
 export default function CustomerCareManagement() {
-  const [conversations, setConversations] = useState(INITIAL_CONVERSATIONS);
+  const [conversations, setConversations] = useState([]);
+  const [aptError, setAptError] = useState('');
   const [selectedId, setSelectedId] = useState(null);
   const [activeMessages, setActiveMessages] = useState([]);
   const [filterTab, setFilterTab] = useState('all'); // all | unread
@@ -172,12 +73,41 @@ export default function CustomerCareManagement() {
 
   const fetchAppointments = useCallback(async () => {
     setAptLoading(true);
+    setAptError('');
     try {
       const res = await getAppointmentsApi();
       const list = Array.isArray(res?.data) ? res.data : (res?.data?.data || []);
       setAppointments(list);
-    } catch {
-      // ignore
+      if (list.length > 0) {
+        const liveConvos = list.map((apt, idx) => ({
+          id: apt._id || apt.id || `apt_${idx + 1}`,
+          name: apt.customerName || apt.fullName || 'Khách hàng',
+          avatar: (apt.items && apt.items[0]?.image) || apt.avatar || '/assets/dresses/dress_01.jpg',
+          online: idx % 2 === 0,
+          time: apt.rentalStartDate ? new Date(apt.rentalStartDate).toLocaleDateString('vi-VN') : 'Gần đây',
+          lastMessage: `Lịch hẹn thử váy tại ${apt.branch || 'Showroom'} lúc ${apt.timeSlot || '09:00 - 10:30'}`,
+          unread: apt.status === 'pending',
+          messages: [
+            {
+              id: 1,
+              sender: 'customer',
+              text: `Chào Atelier, em muốn đặt lịch hẹn thử mẫu váy cưới ${apt.dressName || 'Haute Couture'} vào lúc ${apt.timeSlot || '09:00 - 10:30'} ngày ${apt.appointmentDate || apt.date || 'sắp tới'} ạ.`,
+              time: 'Gần đây',
+              status: apt.status === 'pending' ? 'Chưa đọc' : 'Đã xem',
+            },
+          ],
+        }));
+        setConversations(liveConvos);
+        setSelectedId((prev) => prev || liveConvos[0].id);
+        setActiveMessages(liveConvos[0].messages);
+      } else {
+        setConversations([]);
+      }
+    } catch (err) {
+      console.error('Error fetching appointments:', err);
+      setAppointments([]);
+      setConversations([]);
+      setAptError('Lỗi kết nối cơ sở dữ liệu: Không thể lấy danh sách lịch hẹn và chăm sóc khách hàng từ MongoDB.');
     } finally {
       setAptLoading(false);
     }

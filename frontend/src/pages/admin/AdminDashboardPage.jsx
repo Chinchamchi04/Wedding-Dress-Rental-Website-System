@@ -8,38 +8,29 @@ import { getAdminDashboard } from '../../services/reportService';
 const PERIODS = { week: '7 ngày qua', month: 'Tháng này', quarter: 'Quý này', year: 'Năm nay' };
 const money = (value) => formatCurrencyVND(value);
 
-const MOCK_ADMIN_DASHBOARD = {
-  orderValue: 145000000,
-  revenue: 84600000,
-  totalOrders: 32,
-  completedOrders: 28,
-  members: 146,
-  ordersMissingDepositTransaction: 0,
-  chart: [
-    { label: '01/11', orderValue: 28000000 },
-    { label: '08/11', orderValue: 42000000 },
-    { label: '15/11', orderValue: 35000000 },
-    { label: '22/11', orderValue: 40000000 },
-  ],
-};
-
 export default function AdminDashboardPage() {
   const [period, setPeriod] = useState('month');
-  const [data, setData] = useState(MOCK_ADMIN_DASHBOARD);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     let active = true;
     setError('');
+    setLoading(true);
     getAdminDashboard(period)
       .then((value) => {
         if (!active) return;
         if (value) {
-          setData(value);
+          setData(value?.data || value);
         }
+        setLoading(false);
       })
-      .catch(() => {
-        if (active) setData(MOCK_ADMIN_DASHBOARD);
+      .catch((err) => {
+        if (!active) return;
+        setData(null);
+        setError('Lỗi kết nối cơ sở dữ liệu: Không thể tải dữ liệu thống kê quản trị từ máy chủ MongoDB.');
+        setLoading(false);
       });
     return () => {
       active = false;
@@ -87,7 +78,11 @@ export default function AdminDashboardPage() {
       subtitle="Chỉ số hoạt động & phân tích tài chính UniBridal 2026"
       activeNav="dashboard"
     >
-      {error && <p role="alert" className="mb-4 text-sm text-red-700">{error}</p>}
+      {error && (
+        <div role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <span className="font-semibold">⚠️ Lỗi kết nối Cơ sở dữ liệu:</span> {error}
+        </div>
+      )}
       {data?.ordersMissingDepositTransaction > 0 && (
         <p role="alert" className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
           {data.ordersMissingDepositTransaction} đơn đã chuyển sang trạng thái đặt cọc nhưng chưa có giao dịch cọc thành công trong hệ thống. Cần đối soát trước khi xác nhận tiền thực thu.

@@ -88,7 +88,8 @@ const renderDepositWithDong = (amountVal) => {
 const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: propWishlistedIds }) => {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
-  const [items, setItems] = useState(products);
+  const [items, setItems] = useState([]);
+  const [error, setError] = useState('');
   const [internalWishlistIds, setInternalWishlistIds] = useState(() => getWishlistIds());
 
   useEffect(() => {
@@ -111,23 +112,30 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
           const mapped = res.data.slice(0, 4).map((d, index) => ({
             id: d.id || d._id || index + 1,
             slug: d.slug,
-            name: d.name || products[index]?.name,
-            badgeMain: d.collectionTag?.split(' ')?.[0] || products[index]?.badgeMain || 'HAUTE COUTURE',
-            badgeSub: d.silhouette ? `Dáng ${d.silhouette}` : products[index]?.badgeSub || 'Có sẵn',
+            name: d.name,
+            badgeMain: d.collectionTag?.split(' ')?.[0] || 'HAUTE COUTURE',
+            badgeSub: d.silhouette ? `Dáng ${d.silhouette}` : 'Có sẵn',
             rating: Number(d.rating || 4.9).toFixed(1),
             rentCount: `${d.rentCount || 88} lượt thuê`,
             size: d.sizes?.length
               ? `Size: ${d.sizes.map((s) => (typeof s === 'string' ? s : s.id || s.label)).join(' - ')}`
               : 'Size: S - M',
-            price: d.price || d.rentPrice || products[index]?.price,
-            depositAmount: d.depositAmount || products[index]?.depositAmount,
-            image: dressImage(d) || products[index]?.image || card1Img,
+            price: d.price || d.rentPrice || 5000000,
+            depositAmount: d.depositAmount || 15000000,
+            image: dressImage(d) || card1Img,
           }));
           setItems(mapped);
+          setError('');
+        } else if (isMounted) {
+          setItems([]);
+          setError('Lỗi kết nối cơ sở dữ liệu: Không có dữ liệu váy cưới từ MongoDB.');
         }
       })
-      .catch(() => {
-        // Fallback default products
+      .catch((err) => {
+        if (isMounted) {
+          setItems([]);
+          setError('Lỗi kết nối cơ sở dữ liệu: Không thể kết nối tới máy chủ MongoDB.');
+        }
       });
 
     return () => {

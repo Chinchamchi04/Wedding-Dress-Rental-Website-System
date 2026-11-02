@@ -41,7 +41,7 @@ import {
   createAppointment,
   createAppointmentApi,
 } from '../../services/appointmentService';
-import { MOCK_DRESSES, getAllDresses } from '../../services/dressService';
+import { getAllDresses } from '../../services/dressService';
 
 // Helper: Format Vietnamese Date
 function formatVietnameseDate(dateStr) {
@@ -171,7 +171,8 @@ export default function AppointmentPage() {
   );
 
   // Selected Dress Objects
-  const [availableDresses, setAvailableDresses] = useState(MOCK_DRESSES);
+  const [availableDresses, setAvailableDresses] = useState([]);
+  const [dbError, setDbError] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -192,7 +193,11 @@ export default function AppointmentPage() {
           }
         }
       }
-    }).catch(() => { });
+    }).catch((err) => {
+      console.error('Error loading dresses:', err);
+      setAvailableDresses([]);
+      setDbError('Lỗi kết nối cơ sở dữ liệu: Không thể tải danh sách lễ phục từ máy chủ.');
+    });
     return () => { active = false; };
   }, []);
 

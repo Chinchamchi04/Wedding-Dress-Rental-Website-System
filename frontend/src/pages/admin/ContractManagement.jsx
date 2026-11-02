@@ -74,132 +74,11 @@ const DRESS_OPTIONS = [
   }
 ];
 
-const MOCK_CONTRACTS = [
-  {
-    id: 'HD-UB-2026-089',
-    customerName: 'Nguyễn Khánh Linh',
-    phone: '0912 345 678',
-    idCard: '001198012345',
-    dressName: 'Elysian Rose Ballgown',
-    dressCode: 'BGW-2026',
-    dressSize: 'Size S (Eo 62-66cm)',
-    dressImage: 'https://images.unsplash.com/photo-1594552072238-b8a33785b261?auto=format&fit=crop&w=600&q=80',
-    templateName: 'Hợp đồng Thuê Váy Cưới Haute Couture Tiêu Chuẩn',
-    startDate: '2026-10-24',
-    endDate: '2026-10-27',
-    rentalPrice: 5200000,
-    depositAmount: 15000000,
-    totalValue: 20200000,
-    status: 'active',
-    signedAt: '2026-10-20 14:30',
-    signedMethod: 'SmartOTP eID',
-    staffInCharge: 'Trần Bích Ngọc',
-    packageType: 'Gói 3 Ngày Tiêu Chuẩn',
-    note: 'Đã fitting tinh chỉnh eo giảm 1.5cm ngày 19/10.'
-  },
-  {
-    id: 'HD-UB-2026-088',
-    customerName: 'Trần Thảo My',
-    phone: '0988 765 432',
-    idCard: '079199009876',
-    dressName: 'Bespoke Atelier Tailoring Gown',
-    dressCode: 'BESPOKE-2026',
-    dressSize: 'May đo cá nhân hóa',
-    dressImage: 'https://images.unsplash.com/photo-1546804784-896d0dca3800?auto=format&fit=crop&w=600&q=80',
-    templateName: 'Hợp đồng Đặt May Đo Độc Bản & Thuê Nước Đầu',
-    startDate: '2026-11-05',
-    endDate: '2026-11-10',
-    rentalPrice: 18500000,
-    depositAmount: 30000000,
-    totalValue: 48500000,
-    status: 'active',
-    signedAt: '2026-10-18 11:15',
-    signedMethod: 'Chữ ký điện tử VNPT CA',
-    staffInCharge: 'Lê Hoàng Minh',
-    packageType: 'May đo Bespoke Nước Đầu',
-    note: 'Đính kết hạt pha lê Swarovski thủ công 100%.'
-  },
-  {
-    id: 'HD-UB-2026-082',
-    customerName: 'Phạm Hoàng Anh',
-    phone: '0903 112 233',
-    idCard: '031197004567',
-    dressName: 'Celeste Royal Mermaid',
-    dressCode: 'MER-2026',
-    dressSize: 'Size M (Eo 68-72cm)',
-    dressImage: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80',
-    templateName: 'Hợp đồng Thuê Váy Cưới Haute Couture Tiêu Chuẩn',
-    startDate: '2026-10-28',
-    endDate: '2026-10-31',
-    rentalPrice: 6500000,
-    depositAmount: 18000000,
-    totalValue: 24500000,
-    status: 'pending_signature',
-    signedAt: null,
-    signedMethod: 'Chờ khách hàng ký OTP',
-    staffInCharge: 'Trần Bích Ngọc',
-    packageType: 'Gói 3 Ngày Tiêu Chuẩn',
-    note: 'Khách đã thanh toán cọc 30% giữ lịch ngày 19/10.'
-  },
-  {
-    id: 'HD-UB-2026-076',
-    customerName: 'Lê Quỳnh Như',
-    phone: '0938 999 888',
-    idCard: '048196001234',
-    dressName: 'Lumière Minimalist Silk A-Line',
-    dressCode: 'ALINE-2026',
-    dressSize: 'Size S (Eo 64-68cm)',
-    dressImage: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=600&q=80',
-    templateName: 'Hợp đồng Thuê Váy Cưới Haute Couture Tiêu Chuẩn',
-    startDate: '2026-10-15',
-    endDate: '2026-10-18',
-    rentalPrice: 3800000,
-    depositAmount: 10000000,
-    totalValue: 13800000,
-    status: 'completed',
-    signedAt: '2026-10-12 09:40',
-    signedMethod: 'SmartOTP eID',
-    staffInCharge: 'Vũ Thị Hằng',
-    packageType: 'Gói 3 Ngày Tiêu Chuẩn',
-    note: 'Váy trả đúng hạn, nghiệm thu 10/10 không tì vết. Đã giải ngân hoàn cọc 10.000.000đ.'
-  },
-  {
-    id: 'HD-UB-2026-061',
-    customerName: 'Vũ Thanh Hương',
-    phone: '0966 223 344',
-    idCard: '025199003322',
-    dressName: 'Monet 3D Floral Couture Gown',
-    dressCode: 'MONET-2026',
-    dressSize: 'Size L (Eo 74-78cm)',
-    dressImage: 'https://images.unsplash.com/photo-1549416878-b9ca35c2d47b?auto=format&fit=crop&w=600&q=80',
-    templateName: 'Hợp đồng Thuê Váy Cưới Haute Couture Tiêu Chuẩn',
-    startDate: '2026-10-09',
-    endDate: '2026-10-13',
-    rentalPrice: 7200000,
-    depositAmount: 20000000,
-    totalValue: 27200000,
-    status: 'disputed',
-    signedAt: '2026-10-05 10:10',
-    signedMethod: 'SmartOTP eID',
-    staffInCharge: 'Lê Hoàng Minh',
-    packageType: 'Gói 4 Ngày Mở Rộng',
-    note: 'Trả váy trễ 1 ngày + vết bẩn rượu vang phần đuôi, đang xử lý trừ cọc 2.500.000đ.'
-  }
-];
-
 const fmtVnd = (num) => formatCurrencyVND(num);
 
 export default function ContractManagement() {
-  const [contracts, setContracts] = useState(() => {
-    try {
-      const saved = localStorage.getItem('unibridal_contracts_local');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    return MOCK_CONTRACTS;
-  });
+  const [contracts, setContracts] = useState([]);
+  const [error, setError] = useState('');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -501,7 +380,12 @@ export default function ContractManagement() {
       `}</style>
 
       <div className="space-y-6">
-        {/* Toast Notification */}
+        {error && (
+        <div role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <span className="font-semibold">⚠️ Lỗi kết nối Cơ sở dữ liệu:</span> {error}
+        </div>
+      )}
+      {/* Toast Notification */}
         {toastMsg && (
           <div className="fixed bottom-6 right-6 z-50 bg-[#302626] text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-sm animate-fade-in border border-amber-900/30">
             <Sparkles size={16} className="text-amber-400" />

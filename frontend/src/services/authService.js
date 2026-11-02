@@ -13,44 +13,8 @@ export async function login({ email, password }) {
     }
     return res;
   } catch (error) {
-    // Fallback tài khoản demo nếu backend offline
-    if (email === 'admin@unibridal.vn' && password === 'Admin@123') {
-      const mockAdmin = {
-        _id: 'usr_admin_001',
-        fullName: 'Quản Trị Viên UniBridal',
-        email: 'admin@unibridal.vn',
-        role: 'admin',
-        roleId: { code: 'ADMIN', name: 'Quản trị viên' },
-      };
-      localStorage.setItem('token', 'mock_jwt_token_admin_2026');
-      localStorage.setItem('user', JSON.stringify(mockAdmin));
-      return { success: true, message: 'Đăng nhập Admin thành công', data: { user: mockAdmin, token: 'mock_jwt_token_admin_2026' } };
-    }
-    if (email === 'staff@unibridal.vn' && password === 'Staff@123') {
-      const mockStaff = {
-        _id: 'usr_staff_001',
-        fullName: 'Chuyên Viên Tư Vấn Showroom',
-        email: 'staff@unibridal.vn',
-        role: 'staff',
-        roleId: { code: 'STAFF', name: 'Nhân viên Showroom' },
-      };
-      localStorage.setItem('token', 'mock_jwt_token_staff_2026');
-      localStorage.setItem('user', JSON.stringify(mockStaff));
-      return { success: true, message: 'Đăng nhập Staff thành công', data: { user: mockStaff, token: 'mock_jwt_token_staff_2026' } };
-    }
-    if (email === 'customer@unibridal.vn' && password === 'Customer@123') {
-      const mockCustomer = {
-        _id: 'usr_cust_001',
-        fullName: 'Cô Dâu Mai Phương',
-        email: 'customer@unibridal.vn',
-        role: 'customer',
-        roleId: { code: 'CUSTOMER', name: 'Khách hàng' },
-      };
-      localStorage.setItem('token', 'mock_jwt_token_customer_2026');
-      localStorage.setItem('user', JSON.stringify(mockCustomer));
-      return { success: true, message: 'Đăng nhập Khách hàng thành công', data: { user: mockCustomer, token: 'mock_jwt_token_customer_2026' } };
-    }
-    throw error;
+    console.error('Login error from database:', error);
+    throw new Error(error?.message || 'Lỗi kết nối cơ sở dữ liệu: Không thể kết nối tới máy chủ xác thực.');
   }
 }
 
@@ -62,16 +26,8 @@ export async function register(userData) {
   try {
     return await axiosClient.post('/auth/register', userData);
   } catch (error) {
-    // Nếu server trả về lỗi (400, 404, 500...), ném ra lỗi để giao diện hiển thị cho người dùng
-    if (error.status) {
-      throw error;
-    }
-    // Fallback chỉ khi hoàn toàn mất mạng
-    return {
-      success: true,
-      message: 'Mã xác thực OTP đã được gửi về email của bạn (Chế độ mô phỏng).',
-      data: { email: userData.email, fullName: userData.fullName },
-    };
+    console.error('Register error from database:', error);
+    throw new Error(error?.message || 'Lỗi kết nối cơ sở dữ liệu: Không thể tạo tài khoản trên máy chủ.');
   }
 }
 

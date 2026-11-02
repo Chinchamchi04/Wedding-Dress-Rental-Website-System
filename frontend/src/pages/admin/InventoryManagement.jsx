@@ -38,164 +38,14 @@ import card4Monet from '../../assets/card4_monet.jpg';
 import card5Aurora from '../../assets/card5_aurora.jpg';
 import card6Seraphina from '../../assets/card6_seraphina.jpg';
 
-const INITIAL_INVENTORY = [
-  {
-    id: 1,
-    name: 'Elysian Rose Ballgown',
-    code: 'KHÔ-BALL-01',
-    collection: 'ATELIER ROYAL',
-    image: card1Elysian,
-    location: 'Tủ Treo A1 - Kệ 03',
-    rfid: 'RFID: #RF-9921-A1',
-    conditionType: 'cold',
-    conditionText: 'Kho Lạnh Tơ Tằm (19°C)',
-    description: 'Tùng xòe 7 tầng voan Pháp, ren Chantilly',
-    sizes: [
-      { label: 'Size S: 02' },
-      { label: 'Size M: 02' },
-    ],
-    totalUnits: 'Tổng: 04 bộ',
-    statusText: 'ĐẠT CHUẨN LƯU KHO',
-    statusType: 'stored',
-    inspectDate: '28/10/2026',
-    inspector: 'Bởi: Bích Ngọc',
-    inspectNote: 'Phom 10/10 Khô',
-    inspectNoteColor: 'green',
-  },
-  {
-    id: 2,
-    name: 'Aurora Pearl Minimalist',
-    code: 'KHÔ-SHE-02',
-    collection: 'SILK MINIMALIST',
-    image: card5Aurora,
-    location: 'Tủ Treo B2 - Kệ 01',
-    rfid: 'RFID: #RF-4412-B2',
-    conditionType: 'humidity',
-    conditionText: 'Kho Chống Ẩm Cao Cấp',
-    description: 'Crepe de Chine dệt bóng, kết ngọc trai nước ngọt',
-    sizes: [
-      { label: 'Size S: 01' },
-      { label: 'Size L: 01' },
-    ],
-    outOfStockSize: 'Size M hết hàng',
-    totalUnits: 'Tổng: 02 bộ',
-    statusText: 'SẴN SÀNG XUẤT GIAO',
-    statusType: 'ready',
-    inspectDate: '27/10/2026',
-    inspector: 'Bởi: Thu Thảo',
-    inspectNote: 'Độ bóng nguyên bản',
-    inspectNoteColor: 'green',
-  },
-  {
-    id: 3,
-    name: 'Monet 3D Floral Couture',
-    code: 'KHÔ-FLOR-03',
-    collection: 'ARTISAN GARDEN',
-    image: card4Monet,
-    location: 'Tủ Treo C1 - Kệ 04',
-    rfid: 'RFID: #RF-7128-C1',
-    conditionType: 'restore',
-    conditionText: 'Bảo Dưỡng Phục Hồi Riêng',
-    description: '400 cánh hoa lụa organza thêu nổi 3D',
-    sizes: [
-      { label: 'Size S: 01' },
-      { label: 'Size M: 01' },
-    ],
-    totalUnits: 'Tổng: 02 bộ',
-    statusText: 'GIẶT SẤY NHIỆT THẤP',
-    statusType: 'drying',
-    inspectDate: '26/10/2026',
-    inspector: 'Bởi: Trịnh Quỳnh',
-    inspectNote: 'Dặm 6 cánh hoa',
-    inspectNoteColor: 'orange',
-  },
-  {
-    id: 4,
-    name: 'Celeste Royal Mermaid',
-    code: 'KHÔ-MER-04',
-    collection: 'COUTURE SIREN',
-    image: card2Celeste,
-    location: 'Tủ Treo A3 - Kệ 05',
-    rfid: 'RFID: #RF-3398-A3',
-    conditionType: 'cold',
-    conditionText: 'Kho Lạnh Tơ Tằm (18.5°C)',
-    description: 'Phom đuôi cá siết eo tỉ lệ vàng, đính cườm',
-    sizes: [
-      { label: 'Size XS: 01' },
-      { label: 'Size S: 02' },
-      { label: 'Size M: 01' },
-    ],
-    totalUnits: 'Tổng: 04 bộ',
-    statusText: 'CHỜ KIỂM ĐỊNH SAU THUÊ',
-    statusType: 'pending',
-    inspectDate: '28/10/2026',
-    inspector: 'Bởi: Bích Ngọc',
-    inspectNote: 'Khảo sát viền gấu',
-    inspectNoteColor: 'purple',
-  },
-  {
-    id: 5,
-    name: 'Lumière Minimal Mikado',
-    code: 'KHÔ-SILK-05',
-    collection: 'MIKADO PURISM',
-    image: card3Lumiere,
-    location: 'Tủ Treo B1 - Kệ 02',
-    rfid: 'RFID: #RF-1904-B1',
-    conditionType: 'humidity',
-    conditionText: 'Kho Chống Ẩm Cao Cấp',
-    description: 'Lụa Mikado Ý mật độ cao, cổ thuyền vát sâu',
-    sizes: [
-      { label: 'Size S: 03' },
-      { label: 'Size M: 02' },
-    ],
-    totalUnits: 'Tổng: 05 bộ',
-    statusText: 'ĐẠT CHUẨN LƯU KHO',
-    statusType: 'stored',
-    inspectDate: '25/10/2026',
-    inspector: 'Bởi: Bích Ngọc',
-    inspectNote: 'Độ bóng hoàn hảo',
-    inspectNoteColor: 'green',
-  },
-  {
-    id: 6,
-    name: 'Seraphina Royal Diamond',
-    code: 'KHÔ-CRYS-06',
-    collection: 'HERITAGE DIAMOND',
-    image: card6Seraphina,
-    location: 'Tủ Treo VIP-01 (Két Bảo Vệ)',
-    rfid: 'RFID: #RF-9988-VIP',
-    conditionType: 'diamond',
-    conditionText: 'Kho Kim Hoàn & Đính Kết',
-    description: '3.200 viên pha lê Swarovski kết tay đa diện',
-    sizes: [
-      { label: 'Size S: 01' },
-    ],
-    totalUnits: 'Tổng: 01 bộ',
-    statusText: 'SẴN SÀNG XUẤT GIAO',
-    statusType: 'ready',
-    inspectDate: '28/10/2026',
-    inspector: 'Bởi: Bích Ngọc',
-    inspectNote: 'Đủ 3.200 hạt pha lê',
-    inspectNoteColor: 'green',
-  },
-];
-
 const PAGE_SIZE = 6;
 
 export default function InventoryManagement() {
   const { user } = useAuth();
   const currentInspectorName = user?.fullName || user?.name || 'Bích Ngọc';
 
-  const [items, setItems] = useState(() => {
-    try {
-      const saved = localStorage.getItem('unibridal_inventory_local');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    return INITIAL_INVENTORY;
-  });
+  const [items, setItems] = useState([]);
+  const [error, setError] = useState('');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -229,43 +79,46 @@ export default function InventoryManagement() {
         if (!active) return;
         const dbDresses = res?.data;
         if (Array.isArray(dbDresses) && dbDresses.length > 0) {
-          setItems((prev) => {
-            // Nếu đã có danh sách 50 mẫu đầy đủ thì giữ nguyên trạng thái sửa đổi cục bộ
-            if (prev && prev.length >= dbDresses.length) return prev;
-            const shelves = ['KỆ A1 - TẦNG 2', 'KỆ B2 - TẦNG 1', 'KỆ C1 - TẦNG 3', 'KỆ VIP - SẢNH TRƯỚC', 'KỆ D3 - TẦNG 2'];
-            const mapped = dbDresses.map((d, index) => {
-              const num = (index + 1).toString().padStart(2, '0');
-              const code = d.code || `UB-${(index + 1).toString().padStart(3, '0')}`;
-              const shelf = shelves[index % shelves.length];
-              const statusType = index % 8 === 0 ? 'drying' : index % 7 === 0 ? 'pending' : index % 3 === 0 ? 'ready' : 'stored';
-              const statusText = statusType === 'stored' ? 'ĐẠT CHUẨN LƯU KHO'
-                : statusType === 'ready' ? 'SẴN SÀNG XUẤT GIAO'
-                : statusType === 'drying' ? 'GIẶT SẤY NHIỆT THẤP'
-                : 'CHỜ KIỂM ĐỊNH';
-              
-              return {
-                id: d._id || d.id || `inv_${index + 1}`,
-                code: `KHÔ-${code}`,
-                name: d.name,
-                rfid: `#RF-2026-${(index + 1).toString().padStart(4, '0')}`,
-                location: shelf,
-                statusType,
-                statusText,
-                stock: (d.sizes?.length || 2) * 2,
-                sizes: Array.isArray(d.sizes) ? d.sizes.join(', ') : 'S, M',
-                description: d.description || 'Lễ phục cưới cao cấp UniBridal Haute Couture',
-                price: d.rentPrice || d.price || 5000000,
-                inspector: `Bởi: ${currentInspectorName}`,
-                inspectDate: 'Hôm nay',
-                image: (d.images && d.images[0]) || d.image || `/assets/dresses/dress_${num}.jpg`,
-              };
-            });
-            try { localStorage.setItem('unibridal_inventory_local', JSON.stringify(mapped)); } catch {}
-            return mapped;
+          const shelves = ['KỆ A1 - TẦNG 2', 'KỆ B2 - TẦNG 1', 'KỆ C1 - TẦNG 3', 'KỆ VIP - SẢNH TRƯỚC', 'KỆ D3 - TẦNG 2'];
+          const mapped = dbDresses.map((d, index) => {
+            const num = (index + 1).toString().padStart(2, '0');
+            const code = d.code || `UB-${(index + 1).toString().padStart(3, '0')}`;
+            const shelf = shelves[index % shelves.length];
+            const statusType = index % 8 === 0 ? 'drying' : index % 7 === 0 ? 'pending' : index % 3 === 0 ? 'ready' : 'stored';
+            const statusText = statusType === 'stored' ? 'ĐẠT CHUẨN LƯU KHO'
+              : statusType === 'ready' ? 'SẴN SÀNG XUẤT GIAO'
+              : statusType === 'drying' ? 'GIẶT SẤY NHIỆT THẤP'
+              : 'CHỜ KIỂM ĐỊNH';
+            
+            return {
+              id: d._id || d.id || `inv_${index + 1}`,
+              code: `KHÔ-${code}`,
+              name: d.name,
+              rfid: `#RF-2026-${(index + 1).toString().padStart(4, '0')}`,
+              location: shelf,
+              statusType,
+              statusText,
+              stock: (d.sizes?.length || 2) * 2,
+              sizes: Array.isArray(d.sizes) ? d.sizes.join(', ') : 'S, M',
+              description: d.description || 'Lễ phục cưới cao cấp UniBridal Haute Couture',
+              price: d.rentPrice || d.price || 5000000,
+              inspector: `Bởi: ${currentInspectorName}`,
+              inspectDate: 'Hôm nay',
+              image: (d.images && d.images[0]) || d.image || `/assets/dresses/dress_${num}.jpg`,
+            };
           });
+          setItems(mapped);
+          setError('');
+        } else {
+          setItems([]);
+          setError('Không có dữ liệu váy cưới trong cơ sở dữ liệu kho hàng.');
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        if (!active) return;
+        setItems([]);
+        setError('Lỗi kết nối cơ sở dữ liệu: Không thể tải danh sách kho hàng từ máy chủ MongoDB.');
+      })(() => {});
     return () => { active = false; };
   }, [currentInspectorName]);
 
@@ -444,6 +297,11 @@ export default function InventoryManagement() {
         </div>
       )}
 
+      {error && (
+        <div role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <span className="font-semibold">⚠️ Lỗi kết nối Cơ sở dữ liệu:</span> {error}
+        </div>
+      )}
       {/* Page Header Area */}
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-8">
         <div>

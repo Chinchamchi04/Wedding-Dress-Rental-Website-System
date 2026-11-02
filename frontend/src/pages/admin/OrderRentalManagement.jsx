@@ -84,52 +84,6 @@ const CONDITION_OPTIONS = [
   { value: 'torn_lace', label: 'Rách ren/đính kết' },
 ];
 
-/** Dữ liệu demo fallback (3 đơn mẫu) */
-const DEMO_ORDERS_ADMIN = [
-  {
-    _id: 'ord_demo_001',
-    orderCode: 'UB-2026-001',
-    customerName: 'Nguyễn Thị Hoa',
-    customerPhone: '0912 345 678',
-    status: 'renting',
-    rentalStartDate: '2026-10-28T00:00:00.000Z',
-    rentalEndDate: '2026-11-03T00:00:00.000Z',
-    totalDeposit: 15000000,
-    totalRentPrice: 5200000,
-    items: [
-      { name: 'Elysian Rose Ballgown', size: 'S', dressId: null, rentPrice: 5200000 },
-    ],
-  },
-  {
-    _id: 'ord_demo_002',
-    orderCode: 'UB-2026-042',
-    customerName: 'Trần Minh Châu',
-    customerPhone: '0987 654 321',
-    status: 'completed',
-    rentalStartDate: '2026-10-10T00:00:00.000Z',
-    rentalEndDate: '2026-10-13T00:00:00.000Z',
-    totalDeposit: 12000000,
-    totalRentPrice: 4800000,
-    items: [
-      { name: 'Aurora Pearl Sheath', size: 'M', dressId: null, rentPrice: 4800000 },
-    ],
-  },
-  {
-    _id: 'ord_demo_003',
-    orderCode: 'UB-2026-089',
-    customerName: 'Lê Bảo Ngọc',
-    customerPhone: '0903 111 222',
-    status: 'deposit_paid',
-    rentalStartDate: '2026-11-15T00:00:00.000Z',
-    rentalEndDate: '2026-11-18T00:00:00.000Z',
-    totalDeposit: 18000000,
-    totalRentPrice: 6500000,
-    items: [
-      { name: 'Celeste Royal Mermaid', size: 'M', dressId: null, rentPrice: 6500000 },
-    ],
-  },
-];
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('vi-VN') : '—');
@@ -537,16 +491,8 @@ function InspectionModal({ order, onClose, onSuccess }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function OrderRentalManagement() {
-  const [orders, setOrders] = useState(() => {
-    try {
-      const saved = localStorage.getItem('unibridal_orders_local');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch { }
-    return DEMO_ORDERS_ADMIN;
-  });
+  const [orders, setOrders] = useState([]);
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -575,36 +521,16 @@ export default function OrderRentalManagement() {
       const result = await getAllOrdersAdmin(params);
       const rawList = result.orders || [];
 
-      if (rawList.length > 0) {
-        setOrders(rawList);
-        setTotal(result.total || rawList.length);
-        setTotalPages(result.totalPages || Math.ceil((result.total || rawList.length) / PAGE_SIZE));
-      } else {
-        // Fallback demo - nạp từ localStorage nếu có cập nhật
-        let fallback = DEMO_ORDERS_ADMIN;
-        try {
-          const saved = localStorage.getItem('unibridal_orders_local');
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed) && parsed.length > 0) fallback = parsed;
-          }
-        } catch { }
-        setOrders(fallback);
-        setTotal(fallback.length);
-        setTotalPages(1);
-      }
-    } catch {
-      let fallback = DEMO_ORDERS_ADMIN;
-      try {
-        const saved = localStorage.getItem('unibridal_orders_local');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) fallback = parsed;
-        }
-      } catch { }
-      setOrders(fallback);
-      setTotal(fallback.length);
+      setOrders(rawList);
+      setTotal(result.total || rawList.length);
+      setTotalPages(result.totalPages || Math.ceil((result.total || rawList.length) / PAGE_SIZE));
+      setError('');
+    } catch (err) {
+      console.error('Database connection error in OrderRentalManagement:', err);
+      setOrders([]);
+      setTotal(0);
       setTotalPages(1);
+      setError('Lỗi kết nối cơ sở dữ liệu: Không thể lấy danh sách đơn thuê từ máy chủ MongoDB.');
     } finally {
       setLoading(false);
     }

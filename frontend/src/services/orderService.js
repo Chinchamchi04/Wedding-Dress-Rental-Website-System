@@ -45,46 +45,6 @@ export function mapOrder(order) {
   };
 }
 
-// Dữ liệu mẫu dự phòng khi Backend chưa khởi chạy
-const DEMO_ORDERS = [
-  {
-    id: 'UB-2025-089',
-    _id: 'ord_demo_001',
-    orderCode: 'UB-2025-089',
-    status: 'active',
-    statusLabel: 'Đang Chuẩn Bị Bàn Giao',
-    date: '20/11/2025',
-    dress: 'Elysian Rose Ballgown',
-    image: elysianImage,
-    imageAlt: 'Mẫu váy cưới Elysian Rose Ballgown',
-    category: 'Haute Couture',
-    size: 'S (Eo 64–68cm)',
-    style: 'Corset Siết Eo',
-    amount: 4700000,
-    deposit: 15000000,
-    rentalDates: '18/11/2025 – 21/11/2025',
-    fitting: 'Phòng Fitting VIP Nam Kỳ Khởi Nghĩa',
-  },
-  {
-    id: 'UB-2025-042',
-    _id: 'ord_demo_002',
-    orderCode: 'UB-2025-042',
-    status: 'complete',
-    statusLabel: 'Đã Hoàn Tất & Hoàn Cọc',
-    date: '15/05/2025',
-    dress: 'Aurora Pearl Sheath',
-    image: auroraImage,
-    imageAlt: 'Mẫu váy cưới Aurora Pearl Sheath',
-    category: 'Giới thiệu 3 ngày',
-    size: 'S',
-    style: 'Sheath',
-    amount: 4800000,
-    deposit: 12000000,
-    rentalDates: '12/05/2025 – 15/05/2025',
-    fitting: 'Private Suite UniBridal',
-  },
-];
-
 /**
  * Lấy danh sách toàn bộ đơn thuê (Admin / Staff) hoặc đơn cá nhân (Customer)
  * @param {Object} params - { status, customerId, page, limit }
@@ -125,9 +85,8 @@ export async function getOrder(idOrCode) {
   }
 
   const cached = JSON.parse(localStorage.getItem('unibridal-orders') || '[]');
-  const all = [...cached, ...DEMO_ORDERS];
-  const found = all.find((o) => o.id === idOrCode || o._id === idOrCode || o.orderCode === idOrCode);
-  return mapOrder(found || DEMO_ORDERS[0]);
+  if (found) return mapOrder(found);
+    throw new Error('Không tìm thấy đơn hàng trong cơ sở dữ liệu.');
 }
 
 export const getOrderById = getOrder;
@@ -203,13 +162,10 @@ export async function getDressBookedDates(dressId) {
 }
 
 export function getDemoOrders() {
-  return DEMO_ORDERS.map(mapOrder);
+  throw new Error('Lỗi kết nối cơ sở dữ liệu: Không thể lấy danh sách đơn hàng.');
 }
 
-export function getDemoOrder(id) {
-  const item = DEMO_ORDERS.find((order) => order.id === id);
-  return mapOrder(item);
-}
+export function getDemoOrder(id) { return null; }
 
 /**
  * Lấy toàn bộ danh sách đơn thuê (Admin)
