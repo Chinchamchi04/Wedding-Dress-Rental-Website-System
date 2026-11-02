@@ -1,4 +1,6 @@
 import axiosClient from '../api/axiosClient';
+import showroomHcmImg from '../assets/showroom_hcm_flagship.jpg';
+import showroomHnImg from '../assets/showroom_hanoi_heritage.jpg';
 
 const APPOINTMENTS_KEY = 'unibridal-appointments';
 export const APPOINTMENT_EVENT = 'unibridal-appointment-updated';
@@ -7,21 +9,25 @@ export const SHOWROOM_BRANCHES = [
   {
     id: 'hcm-q1',
     name: 'UniBridal Flagship Atelier — Quận 1, TP. HCM',
+    shortName: 'UniBridal Flagship Atelier',
+    location: 'Quận 1, TP. HCM',
     address: '88 Nam Kỳ Khởi Nghĩa, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh',
     phone: '028 3822 8998',
     hours: '09:00 — 21:30 (Thứ 2 — Chủ Nhật)',
     features: ['Private Suite 1:1', 'Sân khấu Catwalk ánh sáng chuẩn', 'Atelier may đo tại chỗ'],
-    image: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80',
+    image: showroomHcmImg,
     mapUrl: 'https://maps.google.com/?q=88+Nam+Ky+Khoi+Nghia+Quan+1+TP+Ho+Chi+Minh',
   },
   {
     id: 'hn-hoankiem',
-    name: 'UniBridal Heritage Mansion — Hoàn Kiếm, Hà Nội',
+    name: 'UniBridal Heritage Mansion — Hoàn Kiếm, Hà\u00A0Nội',
+    shortName: 'UniBridal Heritage Mansion',
+    location: 'Hoàn Kiếm, Hà\u00A0Nội',
     address: '26 Lý Thường Kiệt, Phường Hàng Bài, Quận Hoàn Kiếm, Hà Nội',
     phone: '024 3936 8998',
     hours: '09:00 — 21:00 (Thứ 2 — Chủ Nhật)',
     features: ['Kiến trúc Pháp cổ điển', 'Phòng thử váy VIP Hoàng Gia', 'Bộ sưu tập Haute Couture mới nhất'],
-    image: 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=600&q=80',
+    image: showroomHnImg,
     mapUrl: 'https://maps.google.com/?q=26+Ly+Thuong+Kiet+Hoan+Kiem+Ha+Noi',
   },
 ];

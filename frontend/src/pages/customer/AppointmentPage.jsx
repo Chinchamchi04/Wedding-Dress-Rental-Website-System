@@ -382,15 +382,6 @@ export default function AppointmentPage() {
 
       <main className="flex-1 max-w-[1320px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-9">
 
-        {/* Breadcrumb (hidden on print) */}
-        <nav className="flex items-center gap-2 text-[12.5px] text-[#847374] mb-6 print:hidden">
-          <Link to="/" className="hover:text-[#B8737D] transition-colors no-underline text-[#847374]">
-            Trang chủ
-          </Link>
-          <span>/</span>
-          <span className="text-[#2C2523] font-medium">Đặt Lịch Hẹn Thử Váy Private Suite</span>
-        </nav>
-
         {confirmedBooking ? (
           /* ================= SUCCESS CONFIRMATION INVITATION ================= */
           <div className="max-w-[820px] mx-auto animate-fade-in my-2 sm:my-4">
@@ -749,7 +740,7 @@ export default function AppointmentPage() {
                             : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white hover:border-[#D8C7B8]'
                             }`}
                         >
-                          <div className="h-32 w-full overflow-hidden relative">
+                          <div className="h-36 sm:h-40 w-full overflow-hidden relative">
                             <img
                               src={branch.image}
                               alt={branch.name}
@@ -762,10 +753,18 @@ export default function AppointmentPage() {
                             )}
                           </div>
 
-                          <div className="p-3.5 flex-1 flex flex-col justify-between">
+                          <div className="p-4 flex-1 flex flex-col justify-between">
                             <div>
-                              <h3 className="font-jakarta font-bold text-[15px] text-[#2C2523] m-0 mb-1 leading-snug">
-                                {branch.name}
+                              <h3 className="font-jakarta font-bold text-[14.5px] sm:text-[15px] text-[#2C2523] m-0 mb-1 leading-snug">
+                                <span>{branch.shortName || branch.name.split(' — ')[0]}</span>
+                                {(branch.location || branch.name.includes(' — ')) && (
+                                  <>
+                                    <span className="text-[#847374] font-normal mx-1.5">—</span>
+                                    <span className="whitespace-nowrap text-[#733F49] font-bold">
+                                      {branch.location || branch.name.split(' — ')[1]}
+                                    </span>
+                                  </>
+                                )}
                               </h3>
                               <p className="text-[11.5px] text-[#6B5C5D] leading-relaxed mb-2.5 m-0 line-clamp-2">
                                 <MapPin className="w-3 h-3 text-[#B8737D] inline mr-1" />
