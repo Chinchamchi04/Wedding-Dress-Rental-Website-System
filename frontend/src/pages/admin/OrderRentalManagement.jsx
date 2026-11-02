@@ -1368,7 +1368,7 @@ export default function OrderRentalManagement() {
                     if (idx === 0) setActivePage((prev) => Math.max(1, prev - 3));
                     else setActivePage((prev) => Math.min(totalPages, prev + 3));
                   }}
-                  className="px-2 h-8 text-[#8C7D7E] text-xs font-bold hover:text-[#78434D] transition-colors cursor-pointer"
+                  className="w-8 h-8 rounded-lg bg-white border border-[#EFE5E1] shadow-2xs flex items-center justify-center text-[#8C7D7E] text-xs font-bold hover:bg-[#F5ECE8] hover:text-[#78434D] transition-colors cursor-pointer"
                 >
                   ...
                 </button>
