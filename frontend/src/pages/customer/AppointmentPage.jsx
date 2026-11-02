@@ -345,7 +345,7 @@ export default function AppointmentPage() {
         price: d.price,
         image: d.images?.[0],
       })),
-      vipServices: selectedServices.map((id) => VIP_SERVICES.find((s) => s.id === id)).filter(Boolean),
+      vipServices: [],
       notes: notes.trim(),
     };
 
@@ -1115,64 +1115,11 @@ export default function AppointmentPage() {
                   </div>
                 </section>
 
-                {/* BƯỚC 4: ĐẶC QUYỀN TRẢI NGHIỆM ĐI KÈM */}
+                {/* BƯỚC 4: THÔNG TIN LIÊN HỆ CÔ DÂU */}
                 <section className="bg-white rounded-2xl border border-[#F0E5DC] shadow-[0_4px_24px_rgba(44,37,35,0.03)] p-6 sm:p-7">
                   <div className="flex items-center gap-3 pb-4 border-b border-[#F5EDE8] mb-5">
                     <span className="w-7 h-7 rounded-full bg-[#733F49] text-white flex items-center justify-center text-[12px] font-bold shrink-0">
                       4
-                    </span>
-                    <div>
-                      <h2 className="font-playfair text-[19px] sm:text-[21px] font-semibold text-[#2C2523] m-0">
-                        Đặc Quyền Dịch Vụ Đi Kèm Tại Private Suite
-                      </h2>
-                      <p className="text-[12px] text-[#847374] m-0 mt-0.5">
-                        Tích chọn để Atelier chuẩn bị chu đáo trước giờ đón tiếp
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    {VIP_SERVICES.map((srv) => {
-                      const isSelected = selectedServices.includes(srv.id);
-                      return (
-                        <div
-                          key={srv.id}
-                          onClick={() => handleToggleService(srv.id)}
-                          className={`rounded-xl p-4 border cursor-pointer transition-all flex items-start gap-3.5 ${isSelected
-                            ? 'border-[#733F49] bg-[#FAF3F0] shadow-2xs'
-                            : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white'
-                            }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleToggleService(srv.id)}
-                            className="mt-1 accent-[#733F49] w-4 h-4 rounded"
-                          />
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between gap-1 mb-1">
-                              <h4 className="font-jakarta font-bold text-[13.5px] text-[#2C2523] m-0">
-                                {srv.name}
-                              </h4>
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FAF0EC] text-[#B8737D] border border-[#F2D8D4]">
-                                {srv.tag}
-                              </span>
-                            </div>
-                            <p className="text-[12px] text-[#6B5C5D] leading-relaxed m-0 font-normal">
-                              {srv.desc}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </section>
-
-                {/* BƯỚC 5: THÔNG TIN LIÊN HỆ CÔ DÂU */}
-                <section className="bg-white rounded-2xl border border-[#F0E5DC] shadow-[0_4px_24px_rgba(44,37,35,0.03)] p-6 sm:p-7">
-                  <div className="flex items-center gap-3 pb-4 border-b border-[#F5EDE8] mb-5">
-                    <span className="w-7 h-7 rounded-full bg-[#733F49] text-white flex items-center justify-center text-[12px] font-bold shrink-0">
-                      5
                     </span>
                     <div>
                       <h2 className="font-playfair text-[19px] sm:text-[21px] font-semibold text-[#2C2523] m-0">
