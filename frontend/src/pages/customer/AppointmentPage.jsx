@@ -119,14 +119,15 @@ export default function AppointmentPage() {
   const [selectedTimeSlotId, setSelectedTimeSlotId] = useState('t3');
   const [periodFilter, setPeriodFilter] = useState('all');
 
-  // Step 3: Selected Dresses (Max 5)
+  // Step 3: Selected Dresses (Tối đa 2 mẫu: 1 mẫu chính + tối đa 1 mẫu đề xuất thêm)
   const [selectedDressIds, setSelectedDressIds] = useState(() => {
     if (initialDressId) {
       const parsed = Number(initialDressId);
-      return !isNaN(parsed) && parsed > 0 ? [parsed] : [1];
+      return !isNaN(parsed) && parsed > 0 ? [parsed] : [initialDressId];
     }
-    return [1, 2];
+    return [1];
   });
+  const [isChangingPrimary, setIsChangingPrimary] = useState(false);
 
   // Step 4: VIP Services
   const [selectedServices, setSelectedServices] = useState(['tea', 'stylist', 'polaroid']);
@@ -178,16 +179,77 @@ export default function AppointmentPage() {
       if (!active) return;
       const list = res?.data || [];
       if (Array.isArray(list) && list.length > 0) {
-        setAvailableDresses(list.slice(0, 12));
+        setAvailableDresses(list);
+        if (initialDressId) {
+          const matched = list.find(
+            (d) => String(d.id) === String(initialDressId) ||
+                   String(d._id) === String(initialDressId) ||
+                   String(d.code) === String(initialDressId) ||
+                   Number(d.id) === Number(initialDressId)
+          );
+          if (matched) {
+            setSelectedDressIds([matched.id]);
+          }
+        }
       }
     }).catch(() => { });
     return () => { active = false; };
   }, []);
 
-  const chosenDresses = useMemo(
-    () => availableDresses.filter((d) => selectedDressIds.includes(d.id)),
-    [availableDresses, selectedDressIds]
-  );
+  const primaryDress = useMemo(() => {
+    if (!availableDresses || availableDresses.length === 0) return null;
+    const primaryId = selectedDressIds[0];
+    return (
+      availableDresses.find(
+        (d) => String(d.id) === String(primaryId) || String(d._id) === String(primaryId) || String(d.code) === String(primaryId)
+      ) || availableDresses[0]
+    );
+  }, [availableDresses, selectedDressIds]);
+
+  // Gợi ý 4 thiết kế phù hợp dựa trên phom dáng & phong cách váy chính
+  const recommendedDresses = useMemo(() => {
+    if (!availableDresses || availableDresses.length === 0) return [];
+    const primaryId = primaryDress?.id;
+    const others = availableDresses.filter(
+      (d) => String(d.id) !== String(primaryId) && String(d._id) !== String(primaryId)
+    );
+    // Ưu tiên váy cùng silhouette hoặc chất liệu
+    const sameStyle = others.filter((d) => d.silhouette === primaryDress?.silhouette);
+    const diffStyle = others.filter((d) => d.silhouette !== primaryDress?.silhouette);
+    return [...sameStyle, ...diffStyle].slice(0, 4);
+  }, [availableDresses, primaryDress]);
+
+  const chosenDresses = useMemo(() => {
+    if (!availableDresses || availableDresses.length === 0) return [];
+    return availableDresses.filter((d) =>
+      selectedDressIds.some(
+        (id) => String(d.id) === String(id) || String(d._id) === String(id)
+      )
+    );
+  }, [availableDresses, selectedDressIds]);
+
+  // Chọn / Bỏ chọn mẫu váy thứ 2 từ danh sách đề xuất (Tối đa 2 mẫu thử)
+  const handleToggleSecondaryDress = (dressId) => {
+    if (String(selectedDressIds[0]) === String(dressId)) {
+      message.info('Đây là mẫu váy cưới chính của nàng.');
+      return;
+    }
+    if (selectedDressIds.some((id) => String(id) === String(dressId))) {
+      setSelectedDressIds([selectedDressIds[0]]);
+      message.success('Đã bỏ bớt mẫu váy thử.');
+    } else {
+      setSelectedDressIds([selectedDressIds[0], dressId]);
+      message.success('Đã thêm mẫu váy thứ 2 vào lịch thử (Tối đa 2 mẫu).');
+    }
+  };
+
+  // Đổi mẫu váy chính
+  const handleSelectPrimaryDress = (dressId) => {
+    const secondary = selectedDressIds.slice(1);
+    setSelectedDressIds([dressId, ...secondary]);
+    setIsChangingPrimary(false);
+    message.success('Đã cập nhật mẫu váy cưới chính.');
+  };
 
   // Filtered Time Slots
   const filteredTimeSlots = useMemo(() => {
@@ -840,7 +902,7 @@ export default function AppointmentPage() {
                   </div>
                 </section>
 
-                {/* BƯỚC 3: CHỌN MẪU VÁY CƯỚI (TỐI ĐA 5 MẪU) */}
+                {/* BƯỚC 3: CHỌN MẪU VÁY CƯỚI (1 VÁY CHÍNH + ĐỀ XUẤT TỐI ĐA 2 MẪU THỬ) */}
                 <section className="bg-white rounded-2xl border border-[#F0E5DC] shadow-[0_4px_24px_rgba(44,37,35,0.03)] p-6 sm:p-7">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[#F5EDE8] mb-5 gap-2">
                     <div className="flex items-center gap-3">
@@ -852,13 +914,15 @@ export default function AppointmentPage() {
                           Chọn Mẫu Váy Cưới Nàng Muốn Thử
                         </h2>
                         <p className="text-[12px] text-[#847374] m-0 mt-0.5">
-                          Tối đa 5 thiết kế Haute Couture để được nghệ nhân chuẩn bị tinh chỉnh phom riêng
+                          Mẫu váy chính đã chọn và các thiết kế đề xuất tương đồng (Tối đa 2 mẫu thử trong 1 buổi)
                         </p>
                       </div>
                     </div>
-                    <span className="self-start sm:self-auto px-3 py-1 rounded-full bg-[#FAF0EC] border border-[#F2D8D4] text-[#733F49] font-bold text-[11px]">
-                      Đã chọn: {selectedDressIds.length} / 5 mẫu
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 rounded-full bg-[#FAF0EC] border border-[#F2D8D4] text-[#733F49] font-bold text-[11px]">
+                        Đã chọn: {selectedDressIds.length} / 2 mẫu thử VIP
+                      </span>
+                    </div>
                   </div>
 
                   {errors.dresses && (
@@ -867,49 +931,187 @@ export default function AppointmentPage() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                    {availableDresses.map((dress) => {
-                      const isSelected = selectedDressIds.includes(dress.id);
-                      return (
-                        <div
-                          key={dress.id}
-                          onClick={() => handleToggleDress(dress.id)}
-                          className={`rounded-xl border overflow-hidden cursor-pointer transition-all relative flex flex-col justify-between ${isSelected
-                            ? 'border-[#733F49] ring-2 ring-[#733F49]/30 bg-[#FAF4EE] shadow-sm'
-                            : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white hover:border-[#D8C7B8]'
-                            }`}
-                        >
-                          <div className="aspect-[3/4] w-full overflow-hidden relative">
-                            <img
-                              src={dress.images?.[0]}
-                              alt={dress.name}
-                              className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                            />
-                            {isSelected ? (
-                              <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[#733F49] text-white flex items-center justify-center shadow-md">
-                                <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                              </div>
-                            ) : (
-                              <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/80 border border-[#EEDECF] text-gray-500 hover:text-gray-700 flex items-center justify-center shadow-xs">
-                                +
-                              </div>
-                            )}
-                            <span className="absolute bottom-1.5 left-1.5 text-[8.5px] font-bold px-1.5 py-0.5 rounded-md bg-black/60 text-white backdrop-blur-xs">
-                              {dress.silhouette}
-                            </span>
-                          </div>
+                  {/* 1. MẪU VÁY CHÍNH ĐÃ CHỌN */}
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-2.5">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#733F49] flex items-center gap-1.5">
+                        <Crown className="w-3.5 h-3.5 text-[#D4AF37]" />
+                        Mẫu Váy Chính Nàng Đã Chọn
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsChangingPrimary(!isChangingPrimary)}
+                        className="text-[11.5px] font-bold text-[#733F49] hover:text-[#582A33] underline underline-offset-4 cursor-pointer transition-colors"
+                      >
+                        {isChangingPrimary ? '← Đóng danh sách' : '✦ Đổi sang mẫu chính khác'}
+                      </button>
+                    </div>
 
-                          <div className="p-2.5">
-                            <h4 className="font-playfair font-bold text-[12.5px] text-[#2C2523] m-0 mb-0.5 truncate leading-tight">
-                              {dress.name}
-                            </h4>
-                            <div className="text-[11px] font-bold text-[#733F49]">
-                              {formatCurrencyVND(dress.price)}
+                    {!isChangingPrimary ? (
+                      /* Card Váy Chính VIP Suite */
+                      <div className="rounded-2xl border border-[#B8737D]/40 bg-gradient-to-br from-[#FFFDFC] to-[#FAF3F0] p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-5 shadow-sm">
+                        <div className="w-full sm:w-40 aspect-[3/4] sm:aspect-auto sm:h-52 rounded-xl overflow-hidden shrink-0 border border-[#EEDECF] relative shadow-xs">
+                          <img
+                            src={primaryDress?.images?.[0] || primaryDress?.image}
+                            alt={primaryDress?.name}
+                            className="w-full h-full object-cover"
+                          />
+                          <span className="absolute bottom-2 left-2 text-[9.5px] font-bold px-2 py-0.5 rounded-md bg-black/60 text-white backdrop-blur-xs">
+                            {primaryDress?.silhouette || 'Haute Couture'}
+                          </span>
+                        </div>
+
+                        <div className="flex-1 w-full flex flex-col justify-between self-stretch">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <span className="px-2 py-0.5 rounded-full bg-[#FAF0EC] text-[#733F49] text-[10px] font-bold uppercase tracking-wider">
+                                {primaryDress?.collectionTag || 'ATELIER HAUTE COUTURE'}
+                              </span>
+                              {primaryDress?.code && (
+                                <span className="text-[11px] font-mono font-semibold text-[#847374]">
+                                  #{primaryDress.code}
+                                </span>
+                              )}
+                            </div>
+
+                            <h3 className="font-playfair text-[20px] sm:text-[22px] font-bold text-[#2C2523] m-0 mb-1 leading-snug">
+                              {primaryDress?.name}
+                            </h3>
+
+                            <p className="text-[12px] text-[#6B5C5D] leading-relaxed mb-3 m-0 line-clamp-2">
+                              {primaryDress?.description || 'Thiết kế thủ công tinh xảo, đính kết ren và pha lê cao cấp chuẩn bị riêng cho nàng.'}
+                            </p>
+
+                            <div className="grid grid-cols-2 gap-3 mb-3 p-3 rounded-xl bg-white/80 border border-[#F0E5DC]">
+                              <div>
+                                <span className="text-[10.5px] text-[#847374] block">Giá thuê niêm yết:</span>
+                                <strong className="text-[13.5px] font-jakarta text-[#733F49] font-bold">
+                                  {formatCurrencyVND(primaryDress?.price || primaryDress?.rentPrice)}
+                                </strong>
+                              </div>
+                              <div>
+                                <span className="text-[10.5px] text-[#847374] block">Cọc bảo lãnh hoàn trả:</span>
+                                <strong className="text-[13.5px] font-jakarta text-[#2C2523] font-bold">
+                                  {formatCurrencyVND(primaryDress?.depositAmount || 15000000)}
+                                </strong>
+                              </div>
                             </div>
                           </div>
+
+                          <div className="flex items-center gap-1.5 text-[11.5px] font-semibold text-[#2E7D32] pt-2 border-t border-[#EEDECF]">
+                            <Check className="w-4 h-4 stroke-[2.5]" />
+                            <span>Mẫu váy chính được nghệ nhân chuẩn bị tinh chỉnh phom riêng cho nàng</span>
+                          </div>
                         </div>
-                      );
-                    })}
+                      </div>
+                    ) : (
+                      /* Chọn mẫu chính khác */
+                      <div className="p-4 rounded-2xl bg-[#FCF9F6] border border-[#EEDECF]">
+                        <p className="text-[12px] text-[#6B5C5D] mb-3 m-0">Click vào một mẫu váy dưới đây để đặt làm mẫu chính:</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          {availableDresses.map((dress) => {
+                            const isSelected = String(primaryDress?.id) === String(dress.id);
+                            return (
+                              <div
+                                key={dress.id}
+                                onClick={() => handleSelectPrimaryDress(dress.id)}
+                                className={`rounded-xl border p-2 cursor-pointer transition-all flex flex-col justify-between ${isSelected ? 'border-[#733F49] ring-2 ring-[#733F49]/30 bg-white' : 'border-[#EEDECF] bg-white hover:border-[#B8737D]'}`}
+                              >
+                                <div className="aspect-[3/4] w-full rounded-lg overflow-hidden relative mb-1.5">
+                                  <img src={dress.images?.[0] || dress.image} alt={dress.name} className="w-full h-full object-cover" />
+                                  {isSelected && (
+                                    <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#733F49] text-white flex items-center justify-center">
+                                      <Check className="w-3 h-3" />
+                                    </div>
+                                  )}
+                                </div>
+                                <h4 className="font-playfair text-[11.5px] font-bold text-[#2C2523] truncate m-0">{dress.name}</h4>
+                                <span className="text-[10.5px] text-[#733F49] font-bold">{formatCurrencyVND(dress.price || dress.rentPrice)}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 2. ĐỀ XUẤT CÁC MẪU VÁY TƯƠNG ĐỒNG PHÙ HỢP (CHỌN THÊM TỐI ĐA 1 MẪU) */}
+                  <div className="pt-4 border-t border-[#F5EDE8]">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3.5 gap-1">
+                      <div>
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-[#B8737D] flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-[#B8737D]" />
+                          Gợi Ý Thiết Kế Tương Đồng Dành Riêng Cho Nàng
+                        </span>
+                        <p className="text-[11.5px] text-[#847374] m-0 mt-0.5">
+                          Nàng có thể chọn thêm 1 mẫu phù hợp để thử cùng trong buổi hẹn VIP Suite (Tối đa 2 mẫu thử)
+                        </p>
+                      </div>
+                      <span className="text-[11px] text-[#733F49] font-semibold">
+                        {selectedDressIds.length === 2 ? '✓ Đã chọn đủ 2 mẫu' : '+ Có thể chọn thêm 1 mẫu'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+                      {recommendedDresses.map((dress) => {
+                        const isChosenAsSecondary = selectedDressIds.slice(1).some(
+                          (id) => String(id) === String(dress.id) || String(id) === String(dress._id)
+                        );
+                        return (
+                          <div
+                            key={dress.id}
+                            onClick={() => handleToggleSecondaryDress(dress.id)}
+                            className={`rounded-xl border overflow-hidden cursor-pointer transition-all flex flex-col justify-between relative group ${
+                              isChosenAsSecondary
+                                ? 'border-[#733F49] ring-2 ring-[#733F49]/30 bg-[#FAF4EE] shadow-sm'
+                                : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white hover:border-[#D8C7B8]'
+                            }`}
+                          >
+                            <div className="aspect-[3/4] w-full overflow-hidden relative">
+                              <img
+                                src={dress.images?.[0] || dress.image}
+                                alt={dress.name}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              />
+                              {isChosenAsSecondary ? (
+                                <div className="absolute top-2 right-2 bg-[#733F49] text-white text-[9.5px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+                                  <Check className="w-3 h-3 stroke-[2.5]" /> Thử cùng
+                                </div>
+                              ) : (
+                                <div className="absolute top-2 right-2 bg-white/90 text-[#733F49] hover:bg-[#733F49] hover:text-white text-[9.5px] font-bold px-2 py-0.5 rounded-full border border-[#EEDECF] shadow-xs transition-colors">
+                                  + Chọn thử
+                                </div>
+                              )}
+                              <span className="absolute bottom-1.5 left-1.5 text-[8.5px] font-bold px-1.5 py-0.5 rounded-md bg-black/60 text-white backdrop-blur-xs">
+                                {dress.silhouette}
+                              </span>
+                            </div>
+
+                            <div className="p-2.5 flex-1 flex flex-col justify-between">
+                              <div>
+                                <h4 className="font-playfair font-bold text-[12.5px] text-[#2C2523] m-0 mb-0.5 truncate leading-tight">
+                                  {dress.name}
+                                </h4>
+                                <div className="text-[11px] font-bold text-[#733F49] mb-2">
+                                  {formatCurrencyVND(dress.price || dress.rentPrice)}
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                className={`w-full py-1 text-[10.5px] font-bold rounded-lg border transition-colors cursor-pointer ${
+                                  isChosenAsSecondary
+                                    ? 'bg-[#733F49] text-white border-[#733F49]'
+                                    : 'bg-white text-[#733F49] border-[#EEDECF] hover:bg-[#FAF0EC]'
+                                }`}
+                              >
+                                {isChosenAsSecondary ? '✓ Đang chọn thử kèm' : '+ Thử mẫu này'}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </section>
 
@@ -1133,7 +1335,7 @@ export default function AppointmentPage() {
 
                     <div>
                       <span className="text-[11px] font-bold uppercase text-[#847374] block mb-1.5">
-                        MẪU VÁY SẼ THỬ ({chosenDresses.length} MẪU)
+                        MẪU VÁY SẼ THỬ ({chosenDresses.length} / 2 MẪU)
                       </span>
                       <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                         {chosenDresses.map((dress) => (
