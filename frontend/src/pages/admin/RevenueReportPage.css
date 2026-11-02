@@ -650,6 +650,20 @@
   color: #FFFFFF;
 }
 
+.ub-revenue-page-btns button.ub-revenue-ellipsis-btn {
+  border: none;
+  background: transparent;
+  color: #8C7D7E;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.ub-revenue-page-btns button.ub-revenue-ellipsis-btn:hover {
+  color: var(--wine);
+  background: transparent;
+  border-color: transparent;
+}
+
 .ub-revenue-page-btns button:disabled {
   opacity: 0.4;
   cursor: not-allowed;

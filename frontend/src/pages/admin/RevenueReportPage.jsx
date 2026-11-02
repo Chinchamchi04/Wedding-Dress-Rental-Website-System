@@ -391,6 +391,25 @@ export default function RevenueReportPage() {
   }, [report, search, typeFilter, statusFilter]);
 
   const pageCount = Math.max(1, Math.ceil(filteredTransactions.length / PAGE_SIZE));
+
+  const paginationItems = useMemo(() => {
+    if (pageCount <= 6) {
+      return Array.from({ length: pageCount }, (_, i) => i + 1);
+    }
+    // Khi ở trang 1 hoặc 2: hiển thị 1, 2, 3 ... (pageCount - 1), pageCount
+    if (page < 3) {
+      return [1, 2, 3, '...', pageCount - 1, pageCount];
+    }
+    // Khi ở các trang cuối:
+    if (page >= pageCount - 2) {
+      return ['...', pageCount - 3, pageCount - 2, pageCount - 1, pageCount];
+    }
+    // Khi ấn đến 3 trở đi: thu số 1 về (thay bằng '...'), hiện 4 -> ... 2, 3, 4 ...
+    if (page + 2 >= pageCount - 1) {
+      return ['...', page - 1, page, page + 1, pageCount - 1, pageCount];
+    }
+    return ['...', page - 1, page, page + 1, '...', pageCount - 1, pageCount];
+  }, [page, pageCount]);
   const rows = filteredTransactions.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   // Quick CSV Export
@@ -712,16 +731,31 @@ export default function RevenueReportPage() {
                 <ChevronLeft size={16} />
               </button>
 
-              {Array.from({ length: pageCount }, (_, i) => i + 1).map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  className={page === p ? 'is-active' : ''}
-                  onClick={() => setPage(p)}
-                >
-                  {p}
-                </button>
-              ))}
+              {paginationItems.map((p, idx) =>
+                p === '...' ? (
+                  <button
+                    key={`ellipsis-${idx}`}
+                    type="button"
+                    title={idx === 0 ? 'Về trang trước đó' : 'Đến các trang sau'}
+                    onClick={() => {
+                      if (idx === 0) setPage((prev) => Math.max(1, prev - 3));
+                      else setPage((prev) => Math.min(pageCount, prev + 3));
+                    }}
+                    className="ub-revenue-ellipsis-btn"
+                  >
+                    ...
+                  </button>
+                ) : (
+                  <button
+                    key={p}
+                    type="button"
+                    className={page === p ? 'is-active' : ''}
+                    onClick={() => setPage(p)}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
 
               <button
                 type="button"

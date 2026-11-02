@@ -887,12 +887,23 @@ export default function OrderRentalManagement() {
 
   // ── Pagination helper ────────────────────────────────────────────────────
   const pageNumbers = useMemo(() => {
-    const pages = [];
-    for (let i = 1; i <= Math.min(totalPages, 5); i++) pages.push(i);
-    if (totalPages > 5) pages.push('...');
-    if (totalPages > 5 && !pages.includes(totalPages)) pages.push(totalPages);
-    return pages;
-  }, [totalPages]);
+    if (totalPages <= 6) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    // Khi ở trang 1 hoặc 2: hiển thị 1, 2, 3 ... (totalPages - 1), totalPages
+    if (activePage < 3) {
+      return [1, 2, 3, '...', totalPages - 1, totalPages];
+    }
+    // Khi ở các trang cuối:
+    if (activePage >= totalPages - 2) {
+      return ['...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+    // Khi ấn đến 3 trở đi: thu số 1 về (thay bằng '...'), hiện 4 -> ... 2, 3, 4 ...
+    if (activePage + 2 >= totalPages - 1) {
+      return ['...', activePage - 1, activePage, activePage + 1, totalPages - 1, totalPages];
+    }
+    return ['...', activePage - 1, activePage, activePage + 1, '...', totalPages - 1, totalPages];
+  }, [activePage, totalPages]);
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
@@ -1349,9 +1360,18 @@ export default function OrderRentalManagement() {
 
             {pageNumbers.map((p, idx) =>
               p === '...' ? (
-                <span key={`ellipsis-${idx}`} className="px-1 text-[#8C7D7E] text-xs font-semibold">
+                <button
+                  key={`ellipsis-${idx}`}
+                  type="button"
+                  title={idx === 0 ? 'Về các trang trước' : 'Đến các trang sau'}
+                  onClick={() => {
+                    if (idx === 0) setActivePage((prev) => Math.max(1, prev - 3));
+                    else setActivePage((prev) => Math.min(totalPages, prev + 3));
+                  }}
+                  className="px-2 h-8 text-[#8C7D7E] text-xs font-bold hover:text-[#78434D] transition-colors cursor-pointer"
+                >
                   ...
-                </span>
+                </button>
               ) : (
                 <button
                   key={p}
