@@ -527,9 +527,6 @@ export default function ContractManagement() {
                   <tr key={item.id} className="hover:bg-[#FCFAF8] transition-colors group">
                     <td className="py-4 px-4 font-mono font-bold text-[#733F49] text-xs">
                       {item.id}
-                      <span className="block text-[10px] text-[#A39192] font-sans font-normal mt-0.5">
-                        NV: {item.staffInCharge}
-                      </span>
                     </td>
 
                     <td className="py-4 px-4">
@@ -634,18 +631,6 @@ export default function ContractManagement() {
                             <Send size={16} />
                           </button>
                         )}
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedContract(item);
-                            setTimeout(() => window.print(), 200);
-                          }}
-                          className="p-2 rounded-lg text-[#7A6A6B] hover:bg-[#F5EAE6] transition-colors cursor-pointer"
-                          title="In / Xuất PDF"
-                        >
-                          <Printer size={16} />
-                        </button>
                       </div>
                     </td>
                   </tr>
