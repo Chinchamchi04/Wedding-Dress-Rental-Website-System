@@ -100,10 +100,18 @@ export default function InventoryManagement() {
             const mappedSizes = rawSizes.map((sz) => ({
               label: typeof sz === 'object' && sz?.label ? sz.label : `Size ${typeof sz === 'object' ? (sz?.size || 'S') : sz} (2 bộ)`
             }));
-            
+
+            const inspectNote = statusType === 'ready'
+              ? 'Phom dáng 100% nguyên vẹn'
+              : statusType === 'drying'
+              ? 'Đang giặt sấy vi khí hậu'
+              : statusType === 'pending'
+              ? 'Cần kiểm định ren & gọng'
+              : 'Đạt chuẩn bảo quản 10/10';
+
             return {
               id: d._id || d.id || `inv_${index + 1}`,
-              code: `KHÔ-${code}`,
+              code: `KHO-${code}`,
               name: d.name,
               collection: d.collection || 'ATELIER HAUTE COUTURE 2026',
               rfid: `#RF-2026-${(index + 1).toString().padStart(4, '0')}`,
@@ -118,9 +126,9 @@ export default function InventoryManagement() {
               description: d.description || 'Lễ phục cưới cao cấp UniBridal Haute Couture',
               price: d.rentPrice || d.price || 5000000,
               inspector: `Bởi: ${currentInspectorName}`,
-              inspectDate: 'Hôm nay',
-              inspectNote: 'Phom dáng 100% nguyên vẹn',
-              inspectNoteColor: 'green',
+              inspectDate: 'Hôm nay (02/11/2026)',
+              inspectNote,
+              inspectNoteColor: statusType === 'ready' ? 'green' : statusType === 'drying' ? 'orange' : statusType === 'pending' ? 'red' : 'blue',
               image: (d.images && d.images[0]) || d.image || `/assets/dresses/dress_${num}.jpg`,
             };
           });
@@ -174,13 +182,14 @@ export default function InventoryManagement() {
 
   // Cập nhật tình trạng của một váy trong kho
   const handleUpdateItemStatus = (itemId, newStatusType, newStatusText) => {
+    const todayStr = `Hôm nay (${new Date().toLocaleDateString('vi-VN')})`;
     const updated = items.map((it) => {
       if (it.id === itemId) {
         return {
           ...it,
           statusType: newStatusType,
           statusText: newStatusText,
-          inspectDate: new Date().toLocaleDateString('vi-VN'),
+          inspectDate: todayStr,
           inspector: `Bởi: ${currentInspectorName}`
         };
       }
@@ -194,7 +203,7 @@ export default function InventoryManagement() {
         ...prev,
         statusType: newStatusType,
         statusText: newStatusText,
-        inspectDate: new Date().toLocaleDateString('vi-VN'),
+        inspectDate: todayStr,
         inspector: `Bởi: ${currentInspectorName}`
       }));
     }
@@ -222,7 +231,7 @@ export default function InventoryManagement() {
       diamond: 'Kho Kim Hoàn & Đính Kết VIP'
     };
 
-    const newCode = `KHÔ-${newCollection.slice(0, 4).toUpperCase()}-${String(items.length + 1).padStart(2, '0')}`;
+    const newCode = `KHO-${newCollection.slice(0, 4).toUpperCase()}-${String(items.length + 1).padStart(2, '0')}`;
     const rfidVal = newRfid.trim() || `RFID: #RF-${Math.floor(1000 + Math.random() * 9000)}-${newLocation.slice(0, 2).toUpperCase()}`;
 
     const totalCount = Number(newSizeS || 0) + Number(newSizeM || 0);
@@ -245,7 +254,7 @@ export default function InventoryManagement() {
       totalUnits: `Tổng: ${String(totalCount).padStart(2, '0')} bộ`,
       statusText: 'ĐẠT CHUẨN LƯU KHO',
       statusType: 'stored',
-      inspectDate: new Date().toLocaleDateString('vi-VN'),
+      inspectDate: `Hôm nay (${new Date().toLocaleDateString('vi-VN')})`,
       inspector: `Bởi: ${currentInspectorName}`,
       inspectNote: 'Nhập kho mới 10/10',
       inspectNoteColor: 'green',
@@ -602,7 +611,7 @@ export default function InventoryManagement() {
                             >
                               {item.name}
                             </div>
-                            <span className="inline-flex items-center px-2 py-0.5 rounded bg-[#F6EDE8] text-[#846E63] font-mono text-[10.5px] font-semibold leading-none">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#FAF0EC] text-[#733F49] font-mono text-[10.5px] font-bold border border-[#F2D8D4] leading-none">
                               {item.code}
                             </span>
                             <div className="text-[10px] font-bold text-[#A39293] tracking-wider uppercase leading-none">
@@ -619,7 +628,7 @@ export default function InventoryManagement() {
                           <span className="font-bold text-[#2C2523] text-[13px] whitespace-nowrap">
                             {item.location}
                           </span>
-                          <span className="px-1.5 py-0.5 rounded border border-[#E8DCD7] text-[#8C7D7E] font-mono text-[10px] whitespace-nowrap shrink-0">
+                          <span className="px-2 py-0.5 rounded-md border border-[#E8DCD7] bg-[#FAF5F2] text-[#7A696B] font-mono text-[10px] font-semibold whitespace-nowrap shrink-0">
                             {item.rfid}
                           </span>
                         </div>
@@ -656,48 +665,54 @@ export default function InventoryManagement() {
 
                       {/* Col 3: Phân loại & Tồn size (Căn giữa) */}
                       <td className="py-4 px-4 text-center whitespace-nowrap">
-                        <div className="flex flex-col items-center gap-1 mb-1">
-                          {(Array.isArray(item.sizes) ? item.sizes : []).map((s, idx) => (
-                            <span
-                              key={idx}
-                              className="inline-block px-2.5 py-0.5 rounded bg-[#FBEBE7] text-[#8A4650] font-semibold text-[11px] text-center"
-                            >
-                              {typeof s === 'object' && s?.label ? s.label : `Size ${s}`}
-                            </span>
-                          ))}
+                        <div className="flex flex-col items-center gap-1.5 mb-1">
+                          <div className="flex flex-wrap items-center justify-center gap-1">
+                            {(Array.isArray(item.sizes) ? item.sizes : []).map((s, idx) => (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#FAF0EC] text-[#733F49] border border-[#F2D8D4] font-semibold text-[11px] text-center"
+                              >
+                                {typeof s === 'object' && s?.label ? s.label : `Size ${s}`}
+                              </span>
+                            ))}
+                          </div>
                           {item.outOfStockSize && (
                             <span className="text-[11px] font-semibold text-[#D03B3B] text-center">
                               {item.outOfStockSize}
                             </span>
                           )}
+                          {item.totalUnits && (
+                            <span className="text-[11px] text-[#8C7D7E] text-center font-medium">
+                              {item.totalUnits}
+                            </span>
+                          )}
                         </div>
-                        {item.totalUnits && (
-                          <div className="text-[11px] text-[#8C7D7E] text-center">
-                            {item.totalUnits}
-                          </div>
-                        )}
                       </td>
 
-                      {/* Col 4: Tình trạng (Capsule badge nằm ngang) */}
+                      {/* Col 4: Tình trạng (Capsule badge đồng bộ với 4 card tổng quan) */}
                       <td className="py-4 px-4 text-center whitespace-nowrap">
-                        {item.statusType === 'stored' && (
-                          <span className="inline-flex items-center justify-center px-3.5 py-1.5 rounded-full text-[10.5px] font-bold tracking-wider uppercase whitespace-nowrap bg-[#EAF8EE] text-[#1E8347]">
-                            Đạt Chuẩn Lưu Kho
+                        {item.statusType === 'ready' && (
+                          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase whitespace-nowrap bg-[#EAF7EE] text-[#1E8347] border border-[#BCE7C7]">
+                            <CheckCircle2 size={13} className="text-[#1E8347]" />
+                            <span>Sẵn Sàng Xuất Giao</span>
                           </span>
                         )}
-                        {item.statusType === 'ready' && (
-                          <span className="inline-flex items-center justify-center px-3.5 py-1.5 rounded-full text-[10.5px] font-bold tracking-wider uppercase whitespace-nowrap bg-[#FEF3E8] text-[#D97706]">
-                            Sẵn Sàng Xuất Giao
+                        {item.statusType === 'stored' && (
+                          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase whitespace-nowrap bg-[#EFF6FF] text-[#1D4ED8] border border-[#BFDBFE]">
+                            <Sparkles size={13} className="text-[#1D4ED8]" />
+                            <span>Đạt Chuẩn Lưu Kho</span>
                           </span>
                         )}
                         {item.statusType === 'drying' && (
-                          <span className="inline-flex items-center justify-center px-3.5 py-1.5 rounded-full text-[10.5px] font-bold tracking-wider uppercase whitespace-nowrap bg-[#FFF4E6] text-[#C05621]">
-                            Giặt Sấy Nhiệt Thấp
+                          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase whitespace-nowrap bg-[#FEF2E6] text-[#D97706] border border-[#FED7AA]">
+                            <Clock size={13} className="text-[#D97706]" />
+                            <span>Giặt Sấy Nhiệt Thấp</span>
                           </span>
                         )}
                         {item.statusType === 'pending' && (
-                          <span className="inline-flex items-center justify-center px-3.5 py-1.5 rounded-full text-[10.5px] font-bold tracking-wider uppercase whitespace-nowrap bg-[#F5EEFA] text-[#7E3AF2]">
-                            Chờ Kiểm Định Sau Thuê
+                          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase whitespace-nowrap bg-[#FDECEE] text-[#D03B3B] border border-[#FCA5A5]">
+                            <AlertTriangle size={13} className="text-[#D03B3B]" />
+                            <span>Chờ Kiểm Định</span>
                           </span>
                         )}
                       </td>
@@ -712,11 +727,13 @@ export default function InventoryManagement() {
                         </div>
                         <div
                           className={`text-[11.5px] font-semibold mt-0.5 whitespace-nowrap ${
-                            item.inspectNoteColor === 'green'
+                            item.statusType === 'ready'
                               ? 'text-[#1E8347]'
-                              : item.inspectNoteColor === 'orange'
-                              ? 'text-[#C05621]'
-                              : 'text-[#7E3AF2]'
+                              : item.statusType === 'drying'
+                              ? 'text-[#D97706]'
+                              : item.statusType === 'pending'
+                              ? 'text-[#D03B3B]'
+                              : 'text-[#1D4ED8]'
                           }`}
                         >
                           {item.inspectNote}
