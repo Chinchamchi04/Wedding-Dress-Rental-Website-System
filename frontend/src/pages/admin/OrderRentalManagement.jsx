@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { message, Modal, Radio, Input } from 'antd';
 import {
@@ -32,50 +32,30 @@ const PAGE_SIZE = 20;
 
 /** Badge config cho từng status */
 const STATUS_CONFIG = {
-  deposit_paid: {
-    label: 'Đã Đặt Cọc',
-    bg: 'bg-[#FEF3C7]',
-    text: 'text-[#92400E]',
-  },
-  preparing: {
-    label: 'Đang Chuẩn Bị',
-    bg: 'bg-[#DBEAFE]',
-    text: 'text-[#1D4ED8]',
-  },
-  delivered: {
-    label: 'Đã Giao Váy',
-    bg: 'bg-[#FFEDD5]',
-    text: 'text-[#C2410C]',
-  },
-  renting: {
-    label: 'Đang Thuê',
-    bg: 'bg-[#EDE9FE]',
-    text: 'text-[#6D28D9]',
-  },
-  returned: {
-    label: 'Đã Trả Váy',
-    bg: 'bg-[#D1FAE5]',
-    text: 'text-[#065F46]',
-  },
-  completed: {
-    label: 'Hoàn Tất',
-    bg: 'bg-[#A7F3D0]',
-    text: 'text-[#064E3B]',
-  },
-  cancelled: {
-    label: 'Đã Hủy',
-    bg: 'bg-[#F3F4F6]',
-    text: 'text-[#6B7280]',
-  },
+  pending_payment: { label: 'Chờ Cọc', bg: 'bg-[#FEF3C7]', text: 'text-[#92400E]' },
+  deposit_paid: { label: 'Đã Đặt Cọc', bg: 'bg-[#FEF3C7]', text: 'text-[#92400E]' },
+  active: { label: 'Đã Ký Hợp Đồng', bg: 'bg-[#FEF3C7]', text: 'text-[#92400E]' },
+  confirmed: { label: 'Đã Xác Nhận', bg: 'bg-[#DBEAFE]', text: 'text-[#1D4ED8]' },
+  preparing: { label: 'Đang Chuẩn Bị', bg: 'bg-[#DBEAFE]', text: 'text-[#1D4ED8]' },
+  delivered: { label: 'Đã Giao Váy', bg: 'bg-[#FFEDD5]', text: 'text-[#C2410C]' },
+  renting: { label: 'Đang Thuê', bg: 'bg-[#EDE9FE]', text: 'text-[#6D28D9]' },
+  returned: { label: 'Đã Trả Váy', bg: 'bg-[#D1FAE5]', text: 'text-[#065F46]' },
+  complete: { label: 'Hoàn Tất', bg: 'bg-[#A7F3D0]', text: 'text-[#064E3B]' },
+  completed: { label: 'Hoàn Tất', bg: 'bg-[#A7F3D0]', text: 'text-[#064E3B]' },
+  cancelled: { label: 'Đã Hủy', bg: 'bg-[#F3F4F6]', text: 'text-[#6B7280]' },
 };
 
 /** Các chuyển tiếp status hợp lệ (chỉ tiến, không lui) */
 const NEXT_STATUSES = {
+  pending_payment: ['deposit_paid', 'cancelled'],
   deposit_paid: ['preparing', 'cancelled'],
+  active: ['preparing', 'cancelled'],
+  confirmed: ['preparing', 'cancelled'],
   preparing: ['delivered', 'cancelled'],
   delivered: ['renting', 'cancelled'],
   renting: ['returned', 'cancelled'],
   returned: ['completed'],
+  complete: [],
   completed: [],
   cancelled: [],
 };
@@ -175,7 +155,23 @@ function StatusBadge({ status }) {
 function UpdateStatusDropdown({ order, onUpdated }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const dropdownRef = useRef(null);
   const nexts = NEXT_STATUSES[order.status] || [];
+
+  // Tự động đóng dropdown khi click ra ngoài
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setOpen(false);
+      }
+    }
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [open]);
 
   if (nexts.length === 0) return null;
 
@@ -194,29 +190,47 @@ function UpdateStatusDropdown({ order, onUpdated }) {
   };
 
   return (
-    <div className="relative inline-block">
+    <div ref={dropdownRef} className="relative inline-block text-left whitespace-normal">
       <button
         type="button"
         disabled={loading}
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF2EE] border border-[#EFE2DC] text-[11.5px] text-[#554748] font-medium hover:bg-[#F3E7E2] transition-colors disabled:opacity-60"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF2EE] border border-[#EFE2DC] text-[12px] text-[#554748] font-medium hover:bg-[#F3E7E2] hover:text-[#733F49] transition-all disabled:opacity-60 cursor-pointer shadow-2xs"
       >
-        <SlidersHorizontal size={12} />
-        Cập nhật
-        <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+        <SlidersHorizontal size={12} className="text-[#846E63]" />
+        <span>Cập nhật</span>
+        <ChevronDown size={12} className={`transition-transform text-[#846E63] ${open ? 'rotate-180' : ''}`} />
       </button>
+
       {open && (
-        <div className="absolute left-0 top-full mt-1 w-44 bg-white rounded-xl shadow-lg border border-[#EFE5E1] py-1.5 z-40">
-          {nexts.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => handleChange(s)}
-              className="w-full px-3.5 py-1.5 text-left text-[12px] text-[#5F4E50] hover:bg-[#FAF5F2] hover:text-[#733F49] transition-colors"
-            >
-              {STATUS_CONFIG[s]?.label ?? s}
-            </button>
-          ))}
+        <div className="absolute right-0 top-full mt-1.5 w-52 bg-white rounded-xl shadow-2xl border border-[#EFE5E1] py-1.5 z-50 flex flex-col divide-y divide-[#F9F0EB]">
+          <div className="px-3.5 py-1.5 bg-[#FCF8F5] text-[10.5px] font-bold uppercase tracking-wider text-[#8C7A7B]">
+            Chuyển bước tiếp theo
+          </div>
+          <div className="py-1 flex flex-col">
+            {nexts.map((s) => {
+              const cfg = STATUS_CONFIG[s] || { label: s };
+              const isCancel = s === 'cancelled';
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => handleChange(s)}
+                  className={`w-full flex items-center justify-between px-3.5 py-2 text-left text-[12px] transition-colors font-medium border-0 bg-transparent cursor-pointer ${
+                    isCancel
+                      ? 'text-red-600 hover:bg-red-50 hover:text-red-700'
+                      : 'text-[#4A3E3F] hover:bg-[#FAF4EE] hover:text-[#733F49]'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${isCancel ? 'bg-red-500' : 'bg-[#733F49]'}`} />
+                    <span>{cfg.label}</span>
+                  </span>
+                  <ChevronRight size={13} className="opacity-40" />
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
