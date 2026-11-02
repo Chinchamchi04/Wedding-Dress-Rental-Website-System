@@ -19,7 +19,12 @@ export function AuthProvider({ children }) {
     }
   });
 
-  const [isLoading, setIsLoading] = useState(!!token);
+  const [isLoading, setIsLoading] = useState(() => {
+    // Nếu đã có sẵn thông tin user từ localStorage/sessionStorage, không cần block màn hình bằng loading spinner
+    const saved = localStorage.getItem('user') || localStorage.getItem(AUTH_USER_KEY) || sessionStorage.getItem(AUTH_USER_KEY);
+    if (saved) return false;
+    return !!(localStorage.getItem('token') || sessionStorage.getItem('token') || localStorage.getItem('accessToken'));
+  });
 
   const logout = () => {
     serviceLogout();
