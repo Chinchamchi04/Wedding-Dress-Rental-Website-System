@@ -10,10 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
-  Snowflake,
-  Droplets,
   Wrench,
-  Gem,
   MoreVertical,
   Download,
   FileSpreadsheet,
@@ -27,7 +24,6 @@ import {
   CheckCheck
 } from 'lucide-react';
 import HangerIcon from '../../components/common/HangerIcon';
-import ShelvesIcon from '../../components/common/ShelvesIcon';
 import { useAuth } from '../../contexts/AuthContext';
 import { getAllDresses } from '../../services/dressService';
 
@@ -59,7 +55,7 @@ export default function InventoryManagement() {
   // Form thêm sản phẩm kho mới
   const [newName, setNewName] = useState('');
   const [newCollection, setNewCollection] = useState('ATELIER COUTURE 2026');
-  const [newLocation, setNewLocation] = useState('Tủ Treo A2 - Kệ 01');
+  const [newLocation, setNewLocation] = useState('Tủ A1');
   const [newRfid, setNewRfid] = useState('');
   const [newConditionType, setNewConditionType] = useState('cold');
   const [newDescription, setNewDescription] = useState('');
@@ -79,22 +75,16 @@ export default function InventoryManagement() {
         if (!active) return;
         const dbDresses = res?.data;
         if (Array.isArray(dbDresses) && dbDresses.length > 0) {
-          const shelves = ['KỆ A1 - TẦNG 2', 'KỆ B2 - TẦNG 1', 'KỆ C1 - TẦNG 3', 'KỆ VIP - SẢNH TRƯỚC', 'KỆ D3 - TẦNG 2'];
-          const conditions = [
-            { type: 'cold', text: 'Kho Lạnh Tơ Tằm (19°C)' },
-            { type: 'humidity', text: 'Kho Chống Ẩm Cao Cấp' },
-            { type: 'diamond', text: 'Kho Kim Hoàn & Đính Kết VIP' }
-          ];
+          const cabinets = ['Tủ A1', 'Tủ B2', 'Tủ C1', 'Tủ VIP', 'Tủ D3'];
           const mapped = dbDresses.map((d, index) => {
             const num = (index + 1).toString().padStart(2, '0');
             const code = d.code || `UB-${(index + 1).toString().padStart(3, '0')}`;
-            const shelf = shelves[index % shelves.length];
-            const cond = conditions[index % conditions.length];
+            const cabinet = cabinets[index % cabinets.length];
             const statusType = index % 8 === 0 ? 'drying' : index % 7 === 0 ? 'pending' : index % 3 === 0 ? 'ready' : 'stored';
             const statusText = statusType === 'stored' ? 'ĐẠT CHUẨN LƯU KHO'
               : statusType === 'ready' ? 'SẴN SÀNG XUẤT GIAO'
-              : statusType === 'drying' ? 'GIẶT SẤY NHIỆT THẤP'
-              : 'CHỜ KIỂM ĐỊNH';
+                : statusType === 'drying' ? 'GIẶT SẤY NHIỆT THẤP'
+                  : 'CHỜ KIỂM ĐỊNH';
 
             const rawSizes = Array.isArray(d.sizes) && d.sizes.length > 0 ? d.sizes : ['S', 'M'];
             const mappedSizes = rawSizes.map((sz) => ({
@@ -104,10 +94,10 @@ export default function InventoryManagement() {
             const inspectNote = statusType === 'ready'
               ? 'Phom dáng 100% nguyên vẹn'
               : statusType === 'drying'
-              ? 'Đang giặt sấy vi khí hậu'
-              : statusType === 'pending'
-              ? 'Cần kiểm định ren & gọng'
-              : 'Đạt chuẩn bảo quản 10/10';
+                ? 'Đang giặt sấy vi khí hậu'
+                : statusType === 'pending'
+                  ? 'Cần kiểm định ren & gọng'
+                  : 'Đạt chuẩn bảo quản 10/10';
 
             return {
               id: d._id || d.id || `inv_${index + 1}`,
@@ -115,9 +105,9 @@ export default function InventoryManagement() {
               name: d.name,
               collection: d.collection || 'ATELIER HAUTE COUTURE 2026',
               rfid: `#RF-2026-${(index + 1).toString().padStart(4, '0')}`,
-              location: shelf,
-              conditionType: cond.type,
-              conditionText: cond.text,
+              location: cabinet,
+              conditionType: 'cold',
+              conditionText: 'Tiêu chuẩn bảo quản vi khí hậu',
               statusType,
               statusText,
               stock: mappedSizes.length * 2,
@@ -196,7 +186,7 @@ export default function InventoryManagement() {
       return it;
     });
     setItems(updated);
-    try { localStorage.setItem('unibridal_inventory_local', JSON.stringify(updated)); } catch {}
+    try { localStorage.setItem('unibridal_inventory_local', JSON.stringify(updated)); } catch { }
     setActionMenuOpenId(null);
     if (selectedItem && selectedItem.id === itemId) {
       setSelectedItem((prev) => ({
@@ -262,7 +252,7 @@ export default function InventoryManagement() {
 
     const updated = [newItem, ...items];
     setItems(updated);
-    try { localStorage.setItem('unibridal_inventory_local', JSON.stringify(updated)); } catch {}
+    try { localStorage.setItem('unibridal_inventory_local', JSON.stringify(updated)); } catch { }
 
     setIsAddModalOpen(false);
     setNewName('');
@@ -274,7 +264,7 @@ export default function InventoryManagement() {
   // Xuất file bảng kiểm kê CSV
   const handleExportCsv = () => {
     try {
-      const headers = ['Mã Kho', 'Tên Váy', 'Bộ Sưu Tập', 'Vị Trí Tủ Kệ', 'Thẻ RFID', 'Điều Kiện Bảo Quản', 'Tình Trạng', 'Lần Kiểm Kê Gần Nhất', 'Người Kiểm Định'];
+      const headers = ['Mã Kho', 'Tên Váy', 'Bộ Sưu Tập', 'Vị Trí Tủ', 'Thẻ RFID', 'Điều Kiện Bảo Quản', 'Tình Trạng', 'Lần Kiểm Kê Gần Nhất', 'Người Kiểm Định'];
       const rows = items.map((it) => [
         `"${it.code}"`,
         `"${it.name}"`,
@@ -333,7 +323,7 @@ export default function InventoryManagement() {
         <div>
           <div className="w-2.5 h-2.5 rounded-full bg-[#B8737D] mb-3" />
           <h1 className="font-playfair text-[32px] md:text-[38px] font-bold text-[#5F2B36] tracking-tight mb-2">
-            Quản Lý Kho Hàng &amp; Sản Phẩm
+            Quản Lý Kho Hàng
           </h1>
           <p className="text-[13.5px] text-[#7A6B6C] font-normal leading-relaxed max-w-4xl">
             Giám sát kiểm định phom dáng, điều phối tủ treo bảo quản lạnh/chống ẩm vi khí hậu chuyên dụng, theo dõi lịch sử giặt hấp phục hồi xơ sợi tơ tằm và kiểm kê vật tư phụ kiện hạt cườm, pha lê thủ công.
@@ -479,7 +469,7 @@ export default function InventoryManagement() {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Tìm theo mã váy, tên thiết kế, vị trí tủ treo, mô tả chất liệu..."
+            placeholder="Tìm theo mã váy, tên thiết kế, vị trí tủ, mô tả chất liệu..."
             className="w-full pl-11 pr-4 py-3 rounded-xl bg-[#FFF6F3] border border-[#F4E8E3] focus:border-[#B8737D] focus:bg-white text-[13.5px] text-[#2C2523] placeholder-[#A39293] outline-none transition-all"
           />
           {searchTerm && (
@@ -523,9 +513,8 @@ export default function InventoryManagement() {
               <span>{selectedFilterLabel}</span>
               <ChevronDown
                 size={14}
-                className={`text-[#8C7D7E] transition-transform ${
-                  filterDropdownOpen ? 'rotate-180' : ''
-                }`}
+                className={`text-[#8C7D7E] transition-transform ${filterDropdownOpen ? 'rotate-180' : ''
+                  }`}
               />
             </button>
 
@@ -539,11 +528,10 @@ export default function InventoryManagement() {
                       setStatusFilter(opt.value);
                       setFilterDropdownOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between px-4 py-2 text-left text-[13px] transition-colors cursor-pointer ${
-                      statusFilter === opt.value
+                    className={`w-full flex items-center justify-between px-4 py-2 text-left text-[13px] transition-colors cursor-pointer ${statusFilter === opt.value
                         ? 'bg-[#F9EDE9] text-[#733F49] font-bold'
                         : 'bg-transparent text-[#5F4E50] hover:bg-[#FAF5F2]'
-                    }`}
+                      }`}
                   >
                     <span>{opt.label}</span>
                     {statusFilter === opt.value && <Check size={14} />}
@@ -565,7 +553,7 @@ export default function InventoryManagement() {
                   SẢN PHẨM &amp; MÃ LỄ PHỤC
                 </th>
                 <th className="py-4 px-3 sm:px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[23%] min-w-[200px]">
-                  VỊ TRÍ KHO &amp; KỆ TREO
+                  VỊ TRÍ TỦ
                 </th>
                 <th className="py-4 px-3 sm:px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[14%] min-w-[130px]">
                   PHÂN LOẠI &amp; TỒN SIZE
@@ -621,44 +609,18 @@ export default function InventoryManagement() {
                         </div>
                       </td>
 
-                      {/* Col 2: Vị trí kho & Kệ treo */}
+                      {/* Col 2: Vị trí tủ */}
                       <td className="py-4 px-4">
-                        <div className="flex items-center gap-2 mb-1 whitespace-nowrap">
-                          <ShelvesIcon size={16} className="text-[#8A4650] shrink-0" />
-                          <span className="font-bold text-[#2C2523] text-[13px] whitespace-nowrap">
+                        <div className="flex items-center gap-2 mb-1.5 whitespace-nowrap">
+                          <HangerIcon size={16} strokeWidth={1.8} className="text-[#8A4650] shrink-0" />
+                          <span className="font-bold text-[#2C2523] text-[13.5px] whitespace-nowrap">
                             {item.location}
                           </span>
                           <span className="px-2 py-0.5 rounded-md border border-[#E8DCD7] bg-[#FAF5F2] text-[#7A696B] font-mono text-[10px] font-semibold whitespace-nowrap shrink-0">
                             {item.rfid}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-[11.5px] font-semibold mb-0.5 whitespace-nowrap">
-                          {item.conditionType === 'cold' && (
-                            <>
-                              <Snowflake size={13} className="text-[#2563EB]" />
-                              <span className="text-[#2563EB]">{item.conditionText}</span>
-                            </>
-                          )}
-                          {item.conditionType === 'humidity' && (
-                            <>
-                              <Droplets size={13} className="text-[#0284C7]" />
-                              <span className="text-[#0284C7]">{item.conditionText}</span>
-                            </>
-                          )}
-                          {item.conditionType === 'restore' && (
-                            <>
-                              <Wrench size={13} className="text-[#D97706]" />
-                              <span className="text-[#D97706]">{item.conditionText}</span>
-                            </>
-                          )}
-                          {item.conditionType === 'diamond' && (
-                            <>
-                              <Gem size={13} className="text-[#D97706]" />
-                              <span className="text-[#D97706]">{item.conditionText}</span>
-                            </>
-                          )}
-                        </div>
-                        <div className="text-[11.5px] text-[#8A797A]">
+                        <div className="text-[11.5px] text-[#8A797A] line-clamp-2 max-w-[280px]">
                           {item.description}
                         </div>
                       </td>
@@ -726,15 +688,14 @@ export default function InventoryManagement() {
                           {item.inspector}
                         </div>
                         <div
-                          className={`text-[11.5px] font-semibold mt-0.5 whitespace-nowrap ${
-                            item.statusType === 'ready'
+                          className={`text-[11.5px] font-semibold mt-0.5 whitespace-nowrap ${item.statusType === 'ready'
                               ? 'text-[#1E8347]'
                               : item.statusType === 'drying'
-                              ? 'text-[#D97706]'
-                              : item.statusType === 'pending'
-                              ? 'text-[#D03B3B]'
-                              : 'text-[#1D4ED8]'
-                          }`}
+                                ? 'text-[#D97706]'
+                                : item.statusType === 'pending'
+                                  ? 'text-[#D03B3B]'
+                                  : 'text-[#1D4ED8]'
+                            }`}
                         >
                           {item.inspectNote}
                         </div>
@@ -850,11 +811,10 @@ export default function InventoryManagement() {
                     key={pageNum}
                     type="button"
                     onClick={() => setActivePage(pageNum)}
-                    className={`w-8 h-8 rounded-lg font-bold flex items-center justify-center transition-colors cursor-pointer ${
-                      activePage === pageNum
+                    className={`w-8 h-8 rounded-lg font-bold flex items-center justify-center transition-colors cursor-pointer ${activePage === pageNum
                         ? 'bg-[#78434D] text-white shadow-xs'
                         : 'bg-white border border-[#EFE5E1] shadow-2xs text-[#4A3B3D] hover:bg-[#F5ECE8]'
-                    }`}
+                      }`}
                   >
                     {pageNum}
                   </button>
@@ -915,7 +875,7 @@ export default function InventoryManagement() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 text-xs">
                   <div className="p-3 rounded-xl bg-[#FAF5F2] border border-[#F0E6E2]">
-                    <span className="text-[#8C7D7E] block mb-1">Vị trí tủ treo:</span>
+                    <span className="text-[#8C7D7E] block mb-1">Vị trí tủ:</span>
                     <div className="font-bold text-[#2C2523]">
                       {selectedItem.location}
                     </div>
@@ -1024,12 +984,12 @@ export default function InventoryManagement() {
                 </div>
                 <div>
                   <label className="block font-bold text-[#5F4E50] mb-1">
-                    Vị Trí Tủ Treo *
+                    Vị Trí Tủ *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="VD: Tủ Treo A2 - Kệ 01"
+                    placeholder="VD: Tủ A1, Tủ B2, Tủ VIP..."
                     value={newLocation}
                     onChange={(e) => setNewLocation(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D]"
