@@ -299,34 +299,6 @@ export default function ContractTemplateManagement() {
     fetchTemplates();
   }, []);
 
-  // Clause Library Mock
-  const clauseLibrary = [
-    {
-      category: 'Bảo lãnh & Đặt cọc',
-      title: 'Điều khoản cọc bảo chứng tài sản bằng CCCD gắn chip',
-      snippet: 'Bên B đồng ý xuất trình và để Bên A đối chiếu thông tin CCCD gắn chip gốc, đồng thời đặt cọc số tiền tương đương 50% giá niêm yết...',
-      usedIn: 4
-    },
-    {
-      category: 'Bồi thường hư hại',
-      title: 'Quy chuẩn đền bù vỡ hạt pha lê Swarovski & ren rách',
-      snippet: 'Trường hợp đính kết thủ công bị rơi rớt vượt quá 5% diện tích hoặc rách ren phần ngực, Bên B chịu chi phí phục hồi theo báo giá của xưởng thêu...',
-      usedIn: 5
-    },
-    {
-      category: 'Bất khả kháng',
-      title: 'Miễn trừ trách nhiệm thiên tai & dịch bệnh theo công bố chính phủ',
-      snippet: 'Nếu sự kiện cưới bị hoãn do thiên tai bất khả kháng được cơ quan nhà nước ban bố tình trạng khẩn cấp, hai bên được phép bảo lưu hợp đồng trong 180 ngày...',
-      usedIn: 6
-    },
-    {
-      category: 'Ký số điện tử',
-      title: 'Xác thực định danh e-KYC và chữ ký số một lần qua SMS OTP',
-      snippet: 'Mã xác thực 6 số gửi tới số thuê bao đã đăng ký chính chủ là bằng chứng pháp lý không thể chối bỏ về sự đồng thuận của Bên B đối với toàn văn hợp đồng...',
-      usedIn: 6
-    }
-  ];
-
   const triggerToast = (msg) => {
     setShowToast(msg);
     setTimeout(() => setShowToast(''), 3000);
@@ -413,16 +385,6 @@ export default function ContractTemplateManagement() {
           }`}
         >
           Danh Sách Mẫu Hợp Đồng ({templates.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('clauses')}
-          className={`pb-3 text-sm font-semibold transition-all relative ${
-            activeTab === 'clauses'
-              ? 'text-[#C5A880] border-b-2 border-[#C5A880]'
-              : 'text-[#8C7A6B] hover:text-[#2C2523]'
-          }`}
-        >
-          Thư Viện Điều Khoản Tiêu Chuẩn ({clauseLibrary.length})
         </button>
         <button
           onClick={() => setActiveTab('matrix')}
@@ -623,57 +585,7 @@ export default function ContractTemplateManagement() {
         </div>
       )}
 
-      {/* TAB 2: THƯ VIỆN ĐIỀU KHOẢN TIÊU CHUẨN */}
-      {activeTab === 'clauses' && (
-        <div className="space-y-6">
-          <div className="bg-gradient-to-r from-[#2C2523] to-[#423835] text-white p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-md">
-            <div>
-              <span className="text-xs uppercase tracking-wider text-[#D8B168] font-bold">Standard Clause Bank</span>
-              <h3 className="text-xl font-bold font-serif mt-1">Thư Viện Điều Khoản Pháp Lý Chuẩn Hóa</h3>
-              <p className="text-xs text-[#E5D7CC] mt-1 max-w-2xl leading-relaxed">
-                Tập hợp các điều khoản đã được cố vấn pháp lý kiểm định. Khi áp dụng vào bất kỳ mẫu hợp đồng mới, các biến số (Tên váy, Tiền cọc, Ngày thuê) sẽ tự động liên kết dữ liệu.
-              </p>
-            </div>
-            <button
-              onClick={() => triggerToast('Đã mở công cụ soạn thảo điều khoản mẫu mới')}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#C5A880] hover:bg-[#B39366] text-white text-xs font-semibold rounded-xl shrink-0 transition-all shadow-sm"
-            >
-              <Plus className="w-4 h-4" />
-              Thêm Điều Khoản Mẫu
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {clauseLibrary.map((item, idx) => (
-              <div key={idx} className="bg-white p-5 rounded-2xl border border-[#EFE5E1] shadow-xs hover:border-[#C5A880]/50 transition-all flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#C5A880] bg-[#FAF3EC] px-2.5 py-0.5 rounded-md">
-                      {item.category}
-                    </span>
-                    <span className="text-[11px] text-[#A39284]">Được dùng trong {item.usedIn} mẫu</span>
-                  </div>
-                  <h4 className="text-sm font-bold text-[#2C2523] mb-2">{item.title}</h4>
-                  <p className="text-xs text-[#8C7A6B] leading-relaxed italic bg-[#FDFBF9] p-3 rounded-xl border border-[#F2E8E2]">
-                    "{item.snippet}"
-                  </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-[#F7EFEA] flex items-center justify-end gap-2">
-                  <button
-                    onClick={() => triggerToast('Đã sao chép nội dung điều khoản vào Clipboard')}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#8C7A6B] hover:text-[#C5A880] py-1 px-2.5 rounded-lg hover:bg-[#FAF7F2] transition-colors"
-                  >
-                    <Copy className="w-3.5 h-3.5" />
-                    Sao chép điều khoản
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 3: BẢNG QUY CHUẨN ĐỀN BÙ HƯ HỎNG */}
+      {/* TAB: BẢNG QUY CHUẨN ĐỀN BÙ HƯ HỎNG */}
       {activeTab === 'matrix' && (
         <div className="bg-white rounded-2xl border border-[#EFE5E1] shadow-xs overflow-hidden">
           <div className="p-6 border-b border-[#F2E8E2] bg-[#FAF7F2]/60">
