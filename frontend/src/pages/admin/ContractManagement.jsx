@@ -146,7 +146,7 @@ export default function ContractManagement() {
             totalValue: (ord.totalRentPrice || 5200000) + (ord.totalDeposit || 15000000),
             status,
             signedAt: ord.createdAt ? new Date(ord.createdAt).toLocaleString('vi-VN') : '2026-11-01',
-            signedMethod: ord.contractSignature ? 'Ký số điện tử UniBridal Pass' : 'SmartOTP eID',
+            signedMethod: ord.contractSignature ? 'Chữ ký điện tử UniBridal' : 'Ký số điện tử',
             staffInCharge: 'Chuyên viên Atelier',
             packageType: 'Gói Thuê Lễ Phục Tiêu Chuẩn',
             note: ord.notes || 'Hợp đồng điện tử kèm biên nhận cọc bảo lãnh.'
@@ -210,13 +210,13 @@ export default function ContractManagement() {
       case 'pending_signature':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-            <Clock size={13} /> Chờ Ký OTP
+            <Clock size={13} /> Chờ Ký
           </span>
         );
       case 'completed':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#F3ECE8] text-[#705856] border border-[#E8DDD8]">
-            <CheckCircle2 size={13} /> Đã Thanh Lý
+            <CheckCircle2 size={13} /> Đã Hoàn Thành
           </span>
         );
       case 'disputed':
@@ -278,7 +278,7 @@ export default function ContractManagement() {
 
     const labels = {
       active: 'Đã kích hoạt hợp đồng có hiệu lực pháp lý!',
-      completed: 'Đã thanh lý hợp đồng & giải ngân hoàn cọc cho khách hàng!',
+      completed: 'Hợp đồng đã hoàn thành & giải ngân hoàn cọc cho khách hàng!',
       disputed: 'Đã chuyển hợp đồng sang trạng thái đối soát bồi thường cọc!'
     };
     showToast(labels[newStatus] || 'Đã cập nhật trạng thái hợp đồng thành công!');
@@ -451,15 +451,15 @@ export default function ContractManagement() {
           </div>
 
           <div className="bg-white p-4 rounded-xl border border-[#EFE5E1] shadow-xs">
-            <span className="text-xs text-[#8A797A] font-medium block">CHỜ KHÁCH KÝ OTP</span>
+            <span className="text-xs text-[#8A797A] font-medium block">CHỜ KHÁCH KÝ</span>
             <div className="text-2xl font-bold text-amber-600 mt-1">{stats.pending}</div>
-            <div className="text-[11px] text-[#8A797A] mt-1">Cần nhắc nhở trước ngày fitting</div>
+            <div className="text-[11px] text-[#8A797A] mt-1">Cần ký trước ngày fitting / nhận váy</div>
           </div>
 
           <div className="bg-white p-4 rounded-xl border border-[#EFE5E1] shadow-xs">
-            <span className="text-xs text-[#8A797A] font-medium block">ĐÃ THANH LÝ AN TOÀN</span>
+            <span className="text-xs text-[#8A797A] font-medium block">ĐÃ HOÀN THÀNH</span>
             <div className="text-2xl font-bold text-emerald-700 mt-1">{stats.completed}</div>
-            <div className="text-[11px] text-emerald-600 mt-1">Hoàn cọc 100% nguyên vẹn</div>
+            <div className="text-[11px] text-emerald-600 mt-1">Đã giải ngân &amp; hoàn tất cọc</div>
           </div>
 
           <div className="bg-white p-4 rounded-xl border border-[#EFE5E1] shadow-xs">
@@ -488,8 +488,8 @@ export default function ContractManagement() {
             {[
               { id: 'all', label: 'Tất cả' },
               { id: 'active', label: 'Có hiệu lực' },
-              { id: 'pending_signature', label: 'Chờ ký OTP' },
-              { id: 'completed', label: 'Đã thanh lý' },
+              { id: 'pending_signature', label: 'Chờ ký' },
+              { id: 'completed', label: 'Đã hoàn thành' },
               { id: 'disputed', label: 'Đang xử lý cọc' }
             ].map((tab) => (
               <button
@@ -618,7 +618,7 @@ export default function ContractManagement() {
                             type="button"
                             onClick={() => handleUpdateStatus(item.id, 'completed')}
                             className="p-2 rounded-lg text-[#5F333B] hover:bg-[#F2E4DE] transition-colors cursor-pointer"
-                            title="Thanh lý hợp đồng & Hoàn cọc"
+                            title="Hoàn thành hợp đồng & Hoàn cọc"
                           >
                             <FileCheck2 size={17} />
                           </button>
@@ -629,7 +629,7 @@ export default function ContractManagement() {
                             type="button"
                             onClick={() => handleSendReminder(item)}
                             className="p-2 rounded-lg text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer"
-                            title="Gửi lại mã nhắc ký OTP qua SMS/Email"
+                            title="Gửi nhắc ký hợp đồng qua SMS/Email"
                           >
                             <Send size={16} />
                           </button>
@@ -900,7 +900,7 @@ export default function ContractManagement() {
                       className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#733F49] hover:bg-[#5C323A] text-white text-xs font-semibold cursor-pointer"
                     >
                       <FileCheck2 size={14} />
-                      <span>Thanh Lý &amp; Hoàn Cọc</span>
+                      <span>Hoàn Thành &amp; Hoàn Cọc</span>
                     </button>
                   )}
 
@@ -1045,7 +1045,7 @@ export default function ContractManagement() {
                   <div>
                     <p className="font-bold uppercase text-[#733F49]">ĐẠI DIỆN BÊN B (KHÁCH HÀNG)</p>
                     <p className="text-[#A39192] italic mt-1">
-                      {selectedContract.signedAt ? 'Xác thực định danh eKYC & SmartOTP' : 'Chưa thực hiện ký điện tử'}
+                      {selectedContract.signedAt ? 'Xác thực chữ ký số điện tử' : 'Chưa thực hiện ký điện tử'}
                     </p>
                     <div className="h-20 flex items-center justify-center">
                       {selectedContract.signedAt ? (
@@ -1055,7 +1055,7 @@ export default function ContractManagement() {
                         </div>
                       ) : (
                         <div className="border border-dashed border-amber-400 rounded-lg p-2 bg-amber-50 text-amber-700 text-xs">
-                          Chờ khách hàng nhập mã OTP xác thực
+                          Chờ khách hàng ký xác nhận hợp đồng
                         </div>
                       )}
                     </div>

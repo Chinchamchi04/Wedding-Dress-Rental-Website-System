@@ -91,7 +91,7 @@ const contractSchema = new mongoose.Schema(
     },
     signedMethod: {
       type: String,
-      default: 'Chờ khách hàng ký OTP', // 'SmartOTP eID', 'Chữ ký điện tử VNPT CA', 'Ký giấy showroom'
+      default: 'Chờ khách hàng ký', // 'Chữ ký điện tử trực tuyến', 'Ký giấy showroom'
     },
     staffInCharge: {
       type: mongoose.Schema.Types.ObjectId,
