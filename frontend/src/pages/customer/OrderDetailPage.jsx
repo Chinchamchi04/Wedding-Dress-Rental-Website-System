@@ -333,27 +333,36 @@ export default function OrderDetailPage() {
               </p>
             </div>
 
-            {/* ── BANNER BIÊN BẢN KIỂM ĐỊNH NẾU ĐÃ TRẢ VÁY ── */}
+            {/* ── BANNER BIÊN BẢN KIỂM ĐỊNH & HOÀN CỌC NỔI BẬT ── */}
             {(order.rawStatus === 'returned' || order.inspection) && (
-              <div className="mt-4 p-4 rounded-2xl bg-[#FFF6F3] border border-[#F3DDD7] text-xs space-y-2 font-jakarta">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#B8737D] animate-ping" />
-                    <span className="font-bold text-[#5F2B36] text-[13px]">
-                      Biên Bản Kiểm Định Trả Váy &amp; Quyết Toán Hoàn Cọc
+              <div className="mt-5 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#FFF4F0] via-[#FFF8F5] to-[#FFF1EC] border-2 border-[#E7BFB5] shadow-sm space-y-3 font-jakarta transition-all">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-3 w-3 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#B8737D] opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-[#8C4654]"></span>
+                    </span>
+                    <span className="font-playfair font-bold text-[#5F2B36] text-[15px] sm:text-[16px] tracking-wide">
+                      ✦ Showroom đã lập Biên Bản Kiểm Định Trả Váy
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setIsInspectionOpen(true)}
-                    className="px-4 py-2 rounded-xl bg-[#733F49] text-white text-xs font-bold hover:bg-[#5C3038] transition-colors cursor-pointer shadow-xs"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#733F49] to-[#8C4654] hover:from-[#5A2D35] hover:to-[#733F49] text-white text-xs font-bold transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg border-0 shrink-0"
                   >
-                    Xem Biên Bản &amp; Xác Nhận Hoàn Cọc
+                    <span>Xem Biên Bản &amp; Xác Nhận Hoàn Cọc</span>
                   </button>
                 </div>
-                <p className="text-[12px] text-[#7A6B6C] m-0">
-                  Showroom đã lập biên bản kiểm định hiện trạng váy và bảng tính tiền hoàn cọc. Nàng có thể xem chi tiết để đồng ý nhận hoàn cọc tự động hoặc gửi khiếu nại nếu chưa hài lòng.
+
+                <p className="text-[12.5px] sm:text-[13px] leading-relaxed text-[#5E4D4F] m-0">
+                  Nàng vui lòng xem chi tiết hiện trạng váy và số tiền cọc được hoàn lại. Khi nàng đồng ý, hệ thống sẽ tự động hoàn cọc ngay lập tức; nếu chưa hài lòng nàng có quyền gửi đơn khiếu nại.
                 </p>
+
+                <div className="pt-1 flex items-center gap-1.5 text-[11px] text-[#8C7A7B]">
+                  <span>📧</span>
+                  <span>Hệ thống đã đồng thời gửi thông báo và bản sao biên bản kiểm định chi tiết về email của nàng.</span>
+                </div>
               </div>
             )}
 

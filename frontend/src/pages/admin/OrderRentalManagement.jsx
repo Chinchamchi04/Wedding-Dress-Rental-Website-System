@@ -334,7 +334,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
         evidencePhotos,
       });
 
-      message.success(`Đã lưu biên bản kiểm định thành công! Biên bản đã được chuyển đến khách hàng trong phần Lịch sử đơn hàng để xác nhận.`);
+      message.success('Đã lưu biên bản kiểm định thành công! Hệ thống đã gửi email thông báo kèm liên kết xác nhận hoàn cọc tới khách hàng.');
       setIsEditing(false);
       onSuccess();
     } catch {

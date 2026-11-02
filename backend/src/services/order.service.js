@@ -1,5 +1,10 @@
 import Order from '../models/Order.model.js';
 import ReturnInspection from '../models/ReturnInspection.model.js';
+import User from '../models/User.model.js';
+import {
+  sendInspectionNotificationEmail,
+  sendRefundConfirmationEmail,
+} from '../utils/sendEmail.js';
 
 /**
  * Service xử lý nghiệp vụ Đơn Thuê Váy & Hợp Đồng (Orders)
@@ -280,6 +285,35 @@ export const submitReturnInspection = async (orderId, data, staffUser) => {
   order.actualReturnDate = new Date();
   await order.save();
 
+  // Tự động gửi email thông báo biên bản kiểm định đến khách hàng
+  try {
+    let customerEmail = order.customerEmail || order.email;
+    let customerName = order.customerName || order.brideName || 'Quý khách';
+
+    if (!customerEmail && order.customerId) {
+      const customer = await User.findById(order.customerId).lean();
+      if (customer) {
+        customerEmail = customer.email;
+        customerName = customer.fullName || customerName;
+      }
+    }
+
+    if (customerEmail) {
+      const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+      sendInspectionNotificationEmail({
+        to: customerEmail,
+        fullName: customerName,
+        orderCode: order.orderCode,
+        totalDeposit: order.totalDeposit,
+        totalDeduction: inspection.totalDeduction,
+        finalRefundAmount: inspection.finalRefundAmount,
+        returnUrl: `${clientUrl}/profile/orders`,
+      }).catch((err) => console.error('[EMAIL INSPECTION SEND ERROR]', err.message));
+    }
+  } catch (err) {
+    console.error('[EMAIL NOTIFICATION ERROR]', err.message);
+  }
+
   return { order, inspection };
 };
 
@@ -317,6 +351,31 @@ export const approveReturnInspection = async (orderId, customerUser) => {
 
   order.status = 'completed';
   await order.save();
+
+  // Tự động gửi email xác nhận hoàn cọc thành công
+  try {
+    let customerEmail = order.customerEmail || order.email;
+    let customerName = order.customerName || order.brideName || 'Quý khách';
+
+    if (!customerEmail && order.customerId) {
+      const customer = await User.findById(order.customerId).lean();
+      if (customer) {
+        customerEmail = customer.email;
+        customerName = customer.fullName || customerName;
+      }
+    }
+
+    if (customerEmail) {
+      sendRefundConfirmationEmail({
+        to: customerEmail,
+        fullName: customerName,
+        orderCode: order.orderCode,
+        finalRefundAmount: inspection.finalRefundAmount,
+      }).catch((err) => console.error('[EMAIL REFUND SEND ERROR]', err.message));
+    }
+  } catch (err) {
+    console.error('[EMAIL REFUND NOTIFICATION ERROR]', err.message);
+  }
 
   return { order, inspection };
 };
