@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  MessageSquare,
   X,
   SendHorizontal,
   ExternalLink,
@@ -513,26 +512,6 @@ export default function ChatWidget() {
                 WebkitUserDrag: 'none',
               }}
             />
-
-            {/* Badge nút tròn góc dưới (X khi mở, icon Chat khi đóng) */}
-            <span
-              className={`absolute bottom-0 right-1 w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center border-2 border-white shadow-md transition-all duration-300 z-20 ${
-                isOpen
-                  ? 'bg-[#804E55] text-white hover:bg-[#6D3940]'
-                  : 'bg-[#B8737D] text-white group-hover/btn:bg-[#a35d67]'
-              }`}
-            >
-              {isOpen ? (
-                <X className="w-3.5 h-3.5 stroke-[2.5]" />
-              ) : (
-                <MessageSquare className="w-3 h-3 stroke-[2.2]" />
-              )}
-            </span>
-
-            {/* Online status green dot */}
-            {!isOpen && (
-              <span className="absolute bottom-4 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-white shadow-xs animate-pulse z-20" />
-            )}
 
             {/* Unread badge nếu có tin nhắn mới */}
             {!isOpen && unreadCount > 0 && (
