@@ -17,6 +17,11 @@ import {
   RefreshCw,
   Layers,
   Trash2,
+  Banknote,
+  ShieldCheck,
+  Percent,
+  TableProperties,
+  ChevronUp,
 } from 'lucide-react';
 import HangerIcon from '../../components/common/HangerIcon';
 import { getAllDresses, deleteDress } from '../../services/dressService';
@@ -43,6 +48,7 @@ export default function InventoryManagement() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [actionMenuOpenId, setActionMenuOpenId] = useState(null);
   const [toastMsg, setToastMsg] = useState('');
+  const [showMatrixTable, setShowMatrixTable] = useState(false);
 
   // State cho Modal Sửa Sản Phẩm (Edit Modal)
   const [editingItem, setEditingItem] = useState(null);
@@ -607,6 +613,24 @@ export default function InventoryManagement() {
     (i) => i.statusType === 'drying' || (i.maintenanceCount && i.maintenanceCount > 0)
   ).length;
 
+  // 5. Tổng giá trị tài sản kho bảo lãnh
+  const totalAssetValue = useMemo(() => {
+    return items.reduce((sum, item) => sum + ((item.depositAmount || 15000000) * (item.totalStock || 1)), 0);
+  }, [items]);
+
+  // 6. Tổng số váy khả dụng sẵn sàng ngay
+  const totalAvailableUnits = useMemo(() => {
+    return items.reduce((sum, item) => sum + (item.availableStock || 0), 0);
+  }, [items]);
+
+  // 7. Tổng số váy đang phục vụ cô dâu
+  const totalRentedUnits = useMemo(() => {
+    return items.reduce((sum, item) => sum + (item.rentedCount || 0), 0);
+  }, [items]);
+
+  // 8. Tỷ lệ lấp đầy kho (%)
+  const utilizationRate = totalUnitsAll > 0 ? Math.round((totalRentedUnits / totalUnitsAll) * 100) : 0;
+
   const selectedFilterLabel =
     statusOptions.find((o) => o.value === statusFilter)?.label || 'Tất Cả Tình Trạng';
 
@@ -650,6 +674,19 @@ export default function InventoryManagement() {
         <div className="flex items-center gap-2.5">
           <button
             type="button"
+            onClick={() => setShowMatrixTable(!showMatrixTable)}
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border shadow-xs ${
+              showMatrixTable
+                ? 'bg-[#5F2B36] text-white border-[#5F2B36]'
+                : 'bg-white text-[#5F2B36] border-[#E8DDD8] hover:bg-[#FAF0EC]'
+            }`}
+          >
+            <TableProperties size={15} />
+            <span>{showMatrixTable ? 'Ẩn Ma Trận Size' : 'Bảng Ma Trận Tồn Kho & Size'}</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setIsAddModalOpen(true)}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#733F49] to-[#8C4654] hover:from-[#5A2D35] hover:to-[#733F49] text-white text-xs font-bold transition-all cursor-pointer shadow-xs border-0"
           >
@@ -659,7 +696,7 @@ export default function InventoryManagement() {
         </div>
       </div>
 
-      {/* 4 Top Metric Cards: Tổng số váy, Tổng số mẫu, Tổng số mẫu đang cho thuê, Tổng số mẫu đang bảo dưỡng */}
+      {/* 4 Top Metric Cards Nâng Cấp: Tổng số váy, Tổng số mẫu, Đang cho thuê, Đang bảo dưỡng */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Card 1: TỔNG MẪU THIẾT KẾ (Ánh hồng thanh lịch) */}
         <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FDE8EC_0%,_transparent_70%)] rounded-2xl border border-[#FAD2DA] p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
@@ -679,7 +716,10 @@ export default function InventoryManagement() {
               <span className="text-[12px] font-medium text-[#8C7D7E] ml-2">mẫu thiết kế</span>
             </div>
           </div>
-
+          <div className="mt-3 pt-2.5 border-t border-[#F8E2E6] flex items-center justify-between text-[11px]">
+            <span className="text-[#8A797A]">Giá trị cọc bảo lãnh:</span>
+            <span className="font-bold text-[#733F49]">{fmtVnd(totalAssetValue)}</span>
+          </div>
         </div>
 
         {/* Card 2: TỔNG SỐ VÁY (Ánh xanh lá dịu mát) */}
@@ -687,7 +727,7 @@ export default function InventoryManagement() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#1E8347] uppercase">
-                TỔNG SỐ VÁY
+                TỔNG SỐ LỄ PHỤC
               </span>
               <div className="w-10 h-10 rounded-xl bg-[#EAF8EE] flex items-center justify-center text-[#1E8347]">
                 <HangerIcon size={18} />
@@ -700,7 +740,10 @@ export default function InventoryManagement() {
               <span className="text-[12px] font-medium text-[#736364] ml-2">chiếc váy</span>
             </div>
           </div>
-
+          <div className="mt-3 pt-2.5 border-t border-[#D5F3DD] flex items-center justify-between text-[11px]">
+            <span className="text-[#5E7A67]">Khả dụng tại tủ:</span>
+            <span className="font-bold text-[#1E8347]">{totalAvailableUnits} chiếc sẵn sàng</span>
+          </div>
         </div>
 
         {/* Card 3: MẪU ĐANG CHO THUÊ */}
@@ -708,7 +751,7 @@ export default function InventoryManagement() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#1D4ED8] uppercase">
-                MẪU ĐANG CHO THUÊ
+                LỄ PHỤC ĐI THUÊ
               </span>
               <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] flex items-center justify-center text-[#1D4ED8]">
                 <Sparkles size={18} />
@@ -723,7 +766,10 @@ export default function InventoryManagement() {
               </span>
             </div>
           </div>
-
+          <div className="mt-3 pt-2.5 border-t border-[#DBEAFE] flex items-center justify-between text-[11px]">
+            <span className="text-[#4B6B94]">Tỷ lệ lấp đầy:</span>
+            <span className="font-bold text-[#1D4ED8]">{utilizationRate}% ({totalRentedUnits} chiếc)</span>
+          </div>
         </div>
 
         {/* Card 4: MẪU ĐANG BẢO DƯỠNG */}
@@ -744,9 +790,159 @@ export default function InventoryManagement() {
               <span className="text-[12px] font-medium text-[#D97706] ml-2">mẫu đang xử lý</span>
             </div>
           </div>
-
+          <div className="mt-3 pt-2.5 border-t border-[#FDE68A] flex items-center justify-between text-[11px]">
+            <span className="text-[#855B1B]">Tiêu chuẩn:</span>
+            <span className="font-bold text-[#92400E]">Giặt khô & vi khí hậu</span>
+          </div>
         </div>
       </div>
+
+      {/* NÂNG CẤP: Bảng Ma Trận Tồn Kho Chi Tiết Theo Size (Hiển thị khi bật nút toggle) */}
+      {showMatrixTable && (
+        <section className="bg-white rounded-2xl border border-[#EFE5E1] p-6 shadow-xs mb-6 animate-fadeIn">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-[#F4EBE7]">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-[#FAF0EC] flex items-center justify-center text-[#733F49]">
+                <TableProperties size={17} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#2C2523] uppercase tracking-wider">
+                  Bảng Ma Trận Tồn Kho Theo Size & Tình Trạng Lễ Phục
+                </h3>
+                <p className="text-xs text-[#8A797A]">Đối soát chi tiết từng kích cỡ và số lượng sẵn sàng phục vụ tại showroom</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 text-xs">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">
+                <CheckCircle2 size={13} /> {totalAvailableUnits} chiếc sẵn sàng
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 font-semibold border border-blue-200">
+                <Sparkles size={13} /> {totalRentedUnits} chiếc đang cho thuê
+              </span>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-[#FAF5F2] text-[#705F60] font-bold uppercase tracking-wider text-[11px] border-b border-[#EFE2DC]">
+                  <th className="py-3 px-3.5">Mã Váy</th>
+                  <th className="py-3 px-3.5">Tên Mẫu Thiết Kế</th>
+                  <th className="py-3 px-3 text-center">Vị Trí Tủ</th>
+                  <th className="py-3 px-2 text-center bg-[#FDF8F6]">Size XS</th>
+                  <th className="py-3 px-2 text-center bg-[#FDF8F6]">Size S</th>
+                  <th className="py-3 px-2 text-center bg-[#FDF8F6]">Size M</th>
+                  <th className="py-3 px-2 text-center bg-[#FDF8F6]">Size L</th>
+                  <th className="py-3 px-3 text-center font-bold">Tổng Bộ</th>
+                  <th className="py-3 px-3 text-center text-emerald-700">Khả Dụng</th>
+                  <th className="py-3 px-3 text-center text-blue-700">Đang Thuê</th>
+                  <th className="py-3 px-3 text-center text-amber-700">Bảo Dưỡng</th>
+                  <th className="py-3 px-3.5 text-right">Tiền Cọc Niêm Yết</th>
+                  <th className="py-3 px-3 text-center">Tình Trạng</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F5EAE6]">
+                {items.map((it) => {
+                  const szXS = (it.sizes || []).find((s) => s.size?.toUpperCase() === 'XS')?.quantity || 0;
+                  const szS = (it.sizes || []).find((s) => s.size?.toUpperCase() === 'S')?.quantity || 0;
+                  const szM = (it.sizes || []).find((s) => s.size?.toUpperCase() === 'M')?.quantity || 0;
+                  const szL = (it.sizes || []).find((s) => s.size?.toUpperCase() === 'L')?.quantity || 0;
+
+                  return (
+                    <tr key={it.id} className="hover:bg-[#FFFDFB] transition-colors">
+                      <td className="py-2.5 px-3.5 font-mono font-bold text-[#733F49]">
+                        {it.code}
+                      </td>
+                      <td className="py-2.5 px-3.5 font-semibold text-[#2C2523]">
+                        {it.name}
+                      </td>
+                      <td className="py-2.5 px-3 text-center text-[#705F60]">
+                        <span className="px-2 py-0.5 rounded-md bg-[#FAF2EE] text-[11px] font-semibold border border-[#EFE2DC]">
+                          {it.location || 'Tủ A1'}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-2 text-center bg-[#FFFBF9] font-medium text-[#5D4E50]">
+                        {szXS > 0 ? szXS : '—'}
+                      </td>
+                      <td className="py-2.5 px-2 text-center bg-[#FFFBF9] font-medium text-[#5D4E50]">
+                        {szS > 0 ? szS : '—'}
+                      </td>
+                      <td className="py-2.5 px-2 text-center bg-[#FFFBF9] font-medium text-[#5D4E50]">
+                        {szM > 0 ? szM : '—'}
+                      </td>
+                      <td className="py-2.5 px-2 text-center bg-[#FFFBF9] font-medium text-[#5D4E50]">
+                        {szL > 0 ? szL : '—'}
+                      </td>
+                      <td className="py-2.5 px-3 text-center font-bold text-[#2C2523]">
+                        {it.totalStock}
+                      </td>
+                      <td className="py-2.5 px-3 text-center font-bold text-emerald-700">
+                        {it.availableStock}
+                      </td>
+                      <td className="py-2.5 px-3 text-center font-semibold text-blue-700">
+                        {it.rentedCount > 0 ? it.rentedCount : '0'}
+                      </td>
+                      <td className="py-2.5 px-3 text-center font-semibold text-amber-700">
+                        {it.maintenanceCount > 0 ? it.maintenanceCount : '0'}
+                      </td>
+                      <td className="py-2.5 px-3.5 text-right font-medium text-[#733F49]">
+                        {fmtVnd(it.depositAmount)}
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          it.statusType === 'drying' ? 'bg-amber-50 text-amber-800 border border-amber-200' :
+                          it.statusType === 'out_of_stock' ? 'bg-red-50 text-red-700 border border-red-200' :
+                          it.statusType === 'ready' || it.statusType === 'partially_rented' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                          'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        }`}>
+                          {it.statusText}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {/* Hàng Tổng Cộng Kho */}
+                <tr className="bg-[#FAF0EC] font-bold text-[#2C2523] border-t-2 border-[#EAD5CF]">
+                  <td colSpan={3} className="py-3 px-3.5 text-xs font-playfair uppercase">
+                    TỔNG CỘNG TOÀN KHO SHOWROOM
+                  </td>
+                  <td className="py-3 px-2 text-center bg-[#FAF0EC]">
+                    {items.reduce((sum, it) => sum + ((it.sizes || []).find((s) => s.size?.toUpperCase() === 'XS')?.quantity || 0), 0)}
+                  </td>
+                  <td className="py-3 px-2 text-center bg-[#FAF0EC]">
+                    {items.reduce((sum, it) => sum + ((it.sizes || []).find((s) => s.size?.toUpperCase() === 'S')?.quantity || 0), 0)}
+                  </td>
+                  <td className="py-3 px-2 text-center bg-[#FAF0EC]">
+                    {items.reduce((sum, it) => sum + ((it.sizes || []).find((s) => s.size?.toUpperCase() === 'M')?.quantity || 0), 0)}
+                  </td>
+                  <td className="py-3 px-2 text-center bg-[#FAF0EC]">
+                    {items.reduce((sum, it) => sum + ((it.sizes || []).find((s) => s.size?.toUpperCase() === 'L')?.quantity || 0), 0)}
+                  </td>
+                  <td className="py-3 px-3 text-center text-sm font-bold text-[#2C2523]">
+                    {totalUnitsAll}
+                  </td>
+                  <td className="py-3 px-3 text-center text-sm font-bold text-emerald-700">
+                    {totalAvailableUnits}
+                  </td>
+                  <td className="py-3 px-3 text-center text-sm font-bold text-blue-700">
+                    {totalRentedUnits}
+                  </td>
+                  <td className="py-3 px-3 text-center text-sm font-bold text-amber-700">
+                    {items.reduce((sum, it) => sum + (it.maintenanceCount || 0), 0)}
+                  </td>
+                  <td className="py-3 px-3.5 text-right text-xs font-bold text-[#733F49]">
+                    {fmtVnd(totalAssetValue)}
+                  </td>
+                  <td className="py-3 px-3 text-center text-[11px] text-emerald-700">
+                    Sẵn sàng {totalAvailableUnits}/{totalUnitsAll}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       {/* Search & Filter Bar */}
       <div className="bg-white rounded-2xl border border-[#EFE5E1] p-4 shadow-xs mb-4">

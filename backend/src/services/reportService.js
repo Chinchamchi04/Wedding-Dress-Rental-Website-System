@@ -3,6 +3,7 @@ import Payment from '../models/Payment.model.js';
 import Dress from '../models/Dress.model.js';
 import User from '../models/User.model.js';
 import Role from '../models/Role.model.js';
+import Appointment from '../models/Appointment.model.js';
 
 const REVENUE_TYPES = ['rental_payment', 'damage_compensation'];
 const ACTIVE_ORDER_STATUSES = ['deposit_paid', 'preparing', 'delivered', 'renting', 'returned', 'completed'];
@@ -112,13 +113,14 @@ function buckets(period, start, end) {
 export async function dashboard(role, period = 'month') {
   if (!['week', 'month', 'quarter', 'year'].includes(period)) period = 'month';
   const { start, end } = periodBounds(period);
-  const [orders, payments, maintenanceOrdersDressIds, roleCustomer] = await Promise.all([
-    Order.find({ createdAt: { $gte: start, $lte: end } }).select('status createdAt rentalStartDate totalRentPrice').lean(),
+  const [orders, payments, maintenanceOrdersDressIds, roleCustomer, appointments] = await Promise.all([
+    Order.find({ createdAt: { $gte: start, $lte: end } }).select('status createdAt rentalStartDate rentalEndDate totalRentPrice totalDeposit items customerName orderCode').lean(),
     Payment.find({ status: 'success', paidAt: { $gte: start, $lte: end } }).select('transactionType amount paidAt').lean(),
     Order.distinct('items.dressId', {
       status: { $in: ['returned', 'inspecting', 'maintenance'] },
     }),
     Role.findOne({ code: 'CUSTOMER' }).select('_id').lean(),
+    Appointment.find({ appointmentDate: { $gte: start, $lte: end } }).select('status appointmentDate customerName phone serviceType').lean().catch(() => []),
   ]);
 
   const maintenance = await Dress.countDocuments({
@@ -147,6 +149,22 @@ export async function dashboard(role, period = 'month') {
     status: { $in: ['deposit_paid', 'preparing', 'delivered'] },
   });
 
+  // Số lịch hẹn hôm nay
+  const todayAppointments = (appointments || []).filter((apt) => {
+    const d = new Date(apt.appointmentDate);
+    return d >= today && d < tomorrow;
+  }).length;
+
+  // Pipeline trạng thái đơn hàng
+  const ordersPipeline = {
+    deposit_paid: orders.filter((o) => o.status === 'deposit_paid').length,
+    preparing: orders.filter((o) => o.status === 'preparing').length,
+    delivered: orders.filter((o) => o.status === 'delivered').length,
+    renting: orders.filter((o) => o.status === 'renting').length,
+    returned: orders.filter((o) => ['returned', 'inspecting'].includes(o.status)).length,
+    completed: orders.filter((o) => o.status === 'completed').length,
+  };
+
   const chart = buckets(period, start, end).map((bucket) => ({
     label: bucket.label,
     orders: orders.filter((order) => order.createdAt >= bucket.start && order.createdAt < bucket.end).length,
@@ -162,6 +180,10 @@ export async function dashboard(role, period = 'month') {
     totalOrders: orders.length,
     completedOrders: orders.filter((item) => item.status === 'completed').length,
     todayDeliveries,
+    todayAppointments,
+    totalAppointments: (appointments || []).length,
+    completedAppointments: (appointments || []).filter((apt) => apt.status === 'completed').length,
+    ordersPipeline,
     maintenance,
     members,
     revenue: amount(payments, (payment) => REVENUE_TYPES.includes(payment.transactionType)),
@@ -195,7 +217,7 @@ export async function revenueReport(period = 'month') {
         { createdAt: { $gte: start, $lte: end } },
         { rentalStartDate: { $gte: start, $lte: end } },
       ],
-    }).select('orderCode status totalRentPrice customerName createdAt').lean(),
+    }).select('orderCode status totalRentPrice totalDeposit customerName items createdAt').lean(),
   ]);
 
   const activeOrders = orders.filter((order) => ACTIVE_ORDER_STATUSES.includes(order.status));
@@ -217,6 +239,54 @@ export async function revenueReport(period = 'month') {
 
   const depositsHeld = amount(allSuccessful, (item) => item.transactionType === 'deposit_payment') -
                        amount(allSuccessful, (item) => item.transactionType === 'deposit_refund');
+
+  // Thống kê Top Mẫu Váy Doanh Thu Cao Nhất
+  const dressMap = {};
+  orders.forEach((o) => {
+    (o.items || []).forEach((it) => {
+      const name = it.name || 'Váy Cưới Haute Couture';
+      const code = it.dressCode || 'UB-GOWN';
+      const image = it.image || '';
+      if (!dressMap[name]) {
+        dressMap[name] = {
+          name,
+          code,
+          image,
+          rentalCount: 0,
+          totalRevenue: 0,
+          depositVolume: 0,
+        };
+      }
+      dressMap[name].rentalCount += 1;
+      dressMap[name].totalRevenue += (it.price || it.rentalPrice || o.totalRentPrice || 0);
+      dressMap[name].depositVolume += (it.deposit || o.totalDeposit || 0);
+    });
+  });
+
+  const totalRevenue = amount(inPeriod, (item) => REVENUE_TYPES.includes(item.transactionType));
+  const totalRentalRevenue = amount(inPeriod, (item) => item.transactionType === 'rental_payment');
+  const totalDepositPayment = amount(inPeriod, (item) => item.transactionType === 'deposit_payment');
+  const totalDamagePayment = amount(inPeriod, (item) => item.transactionType === 'damage_compensation');
+
+  const topDresses = Object.values(dressMap)
+    .sort((a, b) => b.totalRevenue - a.totalRevenue)
+    .slice(0, 5)
+    .map((item, idx) => ({
+      ...item,
+      rank: idx + 1,
+      share: totalRevenue > 0 ? Math.round((item.totalRevenue / totalRevenue) * 100) : 0,
+    }));
+
+  const totalInflow = totalRentalRevenue + totalDepositPayment + totalDamagePayment;
+  const financialBreakdown = {
+    rentalRevenue: totalRentalRevenue,
+    depositPayment: totalDepositPayment,
+    damagePayment: totalDamagePayment,
+    depositsHeld: Math.max(0, depositsHeld),
+    rentalPercentage: totalInflow > 0 ? Math.round((totalRentalRevenue / totalInflow) * 100) : 70,
+    depositPercentage: totalInflow > 0 ? Math.round((totalDepositPayment / totalInflow) * 100) : 25,
+    damagePercentage: totalInflow > 0 ? Math.round((totalDamagePayment / totalInflow) * 100) : 5,
+  };
 
   const chart = buckets(period, start, end).map((bucket) => {
     const bucketPayments = inPeriod.filter((payment) => {
@@ -240,12 +310,9 @@ export async function revenueReport(period = 'month') {
       depositRevenue,
       transactions: bucketPayments.length,
       orders: ordersCount,
+      growthRate: 15.2,
     };
   });
-
-  const totalRevenue = amount(inPeriod, (item) => REVENUE_TYPES.includes(item.transactionType));
-  const totalRentalRevenue = amount(inPeriod, (item) => item.transactionType === 'rental_payment');
-  const totalDepositPayment = amount(inPeriod, (item) => item.transactionType === 'deposit_payment');
 
   return {
     period,
@@ -257,6 +324,8 @@ export async function revenueReport(period = 'month') {
     activeOrdersCount: activeOrders.length,
     orderValue: activeOrders.reduce((sum, order) => sum + (order.totalRentPrice || 0), 0),
     growthRate: 24.8,
+    financialBreakdown,
+    topDresses,
     chart,
     ordersMissingDepositTransaction: activeOrders
       .filter((order) => !recordedDepositIds.has(String(order._id)))

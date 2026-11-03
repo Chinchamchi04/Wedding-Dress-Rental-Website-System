@@ -15,3 +15,4 @@ router.patch('/:id/reset-password', optionalAuthenticate, userController.resetUs
 router.delete('/:id', optionalAuthenticate, userController.deleteUser);
 
 export default router;
+
