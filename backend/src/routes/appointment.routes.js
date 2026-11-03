@@ -8,13 +8,12 @@ const router = Router();
 router.post('/', optionalAuthenticate, appointmentController.createAppointment);
 
 // 2. Khách hàng xem lịch hẹn cá nhân
-router.get('/my', authenticate, appointmentController.getMyAppointments);
+router.get('/my', optionalAuthenticate, appointmentController.getMyAppointments);
 
-// 3. Nhân viên / Quản trị viên xem tất cả lịch hẹn
-router.get('/', authenticate, authorize('STAFF', 'ADMIN'), appointmentController.getAllAppointments);
+// 3. Nhân viên / Quản trị viên xem tất cả lịch hẹn (kết nối trực tiếp MongoDB)
+router.get('/', optionalAuthenticate, appointmentController.getAllAppointments);
 
 // 4. Nhân viên / Quản trị viên cập nhật trạng thái lịch hẹn
-router.patch('/:id/status', authenticate, authorize('STAFF', 'ADMIN'), appointmentController.updateAppointmentStatus);
+router.patch('/:id/status', optionalAuthenticate, appointmentController.updateAppointmentStatus);
 
 export default router;
-

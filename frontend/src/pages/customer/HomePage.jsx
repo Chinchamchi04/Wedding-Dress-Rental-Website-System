@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Sparkles, X } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import HeroSection from '../../components/home/HeroSection';
@@ -7,11 +7,15 @@ import SilhouetteShowcase from '../../components/home/SilhouetteShowcase';
 import TrendingCollection from '../../components/home/TrendingCollection';
 import RealBridesGallery from '../../components/home/RealBridesGallery';
 import Footer from '../../components/layout/Footer';
-import BookingModal from '../../components/common/BookingModal';
+import OnboardingWelcomeModal from '../../components/common/OnboardingWelcomeModal';
+import { useAuth } from '../../contexts/AuthContext';
 import { getWishlistIds, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
 
 export default function HomePage() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [wishlistedIds, setWishlistedIds] = useState(() => getWishlistIds());
@@ -48,9 +52,17 @@ export default function HomePage() {
     }
   }, [location]);
 
+  // Tự động mở Modal chào mừng & gợi ý cập nhật số đo khi vừa đăng ký tài khoản thành công
+  useEffect(() => {
+    const shouldShow = sessionStorage.getItem('unibridal_show_onboarding') === 'true' || location.state?.isNewRegister;
+    if (shouldShow) {
+      setIsOnboardingOpen(true);
+      sessionStorage.removeItem('unibridal_show_onboarding');
+    }
+  }, [location]);
+
   const handleOpenBooking = (product = null) => {
-    setSelectedProduct(product);
-    setIsBookingOpen(true);
+    navigate(product?.id ? `/dat-lich?dressId=${product.id}` : '/dat-lich');
   };
 
   const handleCloseBooking = () => {
@@ -83,6 +95,7 @@ export default function HomePage() {
         wishlistCount={wishlistedIds.length}
       />
 
+
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-24 right-6 z-50 bg-[#2C2523] text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-[#E6DAC8]/40 animate-bounce text-[13px] font-medium">
@@ -113,6 +126,7 @@ export default function HomePage() {
           wishlistedIds={wishlistedIds}
         />
 
+
         {/* Section - REAL BRIDES GALLERY & TESTIMONIALS */}
         <RealBridesGallery />
       </main>
@@ -120,11 +134,13 @@ export default function HomePage() {
       {/* 3. Footer */}
       <Footer />
 
-      {/* 4. Interactive Consultation / Fitting Booking Modal */}
-      <BookingModal
-        isOpen={isBookingOpen}
-        onClose={handleCloseBooking}
-        preselectedProduct={selectedProduct}
+
+
+      {/* 5. Post-Registration Bridal Onboarding Modal */}
+      <OnboardingWelcomeModal
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
+        userName={user?.fullName || user?.name || ''}
       />
     </div>
   );

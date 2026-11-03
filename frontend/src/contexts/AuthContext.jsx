@@ -1,66 +1,156 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { getMe, logout as serviceLogout } from '../services/authService';
 import { getProfile } from '../services/profileService';
 
 const AuthContext = createContext(null);
 const AUTH_USER_KEY = 'unibridal.authUser';
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem('token') || sessionStorage.getItem('token'));
-  const [user, setUser] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(AUTH_USER_KEY) || sessionStorage.getItem(AUTH_USER_KEY) || 'null'); } catch { return null; }
+  const [token, setToken] = useState(() => {
+    return localStorage.getItem('token') || sessionStorage.getItem('token') || localStorage.getItem('accessToken') || null;
   });
-  const [loading, setLoading] = useState(!!token);
+
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('user') || localStorage.getItem(AUTH_USER_KEY) || sessionStorage.getItem(AUTH_USER_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [isLoading, setIsLoading] = useState(() => {
+    // Nếu đã có sẵn thông tin user từ localStorage/sessionStorage, không cần block màn hình bằng loading spinner
+    const saved = localStorage.getItem('user') || localStorage.getItem(AUTH_USER_KEY) || sessionStorage.getItem(AUTH_USER_KEY);
+    if (saved) return false;
+    return !!(localStorage.getItem('token') || sessionStorage.getItem('token') || localStorage.getItem('accessToken'));
+  });
 
   const logout = () => {
+    serviceLogout();
     localStorage.removeItem('token');
     localStorage.removeItem('accessToken');
+    localStorage.removeItem('user');
     localStorage.removeItem(AUTH_USER_KEY);
     sessionStorage.removeItem('token');
     sessionStorage.removeItem(AUTH_USER_KEY);
     setToken(null);
     setUser(null);
-    setLoading(false);
+    setIsLoading(false);
   };
 
+  // Đồng bộ thông tin người dùng từ backend khi mở app
   useEffect(() => {
-    if (!token) { setLoading(false); return; }
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
+
     let active = true;
-    getProfile().then((profile) => {
-      if (!active) return;
-      setUser(profile);
-      (localStorage.getItem('token') ? localStorage : sessionStorage).setItem(AUTH_USER_KEY, JSON.stringify(profile));
-    }).catch((error) => {
-      if (active && error?.status === 401) logout();
-    }).finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+
+    const syncUser = async () => {
+      try {
+        let profileData = null;
+        try {
+          const res = await getMe();
+          if (res?.data) profileData = res.data;
+        } catch {
+          // Fallback to getProfile()
+          try {
+            profileData = await getProfile();
+          } catch {
+            // ignore
+          }
+        }
+
+        if (active && profileData) {
+          setUser(profileData);
+          localStorage.setItem('user', JSON.stringify(profileData));
+          localStorage.setItem(AUTH_USER_KEY, JSON.stringify(profileData));
+        }
+      } catch (err) {
+        if (active && (err?.status === 401 || err?.response?.status === 401)) {
+          logout();
+        }
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    };
+
+    syncUser();
+
+    return () => {
+      active = false;
+    };
   }, [token]);
 
   const login = (userData, authToken, remember = true) => {
-    if (!authToken || !userData) throw new Error('Thiếu dữ liệu đăng nhập.');
-    localStorage.removeItem('token'); localStorage.removeItem(AUTH_USER_KEY);
-    sessionStorage.removeItem('token'); sessionStorage.removeItem(AUTH_USER_KEY);
+    if (!authToken || !userData) {
+      throw new Error('Thiếu dữ liệu đăng nhập.');
+    }
+
+    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('user');
+    localStorage.removeItem(AUTH_USER_KEY);
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem(AUTH_USER_KEY);
+
     const store = remember ? localStorage : sessionStorage;
     store.setItem('token', authToken);
+    store.setItem('user', JSON.stringify(userData));
     store.setItem(AUTH_USER_KEY, JSON.stringify(userData));
+
     setToken(authToken);
     setUser(userData);
   };
 
   const updateUser = (profile) => {
-    (localStorage.getItem('token') ? localStorage : sessionStorage).setItem(AUTH_USER_KEY, JSON.stringify(profile));
+    localStorage.setItem('user', JSON.stringify(profile));
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(profile));
+    sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(profile));
     setUser(profile);
   };
 
   const updateToken = (nextToken) => {
-    (localStorage.getItem('token') ? localStorage : sessionStorage).setItem('token', nextToken);
+    localStorage.setItem('token', nextToken);
+    sessionStorage.setItem('token', nextToken);
     setToken(nextToken);
   };
 
-  return <AuthContext.Provider value={{ user, token, loading, isLoggedIn: !!token && !!user, role: user?.role || 'guest', login, logout, updateUser, updateToken }}>{children}</AuthContext.Provider>;
+  const isLoggedIn = !!token && !!user;
+  const rawRole = user?.role || user?.roleId?.code || (token ? 'customer' : 'guest');
+  const role = (typeof rawRole === 'string' ? rawRole : 'guest').toLowerCase();
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isLoggedIn,
+        role,
+        isLoading,
+        loading: isLoading,
+        isAdmin: role === 'admin',
+        isStaff: role === 'staff' || role === 'admin',
+        isCustomer: role === 'customer',
+        login,
+        logout,
+        updateUser,
+        updateToken,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within an AuthProvider');
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
   return context;
 }
+
+export default AuthContext;

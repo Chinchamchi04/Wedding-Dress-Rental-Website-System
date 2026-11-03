@@ -131,18 +131,46 @@ export const seedRBAC = async () => {
       { upsert: true, returnDocument: 'after' }
     );
 
-    // 5. Tạo tài khoản Admin mặc định nếu chưa có tài khoản nào
+    // 5. Tạo tài khoản Admin & Staff mặc định nếu chưa có tài khoản nào
     const adminRole = await Role.findOne({ code: 'ADMIN' });
-    const adminExists = await User.findOne({ email: 'admin@unibridal.com' });
-    if (!adminExists && adminRole) {
-      await User.create({
+    const staffRole = await Role.findOne({ code: 'STAFF' });
+
+    let adminUser = await User.findOne({ email: 'admin@unibridal.com' });
+    if (!adminUser && adminRole) {
+      adminUser = await User.create({
         fullName: 'UniBridal Administrator',
         email: 'admin@unibridal.com',
         password: 'AdminPassword123@',
         phone: '0908123888',
         roleId: adminRole._id,
+        isEmailVerified: true,
+        isActive: true,
       });
       console.log('Default Admin created: admin@unibridal.com / AdminPassword123@');
+    } else if (adminUser) {
+      adminUser.isEmailVerified = true;
+      adminUser.isActive = true;
+      if (adminRole && !adminUser.roleId) adminUser.roleId = adminRole._id;
+      await adminUser.save();
+    }
+
+    let staffUser = await User.findOne({ email: 'staff@unibridal.com' });
+    if (!staffUser && staffRole) {
+      staffUser = await User.create({
+        fullName: 'Chuyên Viên Atelier UniBridal',
+        email: 'staff@unibridal.com',
+        password: 'StaffPassword123@',
+        phone: '0908123999',
+        roleId: staffRole._id,
+        isEmailVerified: true,
+        isActive: true,
+      });
+      console.log('Default Staff created: staff@unibridal.com / StaffPassword123@');
+    } else if (staffUser) {
+      staffUser.isEmailVerified = true;
+      staffUser.isActive = true;
+      if (staffRole && !staffUser.roleId) staffUser.roleId = staffRole._id;
+      await staffUser.save();
     }
 
     console.log('RBAC Permissions & Roles synchronized successfully.');

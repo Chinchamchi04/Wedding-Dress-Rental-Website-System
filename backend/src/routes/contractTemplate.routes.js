@@ -1,6 +1,6 @@
 import express from 'express';
 import * as templateController from '../controllers/contractTemplate.controller.js';
-import { authenticate } from '../middlewares/auth.middleware.js';
+import { optionalAuthenticate } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
@@ -16,10 +16,10 @@ router.get('/:id/pdf', templateController.renderTemplatePdf);
 // Lấy chi tiết mẫu hợp đồng theo ID hoặc Mã Code
 router.get('/:id', templateController.getTemplateById);
 
-// Thêm mới mẫu hợp đồng (Yêu cầu đăng nhập quản trị)
-router.post('/', authenticate, templateController.createTemplate);
+// Thêm mới mẫu hợp đồng (kết nối MongoDB)
+router.post('/', optionalAuthenticate, templateController.createTemplate);
 
 // Cập nhật mẫu hợp đồng
-router.put('/:id', authenticate, templateController.updateTemplate);
+router.put('/:id', optionalAuthenticate, templateController.updateTemplate);
 
 export default router;

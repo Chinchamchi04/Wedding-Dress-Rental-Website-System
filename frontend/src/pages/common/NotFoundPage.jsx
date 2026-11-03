@@ -58,7 +58,7 @@ export default function NotFoundPage({ type: propType }) {
     <div className="min-h-screen bg-[#FCF9F6] text-[#2C2523] flex flex-col font-sans selection:bg-[#F2D8D4] selection:text-[#733F49]">
       <Header />
 
-      <main className="flex-1 flex items-center justify-center py-16 sm:py-24 px-4 relative overflow-hidden">
+      <main className={`flex-1 flex items-center justify-center px-4 relative overflow-hidden ${is401 ? 'py-6 sm:py-10' : 'py-16 sm:py-24'}`}>
         {/* Decorative Luxury Background Glows */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-radial from-[#F2D8D4]/45 via-[#FAF4EE]/20 to-transparent blur-3xl pointer-events-none" />
         <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-[#E0A96D]/10 rounded-full blur-3xl pointer-events-none" />
@@ -138,52 +138,38 @@ export default function NotFoundPage({ type: propType }) {
           </p>
 
           {/* Quick Dress Search Form */}
-          <form onSubmit={handleSearch} className="max-w-md mx-auto mb-8 relative">
-            <div className="relative flex items-center">
-              <Search className="w-4 h-4 text-[#847374] absolute left-4 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Tìm mẫu váy cưới, dạ hội nàng quan tâm..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-24 py-3 rounded-full bg-white border border-[#EEDECF] text-[13.5px] text-[#2C2523] placeholder-[#847374] shadow-xs focus:outline-none focus:border-[#733F49] focus:ring-2 focus:ring-[#733F49]/15 transition-all"
-              />
-              <button
-                type="submit"
-                className="absolute right-1.5 px-4 py-1.5 rounded-full bg-[#733F49] hover:bg-[#5C323A] text-white text-[12px] font-bold transition-colors cursor-pointer shadow-xs"
-              >
-                Tìm kiếm
-              </button>
-            </div>
-          </form>
+          {!is401 && (
+            <form onSubmit={handleSearch} className="max-w-md mx-auto mb-8 relative">
+              <div className="relative flex items-center">
+                <Search className="w-4 h-4 text-[#847374] absolute left-4 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Tìm mẫu váy cưới, dạ hội nàng quan tâm..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-11 pr-24 py-3 rounded-full bg-white border border-[#EEDECF] text-[13.5px] text-[#2C2523] placeholder-[#847374] shadow-xs focus:outline-none focus:border-[#733F49] focus:ring-2 focus:ring-[#733F49]/15 transition-all"
+                />
+                <button
+                  type="submit"
+                  className="absolute right-1.5 px-4 py-1.5 rounded-full bg-[#733F49] hover:bg-[#5C323A] text-white text-[12px] font-bold transition-colors cursor-pointer shadow-xs"
+                >
+                  Tìm kiếm
+                </button>
+              </div>
+            </form>
+          )}
 
           {/* Action Buttons Group */}
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-12">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-8">
             {is401 ? (
-              <>
-                <Link
-                  to="/login"
-                  state={{ from: location }}
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#733F49] hover:bg-[#5C323A] text-white font-bold text-[13.5px] shadow-sm hover:shadow-md transition-all cursor-pointer"
-                >
-                  <LogIn className="w-4 h-4" />
-                  <span>Đăng nhập ngay</span>
-                </Link>
-                <Link
-                  to="/register"
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white hover:bg-[#FAF4EE] border border-[#EEDECF] text-[#733F49] font-bold text-[13.5px] shadow-2xs transition-all cursor-pointer"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  <span>Tạo tài khoản mới</span>
-                </Link>
-                <Link
-                  to="/"
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-transparent hover:bg-black/5 text-[#6B5C5D] font-medium text-[13px] transition-all cursor-pointer"
-                >
-                  <Home className="w-4 h-4" />
-                  <span>Về trang chủ</span>
-                </Link>
-              </>
+              <Link
+                to="/login"
+                state={{ from: location }}
+                className="inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-full bg-[#733F49] hover:bg-[#5C323A] text-white font-bold text-[14px] shadow-sm hover:shadow-md transition-all cursor-pointer"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Quay lại đăng nhập</span>
+              </Link>
             ) : is403 ? (
               <>
                 <Link
@@ -242,68 +228,70 @@ export default function NotFoundPage({ type: propType }) {
           </div>
 
           {/* Helpful Quick Navigation Cards */}
-          <div className="pt-8 border-t border-[#EEDECF]/60 text-left">
-            <span className="block text-[11px] font-bold uppercase tracking-wider text-[#847374] text-center mb-4">
-              ✦ GỢI Ý ĐIỀU HƯỚNG DÀNH CHO NÀNG
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <Link
-                to="/collection"
-                className="p-3.5 rounded-2xl bg-white border border-[#EEDECF] hover:border-[#733F49] hover:shadow-sm transition-all group block cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-[#FAF4EE] text-[#733F49] flex items-center justify-center shrink-0 group-hover:bg-[#733F49] group-hover:text-white transition-colors">
-                    <Sparkle className="w-4 h-4" />
+          {!is401 && (
+            <div className="pt-8 border-t border-[#EEDECF]/60 text-left">
+              <span className="block text-[11px] font-bold uppercase tracking-wider text-[#847374] text-center mb-4">
+                ✦ GỢI Ý ĐIỀU HƯỚNG DÀNH CHO NÀNG
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <Link
+                  to="/collection"
+                  className="p-3.5 rounded-2xl bg-white border border-[#EEDECF] hover:border-[#733F49] hover:shadow-sm transition-all group block cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-[#FAF4EE] text-[#733F49] flex items-center justify-center shrink-0 group-hover:bg-[#733F49] group-hover:text-white transition-colors">
+                      <Sparkle className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <strong className="block text-[12.5px] text-[#2C2523] group-hover:text-[#733F49] transition-colors">
+                        Bộ Sưu Tập Váy Cưới
+                      </strong>
+                      <span className="text-[11px] text-[#847374] block">Hơn 50+ tác phẩm may đo cao cấp</span>
+                    </div>
                   </div>
-                  <div>
-                    <strong className="block text-[12.5px] text-[#2C2523] group-hover:text-[#733F49] transition-colors">
-                      Bộ Sưu Tập Váy Cưới
-                    </strong>
-                    <span className="text-[11px] text-[#847374] block">Hơn 50+ tác phẩm may đo cao cấp</span>
-                  </div>
-                </div>
-              </Link>
+                </Link>
 
-              <Link
-                to="/dat-lich"
-                className="p-3.5 rounded-2xl bg-white border border-[#EEDECF] hover:border-[#733F49] hover:shadow-sm transition-all group block cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-[#FAF4EE] text-[#733F49] flex items-center justify-center shrink-0 group-hover:bg-[#733F49] group-hover:text-white transition-colors">
-                    <Calendar className="w-4 h-4" />
+                <Link
+                  to="/dat-lich"
+                  className="p-3.5 rounded-2xl bg-white border border-[#EEDECF] hover:border-[#733F49] hover:shadow-sm transition-all group block cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-[#FAF4EE] text-[#733F49] flex items-center justify-center shrink-0 group-hover:bg-[#733F49] group-hover:text-white transition-colors">
+                      <Calendar className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <strong className="block text-[12.5px] text-[#2C2523] group-hover:text-[#733F49] transition-colors">
+                        Đặt Lịch Thử Váy VIP
+                      </strong>
+                      <span className="text-[11px] text-[#847374] block">Phòng thử riêng tư & Stylist 1-1</span>
+                    </div>
                   </div>
-                  <div>
-                    <strong className="block text-[12.5px] text-[#2C2523] group-hover:text-[#733F49] transition-colors">
-                      Đặt Lịch Thử Váy VIP
-                    </strong>
-                    <span className="text-[11px] text-[#847374] block">Phòng thử riêng tư & Stylist 1-1</span>
-                  </div>
-                </div>
-              </Link>
+                </Link>
 
-              <Link
-                to="/tin-nhan"
-                className="p-3.5 rounded-2xl bg-white border border-[#EEDECF] hover:border-[#733F49] hover:shadow-sm transition-all group block cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-[#FAF4EE] text-[#733F49] flex items-center justify-center shrink-0 group-hover:bg-[#733F49] group-hover:text-white transition-colors">
-                    <HelpCircle className="w-4 h-4" />
+                <Link
+                  to="/tin-nhan"
+                  className="p-3.5 rounded-2xl bg-white border border-[#EEDECF] hover:border-[#733F49] hover:shadow-sm transition-all group block cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-[#FAF4EE] text-[#733F49] flex items-center justify-center shrink-0 group-hover:bg-[#733F49] group-hover:text-white transition-colors">
+                      <HelpCircle className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <strong className="block text-[12.5px] text-[#2C2523] group-hover:text-[#733F49] transition-colors">
+                        Tư Vấn & Trợ Giúp
+                      </strong>
+                      <span className="text-[11px] text-[#847374] block">Trò chuyện trực tiếp cùng Stylist</span>
+                    </div>
                   </div>
-                  <div>
-                    <strong className="block text-[12.5px] text-[#2C2523] group-hover:text-[#733F49] transition-colors">
-                      Tư Vấn & Trợ Giúp
-                    </strong>
-                    <span className="text-[11px] text-[#847374] block">Trò chuyện trực tiếp cùng Stylist</span>
-                  </div>
-                </div>
-              </Link>
+                </Link>
+              </div>
             </div>
-          </div>
+          )}
 
         </div>
       </main>
 
-      <Footer />
+      {!is401 && <Footer />}
     </div>
   );
 }

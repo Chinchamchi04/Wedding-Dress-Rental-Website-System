@@ -4,7 +4,7 @@ import { CheckCircle } from 'lucide-react';
 import heroBrideImg from '../../assets/hero_bride.jpg';
 import laceDetailImg from '../../assets/lace_detail.jpg';
 
-const HeroSection = () => {
+const HeroSection = ({ onOpenBooking }) => {
   return (
     <section id="home" className="relative overflow-hidden bg-gradient-to-b from-[#FFF7F5] via-[#FFFBF8] to-[#FDFBF7] pt-12 pb-20 lg:pt-16 lg:pb-24">
       {/* Soft Ambient Radial Glows */}
@@ -13,10 +13,8 @@ const HeroSection = () => {
 
       <div className="relative max-w-[1280px] mx-auto px-6 sm:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-10 items-center">
-          
           {/* Left Column: Text Content */}
           <div className="lg:col-span-6 flex flex-col items-start z-10">
-            
             {/* Pill Badge */}
             <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white shadow-[0px_2px_10px_rgba(0,0,0,0.04)] mb-6 select-none mt-2 sm:mt-3">
               <span className="w-1.5 h-1.5 rounded-full bg-[#B8737D] shrink-0" />
@@ -25,12 +23,10 @@ const HeroSection = () => {
               </span>
             </div>
 
-            {/* Heading 1: Exactly as in the design */}
+            {/* Heading 1 */}
             <h1 className="font-playfair text-[44px] sm:text-[54px] lg:text-[58px] leading-[1.15] font-normal tracking-tight text-[#2C2523] mb-5">
               Khoảnh Khắc <br />
-              <span className="italic text-[#B8737D] font-normal">
-                Tỏa Sáng Trọn Vẹn
-              </span>
+              <span className="italic text-[#B8737D] font-normal">Tỏa Sáng Trọn Vẹn</span>
             </h1>
 
             {/* Paragraph */}
@@ -38,86 +34,87 @@ const HeroSection = () => {
               Tuyển tập áo cưới hoàng gia nhập khẩu và đính kết pha lê thủ công tinh xảo. Trải nghiệm nghi thức thử váy riêng tư đỉnh cao trong không gian salon độc bản.
             </p>
 
-            {/* CTA Button: KHÁM PHÁ BỘ SƯU TẬP */}
-            <div className="mb-12">
+            {/* CTA Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto mb-10">
               <Link
                 to="/collection"
-                className="inline-flex items-center justify-center px-8 py-3.5 rounded-xl bg-[#B8737D] text-white font-jakarta text-[13px] font-semibold tracking-wider uppercase shadow-[0px_4px_16px_rgba(184,115,125,0.35)] hover:bg-[#a6626c] transition-all cursor-pointer no-underline active:scale-95"
+                className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-[#B8737D] text-white font-jakarta text-[14px] font-semibold tracking-wider uppercase transition-all duration-300 shadow-[0px_4px_16px_rgba(184,115,125,0.3)] hover:bg-[#a6626c] hover:shadow-[0px_6px_20px_rgba(184,115,125,0.4)] active:scale-[0.98]"
               >
                 KHÁM PHÁ BỘ SƯU TẬP
               </Link>
+              <button
+                type="button"
+                onClick={onOpenBooking}
+                className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-white border border-[#E6DAC8] text-[#2C2523] font-jakarta text-[14px] font-medium tracking-wide hover:border-[#B8737D] hover:text-[#B8737D] transition-all duration-300 shadow-[0px_2px_8px_rgba(0,0,0,0.03)] cursor-pointer"
+              >
+                Đặt Lịch Thử Váy
+              </button>
             </div>
 
-            {/* Separator Line */}
-            <div className="w-full border-t border-[#E6DAC8]/70 pt-8 flex items-start justify-between gap-3 sm:gap-6 overflow-x-auto sm:overflow-visible">
-              {/* Metric 1 */}
-              <div className="shrink-0">
-                <span className="font-playfair text-[32px] sm:text-[36px] font-normal text-[#B8737D] block leading-none mb-1.5">
-                  100%
-                </span>
-                <span className="font-jakarta text-[11.5px] sm:text-[12px] leading-[17px] text-[#514344] block whitespace-nowrap">
-                  Lụa tơ tằm và ren nhập khẩu Pháp
+            {/* Value Propositions */}
+            <div className="flex flex-wrap items-center gap-y-3 gap-x-6 pt-2 border-t border-[#EEDECF] w-full">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-[#B8737D]" />
+                <span className="font-jakarta text-[13px] text-[#514344] font-normal">
+                  Chỉnh may đo chuẩn số đo
                 </span>
               </div>
-
-              {/* Metric 2 */}
-              <div className="shrink-0">
-                <span className="font-playfair text-[32px] sm:text-[36px] font-normal text-[#B8737D] block leading-none mb-1.5">
-                  1 : 1
-                </span>
-                <span className="font-jakarta text-[11.5px] sm:text-[12px] leading-[17px] text-[#514344] block whitespace-nowrap">
-                  Staff tư vấn riêng tư
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-[#B8737D]" />
+                <span className="font-jakarta text-[13px] text-[#514344] font-normal">
+                  Giặt hấp sinh học tiệt trùng
                 </span>
               </div>
-
-              {/* Metric 3 */}
-              <div className="shrink-0">
-                <span className="font-playfair text-[32px] sm:text-[36px] font-normal text-[#B8737D] block leading-none mb-1.5">
-                  2.400+
-                </span>
-                <span className="font-jakarta text-[11.5px] sm:text-[12px] leading-[17px] text-[#514344] block whitespace-nowrap">
-                  Cô dâu tỏa sáng rạng ngời
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-[#B8737D]" />
+                <span className="font-jakarta text-[13px] text-[#514344] font-normal">
+                  Ký hợp đồng &amp; hoàn cọc tức thì
                 </span>
               </div>
             </div>
-
           </div>
 
-          {/* Right Column: Editorial Imagery matching screenshot */}
-          <div className="lg:col-span-6 relative flex justify-center lg:justify-end">
-            <div className="relative w-full max-w-[480px] lg:max-w-[510px]">
-              
-              {/* Floating Top Badge: Chính Sách Hoàn Cọc 100% */}
-              <div className="absolute -top-4 right-4 z-20 flex items-center gap-2 px-3.5 py-1.5 bg-white/95 border border-[#E6DAC8] rounded-xl shadow-md">
-                <div className="w-4 h-4 rounded-full bg-[#FCEEE9] flex items-center justify-center text-[#B8737D]">
-                  <CheckCircle className="w-3.5 h-3.5 text-[#B8737D]" />
+          {/* Right Column: Visual Composition */}
+          <div className="lg:col-span-6 relative flex items-center justify-center">
+            {/* Main Portrait Card */}
+            <div className="relative w-full max-w-[440px] sm:max-w-[480px] h-[580px] sm:h-[640px] rounded-[32px] overflow-hidden shadow-[0px_16px_40px_rgba(44,37,35,0.08)] border-4 border-white">
+              <img
+                src={heroBrideImg}
+                alt="Nàng dâu trong mẫu váy cưới Elysian Rose"
+                className="w-full h-full object-cover object-top"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[rgba(44,37,35,0.4)] via-transparent to-transparent pointer-events-none" />
+            </div>
+
+            {/* Floating Overlap Card 1: Luxury Lace Detail */}
+            <div className="absolute -bottom-6 -left-4 sm:left-4 w-[160px] sm:w-[190px] h-[210px] sm:h-[240px] rounded-2xl overflow-hidden shadow-[0px_12px_32px_rgba(0,0,0,0.12)] border-4 border-white hidden sm:block">
+              <img
+                src={laceDetailImg}
+                alt="Chi tiết ren đính đá Swarovski thủ công"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute bottom-2 left-2 right-2 bg-white/90 backdrop-blur-xs py-1 px-2 rounded text-center">
+                <span className="font-jakarta text-[10px] uppercase font-bold tracking-widest text-[#B8737D]">
+                  Ren Ý Thủ Công
+                </span>
+              </div>
+            </div>
+
+            {/* Floating Overlap Card 2: Rating Trust Badge */}
+            <div className="absolute top-10 -right-2 sm:right-4 bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl shadow-[0px_8px_24px_rgba(201,138,144,0.18)] border border-[#F3D8D8] flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#FFF5F2] flex items-center justify-center text-[#B8737D] font-serif text-lg font-bold">
+                5★
+              </div>
+              <div className="text-left">
+                <div className="font-playfair text-[15px] font-bold text-[#2C2523] leading-tight">
+                  Haute Couture
                 </div>
-                <span className="font-jakarta text-[12px] font-medium text-[#2C2523]">
-                  Chính Sách Hoàn Cọc 100%
-                </span>
+                <div className="font-jakarta text-[11px] text-[#847374] mt-0.5">
+                  100% Khách Hài Lòng
+                </div>
               </div>
-
-              {/* Main Hero Portrait with Clean 4px White Border */}
-              <div className="relative w-full h-[520px] sm:h-[600px] lg:h-[640px] rounded-[28px] sm:rounded-[32px] overflow-hidden bg-[#FCEEE9] border-4 border-solid border-white shadow-[0px_20px_45px_-10px_rgba(0,0,0,0.18)]">
-                <img
-                  src={heroBrideImg}
-                  alt="UniBridal Haute Couture Collection"
-                  className="w-full h-full object-cover object-center"
-                />
-              </div>
-
-              {/* Overlapping Detail Inset matching sample 4px white border */}
-              <div className="absolute -bottom-6 -left-4 sm:-left-8 z-20 w-[150px] h-[150px] sm:w-[185px] sm:h-[185px] rounded-2xl overflow-hidden bg-[#FCEEE9] border-4 border-solid border-white shadow-[0px_16px_32px_-6px_rgba(0,0,0,0.2)]">
-                <img
-                  src={laceDetailImg}
-                  alt="Chi tiết đính kết ren thủ công"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
             </div>
           </div>
-
         </div>
       </div>
     </section>

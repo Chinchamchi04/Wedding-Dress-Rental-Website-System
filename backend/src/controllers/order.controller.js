@@ -15,6 +15,13 @@ export const createOrder = async (req, res, next) => {
 
 export const getMyOrders = async (req, res, next) => {
   try {
+    if (!req.user?._id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Vui lòng đăng nhập để xem lịch sử đơn hàng.',
+        data: [],
+      });
+    }
     const orders = await orderService.getMyOrders(req.user._id);
     res.status(200).json({
       success: true,
@@ -33,6 +40,7 @@ export const getAllOrders = async (req, res, next) => {
       success: true,
       message: 'Lấy danh sách đơn thuê hệ thống thành công',
       data: result.orders,
+      stats: result.stats,
       pagination: {
         total: result.total,
         page: result.page,
@@ -78,6 +86,58 @@ export const getDressBookedDates = async (req, res, next) => {
       success: true,
       message: 'Lấy lịch đặt thuê của váy thành công',
       data: bookedDates,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const submitReturnInspection = async (req, res, next) => {
+  try {
+    const result = await orderService.submitReturnInspection(req.params.id, req.body, req.user);
+    res.status(201).json({
+      success: true,
+      message: 'Lập biên bản kiểm định tình trạng váy thành công!',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getReturnInspection = async (req, res, next) => {
+  try {
+    const inspection = await orderService.getReturnInspection(req.params.id);
+    res.status(200).json({
+      success: true,
+      message: inspection ? 'Lấy biên bản kiểm định thành công' : 'Đơn này chưa có biên bản kiểm định',
+      data: inspection,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const approveReturnInspection = async (req, res, next) => {
+  try {
+    const result = await orderService.approveReturnInspection(req.params.id, req.body, req.user);
+    res.status(200).json({
+      success: true,
+      message: 'Khách hàng đã đồng ý biên bản kiểm định. Hệ thống đã tự động hoàn cọc và hoàn tất đơn hàng!',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const disputeReturnInspection = async (req, res, next) => {
+  try {
+    const result = await orderService.disputeReturnInspection(req.params.id, req.body, req.user);
+    res.status(200).json({
+      success: true,
+      message: 'Gửi khiếu nại biên bản kiểm định thành công! Chuyên viên showroom sẽ liên hệ giải quyết.',
+      data: result,
     });
   } catch (error) {
     next(error);
