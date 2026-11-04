@@ -9,6 +9,7 @@ import contractTemplateRoutes from './routes/contractTemplate.routes.js';
 import chatRoutes from './routes/chat.routes.js';
 import messageRoutes from './routes/message.routes.js';
 import userRoutes from './routes/user.routes.js';
+import categoryRoutes from './routes/category.routes.js';
 import apiRouter from './routes/index.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 
@@ -60,6 +61,7 @@ app.use('/api/contract-templates', contractTemplateRoutes);
 app.use('/api/conversations', chatRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/categories', categoryRoutes);
 app.use('/api', apiRouter);
 
 // Bắt lỗi tập trung

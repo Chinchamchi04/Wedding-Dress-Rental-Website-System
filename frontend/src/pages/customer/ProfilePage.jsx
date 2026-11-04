@@ -201,8 +201,8 @@ export default function ProfilePage() {
                     {notice.type === 'success'
                       ? 'Thành công'
                       : notice.type === 'error'
-                      ? 'Lỗi'
-                      : 'Thông báo'}
+                        ? 'Lỗi'
+                        : 'Thông báo'}
                   </span>
                   <span className="text-[12px] text-[#554543] mt-0.5 leading-snug">
                     {notice.text}
@@ -288,7 +288,7 @@ export default function ProfilePage() {
                 </Form.Item>
 
                 <Form.Item
-                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Số điện thoại (Zalo) *</span>}
+                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Số điện thoại *</span>}
                   name="phone"
                   rules={[{ required: true, message: 'Vui lòng nhập số điện thoại liên lạc.' }]}
                 >

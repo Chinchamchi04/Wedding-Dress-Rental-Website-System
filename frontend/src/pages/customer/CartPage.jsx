@@ -11,7 +11,7 @@ import { formatCurrencyVND } from '../../utils/formatCurrency';
 const money = (amount) => formatCurrencyVND(amount);
 
 function CartItem({ item, onUpdate, onRemove, onWishlist, isWishlisted }) {
-  const total = Number(item.price || 0);
+  const days = Math.max(1, Number(item.days || 1)); const total = Number(item.price || 0) * days;
   const ProductImage = item.detailHref === null ? 'div' : Link;
   return (
     <article className="cart-product">
@@ -25,7 +25,7 @@ function CartItem({ item, onUpdate, onRemove, onWishlist, isWishlisted }) {
             <span className="cart-eyebrow">{item.collection || 'HAUTE COUTURE'}</span>
             <h3>{item.detailHref === null ? item.name : <Link to={item.detailHref || `/dresses/${item.id}`}>{item.name}</Link>}</h3>
           </div>
-          <div className="cart-product-price"><strong>{item.unavailable ? 'Cần kiểm tra' : money(total)}</strong><small>/ giá niêm yết</small></div>
+          <div className="cart-product-price"><strong>{item.unavailable ? 'Cần kiểm tra' : money(total)}</strong><small>{days} ngày x {money(item.price)}</small></div>
         </div>
         <div className="cart-tags"><span>✦ Size {item.size || 'Theo tư vấn'}</span>{item.fabric && <span>✦ {item.fabric}</span>}{item.style && <span>{item.style}</span>}{item.unavailable && <span>Mẫu không còn trong danh sách hiện có</span>}</div>
         <div className="cart-schedule">
@@ -76,7 +76,7 @@ export default function CartPage() {
   const [message, setMessage] = useState('');
   useEffect(() => { let active = true; getDressesFromApi().then((dresses) => { if (!active) return; refreshCartWithDresses(dresses); setRecommendations(['WDR-006', 'WDR-008', 'WDR-009'].map((code) => dresses.find((dress) => dress.code === code && dress.status === 'available')).filter(Boolean).map((dress) => ({ ...dress, price: dress.rentPrice, deposit: dress.depositAmount, collection: dress.collectionTag, size: dress.sizes?.join(' / ') || 'Theo tư vấn', style: dress.code, detailHref: `/dresses/${Number(dress.code.slice(-3))}` }))); }).catch((error) => { if (active) setMessage(error.message || 'Không tải được mẫu váy gợi ý.'); }); return () => { active = false; }; }, []);
   const items = useMemo(() => storedItems.map(resolveCartItem), [storedItems]);
-  const rentalFee = items.reduce((sum, item) => sum + (item.unavailable ? 0 : Number(item.price || 0)), 0);
+  const rentalFee = items.reduce((sum, item) => sum + (item.unavailable ? 0 : Number(item.price || 0) * Math.max(1, Number(item.days || 1))), 0);
   const deposit = items.reduce((sum, item) => sum + (item.unavailable ? 0 : Number(item.deposit || 0)), 0);
   const hasUnavailable = items.some((item) => item.unavailable);
 
