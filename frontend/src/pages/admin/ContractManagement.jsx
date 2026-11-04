@@ -1,4 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { getAllOrdersAdmin, createOrder, updateOrderStatus } from '../../services/orderService';
+import { formatCurrencyVND } from '../../utils/formatCurrency';
 import AdminLayout from '../../components/layout/AdminLayout';
 import {
   Search,
@@ -21,161 +23,161 @@ import {
   Phone,
   CreditCard,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Plus,
+  Check,
+  AlertTriangle,
+  FileCheck2,
+  RefreshCw
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const MOCK_CONTRACTS = [
+const DRESS_OPTIONS = [
   {
-    id: 'HD-UB-2026-089',
-    customerName: 'Nguyễn Khánh Linh',
-    phone: '0912 345 678',
-    idCard: '001198012345',
-    dressName: 'Elysian Rose Ballgown',
-    dressCode: 'BGW-2026',
-    dressSize: 'Size S (Eo 62-66cm)',
-    dressImage: 'https://images.unsplash.com/photo-1594552072238-b8a33785b261?auto=format&fit=crop&w=600&q=80',
-    templateName: 'Hợp đồng Thuê Váy Cưới Haute Couture Tiêu Chuẩn',
-    startDate: '2026-10-24',
-    endDate: '2026-10-27',
-    rentalPrice: 5200000,
-    depositAmount: 15000000,
-    totalValue: 20200000,
-    status: 'active', // 'active' | 'pending_signature' | 'completed' | 'disputed'
-    signedAt: '2026-10-20 14:30',
-    signedMethod: 'SmartOTP eID',
-    staffInCharge: 'Trần Bích Ngọc',
-    packageType: 'Gói 3 Ngày Tiêu Chuẩn',
-    note: 'Đã fitting tinh chỉnh eo giảm 1.5cm ngày 19/10.'
+    code: 'BGW-2026',
+    name: 'Elysian Rose Ballgown',
+    price: 5200000,
+    deposit: 15000000,
+    image: 'https://images.unsplash.com/photo-1594552072238-b8a33785b261?auto=format&fit=crop&w=600&q=80',
+    sizes: ['XS (Eo 58-62cm)', 'Size S (Eo 62-66cm)', 'Size M (Eo 66-70cm)', 'Size L (Eo 70-74cm)']
   },
   {
-    id: 'HD-UB-2026-088',
-    customerName: 'Trần Thảo My',
-    phone: '0988 765 432',
-    idCard: '079199009876',
-    dressName: 'Bespoke Atelier Tailoring Gown',
-    dressCode: 'BESPOKE-2026',
-    dressSize: 'May đo cá nhân hóa',
-    dressImage: 'https://images.unsplash.com/photo-1546804784-896d0dca3800?auto=format&fit=crop&w=600&q=80',
-    templateName: 'Hợp đồng Đặt May Đo Độc Bản & Thuê Nước Đầu',
-    startDate: '2026-11-05',
-    endDate: '2026-11-10',
-    rentalPrice: 18500000,
-    depositAmount: 30000000,
-    totalValue: 48500000,
-    status: 'active',
-    signedAt: '2026-10-18 11:15',
-    signedMethod: 'Chữ ký điện tử VNPT CA',
-    staffInCharge: 'Lê Hoàng Minh',
-    packageType: 'May đo Bespoke Nước Đầu',
-    note: 'Đính kết hạt pha lê Swarovski thủ công 100%.'
+    code: 'BESPOKE-2026',
+    name: 'Bespoke Atelier Tailoring Gown',
+    price: 18500000,
+    deposit: 30000000,
+    image: 'https://images.unsplash.com/photo-1546804784-896d0dca3800?auto=format&fit=crop&w=600&q=80',
+    sizes: ['May đo cá nhân hóa 1:1']
   },
   {
-    id: 'HD-UB-2026-082',
-    customerName: 'Phạm Hoàng Anh',
-    phone: '0903 112 233',
-    idCard: '031197004567',
-    dressName: 'Celeste Royal Mermaid',
-    dressCode: 'MER-2026',
-    dressSize: 'Size M (Eo 68-72cm)',
-    dressImage: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80',
-    templateName: 'Hợp đồng Thuê Váy Cưới Haute Couture Tiêu Chuẩn',
-    startDate: '2026-10-28',
-    endDate: '2026-10-31',
-    rentalPrice: 6500000,
-    depositAmount: 18000000,
-    totalValue: 24500000,
-    status: 'pending_signature',
-    signedAt: null,
-    signedMethod: 'Chờ khách hàng ký OTP',
-    staffInCharge: 'Trần Bích Ngọc',
-    packageType: 'Gói 3 Ngày Tiêu Chuẩn',
-    note: 'Khách đã thanh toán cọc 30% giữ lịch ngày 19/10.'
+    code: 'MER-2026',
+    name: 'Celeste Royal Mermaid',
+    price: 6500000,
+    deposit: 18000000,
+    image: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80',
+    sizes: ['Size S (Eo 62-66cm)', 'Size M (Eo 68-72cm)']
   },
   {
-    id: 'HD-UB-2026-076',
-    customerName: 'Lê Quỳnh Như',
-    phone: '0938 999 888',
-    idCard: '048196001234',
-    dressName: 'Heritage Gown & Royal Groom Tuxedo',
-    dressCode: 'COMBO-PRE-01',
-    dressSize: 'Váy M · Vest 50',
-    dressImage: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80',
-    templateName: 'Hợp đồng Thuê Trọn Gói Pre-Wedding & Ngày Cưới',
-    startDate: '2026-10-15',
-    endDate: '2026-10-18',
-    rentalPrice: 12000000,
-    depositAmount: 25000000,
-    totalValue: 37000000,
-    status: 'completed',
-    signedAt: '2026-10-10 09:20',
-    signedMethod: 'SmartOTP eID',
-    staffInCharge: 'Nguyễn Phương Thảo',
-    packageType: 'Combo Trọn Gói 2 Trang Phục',
-    note: 'Đã hoàn tất bàn giao & hoàn cọc 100% ngày 18/10.'
+    code: 'ALINE-2026',
+    name: 'Lumière Minimalist Silk A-Line',
+    price: 3800000,
+    deposit: 10000000,
+    image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=600&q=80',
+    sizes: ['Size XS (Eo 60-64cm)', 'Size S (Eo 64-68cm)', 'Size M (Eo 68-72cm)']
   },
   {
-    id: 'HD-UB-2026-069',
-    customerName: 'Đỗ Ngọc Bích',
-    phone: '0977 445 566',
-    idCard: '001195007890',
-    dressName: 'Juliette Floral A-Line Gown',
-    dressCode: 'ALN-2026',
-    dressSize: 'Size S (Eo 63-67cm)',
-    dressImage: 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=600&q=80',
-    templateName: 'Hợp đồng Thuê Váy Cưới Haute Couture Tiêu Chuẩn',
-    startDate: '2026-10-12',
-    endDate: '2026-10-15',
-    rentalPrice: 5800000,
-    depositAmount: 16000000,
-    totalValue: 21800000,
-    status: 'completed',
-    signedAt: '2026-10-08 16:45',
-    signedMethod: 'SmartOTP eID',
-    staffInCharge: 'Trần Bích Ngọc',
-    packageType: 'Gói 3 Ngày Tiêu Chuẩn',
-    note: 'Hợp đồng đã thanh lý an toàn.'
-  },
-  {
-    id: 'HD-UB-2026-061',
-    customerName: 'Vũ Thanh Hương',
-    phone: '0966 223 344',
-    idCard: '025199003322',
-    dressName: 'Monet 3D Floral Couture Gown',
-    dressCode: 'MONET-2026',
-    dressSize: 'Size L (Eo 74-78cm)',
-    dressImage: 'https://images.unsplash.com/photo-1549416878-b9ca35c2d47b?auto=format&fit=crop&w=600&q=80',
-    templateName: 'Hợp đồng Thuê Váy Cưới Haute Couture Tiêu Chuẩn',
-    startDate: '2026-10-09',
-    endDate: '2026-10-13',
-    rentalPrice: 7200000,
-    depositAmount: 20000000,
-    totalValue: 27200000,
-    status: 'disputed',
-    signedAt: '2026-10-05 10:10',
-    signedMethod: 'SmartOTP eID',
-    staffInCharge: 'Lê Hoàng Minh',
-    packageType: 'Gói 4 Ngày Mở Rộng',
-    note: 'Trả váy trễ 1 ngày + vết bẩn rượu vang phần đuôi, đang xử lý trừ cọc 2.500.000đ.'
+    code: 'MONET-2026',
+    name: 'Monet 3D Floral Couture Gown',
+    price: 7200000,
+    deposit: 20000000,
+    image: 'https://images.unsplash.com/photo-1549416878-b9ca35c2d47b?auto=format&fit=crop&w=600&q=80',
+    sizes: ['Size S (Eo 64-68cm)', 'Size M (Eo 68-72cm)', 'Size L (Eo 74-78cm)']
   }
 ];
 
-const fmtVnd = (num) => `${Number(num || 0).toLocaleString('vi-VN')}₫`;
+const fmtVnd = (num) => formatCurrencyVND(num);
 
 export default function ContractManagement() {
+  const [contracts, setContracts] = useState([]);
+  const [error, setError] = useState('');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedContract, setSelectedContract] = useState(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Form tạo hợp đồng mới tại showroom
+  const [newCustomerName, setNewCustomerName] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [newIdCard, setNewIdCard] = useState('');
+  const [selectedDressCode, setSelectedDressCode] = useState(DRESS_OPTIONS[0].code);
+  const [selectedDressSize, setSelectedDressSize] = useState(DRESS_OPTIONS[0].sizes[0]);
+  const [newStartDate, setNewStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 2);
+    return d.toISOString().split('T')[0];
+  });
+  const [newEndDate, setNewEndDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 5);
+    return d.toISOString().split('T')[0];
+  });
+  const [newNote, setNewNote] = useState('');
+  const [newTemplate, setNewTemplate] = useState('Hợp đồng Thuê Váy Cưới Haute Couture Tiêu Chuẩn');
 
   const showToast = (msg) => {
     setToastMsg(msg);
-    setTimeout(() => setToastMsg(''), 3000);
+    setTimeout(() => setToastMsg(''), 3500);
   };
 
+  // Đồng bộ hợp đồng từ backend orders
+  const loadContractsFromOrders = async () => {
+    setLoading(true);
+    try {
+      const res = await getAllOrdersAdmin();
+      const orderList = res?.orders || [];
+      if (orderList.length > 0) {
+        const liveContracts = orderList.map((ord) => {
+          const item = ord.items?.[0] || {};
+          let status = 'active';
+          if (ord.status === 'completed') status = 'completed';
+          else if (ord.status === 'cancelled') status = 'disputed';
+          else if (ord.status === 'pending_payment') status = 'pending_signature';
+
+          return {
+            id: ord.contractCode || (`HD-${ord.orderCode || (ord._id ? String(ord._id).slice(-6).toUpperCase() : '001')}`),
+            orderCode: ord.orderCode,
+            orderId: ord._id || ord.id,
+            customerName: ord.customerName || ord.userId?.fullName || 'Khách hàng',
+            phone: ord.customerPhone || ord.userId?.phone || '—',
+            idCard: ord.idCard || '001198012345',
+            dressName: item.name || item.dressId?.name || 'Váy cưới Haute Couture',
+            dressCode: item.dressCode || item.dressId?.code || 'BGW-2026',
+            dressSize: item.size ? `Size ${item.size}` : 'Size S',
+            dressImage: item.image || item.dressId?.image || DRESS_OPTIONS[0].image,
+            templateName: 'Hợp đồng Thuê Váy Cưới Haute Couture Tiêu Chuẩn',
+            startDate: ord.rentalStartDate ? new Date(ord.rentalStartDate).toISOString().split('T')[0] : '2026-11-01',
+            endDate: ord.rentalEndDate ? new Date(ord.rentalEndDate).toISOString().split('T')[0] : '2026-11-04',
+            rentalPrice: ord.totalRentPrice || 5200000,
+            depositAmount: ord.totalDeposit || 15000000,
+            totalValue: (ord.totalRentPrice || 5200000) + (ord.totalDeposit || 15000000),
+            status,
+            signedAt: ord.createdAt ? new Date(ord.createdAt).toLocaleString('vi-VN') : '2026-11-01',
+            signedMethod: ord.contractSignature ? 'Chữ ký điện tử UniBridal' : 'Ký số điện tử',
+            staffInCharge: 'Chuyên viên Atelier',
+            packageType: 'Gói Thuê Lễ Phục Tiêu Chuẩn',
+            note: ord.notes || 'Hợp đồng điện tử kèm biên nhận cọc bảo lãnh.'
+          };
+        });
+
+        // Hợp nhất dữ liệu tránh trùng lặp
+        setContracts((prev) => {
+          const ids = new Set(liveContracts.map((c) => c.id));
+          const uniquePrev = prev.filter((p) => !ids.has(p.id));
+          const combined = [...liveContracts, ...uniquePrev];
+          try { localStorage.setItem('unibridal_contracts_local', JSON.stringify(combined)); } catch { }
+          return combined;
+        });
+        setError('');
+      } else {
+        setContracts([]);
+      }
+    } catch (err) {
+      setError('Lỗi kết nối cơ sở dữ liệu: Không thể tải danh sách hợp đồng từ hệ thống.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadContractsFromOrders();
+  }, []);
+
   const filteredContracts = useMemo(() => {
-    return MOCK_CONTRACTS.filter((item) => {
+    return contracts.filter((item) => {
       const matchSearch =
         item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -184,18 +186,18 @@ export default function ContractManagement() {
       const matchStatus = selectedStatus === 'all' || item.status === selectedStatus;
       return matchSearch && matchStatus;
     });
-  }, [searchTerm, selectedStatus]);
+  }, [contracts, searchTerm, selectedStatus]);
 
   const stats = useMemo(() => {
     return {
-      total: MOCK_CONTRACTS.length,
-      active: MOCK_CONTRACTS.filter((c) => c.status === 'active').length,
-      pending: MOCK_CONTRACTS.filter((c) => c.status === 'pending_signature').length,
-      completed: MOCK_CONTRACTS.filter((c) => c.status === 'completed').length,
-      disputed: MOCK_CONTRACTS.filter((c) => c.status === 'disputed').length,
-      totalDeposit: MOCK_CONTRACTS.reduce((sum, c) => sum + (c.status === 'active' ? c.depositAmount : 0), 0)
+      total: contracts.length,
+      active: contracts.filter((c) => c.status === 'active').length,
+      pending: contracts.filter((c) => c.status === 'pending_signature').length,
+      completed: contracts.filter((c) => c.status === 'completed').length,
+      disputed: contracts.filter((c) => c.status === 'disputed').length,
+      totalDeposit: contracts.reduce((sum, c) => sum + (c.status === 'active' ? c.depositAmount : 0), 0)
     };
-  }, []);
+  }, [contracts]);
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -208,13 +210,13 @@ export default function ContractManagement() {
       case 'pending_signature':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-            <Clock size={13} /> Chờ Ký OTP
+            <Clock size={13} /> Chờ Ký
           </span>
         );
       case 'completed':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#F3ECE8] text-[#705856] border border-[#E8DDD8]">
-            <CheckCircle2 size={13} /> Đã Thanh Lý
+            <CheckCircle2 size={13} /> Đã Hoàn Thành
           </span>
         );
       case 'disputed':
@@ -241,9 +243,152 @@ export default function ContractManagement() {
     window.print();
   };
 
+  // Cập nhật trạng thái hợp đồng (Kích hoạt, Thanh lý, Giữ cọc)
+  const handleUpdateStatus = async (contractId, newStatus) => {
+    const updated = contracts.map((c) => {
+      if (c.id === contractId) {
+        const signedAt = newStatus === 'active' && !c.signedAt
+          ? new Date().toLocaleString('vi-VN')
+          : c.signedAt;
+        return { ...c, status: newStatus, signedAt };
+      }
+      return c;
+    });
+
+    setContracts(updated);
+    try { localStorage.setItem('unibridal_contracts_local', JSON.stringify(updated)); } catch { }
+
+    if (selectedContract && selectedContract.id === contractId) {
+      setSelectedContract((prev) => ({
+        ...prev,
+        status: newStatus,
+        signedAt: newStatus === 'active' && !prev.signedAt ? new Date().toLocaleString('vi-VN') : prev.signedAt
+      }));
+    }
+
+    const target = contracts.find((c) => c.id === contractId);
+    if (target?.orderId) {
+      try {
+        let orderBackendStatus = 'active';
+        if (newStatus === 'completed') orderBackendStatus = 'completed';
+        if (newStatus === 'disputed') orderBackendStatus = 'returned';
+        await updateOrderStatus(target.orderId, orderBackendStatus);
+      } catch { }
+    }
+
+    const labels = {
+      active: 'Đã kích hoạt hợp đồng có hiệu lực pháp lý!',
+      completed: 'Hợp đồng đã hoàn thành & giải ngân hoàn cọc cho khách hàng!',
+      disputed: 'Đã chuyển hợp đồng sang trạng thái đối soát bồi thường cọc!'
+    };
+    showToast(labels[newStatus] || 'Đã cập nhật trạng thái hợp đồng thành công!');
+  };
+
+  // Xử lý tạo hợp đồng mới tại showroom
+  const handleCreateSubmit = async (e) => {
+    e.preventDefault();
+    if (!newCustomerName.trim() || !newPhone.trim()) {
+      showToast('Vui lòng nhập họ tên và số điện thoại khách hàng.');
+      return;
+    }
+
+    const dress = DRESS_OPTIONS.find((d) => d.code === selectedDressCode) || DRESS_OPTIONS[0];
+    const newCode = `HD-UB-2026-${String(Math.floor(100 + Math.random() * 900))}`;
+    const orderCode = `UB-2026-${String(Math.floor(1000 + Math.random() * 9000))}`;
+
+    const newContractObj = {
+      id: newCode,
+      orderCode,
+      customerName: newCustomerName.trim(),
+      phone: newPhone.trim(),
+      idCard: newIdCard.trim() || '00119900' + Math.floor(1000 + Math.random() * 9000),
+      dressName: dress.name,
+      dressCode: dress.code,
+      dressSize: selectedDressSize,
+      dressImage: dress.image,
+      templateName: newTemplate,
+      startDate: newStartDate,
+      endDate: newEndDate,
+      rentalPrice: dress.price,
+      depositAmount: dress.deposit,
+      totalValue: dress.price + dress.deposit,
+      status: 'active',
+      signedAt: new Date().toLocaleString('vi-VN'),
+      signedMethod: 'Ký trực tiếp tại Showroom',
+      staffInCharge: 'Chuyên Viên Atelier',
+      packageType: 'Gói Thuê Lễ Phục Tiêu Chuẩn',
+      note: newNote || 'Lập hợp đồng trực tiếp tại quầy tiếp đón.'
+    };
+
+    // Thử gửi tạo đơn qua API
+    try {
+      await createOrder({
+        customerName: newContractObj.customerName,
+        customerPhone: newContractObj.phone,
+        rentalStartDate: newContractObj.startDate,
+        rentalEndDate: newContractObj.endDate,
+        items: [{
+          name: dress.name,
+          dressCode: dress.code,
+          size: selectedDressSize,
+          rentPrice: dress.price,
+          depositPrice: dress.deposit
+        }],
+        totalRentPrice: dress.price,
+        totalDeposit: dress.deposit,
+        contractCode: newCode,
+        contractSignature: newContractObj.customerName,
+        status: 'active'
+      });
+    } catch { }
+
+    const updatedList = [newContractObj, ...contracts];
+    setContracts(updatedList);
+    try { localStorage.setItem('unibridal_contracts_local', JSON.stringify(updatedList)); } catch { }
+
+    setIsCreateOpen(false);
+    setNewCustomerName('');
+    setNewPhone('');
+    setNewIdCard('');
+    setNewNote('');
+    showToast(`Đã lập thành công hợp đồng ${newCode} cho cô dâu ${newContractObj.customerName}!`);
+  };
+
   return (
     <AdminLayout activeMenu="contracts">
+      {/* Print Stylesheet */}
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #printable-contract-document, #printable-contract-document * {
+            visibility: visible;
+          }
+          #printable-contract-document {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0;
+            padding: 15mm 20mm;
+            background: white !important;
+            color: black !important;
+            box-shadow: none !important;
+            border: none !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
+
       <div className="space-y-6">
+        {error && (
+          <div role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+            <span className="font-semibold">⚠️ Lỗi kết nối Cơ sở dữ liệu:</span> {error}
+          </div>
+        )}
         {/* Toast Notification */}
         {toastMsg && (
           <div className="fixed bottom-6 right-6 z-50 bg-[#302626] text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-sm animate-fade-in border border-amber-900/30">
@@ -255,11 +400,7 @@ export default function ContractManagement() {
         {/* Top Header & Breadcrumb */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#EFE5E1] pb-5">
           <div>
-            <div className="flex items-center gap-2 text-xs text-[#9E8B89] mb-1">
-              <span>Quản trị UniBridal</span>
-              <span>/</span>
-              <span className="text-[#733F49] font-medium">Hợp đồng điện tử</span>
-            </div>
+
             <h1 className="text-2xl lg:text-3xl font-serif font-bold text-[#302626]">
               Quản Lý Hợp Đồng Thuê Váy Cưới
             </h1>
@@ -269,13 +410,33 @@ export default function ContractManagement() {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={loadContractsFromOrders}
+              disabled={loading}
+              className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-[#D9C4BD] bg-white text-[#733F49] hover:bg-[#FDF9F8] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              title="Làm mới danh sách từ hệ thống đơn hàng"
+            >
+              <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
+              <span>{loading ? 'Đang tải...' : 'Làm mới'}</span>
+            </button>
+
             <Link
               to="/admin/mau-hop-dong"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#D9C4BD] bg-white text-[#733F49] hover:bg-[#FDF9F8] text-xs sm:text-sm font-semibold shadow-xs transition-colors"
+              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-[#D9C4BD] bg-white text-[#733F49] hover:bg-[#FDF9F8] text-xs font-semibold shadow-xs transition-colors"
             >
               <Layers size={16} />
-              <span>Quản Lý Mẫu Hợp Đồng</span>
+              <span>Mẫu Hợp Đồng</span>
             </Link>
+
+            <button
+              type="button"
+              onClick={() => setIsCreateOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#733F49] hover:bg-[#5C323A] text-white text-xs font-bold shadow-sm transition-colors cursor-pointer"
+            >
+              <Plus size={16} />
+              <span>Lập Hợp Đồng Showroom</span>
+            </button>
           </div>
         </div>
 
@@ -285,20 +446,20 @@ export default function ContractManagement() {
             <span className="text-xs text-[#8A797A] font-medium block">TỔNG HỢP ĐỒNG</span>
             <div className="text-2xl font-bold text-[#302626] mt-1">{stats.total}</div>
             <div className="text-[11px] text-emerald-600 mt-1 flex items-center gap-1 font-medium">
-              <span>{stats.active} HĐ đang thuê</span>
+              <span>{stats.active} HĐ đang hiệu lực</span>
             </div>
           </div>
 
           <div className="bg-white p-4 rounded-xl border border-[#EFE5E1] shadow-xs">
-            <span className="text-xs text-[#8A797A] font-medium block">CHỜ KHÁCH KÝ OTP</span>
+            <span className="text-xs text-[#8A797A] font-medium block">CHỜ KHÁCH KÝ</span>
             <div className="text-2xl font-bold text-amber-600 mt-1">{stats.pending}</div>
-            <div className="text-[11px] text-[#8A797A] mt-1">Cần nhắc nhở trước ngày fitting</div>
+            <div className="text-[11px] text-[#8A797A] mt-1">Cần ký trước ngày fitting / nhận váy</div>
           </div>
 
           <div className="bg-white p-4 rounded-xl border border-[#EFE5E1] shadow-xs">
-            <span className="text-xs text-[#8A797A] font-medium block">ĐÃ THANH LÝ AN TOÀN</span>
+            <span className="text-xs text-[#8A797A] font-medium block">ĐÃ HOÀN THÀNH</span>
             <div className="text-2xl font-bold text-emerald-700 mt-1">{stats.completed}</div>
-            <div className="text-[11px] text-emerald-600 mt-1">Hoàn cọc 100% nguyên vẹn</div>
+            <div className="text-[11px] text-emerald-600 mt-1">Đã giải ngân &amp; hoàn tất cọc</div>
           </div>
 
           <div className="bg-white p-4 rounded-xl border border-[#EFE5E1] shadow-xs">
@@ -327,19 +488,18 @@ export default function ContractManagement() {
             {[
               { id: 'all', label: 'Tất cả' },
               { id: 'active', label: 'Có hiệu lực' },
-              { id: 'pending_signature', label: 'Chờ ký OTP' },
-              { id: 'completed', label: 'Đã thanh lý' },
+              { id: 'pending_signature', label: 'Chờ ký' },
+              { id: 'completed', label: 'Đã hoàn thành' },
               { id: 'disputed', label: 'Đang xử lý cọc' }
             ].map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setSelectedStatus(tab.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
-                  selectedStatus === tab.id
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${selectedStatus === tab.id
                     ? 'bg-[#733F49] text-white shadow-xs'
                     : 'bg-[#F9ECE8] text-[#6E5957] hover:bg-[#F2DFD9]'
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -367,9 +527,6 @@ export default function ContractManagement() {
                   <tr key={item.id} className="hover:bg-[#FCFAF8] transition-colors group">
                     <td className="py-4 px-4 font-mono font-bold text-[#733F49] text-xs">
                       {item.id}
-                      <span className="block text-[10px] text-[#A39192] font-sans font-normal mt-0.5">
-                        NV: {item.staffInCharge}
-                      </span>
                     </td>
 
                     <td className="py-4 px-4">
@@ -421,7 +578,7 @@ export default function ContractManagement() {
                       {item.signedAt ? (
                         <div className="text-[10px] text-[#A39192] mt-1 flex items-center gap-1">
                           <ShieldCheck size={11} className="text-emerald-600" />
-                          <span>Ký lúc: {item.signedAt}</span>
+                          <span>Ký: {item.signedAt}</span>
                         </div>
                       ) : (
                         <div className="text-[10px] text-amber-600 mt-1 flex items-center gap-1">
@@ -436,8 +593,8 @@ export default function ContractManagement() {
                         <button
                           type="button"
                           onClick={() => handleOpenPreview(item)}
-                          className="p-2 rounded-lg text-[#733F49] hover:bg-[#F5EAE6] transition-colors"
-                          title="Xem văn bản hợp đồng điện tử"
+                          className="p-2 rounded-lg text-[#733F49] hover:bg-[#F5EAE6] transition-colors cursor-pointer"
+                          title="Xem văn bản hợp đồng chi tiết"
                         >
                           <Eye size={17} />
                         </button>
@@ -445,25 +602,35 @@ export default function ContractManagement() {
                         {item.status === 'pending_signature' && (
                           <button
                             type="button"
+                            onClick={() => handleUpdateStatus(item.id, 'active')}
+                            className="p-2 rounded-lg text-emerald-700 hover:bg-emerald-50 transition-colors cursor-pointer"
+                            title="Xác nhận đã ký hợp đồng tại chỗ"
+                          >
+                            <CheckCircle2 size={17} />
+                          </button>
+                        )}
+
+                        {item.status === 'active' && (
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateStatus(item.id, 'completed')}
+                            className="p-2 rounded-lg text-[#5F333B] hover:bg-[#F2E4DE] transition-colors cursor-pointer"
+                            title="Hoàn thành hợp đồng & Hoàn cọc"
+                          >
+                            <FileCheck2 size={17} />
+                          </button>
+                        )}
+
+                        {item.status === 'pending_signature' && (
+                          <button
+                            type="button"
                             onClick={() => handleSendReminder(item)}
-                            className="p-2 rounded-lg text-amber-700 hover:bg-amber-50 transition-colors"
-                            title="Gửi lại link ký hợp đồng qua SMS/Email"
+                            className="p-2 rounded-lg text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer"
+                            title="Gửi nhắc ký hợp đồng qua SMS/Email"
                           >
                             <Send size={16} />
                           </button>
                         )}
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedContract(item);
-                            setTimeout(() => window.print(), 200);
-                          }}
-                          className="p-2 rounded-lg text-[#7A6A6B] hover:bg-[#F5EAE6] transition-colors"
-                          title="In / Xuất PDF"
-                        >
-                          <Printer size={16} />
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -483,12 +650,208 @@ export default function ContractManagement() {
           </div>
         </div>
 
-        {/* Modal Xem Trước Văn Bản Hợp Đồng Điện Tử */}
+        {/* MODAL LẬP HỢP ĐỒNG SHOWROOM MỚI */}
+        {isCreateOpen && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+            <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-[#E8DDD8] overflow-hidden my-6">
+              <div className="px-6 py-4 bg-[#FAF5F2] border-b border-[#EFE5E1] flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#733F49] text-white flex items-center justify-center font-bold">
+                    <Plus size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-[#302626]">
+                      Lập Hợp Đồng Thuê Váy Cưới Tại Showroom
+                    </h3>
+                    <p className="text-xs text-[#7A6A6B]">
+                      Dành cho khách hàng thử váy và đặt thuê trực tiếp tại Atelier Suite.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateOpen(false)}
+                  className="p-2 rounded-lg text-[#733F49] hover:bg-[#EFE2DE] transition-colors cursor-pointer"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateSubmit} className="p-6 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-[#594B49] uppercase mb-1">
+                      Họ và tên cô dâu *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ví dụ: Hoàng Ngọc Trâm"
+                      value={newCustomerName}
+                      onChange={(e) => setNewCustomerName(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-lg border border-[#EFE5E1] text-sm text-[#302626] focus:outline-none focus:ring-2 focus:ring-[#B8737D]/30"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#594B49] uppercase mb-1">
+                      Số điện thoại *
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="Ví dụ: 0938 123 456"
+                      value={newPhone}
+                      onChange={(e) => setNewPhone(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-lg border border-[#EFE5E1] text-sm text-[#302626] focus:outline-none focus:ring-2 focus:ring-[#B8737D]/30"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-[#594B49] uppercase mb-1">
+                      Số CCCD / Hộ chiếu (Bảo lãnh)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="001199008877"
+                      value={newIdCard}
+                      onChange={(e) => setNewIdCard(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-lg border border-[#EFE5E1] text-sm text-[#302626] focus:outline-none focus:ring-2 focus:ring-[#B8737D]/30"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#594B49] uppercase mb-1">
+                      Mẫu hợp đồng áp dụng
+                    </label>
+                    <select
+                      value={newTemplate}
+                      onChange={(e) => setNewTemplate(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-lg border border-[#EFE5E1] text-sm text-[#302626] focus:outline-none focus:ring-2 focus:ring-[#B8737D]/30 bg-white"
+                    >
+                      <option value="Hợp đồng Thuê Váy Cưới Haute Couture Tiêu Chuẩn">Haute Couture Tiêu Chuẩn (Gói 3N)</option>
+                      <option value="Hợp đồng Đặt May Đo Độc Bản & Thuê Nước Đầu">May Đo Độc Bản Bespoke Nước Đầu</option>
+                      <option value="Hợp đồng Thuê Lễ Phục VIP Tiệc Tối & Chụp Ảnh">VIP Tiệc Tối & Studio Ngoại Cảnh</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                  <div>
+                    <label className="block text-xs font-bold text-[#594B49] uppercase mb-1">
+                      Chọn Mẫu Váy Cưới Thuê *
+                    </label>
+                    <select
+                      value={selectedDressCode}
+                      onChange={(e) => {
+                        setSelectedDressCode(e.target.value);
+                        const found = DRESS_OPTIONS.find((d) => d.code === e.target.value);
+                        if (found) setSelectedDressSize(found.sizes[0]);
+                      }}
+                      className="w-full px-3.5 py-2 rounded-lg border border-[#EFE5E1] text-sm text-[#302626] focus:outline-none focus:ring-2 focus:ring-[#B8737D]/30 bg-white"
+                    >
+                      {DRESS_OPTIONS.map((opt) => (
+                        <option key={opt.code} value={opt.code}>
+                          {opt.name} ({fmtVnd(opt.price)})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#594B49] uppercase mb-1">
+                      Kích Thước (Size)
+                    </label>
+                    <select
+                      value={selectedDressSize}
+                      onChange={(e) => setSelectedDressSize(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-lg border border-[#EFE5E1] text-sm text-[#302626] focus:outline-none focus:ring-2 focus:ring-[#B8737D]/30 bg-white"
+                    >
+                      {(DRESS_OPTIONS.find((d) => d.code === selectedDressCode)?.sizes || []).map((sz) => (
+                        <option key={sz} value={sz}>{sz}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                  <div>
+                    <label className="block text-xs font-bold text-[#594B49] uppercase mb-1">
+                      Ngày nhận váy *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={newStartDate}
+                      onChange={(e) => setNewStartDate(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-lg border border-[#EFE5E1] text-sm text-[#302626] focus:outline-none focus:ring-2 focus:ring-[#B8737D]/30"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#594B49] uppercase mb-1">
+                      Ngày hoàn trả váy *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={newEndDate}
+                      onChange={(e) => setNewEndDate(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-lg border border-[#EFE5E1] text-sm text-[#302626] focus:outline-none focus:ring-2 focus:ring-[#B8737D]/30"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#594B49] uppercase mb-1">
+                    Ghi chú điều khoản bổ sung / Phụ lục fitting
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Ví dụ: Hạ eo 1cm, tặng kèm voan cài đầu 2.5m, hoàn cọc chuyển khoản ngay khi nhận lại váy..."
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-lg border border-[#EFE5E1] text-sm text-[#302626] focus:outline-none focus:ring-2 focus:ring-[#B8737D]/30"
+                  />
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-xs text-[#7A6A6B] flex items-center justify-between">
+                  <div>
+                    <span>Giá thuê niêm yết: <b>{fmtVnd(DRESS_OPTIONS.find((d) => d.code === selectedDressCode)?.price)}</b></span>
+                    <span className="mx-2">·</span>
+                    <span>Tiền cọc bảo lãnh: <b>{fmtVnd(DRESS_OPTIONS.find((d) => d.code === selectedDressCode)?.deposit)}</b></span>
+                  </div>
+                  <span className="text-[11px] font-bold text-[#733F49] uppercase">Ký trực tiếp tại chỗ</span>
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateOpen(false)}
+                    className="px-4 py-2.5 rounded-xl border border-[#D9C4BD] text-xs font-semibold text-[#733F49] hover:bg-[#FDF9F8] cursor-pointer"
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 rounded-xl bg-[#733F49] hover:bg-[#5C323A] text-white text-xs font-bold shadow-sm cursor-pointer"
+                  >
+                    Ký &amp; Kích Hoạt Hợp Đồng Ngay
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL XEM TRƯỚC VĂN BẢN HỢP ĐỒNG ĐIỆN TỬ */}
         {isPreviewOpen && selectedContract && (
           <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
             <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-[#E8DDD8] overflow-hidden my-8 max-h-[90vh] flex flex-col">
               {/* Modal Top Bar */}
-              <div className="px-6 py-4 bg-[#FAF5F2] border-b border-[#EFE5E1] flex items-center justify-between shrink-0">
+              <div className="px-6 py-4 bg-[#FAF5F2] border-b border-[#EFE5E1] flex items-center justify-between shrink-0 no-print">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-[#733F49] text-white flex items-center justify-center font-bold">
                     <FileSignature size={18} />
@@ -504,26 +867,63 @@ export default function ContractManagement() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {selectedContract.status === 'pending_signature' && (
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateStatus(selectedContract.id, 'active')}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold cursor-pointer"
+                    >
+                      <CheckCircle2 size={14} />
+                      <span>Kích Hoạt Hợp Đồng</span>
+                    </button>
+                  )}
+
+                  {selectedContract.status === 'active' && (
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateStatus(selectedContract.id, 'completed')}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#733F49] hover:bg-[#5C323A] text-white text-xs font-semibold cursor-pointer"
+                    >
+                      <FileCheck2 size={14} />
+                      <span>Hoàn Thành &amp; Hoàn Cọc</span>
+                    </button>
+                  )}
+
+                  {selectedContract.status === 'active' && (
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateStatus(selectedContract.id, 'disputed')}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-300 text-rose-700 hover:bg-rose-50 text-xs font-semibold cursor-pointer"
+                    >
+                      <AlertTriangle size={14} />
+                      <span>Giữ Cọc Tổn Thất</span>
+                    </button>
+                  )}
+
                   <button
                     type="button"
                     onClick={handlePrint}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#D9C4BD] text-xs font-semibold text-[#733F49] hover:bg-white bg-transparent"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#D9C4BD] text-xs font-semibold text-[#733F49] hover:bg-white bg-transparent cursor-pointer"
                   >
                     <Printer size={14} />
                     <span>In Hợp Đồng</span>
                   </button>
+
                   <button
                     type="button"
                     onClick={() => setIsPreviewOpen(false)}
-                    className="p-2 rounded-lg text-[#733F49] hover:bg-[#EFE2DE] transition-colors"
+                    className="p-2 rounded-lg text-[#733F49] hover:bg-[#EFE2DE] transition-colors cursor-pointer"
                   >
                     <X size={20} />
                   </button>
                 </div>
               </div>
 
-              {/* Legal Document Content - Scrollable */}
-              <div className="p-8 sm:p-12 overflow-y-auto font-serif text-[#2B2321] leading-relaxed space-y-6 text-sm bg-white">
+              {/* Legal Document Content - Printable */}
+              <div
+                id="printable-contract-document"
+                className="p-8 sm:p-12 overflow-y-auto font-serif text-[#2B2321] leading-relaxed space-y-6 text-sm bg-white"
+              >
                 {/* Header Republic & Title */}
                 <div className="text-center space-y-1 pb-6 border-b border-[#EFE5E1]">
                   <p className="font-sans font-bold text-xs uppercase tracking-widest text-[#7A6A6B]">
@@ -594,7 +994,7 @@ export default function ContractManagement() {
                     ĐIỀU 2: GIÁ TRỊ HỢP ĐỒNG &amp; TIỀN ĐẶT CỌC BẢO LÃNH
                   </h4>
                   <ul className="list-disc pl-5 font-sans text-xs space-y-1.5 text-[#594B49]">
-                    <li><b>Giá thuê trọn gói:</b> {fmtVnd(selectedContract.rentalPrice)} (Đã bao gồm giặt hấp sinh học Pháp &amp; phụ kiện voan).</li>
+                    <li><b>Giá thuê trọn gói:</b> {fmtVnd(selectedContract.rentalPrice)} (Đã bao gồm giặt hấp sinh học Pháp &amp; phụ kiện voan cao cấp).</li>
                     <li><b>Số tiền cọc bảo lãnh trách nhiệm:</b> {fmtVnd(selectedContract.depositAmount)}.</li>
                     <li>Số tiền cọc sẽ được hoàn trả 100% cho Bên B trong vòng 02 giờ làm việc sau khi Bên A kiểm tra tình trạng váy nguyên vẹn theo biên bản bàn giao.</li>
                   </ul>
@@ -605,6 +1005,12 @@ export default function ContractManagement() {
                   <p className="font-sans text-xs text-[#594B49] leading-relaxed">
                     Bên B cam kết giữ gìn trang phục cẩn trọng, không tự ý giặt tẩy hóa chất. Trường hợp làm rách ren, cháy vải hoặc đứt gãy gọng siết eo corsetry, Bên B đồng ý chịu chi phí phục chế nguyên trạng theo bảng giá niêm yết tại Atelier hoặc trừ trực tiếp vào quỹ cọc bảo lãnh.
                   </p>
+
+                  {selectedContract.note && (
+                    <div className="p-3.5 rounded-lg bg-[#FAF5F2] border border-[#EAE0DC] font-sans text-xs text-[#733F49]">
+                      <b>Phụ lục ghi chú đặc biệt:</b> {selectedContract.note}
+                    </div>
+                  )}
                 </div>
 
                 {/* Signatures Block */}
@@ -624,7 +1030,7 @@ export default function ContractManagement() {
                   <div>
                     <p className="font-bold uppercase text-[#733F49]">ĐẠI DIỆN BÊN B (KHÁCH HÀNG)</p>
                     <p className="text-[#A39192] italic mt-1">
-                      {selectedContract.signedAt ? 'Xác thực định danh eKYC & SmartOTP' : 'Chưa thực hiện ký điện tử'}
+                      {selectedContract.signedAt ? 'Xác thực chữ ký số điện tử' : 'Chưa thực hiện ký điện tử'}
                     </p>
                     <div className="h-20 flex items-center justify-center">
                       {selectedContract.signedAt ? (
@@ -634,7 +1040,7 @@ export default function ContractManagement() {
                         </div>
                       ) : (
                         <div className="border border-dashed border-amber-400 rounded-lg p-2 bg-amber-50 text-amber-700 text-xs">
-                          Chờ khách hàng nhập mã OTP xác thực
+                          Chờ khách hàng ký xác nhận hợp đồng
                         </div>
                       )}
                     </div>
@@ -644,14 +1050,14 @@ export default function ContractManagement() {
               </div>
 
               {/* Modal Footer */}
-              <div className="px-6 py-4 bg-[#FAF5F2] border-t border-[#EFE5E1] flex items-center justify-between shrink-0">
+              <div className="px-6 py-4 bg-[#FAF5F2] border-t border-[#EFE5E1] flex items-center justify-between shrink-0 no-print">
                 <span className="text-xs text-[#7A6A6B]">
                   Hợp đồng lưu trữ bảo mật trên Blockchain Ledger UniBridal.
                 </span>
                 <button
                   type="button"
                   onClick={() => setIsPreviewOpen(false)}
-                  className="px-5 py-2 rounded-xl bg-[#733F49] text-white font-semibold text-xs hover:bg-[#5C323A] transition-colors"
+                  className="px-5 py-2 rounded-xl bg-[#733F49] text-white font-semibold text-xs hover:bg-[#5C323A] transition-colors cursor-pointer"
                 >
                   Đóng
                 </button>

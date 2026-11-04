@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
+import { message } from 'antd';
 import {
   Search,
   Pin,
@@ -8,8 +9,18 @@ import {
   Smile,
   Send,
   Sparkles,
-  X
+  X,
+  MessageSquare,
+  Check,
+  CheckCircle2,
 } from 'lucide-react';
+import {
+  getConversations,
+  getMessages,
+  sendMessage,
+  markAsRead,
+  togglePin,
+} from '../../services/chatService';
 
 import card1Elysian from '../../assets/card1_elysian.jpg';
 import card2Celeste from '../../assets/card2_celeste.jpg';
@@ -23,121 +34,128 @@ const WEDDING_EMOJIS = [
   '🕊️', '🌹', '❤️', '👏', '🙏', '👍', '😍', '😘'
 ];
 
-const INITIAL_CONVERSATIONS = [
-  {
-    id: 1,
-    name: 'Nguyễn Thảo Linh',
-    avatar: card1Elysian,
-    online: true,
-    time: '14:32',
-    lastMessage: 'Em muốn chỉnh hạ eo thêm 1.5cm cho mẫu Elysian Rose...',
-    unread: false,
-    messages: [
-      {
-        id: 101,
-        sender: 'staff',
-        text: 'Chị gửi Linh ảnh cận cảnh mũi thêu đính kết cườm hoa hồng 3D xưởng vừa lên khung xong trưa nay nhé!',
-        time: '14:25',
-        status: 'Đã xem',
-      },
-      {
-        id: 102,
-        sender: 'customer',
-        text: 'Dạ tuyệt quá chị ơi! Vậy chị chốt lưu số đo chỉnh hạ eo thêm 1.5cm cho mẫu Elysian Rose giúp em vào hợp đồng nhé ạ! Hôm 15/11 em đến thử trực tiếp nha.',
-        time: '14:32',
-        status: 'Vừa nhận',
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: 'Lê Hoàng Yến',
-    avatar: card2Celeste,
-    online: false,
-    time: '14:15',
-    lastMessage: 'Cho em xin thông tin chuyển cọc hợp đồng #HD-2025-089',
-    unread: true,
-    messages: [
-      {
-        id: 201,
-        sender: 'customer',
-        text: 'Cho em xin thông tin chuyển cọc hợp đồng #HD-2025-089 với ạ, em chuyển khoản qua Vietcombank nha chị.',
-        time: '14:15',
-        status: 'Chưa đọc',
-      },
-    ],
-  },
-  {
-    id: 3,
-    name: 'Trần Mai Phương',
-    avatar: card3Lumiere,
-    online: false,
-    time: '13:40',
-    lastMessage: 'Bộ voan cài đầu Cathedral có sẵn ở showroom Nam Kỳ...',
-    unread: true,
-    messages: [
-      {
-        id: 301,
-        sender: 'customer',
-        text: 'Bộ voan cài đầu Cathedral có sẵn ở showroom Nam Kỳ Khởi Nghĩa không chị ơi?',
-        time: '13:40',
-        status: 'Chưa đọc',
-      },
-    ],
-  },
-  {
-    id: 4,
-    name: 'Đặng Ngọc Hà',
-    avatar: card4Monet,
-    online: false,
-    time: '11:20',
-    lastMessage: 'Lịch fitting ngày 20/11 em có thể đổi sang buổi chiều...',
-    unread: true,
-    messages: [
-      {
-        id: 401,
-        sender: 'customer',
-        text: 'Lịch fitting ngày 20/11 em có thể đổi sang buổi chiều khoảng 15h được không ạ?',
-        time: '11:20',
-        status: 'Chưa đọc',
-      },
-    ],
-  },
-  {
-    id: 5,
-    name: 'Bùi Phương Anh',
-    avatar: heroBride,
-    online: false,
-    time: 'Hôm qua',
-    lastMessage: 'Dạ em đã nhận được vali váy cưới rồi, đẹp xuất sắc luôn ạ!',
-    unread: false,
-    messages: [
-      {
-        id: 501,
-        sender: 'customer',
-        text: 'Dạ em đã nhận được vali váy cưới rồi, đẹp xuất sắc luôn ạ! Cảm ơn đội ngũ UniBridal rất nhiều!',
-        time: 'Hôm qua',
-        status: 'Đã xem',
-      },
-    ],
-  },
-];
-
 export default function CustomerCareManagement() {
-  const [conversations, setConversations] = useState(INITIAL_CONVERSATIONS);
-  const [selectedId, setSelectedId] = useState(1);
+  const [conversations, setConversations] = useState([]);
+  const [aptError, setAptError] = useState('');
+  const [selectedId, setSelectedId] = useState(null);
+  const [activeMessages, setActiveMessages] = useState([]);
   const [filterTab, setFilterTab] = useState('all'); // all | unread
   const [searchTerm, setSearchTerm] = useState('');
   const [inputText, setInputText] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [isPinned, setIsPinned] = useState(true);
+  const [isPinned, setIsPinned] = useState(false);
   const [pinnedMessage, setPinnedMessage] = useState(
     'Chốt lưu số đo chỉnh hạ eo thêm 1.5cm cho mẫu Elysian Rose vào hợp đồng. (Hôm 15/11 em đến thử trực tiếp nha)'
   );
 
   const fileInputRef = useRef(null);
   const emojiPickerRef = useRef(null);
+  const messagesEndRef = useRef(null);
+
+  // Avatar presets cho các hội thoại
+  const AVATAR_LIST = [card1Elysian, card2Celeste, card3Lumiere, card4Monet, heroBride];
+
+  // Hàm tải danh sách hội thoại từ máy chủ
+  const fetchConversationsList = useCallback(async () => {
+    try {
+      const res = await getConversations({
+        status: filterTab,
+        search: searchTerm.trim() || undefined,
+      });
+
+      if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        const mapped = res.data.map((c, index) => ({
+          id: c._id,
+          name: c.customerId?.fullName || c.customerName || 'Khách hàng',
+          phone: c.customerId?.phone || c.customerPhone || '',
+          avatar: c.customerAvatar || c.customerId?.avatar || AVATAR_LIST[index % AVATAR_LIST.length],
+          online: true,
+          time: new Date(c.lastMessage?.createdAt || c.updatedAt).toLocaleTimeString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+          lastMessage: c.lastMessage?.text || 'Bắt đầu cuộc trò chuyện',
+          unread: (c.unreadStaffCount || 0) > 0,
+          unreadCount: c.unreadStaffCount || 0,
+          isPinned: c.isPinned || false,
+          messages: [],
+        }));
+
+        setConversations(mapped);
+        setSelectedId((current) => {
+          if (current && mapped.some((m) => m.id === current)) return current;
+          return mapped[0].id;
+        });
+      } else {
+        setConversations([]);
+        setSelectedId(null);
+        setActiveMessages([]);
+      }
+    } catch (err) {
+      console.warn('Lỗi tải danh sách hội thoại:', err);
+    }
+  }, [filterTab, searchTerm]);
+
+  // Hàm tải danh sách tin nhắn của hội thoại đang chọn
+  const fetchActiveMessages = useCallback(async (convId) => {
+    if (!convId || convId.startsWith?.('init_')) return;
+
+    try {
+      const res = await getMessages(convId);
+      if (res?.data && Array.isArray(res.data)) {
+        const mapped = res.data.map((m) => ({
+          id: m._id,
+          sender: m.senderRole === 'customer' ? 'customer' : 'staff',
+          text: m.text,
+          image: m.image,
+          time: new Date(m.createdAt).toLocaleTimeString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+          status: m.status === 'read' ? 'Đã xem' : 'Đã gửi',
+        }));
+        setActiveMessages(mapped);
+      }
+      // Đánh dấu đã đọc
+      markAsRead(convId).catch(() => {});
+    } catch (err) {
+      console.warn('Lỗi tải tin nhắn:', err);
+    }
+  }, []);
+
+  // Lần đầu mount và khi search/filter thay đổi
+  useEffect(() => {
+    fetchConversationsList();
+  }, [fetchConversationsList]);
+
+  // Khi selectedId thay đổi
+  useEffect(() => {
+    if (selectedId) {
+      fetchActiveMessages(selectedId);
+      const conv = conversations.find((c) => c.id === selectedId);
+      if (conv) {
+        setIsPinned(conv.isPinned);
+      }
+    }
+  }, [selectedId, fetchActiveMessages]);
+
+  // Polling chu kỳ 3.5s để cập nhật tin nhắn mới từ khách hàng
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchConversationsList();
+      if (selectedId) {
+        fetchActiveMessages(selectedId);
+      }
+    }, 3500);
+
+    return () => clearInterval(interval);
+  }, [fetchConversationsList, fetchActiveMessages, selectedId]);
+
+  // Cuộn xuống tin nhắn mới nhất
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [activeMessages]);
 
   // Close emoji picker when clicking outside
   useEffect(() => {
@@ -154,7 +172,7 @@ export default function CustomerCareManagement() {
     };
   }, [showEmojiPicker]);
 
-  const activeConv = conversations.find((c) => c.id === selectedId) || conversations[0];
+  const activeConv = conversations.find((c) => c.id === selectedId) || conversations[0] || null;
 
   const filteredConversations = conversations.filter((c) => {
     if (filterTab === 'unread' && !c.unread) return false;
@@ -176,7 +194,6 @@ export default function CustomerCareManagement() {
       setSelectedImage(reader.result);
     };
     reader.readAsDataURL(file);
-    // Reset file input value so re-selecting same file triggers onChange
     e.target.value = '';
   };
 
@@ -185,35 +202,53 @@ export default function CustomerCareManagement() {
     setShowEmojiPicker(false);
   };
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     if (e) e.preventDefault();
     if (!inputText.trim() && !selectedImage) return;
+
+    const textToSend = inputText.trim();
+    const imageToSend = selectedImage;
 
     const newMsg = {
       id: Date.now(),
       sender: 'staff',
-      text: inputText.trim(),
-      image: selectedImage,
+      text: textToSend,
+      image: imageToSend,
       time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
       status: 'Đã gửi',
     };
 
-    setConversations((prev) =>
-      prev.map((c) => {
-        if (c.id === selectedId) {
-          return {
-            ...c,
-            lastMessage: newMsg.text || 'Đã gửi một hình ảnh',
-            time: newMsg.time,
-            messages: [...c.messages, newMsg],
-          };
-        }
-        return c;
-      })
-    );
-
+    setActiveMessages((prev) => [...prev, newMsg]);
     setInputText('');
     setSelectedImage(null);
+
+    // Gửi tin nhắn lên server
+    if (selectedId && !selectedId.startsWith?.('init_')) {
+      try {
+        await sendMessage({
+          conversationId: selectedId,
+          text: textToSend,
+          image: imageToSend,
+          senderRole: 'staff',
+        });
+        fetchConversationsList();
+      } catch (err) {
+        console.error('Lỗi gửi tin nhắn từ Admin:', err);
+      }
+    }
+  };
+
+  const handleTogglePinConversation = async () => {
+    const nextState = !isPinned;
+    setIsPinned(nextState);
+    if (selectedId && !selectedId.startsWith?.('init_')) {
+      try {
+        await togglePin(selectedId);
+        fetchConversationsList();
+      } catch (err) {
+        console.warn('Lỗi ghim:', err);
+      }
+    }
   };
 
   const handleQuickReply = (text) => {
@@ -222,15 +257,20 @@ export default function CustomerCareManagement() {
 
   return (
     <AdminLayout activeMenu="customer-care">
-      {/* Page Title - Đẩy sát lên trên */}
-      <div className="mb-2 -mt-5 lg:-mt-6 flex items-center justify-between">
-        <h1 className="font-serif text-[28px] sm:text-[32px] font-normal text-[#844F5A] tracking-normal select-none">
-          Chăm Sóc Khách Hàng
-        </h1>
+      {/* Page Title */}
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-playfair text-[26px] sm:text-[30px] font-bold text-[#5F2B36] tracking-tight">
+            Chăm Sóc Khách Hàng
+          </h1>
+          <p className="text-[13px] text-[#7A6B6C] mt-1">
+            Trung tâm kết nối nàng dâu: Tư vấn 1:1 qua tin nhắn thời gian thực cùng chuyên viên Atelier UniBridal.
+          </p>
+        </div>
       </div>
 
-      {/* Main Container - Tách thành 2 card riêng biệt có khoảng cách */}
-      <div className="flex flex-col lg:flex-row gap-5 h-[calc(100vh-120px)] min-h-[620px]">
+      {/* Main Container Chat */}
+      <div className="flex flex-col lg:flex-row gap-5 h-[calc(100vh-210px)] min-h-[600px]">
         {/* Left Card: Conversation List Panel */}
         <div className="w-full lg:w-[350px] shrink-0 bg-white rounded-2xl border border-[#EFE5E1] shadow-xs overflow-hidden flex flex-col">
           {/* Search & Filter Header */}
@@ -259,7 +299,7 @@ export default function CustomerCareManagement() {
                     : 'bg-[#FAF2EE] text-[#7A6B6C] hover:bg-[#F2E5E0]'
                 }`}
               >
-                Tất cả (18)
+                Tất cả ({conversations.length})
               </button>
               <button
                 type="button"
@@ -270,7 +310,7 @@ export default function CustomerCareManagement() {
                     : 'bg-[#FAF2EE] text-[#7A6B6C] hover:bg-[#F2E5E0]'
                 }`}
               >
-                Chưa đọc (4)
+                Chưa đọc ({conversations.filter((c) => c.unread).length})
               </button>
             </div>
           </div>
@@ -307,14 +347,22 @@ export default function CustomerCareManagement() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-0.5">
-                      <span className="text-[13px] font-bold text-[#2C2523] truncate">
-                        {c.name}
-                      </span>
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className={`text-[13px] truncate ${c.unread ? 'font-bold text-[#733F49]' : 'font-bold text-[#2C2523]'}`}>
+                          {c.name}
+                        </span>
+                        {c.unread && (
+                          <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" />
+                        )}
+                        {c.isPinned && (
+                          <Pin size={11} className="text-[#B8737D] fill-[#B8737D] -rotate-45 shrink-0" />
+                        )}
+                      </div>
                       <span className="text-[11px] text-[#9A8B8C] shrink-0 ml-1">
                         {c.time}
                       </span>
                     </div>
-                    <p className="text-xs text-[#6A5B5D] truncate leading-snug">
+                    <p className={`text-xs truncate leading-snug ${c.unread ? 'font-semibold text-[#2C2523]' : 'text-[#6A5B5D]'}`}>
                       {c.lastMessage}
                     </p>
                   </div>
@@ -325,9 +373,10 @@ export default function CustomerCareManagement() {
         </div>
 
         {/* Right Card: Active Chat View */}
-        <div className="flex-1 bg-white rounded-2xl border border-[#EFE5E1] shadow-xs overflow-hidden flex flex-col justify-between">
-          {/* Chat Header */}
-          <div className="p-3.5 px-5 bg-[#FAF2EE] border-b border-[#F0E4DF] flex items-center justify-between">
+        {activeConv ? (
+          <div className="flex-1 bg-white rounded-2xl border border-[#EFE5E1] shadow-xs overflow-hidden flex flex-col justify-between min-h-0">
+            {/* Chat Header */}
+            <div className="p-3.5 px-5 bg-[#FAF2EE] border-b border-[#F0E4DF] flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
               <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 shadow-xs border-2 border-white ring-1 ring-[#E8D8D0]">
                 <img
@@ -347,15 +396,7 @@ export default function CustomerCareManagement() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  const nextState = !isPinned;
-                  setIsPinned(nextState);
-                  if (nextState && !pinnedMessage) {
-                    setPinnedMessage(
-                      activeConv.messages[activeConv.messages.length - 1]?.text || 'Đã ghim hội thoại'
-                    );
-                  }
-                }}
+                onClick={handleTogglePinConversation}
                 className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors border-0 cursor-pointer ${
                   isPinned
                     ? 'bg-[#F2E2DC] text-[#733F49] shadow-2xs'
@@ -364,14 +405,6 @@ export default function CustomerCareManagement() {
                 title={isPinned ? 'Bỏ ghim tin nhắn' : 'Ghim tin nhắn'}
               >
                 <Pin size={16} className={isPinned ? 'fill-[#733F49]' : ''} />
-              </button>
-              <button
-                type="button"
-                onClick={() => alert(`Đang kết nối cuộc gọi thoại hotline tư vấn với ${activeConv.name}...`)}
-                className="w-8 h-8 rounded-lg bg-[#FAF0EB] text-[#733F49] flex items-center justify-center hover:bg-[#F3E2DB] transition-colors border-0 cursor-pointer shadow-2xs"
-                title="Gọi điện tư vấn"
-              >
-                <Phone size={15} />
               </button>
             </div>
           </div>
@@ -388,7 +421,7 @@ export default function CustomerCareManagement() {
               </div>
               <button
                 type="button"
-                onClick={() => setIsPinned(false)}
+                onClick={handleTogglePinConversation}
                 className="bg-transparent border-0 text-[#9A8B8C] hover:text-[#733F49] cursor-pointer p-0.5 text-xs font-semibold shrink-0 ml-2"
                 title="Bỏ ghim"
               >
@@ -398,58 +431,69 @@ export default function CustomerCareManagement() {
           )}
 
           {/* Messages Stream */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-white">
-            {activeConv.messages.map((msg) => {
-              const isStaff = msg.sender === 'staff';
-              if (isStaff) {
-                return (
-                  <div key={msg.id} className="flex flex-col items-end">
-                    <div className="bg-[#733F49] text-white text-[13.5px] leading-relaxed p-4 rounded-2xl rounded-tr-xs max-w-lg shadow-2xs">
-                      {msg.image && (
-                        <img
-                          src={msg.image}
-                          alt="Ảnh đính kèm"
-                          className="rounded-xl max-w-full max-h-56 object-cover mb-2 border border-white/20"
-                        />
-                      )}
-                      {msg.text && <div>{msg.text}</div>}
+          <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4 bg-white">
+            {activeMessages.length === 0 ? (
+              <div className="h-full min-h-[220px] flex flex-col items-center justify-center text-center text-[#9A8B8C] py-8">
+                <div className="w-12 h-12 rounded-full bg-[#FAF2EE] flex items-center justify-center text-[#BA7A83] mb-3">
+                  <Sparkles size={20} />
+                </div>
+                <p className="text-xs font-semibold text-[#7A6B6C]">Chưa có tin nhắn trong cuộc hội thoại này.</p>
+                <p className="text-[11px] text-[#A89899] mt-0.5">Nhập phản hồi hoặc bấm câu trả lời nhanh bên dưới để tư vấn nàng dâu.</p>
+              </div>
+            ) : (
+              activeMessages.map((msg) => {
+                const isStaff = msg.sender === 'staff';
+                if (isStaff) {
+                  return (
+                    <div key={msg.id} className="flex flex-col items-end">
+                      <div className="bg-[#733F49] text-white text-[13.5px] leading-relaxed p-4 rounded-2xl rounded-tr-xs max-w-lg shadow-2xs">
+                        {msg.image && (
+                          <img
+                            src={msg.image}
+                            alt="Ảnh đính kèm"
+                            className="rounded-xl max-w-full max-h-56 object-cover mb-2 border border-white/20"
+                          />
+                        )}
+                        {msg.text && <div>{msg.text}</div>}
+                      </div>
+                      <span className="text-[11px] text-[#9A8B8C] mt-1 mr-1">
+                        {msg.time} • {msg.status}
+                      </span>
                     </div>
-                    <span className="text-[11px] text-[#9A8B8C] mt-1 mr-1">
-                      {msg.time} • {msg.status}
-                    </span>
+                  );
+                }
+
+                return (
+                  <div key={msg.id} className="flex items-start gap-3">
+                    <img
+                      src={activeConv.avatar}
+                      alt={activeConv.name}
+                      className="w-10 h-10 rounded-xl object-cover shrink-0 ring-1 ring-[#EFE5E1] shadow-2xs"
+                    />
+                    <div className="flex flex-col items-start max-w-xl">
+                      <div className="bg-[#FAF5F2] text-[#2C2523] text-[13.5px] leading-relaxed p-4 rounded-2xl rounded-tl-xs border border-[#F0E6E2]">
+                        {msg.image && (
+                          <img
+                            src={msg.image}
+                            alt="Ảnh đính kèm"
+                            className="rounded-xl max-w-full max-h-56 object-cover mb-2 border border-[#EFE5E1]"
+                          />
+                        )}
+                        {msg.text && <div>{msg.text}</div>}
+                      </div>
+                      <span className="text-[11px] text-[#9A8B8C] mt-1 ml-1">
+                        {msg.time} • {msg.status}
+                      </span>
+                    </div>
                   </div>
                 );
-              }
-
-              return (
-                <div key={msg.id} className="flex items-start gap-3">
-                  <img
-                    src={activeConv.avatar}
-                    alt={activeConv.name}
-                    className="w-10 h-10 rounded-xl object-cover shrink-0 ring-1 ring-[#EFE5E1] shadow-2xs"
-                  />
-                  <div className="flex flex-col items-start max-w-xl">
-                    <div className="bg-[#FAF5F2] text-[#2C2523] text-[13.5px] leading-relaxed p-4 rounded-2xl rounded-tl-xs border border-[#F0E6E2]">
-                      {msg.image && (
-                        <img
-                          src={msg.image}
-                          alt="Ảnh đính kèm"
-                          className="rounded-xl max-w-full max-h-56 object-cover mb-2 border border-[#EFE5E1]"
-                        />
-                      )}
-                      {msg.text && <div>{msg.text}</div>}
-                    </div>
-                    <span className="text-[11px] text-[#9A8B8C] mt-1 ml-1">
-                      {msg.time} • {msg.status}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
+              })
+            )}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* Chat Footer & Input */}
-          <div className="border-t border-[#F0E6E2] p-4 bg-white space-y-3">
+          <div className="border-t border-[#F0E6E2] p-4 bg-white space-y-3 shrink-0">
             {/* Quick Replies Row */}
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[10px] font-bold tracking-wider text-[#8C7D7E] uppercase flex items-center gap-1 shrink-0">
@@ -587,6 +631,17 @@ export default function CustomerCareManagement() {
             </form>
           </div>
         </div>
+        ) : (
+          <div className="flex-1 bg-white rounded-2xl border border-[#EFE5E1] shadow-xs p-12 flex flex-col items-center justify-center text-center">
+            <div className="w-16 h-16 rounded-2xl bg-[#FAF2EE] flex items-center justify-center text-[#BA7A83] mb-4 shadow-2xs">
+              <MessageSquare size={28} />
+            </div>
+            <h3 className="font-serif text-lg font-bold text-[#2C2523] mb-1">Chưa có hội thoại tư vấn</h3>
+            <p className="text-xs text-[#7A6B6C] max-w-sm leading-relaxed">
+              Khi khách hàng nhắn tin hoặc đặt lịch hẹn thử váy qua hệ thống, các cuộc trò chuyện tư vấn trực tiếp sẽ hiển thị tại đây.
+            </p>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );

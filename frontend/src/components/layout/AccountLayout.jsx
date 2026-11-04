@@ -3,8 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { ClipboardPenLine, History, LogOut, ReceiptText } from 'lucide-react';
 import Header from './Header';
 import Footer from './Footer';
-import BookingModal from '../common/BookingModal';
-import { clearProfile } from '../../services/profileService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const accountLayoutStyles = `
 :where(.profile-page) :is(h1, h2, h3, h4, p) { margin: 0; }
@@ -79,31 +78,36 @@ export function AccountSidebar({ onLogout }) {
   );
 }
 
-export default function AccountLayout({ children, breadcrumb = [], notice, onLogout, hideSidebar = false }) {
+export default function AccountLayout({ children, breadcrumb = [], notice, onLogout, hideSidebar = false, hideBreadcrumb = false }) {
   const navigate = useNavigate();
+  const { logout: logoutAccount } = useAuth();
   const [isBookingOpen, setIsBookingOpen] = useState(false);
-  const logout = onLogout || (() => { clearProfile(); navigate('/login'); });
+  const logout = onLogout || (() => { logoutAccount(); navigate('/login'); });
+
+  const shouldShowBreadcrumb = !hideBreadcrumb && breadcrumb && breadcrumb.length > 0;
 
   return (
     <div className="profile-page min-h-screen font-jakarta text-[#302725]">
       <style>{accountLayoutStyles}</style>
-      <Header onLogout={logout} onOpenBooking={() => setIsBookingOpen(true)} />
+      <Header onLogout={logout} onOpenBooking={() => navigate('/dat-lich')} />
       <main className="profile-main mx-auto w-full max-w-[1320px] px-5 pb-20 pt-4 sm:px-8">
-        <nav aria-label="Đường dẫn" className="mb-4 flex flex-wrap items-center gap-2 text-xs text-[#6c5b57]">
-          <Link to="/" className="hover:text-[#874e57]">Trang chủ</Link>
-          <span aria-hidden="true" className="text-[#ccb7b1]">/</span>
-          <Link to="/profile" className="hover:text-[#874e57]">Hồ Sơ Cá Nhân</Link>
-          {breadcrumb.map((part, index) => (
-            <React.Fragment key={index}>
-              <span aria-hidden="true" className="text-[#ccb7b1]">/</span>
-              {part.to ? (
-                <Link to={part.to} className="hover:text-[#874e57]">{part.label}</Link>
-              ) : (
-                <span aria-current="page" className="text-[#874e57]">{part.label}</span>
-              )}
-            </React.Fragment>
-          ))}
-        </nav>
+        {shouldShowBreadcrumb && (
+          <nav aria-label="Đường dẫn" className="mb-4 flex flex-wrap items-center gap-2 text-xs text-[#6c5b57]">
+            <Link to="/" className="hover:text-[#874e57]">Trang chủ</Link>
+            <span aria-hidden="true" className="text-[#ccb7b1]">/</span>
+            <Link to="/profile" className="hover:text-[#874e57]">Hồ Sơ Cá Nhân</Link>
+            {breadcrumb.map((part, index) => (
+              <React.Fragment key={index}>
+                <span aria-hidden="true" className="text-[#ccb7b1]">/</span>
+                {part.to ? (
+                  <Link to={part.to} className="hover:text-[#874e57]">{part.label}</Link>
+                ) : (
+                  <span aria-current="page" className="text-[#874e57]">{part.label}</span>
+                )}
+              </React.Fragment>
+            ))}
+          </nav>
+        )}
         {notice}
         <div className={hideSidebar ? '' : 'grid items-start gap-6 lg:grid-cols-[minmax(240px,380px)_minmax(0,1fr)] lg:gap-10'}>
           {!hideSidebar && <AccountSidebar onLogout={logout} />}
@@ -111,7 +115,7 @@ export default function AccountLayout({ children, breadcrumb = [], notice, onLog
         </div>
       </main>
       <Footer variant="profile" />
-      <BookingModal isOpen={isBookingOpen} onClose={() => setIsBookingOpen(false)} />
+      
     </div>
   );
 }

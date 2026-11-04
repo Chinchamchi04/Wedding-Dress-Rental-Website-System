@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
-import BookingModal from '../../components/common/BookingModal';
+import { useAuth } from '../../contexts/AuthContext';
 import { getDressById, getRelatedDresses, formatCurrencyVND } from '../../services/dressService';
 import { addToCart } from '../../services/cartService';
 import { isWishlisted as checkWishlisted, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
@@ -110,6 +110,7 @@ const getPaginationItems = (current, total) => {
 export default function DressDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isLoggedIn } = useAuth();
 
   const [dress, setDress] = useState(null);
   const [relatedDresses, setRelatedDresses] = useState([]);
@@ -296,13 +297,9 @@ export default function DressDetailPage() {
       name: dress.name,
       category: dress.silhouette || dress.category || 'HAUTE COUTURE',
       tag: 'ĐANG TƯ VẤN',
-      price: typeof dress.rentalPrice === 'number'
-        ? `${dress.rentalPrice.toLocaleString('vi-VN')}₫`
-        : (dress.price || '5.200.000₫'),
+      price: formatCurrencyVND(dress.rentalPrice || dress.price || 5200000),
       priceUnit: '/ 1 ngày',
-      depositInfo: dress.depositPrice
-        ? `Tiền cọc bảo lãnh: ${typeof dress.depositPrice === 'number' ? dress.depositPrice.toLocaleString('vi-VN') : dress.depositPrice}₫`
-        : 'Tiền cọc bảo lãnh: 15.000.000₫',
+      depositInfo: `Tiền cọc bảo lãnh: ${formatCurrencyVND(dress.depositPrice || 15000000)}`,
       image: (dress.images && dress.images[selectedImageIndex || 0]) || dress.image || (dress.images && dress.images[0]) || '',
       description: dress.description || 'Thiết kế thủ công tinh xảo chuẩn Haute Couture UniBridal',
     };
@@ -326,11 +323,33 @@ export default function DressDetailPage() {
     }, 3800);
   };
 
-  if (loading || !dress) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#FDFBF7] flex flex-col justify-center items-center font-jakarta">
         <div className="w-12 h-12 border-3 border-[#B8737D] border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-[#5A4B4B] text-[15px] tracking-wide">Đang tải tuyệt tác váy cưới...</p>
+        <p className="text-[#5A4B4B] text-[15px] tracking-wide">Đang tải tuyệt tác váy cưới từ cơ sở dữ liệu...</p>
+      </div>
+    );
+  }
+
+  if (!dress) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF7] flex flex-col justify-between font-jakarta">
+        <Header />
+        <div className="max-w-md w-full mx-auto my-16 bg-white p-8 rounded-2xl border border-red-100 shadow-xl text-center">
+          <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 text-xl">⚠️</div>
+          <h2 className="text-xl font-bold text-[#2C2424] mb-2 font-playfair">Lỗi kết nối Cơ sở dữ liệu</h2>
+          <p className="text-sm text-stone-600 mb-6">
+            Không thể tải thông tin mẫu váy cưới từ máy chủ MongoDB. Vui lòng kiểm tra kết nối mạng và dịch vụ cơ sở dữ liệu.
+          </p>
+          <button
+            onClick={() => navigate('/collection')}
+            className="px-6 py-2.5 rounded-xl bg-[#733F49] text-white text-xs font-bold tracking-wider uppercase hover:bg-[#5C3038] transition-colors"
+          >
+            Quay lại Bộ Sưu Tập
+          </button>
+        </div>
+        <Footer />
       </div>
     );
   }
@@ -463,7 +482,9 @@ export default function DressDetailPage() {
                       <Star key={i} className="w-4 h-4 fill-current" />
                     ))}
                   </div>
-                  <span className="font-bold ml-1 text-[#231A19]">{dress.rating}</span>
+                  <span className="font-bold ml-1 text-[#231A19]">
+                    {Number(dress.rating || 5).toFixed(1)}
+                  </span>
                   <span className="text-[#8A7978]">({dress.rentCount})</span>
                 </div>
                 <div className="text-[#8A7978] tracking-wider text-[12px] font-medium">
@@ -639,48 +660,43 @@ export default function DressDetailPage() {
                   ĐẶT THUÊ NGAY (KÝ HỢP ĐỒNG & CỌC)
                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleToggleWishlist}
-                  className={`w-[48px] h-[48px] rounded-[4px] border flex items-center justify-center transition-colors cursor-pointer ${isWishlisted
-                    ? 'bg-[#FFF2F0] border-[#70484E] text-[#70484E]'
-                    : 'bg-white border-[#D6C7C3] text-[#70484E] hover:border-[#70484E]'
-                    }`}
-                  title={isWishlisted ? 'Đã yêu thích' : 'Lưu vào danh sách yêu thích'}
-                >
-                  <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} strokeWidth={1.75} />
-                </button>
+                {isLoggedIn && (
+                  <button
+                    type="button"
+                    onClick={handleToggleWishlist}
+                    className={`w-[48px] h-[48px] rounded-[4px] border flex items-center justify-center transition-colors cursor-pointer ${isWishlisted
+                      ? 'bg-[#FFF2F0] border-[#70484E] text-[#70484E]'
+                      : 'bg-white border-[#D6C7C3] text-[#70484E] hover:border-[#70484E]'
+                      }`}
+                    title={isWishlisted ? 'Đã yêu thích' : 'Lưu vào danh sách yêu thích'}
+                  >
+                    <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} strokeWidth={1.75} />
+                  </button>
+                )}
               </div>
 
-              {/* Row 2: ĐIỀN PHIẾU THUÊ & THỬ VÁY (GUEST) */}
-              <button
-                type="button"
-                onClick={() => navigate(`/thue-nhanh?dressId=${dress.id}`)}
-                className="w-full h-[48px] px-5 rounded-[4px] bg-[#FAF4EE] hover:bg-[#F2E8DF] border border-[#E0D0C4] text-[#70484E] font-jakarta text-[13px] font-semibold tracking-[0.8px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
-              >
-                <Calendar className="w-4 h-4 text-[#70484E]" />
-                ĐIỀN PHIẾU THUÊ & THỬ VÁY (DÀNH CHO GUEST)
-              </button>
-
-              {/* Row 3: ĐẶT LỊCH THỬ VÁY TẠI SHOWROOM */}
+              {/* Row 2: ĐẶT LỊCH THỬ VÁY PRIVATE SUITE (MIỄN PHÍ) */}
               <button
                 type="button"
                 onClick={() => navigate(`/dat-lich?dressId=${dress.id}`)}
-                className="w-full h-[46px] px-5 rounded-[4px] bg-white hover:bg-[#FAF4F3] border border-[#D6C7C3] text-[#5A4848] font-jakarta text-[12.5px] font-medium tracking-[0.5px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+                className="w-full h-[48px] px-5 rounded-[4px] bg-[#FAF4EE] hover:bg-[#F2E8DF] border border-[#E0D0C4] text-[#70484E] font-jakarta text-[13px] font-semibold tracking-[0.8px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
               >
-                <Clock className="w-4 h-4 text-[#70484E]" />
-                CHỈ ĐẶT LỊCH THỬ VÁY PRIVATE SUITE (MIỄN PHÍ)
+                <Calendar className="w-4 h-4 text-[#70484E]" />
+                ĐẶT LỊCH THỬ VÁY PRIVATE SUITE (MIỄN PHÍ)
               </button>
 
               {/* Row 3: THÊM VÀO GIỎ HÀNG */}
-              <button
-                type="button"
-                onClick={handleOnlineRent}
-                className="w-full h-[48px] px-5 rounded-[4px] bg-white hover:bg-[#FAF4F3] border border-[#70484E] text-[#70484E] font-jakarta text-[13px] font-semibold tracking-[0.8px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
-              >
-                <ShoppingBag className="w-4 h-4" strokeWidth={1.8} />
-                THÊM VÀO GIỎ HÀNG
-              </button>
+              {isLoggedIn && (
+                <button
+                  type="button"
+                  onClick={handleOnlineRent}
+                  className="w-full h-[48px] px-5 rounded-[4px] bg-white hover:bg-[#FAF4F3] border border-[#70484E] text-[#70484E] font-jakarta text-[13px] font-semibold tracking-[0.8px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+                >
+                  <ShoppingBag className="w-4 h-4" strokeWidth={1.8} />
+                  THÊM VÀO GIỎ HÀNG
+                </button>
+
+              )}
 
               {/* Row 4: TƯ VẤN TRỰC TIẾP VỚI CHUYÊN VIÊN ATELIER */}
               <button
@@ -835,8 +851,8 @@ export default function DressDetailPage() {
                     document.getElementById('feedback-section')?.scrollIntoView({ behavior: 'smooth' });
                   }}
                   className={`w-9 h-9 rounded-[8px] flex items-center justify-center border transition-colors ${feedbackPage === 1
-                      ? 'border-[#EAE0DC] text-[#C4B4B0] cursor-not-allowed bg-transparent'
-                      : 'border-[#EAE0DC] bg-white text-[#70484E] hover:border-[#70484E] cursor-pointer'
+                    ? 'border-[#EAE0DC] text-[#C4B4B0] cursor-not-allowed bg-transparent'
+                    : 'border-[#EAE0DC] bg-white text-[#70484E] hover:border-[#70484E] cursor-pointer'
                     }`}
                   aria-label="Trang trước"
                 >
@@ -865,8 +881,8 @@ export default function DressDetailPage() {
                         document.getElementById('feedback-section')?.scrollIntoView({ behavior: 'smooth' });
                       }}
                       className={`w-9 h-9 rounded-[8px] flex items-center justify-center font-jakarta text-[13px] font-medium transition-colors cursor-pointer ${isActive
-                          ? 'bg-[#70484E] text-white shadow-xs'
-                          : 'bg-white border border-[#EAE0DC] text-[#5A4848] hover:border-[#70484E] hover:text-[#70484E]'
+                        ? 'bg-[#70484E] text-white shadow-xs'
+                        : 'bg-white border border-[#EAE0DC] text-[#5A4848] hover:border-[#70484E] hover:text-[#70484E]'
                         }`}
                     >
                       {pNum}
@@ -882,8 +898,8 @@ export default function DressDetailPage() {
                     document.getElementById('feedback-section')?.scrollIntoView({ behavior: 'smooth' });
                   }}
                   className={`w-9 h-9 rounded-[8px] flex items-center justify-center border transition-colors ${feedbackPage === totalFeedbackPages
-                      ? 'border-[#EAE0DC] text-[#C4B4B0] cursor-not-allowed bg-transparent'
-                      : 'border-[#EAE0DC] bg-white text-[#70484E] hover:border-[#70484E] cursor-pointer'
+                    ? 'border-[#EAE0DC] text-[#C4B4B0] cursor-not-allowed bg-transparent'
+                    : 'border-[#EAE0DC] bg-white text-[#70484E] hover:border-[#70484E] cursor-pointer'
                     }`}
                   aria-label="Trang kế tiếp"
                 >
@@ -914,7 +930,7 @@ export default function DressDetailPage() {
                 <div
                   key={item.id}
                   onClick={() => navigate(`/dresses/${item.id}`)}
-                  className="bg-white border border-[#EAE0DC] rounded-[22px] overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col group cursor-pointer"
+                  className="bg-white border border-[#EAE0DC] hover:border-[#D498A0] rounded-[22px] overflow-hidden shadow-xs hover:shadow-[0_16px_36px_rgba(218,142,150,0.32)] hover:-translate-y-1 transition-all duration-300 flex flex-col group cursor-pointer"
                 >
                   <div className="relative aspect-[3/4] bg-[#FCEEE9] overflow-hidden">
                     <img
@@ -1032,12 +1048,7 @@ export default function DressDetailPage() {
         </div>
       )}
 
-      {/* 5. Booking Modal */}
-      <BookingModal
-        isOpen={isBookingOpen}
-        onClose={() => setIsBookingOpen(false)}
-        preselectedProduct={dress}
-      />
+
 
       {/* 6. Footer */}
       <Footer />
