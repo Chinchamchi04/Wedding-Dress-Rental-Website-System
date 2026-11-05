@@ -12,6 +12,7 @@ const STATUS = {
   renting: ['active', 'Đang thuê'],
   returned: ['active', 'Đã trả váy'],
   completed: ['complete', 'Hoàn tất'],
+  complete: ['complete', 'Hoàn tất'],
   cancelled: ['cancelled', 'Đã hủy'],
 };
 
@@ -30,8 +31,8 @@ export function mapOrder(order) {
     statusLabel,
     rawStatus: order.status,
     date: fmtDate(order.rentalStartDate || order.createdAt || order.date),
-    dress: item.name || order.dress || 'Lễ phục',
-    image: order.image || (item.dressId ? dressImage(item.dressId) : elysianImage),
+    dress: order.items?.map((entry) => entry.name).filter(Boolean).join(', ') || order.dress || 'Lễ phục',
+    image: order.image || (item.image ? dressImage({ image: item.image }) : typeof item.dressId === 'object' && item.dressId ? dressImage(item.dressId) : elysianImage),
     imageAlt: order.imageAlt || item.name || 'Lễ phục',
     category: item.dressId?.silhouette || order.category || 'Haute Couture',
     size: item.size || order.size || '—',
@@ -48,6 +49,11 @@ export function mapOrder(order) {
     shippingAddress: order.shippingAddress,
     items: order.items || [],
     inspection: order.inspection || null,
+    customerName: order.customerName || '',
+    contract: order.contract || null,
+    contractCode: order.contractCode || '',
+    contractSignature: order.contractSignature || '',
+    rentalDays: order.rentalDays,
   };
 }
 

@@ -30,6 +30,7 @@ import {
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { getRevenueReport } from '../../services/reportService';
 import './RevenueReportPage.css';
+import { roundedChartScale, formatGrowth, growthLabel } from '../../utils/chartScale';
 
 const money = (value) => formatCurrencyVND(value || 0);
 
@@ -64,17 +65,17 @@ function MetricCard({ title, value, Icon, note, growth, isShield }) {
           <Icon size={19} />
         </i>
       </div>
-      <strong>{money(value)}</strong>
+      <strong>{value == null ? '—' : money(value)}</strong>
       <div className="ub-revenue-metric-foot">
         <p>{note}</p>
-        {growth && <span className="ub-revenue-growth">+{growth}%</span>}
+        {growth != null && <span className={`ub-revenue-growth ${growth < 0 ? 'is-negative' : ''}`}>{formatGrowth(growth)}</span>}
         {isShield && <span className="ub-revenue-shield-pill">Bảo chứng 100%</span>}
       </div>
     </article>
   );
 }
 
-function LuxuryRevenueChart({ entries = [], chartMode = 'combo' }) {
+function LuxuryRevenueChart({ entries = [] }) {
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
   const maxRevenue = Math.max(
@@ -82,9 +83,7 @@ function LuxuryRevenueChart({ entries = [], chartMode = 'combo' }) {
     ...entries.map((item) => Math.max(item.revenue || 0, item.rentalRevenue || 0))
   );
 
-  // Round max for scale steps
-  const scaleMax = Math.ceil(maxRevenue / 10000000) * 10000000;
-  const fractions = [0, 0.25, 0.5, 0.75, 1];
+  const { max: scaleMax, ticks } = roundedChartScale(maxRevenue, 5000000);
 
   const svgWidth = 840;
   const svgHeight = 290;
@@ -98,38 +97,13 @@ function LuxuryRevenueChart({ entries = [], chartMode = 'combo' }) {
   const count = Math.max(1, entries.length);
   const stepX = usableWidth / count;
 
-  // Calculate points for the smooth area & curve
+  // Calculate bar positions and label anchors.
   const points = entries.map((item, index) => {
     const x = leftMargin + index * stepX + stepX * 0.5;
     const rev = item.revenue || 0;
     const y = chartBottom - (rev / scaleMax) * chartHeight;
     return { x, y, item, index };
   });
-
-  // Generate smooth cubic bezier SVG path
-  const curvePath = useMemo(() => {
-    if (points.length === 0) return '';
-    if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
-
-    let path = `M ${points[0].x} ${points[0].y}`;
-    for (let i = 0; i < points.length - 1; i++) {
-      const p0 = points[i];
-      const p1 = points[i + 1];
-      const cx1 = p0.x + (p1.x - p0.x) * 0.5;
-      const cy1 = p0.y;
-      const cx2 = p0.x + (p1.x - p0.x) * 0.5;
-      const cy2 = p1.y;
-      path += ` C ${cx1} ${cy1}, ${cx2} ${cy2}, ${p1.x} ${p1.y}`;
-    }
-    return path;
-  }, [points]);
-
-  const areaPath = useMemo(() => {
-    if (points.length === 0) return '';
-    const first = points[0];
-    const last = points[points.length - 1];
-    return `${curvePath} L ${last.x} ${chartBottom} L ${first.x} ${chartBottom} Z`;
-  }, [curvePath, points, chartBottom]);
 
   // Find peak point
   const peakPoint = useMemo(() => {
@@ -153,7 +127,7 @@ function LuxuryRevenueChart({ entries = [], chartMode = 'combo' }) {
           <p className="ub-revenue-tooltip-title">{hoveredItem.label}</p>
           <div className="ub-revenue-tooltip-val">{money(hoveredItem.revenue)}</div>
           <div className="ub-revenue-tooltip-sub">
-            <div>• Tiền thuê: {money(hoveredItem.rentalRevenue || hoveredItem.revenue)}</div>
+            <div>• Tiền thuê: {money(hoveredItem.rentalRevenue ?? 0)}</div>
             {hoveredItem.depositRevenue > 0 && (
               <div>• Tiền cọc: {money(hoveredItem.depositRevenue)}</div>
             )}
@@ -178,13 +152,6 @@ function LuxuryRevenueChart({ entries = [], chartMode = 'combo' }) {
             <stop offset="100%" stopColor="#D8B168" />
           </linearGradient>
 
-          {/* Area Fill Gradient */}
-          <linearGradient id="ubAreaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="rgba(184, 115, 125, 0.42)" />
-            <stop offset="65%" stopColor="rgba(216, 177, 104, 0.12)" />
-            <stop offset="100%" stopColor="rgba(216, 177, 104, 0.0)" />
-          </linearGradient>
-
           {/* Soft Shadow Filter */}
           <filter id="ubSoftGlow" x="-20%" y="-20%" width="140%" height="140%">
             <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#733F49" floodOpacity="0.3" />
@@ -192,22 +159,22 @@ function LuxuryRevenueChart({ entries = [], chartMode = 'combo' }) {
         </defs>
 
         {/* Horizontal Grid lines and Y-axis labels */}
-        {fractions.map((f) => {
-          const y = chartBottom - f * chartHeight;
-          const valInMillions = (scaleMax * f) / 1000000;
+        {ticks.map((tick) => {
+          const y = chartBottom - (tick / scaleMax) * chartHeight;
+          const valInMillions = tick / 1000000;
           return (
-            <g key={f}>
+            <g key={tick}>
               <line
                 x1={leftMargin}
                 x2={svgWidth - rightMargin}
                 y1={y}
                 y2={y}
                 stroke="#F2E6E2"
-                strokeWidth={f === 0 ? 1.5 : 1}
-                strokeDasharray={f === 0 ? undefined : '4 4'}
+                strokeWidth={tick === 0 ? 1.5 : 1}
+                strokeDasharray={tick === 0 ? undefined : '4 4'}
               />
               <text x={leftMargin - 12} y={y + 4} textAnchor="end" className="ub-revenue-axis-text">
-                {Math.round(valInMillions)}tr ₫
+                {valInMillions}tr ₫
               </text>
             </g>
           );
@@ -233,17 +200,11 @@ function LuxuryRevenueChart({ entries = [], chartMode = 'combo' }) {
           );
         })}
 
-        {/* Area Gradient (if combo or area mode) */}
-        {(chartMode === 'combo' || chartMode === 'area') && areaPath && (
-          <path d={areaPath} fill="url(#ubAreaGrad)" />
-        )}
-
-        {/* Render Bars (if combo or bar mode) */}
-        {(chartMode === 'combo' || chartMode === 'bar') &&
-          entries.map((item, index) => {
+        {/* Revenue bars */}
+        {entries.map((item, index) => {
             const barWidth = Math.min(42, Math.max(18, stepX * 0.42));
             const rev = item.revenue || 0;
-            const bHeight = Math.max(4, (rev / scaleMax) * chartHeight);
+            const bHeight = Math.max(0, (rev / scaleMax) * chartHeight);
             const x = leftMargin + index * stepX + (stepX - barWidth) / 2;
             const y = chartBottom - bHeight;
             const isHovered = hoveredIndex === index;
@@ -269,43 +230,13 @@ function LuxuryRevenueChart({ entries = [], chartMode = 'combo' }) {
             );
           })}
 
-        {/* Trend Curve Line (if combo or area mode) */}
-        {(chartMode === 'combo' || chartMode === 'area') && curvePath && (
-          <path
-            d={curvePath}
-            fill="none"
-            stroke="#D8B168"
-            strokeWidth={3}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        )}
-
-        {/* Data points & X labels */}
+        {/* Peak badge & X labels */}
         {points.map((pt) => {
           const isHovered = hoveredIndex === pt.index;
           const isPeak = peakPoint && peakPoint.index === pt.index && (pt.item.revenue || 0) > 0;
 
           return (
             <g key={`pt-${pt.index}`}>
-              {/* Outer halo on hover */}
-              {isHovered && (
-                <circle cx={pt.x} cy={pt.y} r={9} fill="rgba(216, 177, 104, 0.35)" />
-              )}
-
-              {/* Point dot */}
-              <circle
-                cx={pt.x}
-                cy={pt.y}
-                r={isHovered ? 5.5 : 4}
-                fill={isHovered ? '#D8B168' : '#733F49'}
-                stroke="#FFFFFF"
-                strokeWidth={2}
-                style={{ cursor: 'pointer', transition: 'all 0.15s ease' }}
-                onMouseEnter={() => setHoveredIndex(pt.index)}
-                onMouseLeave={() => setHoveredIndex(null)}
-              />
-
               {/* Peak badge pin on top */}
               {isPeak && !isHovered && (
                 <g>
@@ -349,7 +280,7 @@ function LuxuryRevenueChart({ entries = [], chartMode = 'combo' }) {
 
 export default function RevenueReportPage() {
   const [period, setPeriod] = useState('month');
-  const [chartMode, setChartMode] = useState('combo');
+  const [reload, setReload] = useState(0);
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -364,6 +295,7 @@ export default function RevenueReportPage() {
     let active = true;
     setLoading(true);
     setError('');
+    setReport(null);
 
     getRevenueReport(period)
       .then((data) => {
@@ -381,7 +313,7 @@ export default function RevenueReportPage() {
     return () => {
       active = false;
     };
-  }, [period]);
+  }, [period, reload]);
 
   const filteredTransactions = useMemo(() => {
     const list = report?.transactions || [];
@@ -425,20 +357,21 @@ export default function RevenueReportPage() {
   // Quick CSV Export
   const handleExportCSV = () => {
     if (!filteredTransactions.length) return;
+    const cell = (value) => { const text = String(value ?? ''); return '"' + (/^[=+@-]/.test(text) ? "'" : '') + text.replaceAll('"', '""') + '"'; };
     const headers = ['Mã giao dịch', 'Ngày', 'Khách hàng', 'Mã đơn', 'Lễ phục', 'Loại', 'Số tiền (VNĐ)', 'Kênh', 'Trạng thái'];
     const csvRows = [
       headers.join(','),
       ...filteredTransactions.map((tx) =>
         [
-          `"${tx.code}"`,
-          `"${new Date(tx.date).toLocaleDateString('vi-VN')}"`,
-          `"${tx.customer}"`,
-          `"${tx.orderCode}"`,
-          `"${tx.dress}"`,
-          `"${TYPE_CONFIG[tx.type]?.label || tx.type}"`,
+          cell(tx.code),
+          cell(new Date(tx.date).toLocaleDateString('vi-VN')),
+          cell(tx.customer),
+          cell(tx.orderCode),
+          cell(tx.dress),
+          cell(TYPE_CONFIG[tx.type]?.label || tx.type),
           tx.amount,
-          `"${tx.method}"`,
-          `"${STATUS_CONFIG[tx.status]?.label || tx.status}"`,
+          cell(tx.method),
+          cell(STATUS_CONFIG[tx.status]?.label || tx.status),
         ].join(',')
       ),
     ];
@@ -450,11 +383,13 @@ export default function RevenueReportPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const avgOrderValue = useMemo(() => {
-    if (!report?.orders || report.orders === 0) return 0;
-    return Math.round((report.revenue || 0) / report.orders);
+    if (!report) return null;
+    if (!report.orders) return 0;
+    return Math.round((report.orderValue || 0) / (report.activeOrdersCount || 1));
   }, [report]);
 
   return (
@@ -468,7 +403,7 @@ export default function RevenueReportPage() {
         {error && (
           <div className="p-4 mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
             <AlertCircle size={18} />
-            <span>{error}</span>
+            <span>{error}</span><button type="button" className="underline" onClick={() => setReload((value) => value + 1)}>Thử lại</button>
           </div>
         )}
 
@@ -479,18 +414,18 @@ export default function RevenueReportPage() {
             value={report?.revenue}
             Icon={TrendingUp}
             note={`Doanh thu cho thuê: ${money(report?.rentalRevenue)}`}
-            growth={report?.growthRate || 24.8}
+            growth={report?.growthRate}
           />
           <MetricCard
-            title="TIỀN CỌC ĐANG GIỮ LỊCH"
+            title="TIỀN CỌC ĐANG GIỮ"
             value={report?.depositsHeld}
             Icon={LockKeyhole}
-            note="Cam kết hoàn trả 100% sau kiểm định hoàn tất"
+            note="Số dư cọc đã thu trừ các giao dịch hoàn cọc, tính đến cuối kỳ"
             isShield
           />
           <MetricCard
             title="TỔNG GIÁ TRỊ HỢP ĐỒNG"
-            value={report?.orderValue || report?.revenue}
+            value={report?.orderValue}
             Icon={Banknote}
             note={`Ghi nhận qua ${report?.orders || 0} đơn hợp đồng trong kỳ`}
           />
@@ -498,7 +433,7 @@ export default function RevenueReportPage() {
             title="GIÁ TRỊ TRUNG BÌNH / ĐƠN"
             value={avgOrderValue}
             Icon={CreditCard}
-            note="Hiệu suất cho thuê lễ phục Haute Couture"
+            note="Giá trị trung bình của các đơn đã qua đặt cọc trong kỳ"
           />
         </section>
 
@@ -522,7 +457,7 @@ export default function RevenueReportPage() {
 
           <div className="ub-revenue-db-live">
             <span className="ub-revenue-live-dot" />
-            <span>Kết nối Cơ sở dữ liệu MongoDB Trực tiếp ({report?.transactions?.length || 0} giao dịch)</span>
+            <span>{loading ? 'Đang tải dữ liệu...' : error ? 'Chưa tải được báo cáo' : `Dữ liệu từ hệ thống (${report?.transactions?.length || 0} giao dịch)`}</span>
           </div>
         </section>
 
@@ -534,31 +469,6 @@ export default function RevenueReportPage() {
               <p>Tổng hợp các giao dịch thanh toán thành công theo từng kỳ · Đơn vị: triệu đồng (VNĐ)</p>
             </div>
 
-            <div className="ub-revenue-chart-actions">
-              <div className="ub-revenue-chart-modes" role="group">
-                <button
-                  type="button"
-                  className={chartMode === 'combo' ? 'is-active' : ''}
-                  onClick={() => setChartMode('combo')}
-                >
-                  Kết hợp (Combo)
-                </button>
-                <button
-                  type="button"
-                  className={chartMode === 'bar' ? 'is-active' : ''}
-                  onClick={() => setChartMode('bar')}
-                >
-                  Cột (Bar)
-                </button>
-                <button
-                  type="button"
-                  className={chartMode === 'area' ? 'is-active' : ''}
-                  onClick={() => setChartMode('area')}
-                >
-                  Xu hướng (Curve)
-                </button>
-              </div>
-            </div>
           </div>
 
           {loading ? (
@@ -566,16 +476,13 @@ export default function RevenueReportPage() {
               Đang tải dữ liệu biểu đồ từ MongoDB...
             </div>
           ) : (
-            <LuxuryRevenueChart entries={report?.chart || []} chartMode={chartMode} />
+            <LuxuryRevenueChart entries={report?.chart || []} />
           )}
 
           <div className="ub-revenue-chart-foot">
             <div className="ub-revenue-chart-legend">
               <span>
                 <i className="ub-revenue-legend-bar" /> Cột doanh thu thực nhận
-              </span>
-              <span>
-                <i className="ub-revenue-legend-line" /> Đường xu hướng tăng trưởng
               </span>
             </div>
 
@@ -603,34 +510,35 @@ export default function RevenueReportPage() {
                   </div>
                 </div>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  Đối soát 100%
+                  Dữ liệu theo giao dịch
                 </span>
               </div>
 
               {/* Progress Bar phân bổ dòng tiền */}
               <div className="h-4 w-full rounded-full bg-[#F5EBE8] overflow-hidden flex my-4">
                 <div
-                  style={{ width: `${report?.financialBreakdown?.rentalPercentage || 30}%` }}
+                  style={{ width: `${report?.financialBreakdown?.rentalPercentage ?? 0}%` }}
                   className="bg-gradient-to-r from-[#733F49] to-[#995361] h-full transition-all duration-500"
-                  title={`Tiền thuê thực thu: ${report?.financialBreakdown?.rentalPercentage || 30}%`}
+                  title={`Tiền thuê thực thu: ${report?.financialBreakdown?.rentalPercentage ?? 0}%`}
                 />
                 <div
-                  style={{ width: `${report?.financialBreakdown?.depositPercentage || 70}%` }}
+                  style={{ width: `${report?.financialBreakdown?.depositPercentage ?? 0}%` }}
                   className="bg-gradient-to-r from-[#D8B168] to-[#F5D07A] h-full transition-all duration-500"
-                  title={`Tiền đặt cọc bảo lãnh: ${report?.financialBreakdown?.depositPercentage || 70}%`}
+                  title={`Tiền đặt cọc bảo lãnh: ${report?.financialBreakdown?.depositPercentage ?? 0}%`}
                 />
               </div>
 
-              {/* Chi tiết từng nguồn tiền */}
+              {report?.damagePayment > 0 && <p className="text-xs text-stone-600">Thu bồi thường hư hại: {money(report.damagePayment)} ({report.financialBreakdown.damagePercentage}%)</p>}
+          {/* Chi tiết từng nguồn tiền */}
               <div className="space-y-3 mt-4 text-xs">
                 <div className="flex items-center justify-between p-3 rounded-xl bg-[#FFF9F7] border border-[#F5EAE6]">
                   <div className="flex items-center gap-2.5">
                     <span className="w-3 h-3 rounded-full bg-[#733F49]" />
-                    <span className="font-medium text-[#4A3C3D]">Tiền thuê thực nhận (Doanh thu ròng):</span>
+                    <span className="font-medium text-[#4A3C3D]">Tiền thuê thực nhận:</span>
                   </div>
                   <div className="text-right">
-                    <span className="font-bold text-[#733F49] text-sm">{money(report?.rentalRevenue || report?.revenue)}</span>
-                    <span className="text-[11px] text-[#A39293] ml-1.5">({report?.financialBreakdown?.rentalPercentage || 26}%)</span>
+                    <span className="font-bold text-[#733F49] text-sm">{money(report?.rentalRevenue ?? 0)}</span>
+                    <span className="text-[11px] text-[#A39293] ml-1.5">({report?.financialBreakdown?.rentalPercentage ?? 0}%)</span>
                   </div>
                 </div>
 
@@ -641,14 +549,14 @@ export default function RevenueReportPage() {
                   </div>
                   <div className="text-right">
                     <span className="font-bold text-[#926C15] text-sm">{money(report?.depositPayment || 0)}</span>
-                    <span className="text-[11px] text-[#A39293] ml-1.5">({report?.financialBreakdown?.depositPercentage || 74}%)</span>
+                    <span className="text-[11px] text-[#A39293] ml-1.5">({report?.financialBreakdown?.depositPercentage ?? 0}%)</span>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between p-3 rounded-xl bg-[#F0FDF4] border border-[#DCFCE7]">
                   <div className="flex items-center gap-2.5">
                     <ShieldCheck size={14} className="text-emerald-600" />
-                    <span className="font-medium text-[#166534]">Quỹ cọc đang giữ bảo lãnh an toàn:</span>
+                    <span className="font-medium text-[#166534]">Số dư cọc tính đến cuối kỳ:</span>
                   </div>
                   <div className="text-right">
                     <span className="font-bold text-emerald-700 text-sm">{money(report?.depositsHeld || 0)}</span>
@@ -673,7 +581,7 @@ export default function RevenueReportPage() {
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-[#2C2523] uppercase tracking-wider">Top Thiết Kế Lễ Phục Sinh Lời Cao Nhất</h3>
-                    <p className="text-xs text-[#8A797A]">Xếp hạng theo tổng doanh thu tiền thuê tích lũy</p>
+                    <p className="text-xs text-[#8A797A]">Xếp hạng theo tiền thuê đã thu trong kỳ</p>
                   </div>
                 </div>
                 <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#FAF0EC] text-[#733F49] border border-[#F2DFD9]">
@@ -726,10 +634,10 @@ export default function RevenueReportPage() {
                         </td>
                         <td className="py-2.5 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            <span className="font-semibold text-[11px] text-[#733F49]">{dress.share || 15}%</span>
+                            <span className="font-semibold text-[11px] text-[#733F49]">{dress.share ?? 0}%</span>
                             <div className="w-10 h-1.5 rounded-full bg-[#F5EBE8] overflow-hidden">
                               <div
-                                style={{ width: `${Math.min(100, (dress.share || 15) * 2)}%` }}
+                                style={{ width: `${Math.min(100, dress.share ?? 0)}%` }}
                                 className="h-full bg-[#733F49] rounded-full"
                               />
                             </div>
@@ -743,8 +651,8 @@ export default function RevenueReportPage() {
             </div>
 
             <div className="mt-4 pt-3 border-t border-[#F2E7E2] flex items-center justify-between text-xs text-[#8A797A]">
-              <span>Cập nhật dựa trên toàn bộ đơn đặt cọc và hợp đồng</span>
-              <span className="font-semibold text-emerald-700">Tỷ lệ xoay vòng váy: 87.5%</span>
+              <span>Phân bổ tiền thuê đã thanh toán cho từng mẫu váy</span>
+              <span className="font-semibold text-emerald-700">Theo giao dịch thành công</span>
             </div>
           </div>
         </section>
@@ -768,10 +676,11 @@ export default function RevenueReportPage() {
               <button
                 type="button"
                 onClick={handleExportCSV}
+                disabled={loading || !!error || !filteredTransactions.length}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FAF2EE] hover:bg-[#F3E7E2] text-xs font-semibold text-[#5F4648] border border-[#EFE2DC] transition-colors cursor-pointer"
               >
                 <Download size={13} />
-                <span>Xuất File Excel/CSV</span>
+                <span>Xuất giao dịch CSV</span>
               </button>
               <button
                 type="button"
@@ -805,7 +714,7 @@ export default function RevenueReportPage() {
                         {row.label}
                       </td>
                       <td className="py-3 px-4 text-right font-bold text-[#733F49]">
-                        {money(row.rentalRevenue || row.revenue)}
+                        {money(row.rentalRevenue ?? 0)}
                       </td>
                       <td className="py-3 px-4 text-right font-semibold text-[#926C15]">
                         {money(row.depositRevenue || 0)}
@@ -820,12 +729,12 @@ export default function RevenueReportPage() {
                       </td>
                       <td className="py-3 px-4 text-center">
                         <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 text-[11px]">
-                          <ArrowUpRight size={12} /> +{row.growthRate || 15.2}%
+                          <ArrowUpRight size={12} /> {formatGrowth(row.growthRate)}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-center">
                         <span className="inline-flex items-center gap-1 font-semibold text-[#733F49] bg-[#FAF0EC] px-2.5 py-0.5 rounded-full text-[11px] border border-[#F2DFD9]">
-                          <Sparkles size={11} /> Ổn định & Tăng
+                          <Sparkles size={11} /> {growthLabel(row.growthRate)}
                         </span>
                       </td>
                     </tr>
@@ -834,7 +743,7 @@ export default function RevenueReportPage() {
                   <tr className="bg-[#FAF0EC] font-bold text-[#2C2523] border-t-2 border-[#EAD5CF]">
                     <td className="py-3.5 px-4 text-sm font-playfair uppercase">Tổng Cộng Toàn Kỳ</td>
                     <td className="py-3.5 px-4 text-right text-sm text-[#733F49] font-bold">
-                      {money(report?.rentalRevenue || report?.revenue)}
+                      {money(report?.rentalRevenue ?? 0)}
                     </td>
                     <td className="py-3.5 px-4 text-right text-sm text-[#926C15] font-bold">
                       {money(report?.depositPayment || 0)}
@@ -846,10 +755,10 @@ export default function RevenueReportPage() {
                       {report?.orders || 0} đơn
                     </td>
                     <td className="py-3.5 px-4 text-center text-emerald-700 font-bold">
-                      +{report?.growthRate || 24.8}%
+                      {formatGrowth(report?.growthRate)}
                     </td>
                     <td className="py-3.5 px-4 text-center text-[#733F49]">
-                      Xuất sắc
+                      {growthLabel(report?.growthRate)}
                     </td>
                   </tr>
                 </tbody>
@@ -890,6 +799,8 @@ export default function RevenueReportPage() {
                 <option value="all">Tất cả loại giao dịch</option>
                 <option value="rental_payment">Thanh toán thuê</option>
                 <option value="deposit_payment">Tiền đặt cọc</option>
+                <option value="damage_compensation">Bồi thường hư hại</option>
+                <option value="deposit_refund">Hoàn cọc</option>
               </select>
 
               <select
@@ -909,6 +820,7 @@ export default function RevenueReportPage() {
               <button
                 type="button"
                 onClick={handleExportCSV}
+                disabled={loading || !!error || !filteredTransactions.length}
                 className="inline-flex items-center gap-1.5 h-[38px] px-3.5 rounded-lg border border-[#E8DBD6] bg-white text-xs font-semibold text-[#5A4743] hover:bg-[#FAF5F3] hover:border-[#733F49] transition-all"
               >
                 <Download size={14} /> Xuất CSV
@@ -989,7 +901,7 @@ export default function RevenueReportPage() {
 
             {rows.length === 0 && (
               <div className="py-14 text-center text-sm text-stone-500">
-                Không tìm thấy giao dịch nào phù hợp với bộ lọc trong kỳ.
+                {loading ? 'Đang tải giao dịch...' : error ? 'Chưa tải được giao dịch từ máy chủ.' : 'Không tìm thấy giao dịch nào phù hợp với bộ lọc trong kỳ.'}
               </div>
             )}
           </div>

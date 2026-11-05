@@ -17,10 +17,13 @@ import {
   MessageCircle,
   Printer,
   AlertCircle,
+  FileSignature,
 } from 'lucide-react';
 import AccountLayout from '../../components/layout/AccountLayout';
-import { formatVnd, getOrder, updateOrderStatus } from '../../services/orderService';
-import { CustomerInspectionModal } from './OrderHistoryPage';
+import { formatVnd } from '../../services/orderService';
+import { getOrder, cancelOrder } from '../../services/customerOrderService';
+import CustomerInspectionModal from '../../components/common/CustomerInspectionModal';
+import SignedContractModal from '../../components/common/SignedContractModal';
 
 /* ─────────────────────────────────────────────
    STATUS TIMELINE CONFIG
@@ -73,6 +76,7 @@ const STATUS_STEP_MAP = {
   renting: 3,
   returned: 4,
   completed: 5,
+  complete: 5,
 };
 
 /* ─────────────────────────────────────────────
@@ -239,6 +243,7 @@ export default function OrderDetailPage() {
   const [error, setError] = useState('');
   const [cancelling, setCancelling] = useState(false);
   const [isInspectionOpen, setIsInspectionOpen] = useState(false);
+  const [isContractOpen, setIsContractOpen] = useState(false);
 
   const fetchOrderDetail = () => {
     getOrder(orderId)
@@ -260,16 +265,11 @@ export default function OrderDetailPage() {
       onOk: async () => {
         setCancelling(true);
         try {
-          await updateOrderStatus(order._id || order.id, 'cancelled');
-          message.success('Đã gửi yêu cầu hủy đơn thành công');
-          setOrder((prev) => ({
-            ...prev,
-            rawStatus: 'cancelled',
-            status: 'cancelled',
-            statusLabel: 'Đã hủy',
-          }));
-        } catch {
-          message.error('Không thể hủy đơn lúc này. Vui lòng liên hệ showroom.');
+          const updated = await cancelOrder(order._id || order.id);
+          setOrder(updated);
+          message.success('Đã hủy đơn thuê. Tiền đã thu (nếu có) cần showroom đối soát hoàn trả riêng.');
+        } catch (issue) {
+          message.error(issue.message || 'Không thể hủy đơn lúc này. Vui lòng liên hệ showroom.');
         } finally {
           setCancelling(false);
         }
@@ -279,6 +279,10 @@ export default function OrderDetailPage() {
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
+    setError('');
+    setOrder(null);
+    setIsContractOpen(false);
     getOrder(orderId)
       .then((data) => {
         if (active) setOrder(data);
@@ -356,12 +360,12 @@ export default function OrderDetailPage() {
                 </div>
 
                 <p className="text-[12.5px] sm:text-[13px] leading-relaxed text-[#5E4D4F] m-0">
-                  Nàng vui lòng xem chi tiết hiện trạng váy và số tiền cọc được hoàn lại. Khi nàng đồng ý, hệ thống sẽ tự động hoàn cọc ngay lập tức; nếu chưa hài lòng nàng có quyền gửi đơn khiếu nại.
+                  Nàng vui lòng xem hiện trạng váy và số tiền đề nghị hoàn. Sau khi nàng xác nhận, showroom sẽ đối soát và xử lý hoàn cọc; nếu chưa hài lòng nàng có quyền gửi khiếu nại.
                 </p>
 
                 <div className="pt-1 flex items-center gap-1.5 text-[11px] text-[#8C7A7B]">
                   <span>📧</span>
-                  <span>Hệ thống đã đồng thời gửi thông báo và bản sao biên bản kiểm định chi tiết về email của nàng.</span>
+                  <span>Nàng có thể xem biên bản kiểm định và trạng thái xử lý hoàn cọc tại đây.</span>
                 </div>
               </div>
             )}
@@ -380,25 +384,18 @@ export default function OrderDetailPage() {
                   <Shirt size={14} className="mr-1 inline" />
                   Chi tiết lễ phục
                 </p>
-                <div className="mt-5 grid gap-5 sm:grid-cols-[160px_1fr]">
-                  {order.image && (
-                    <img
-                      src={order.image}
-                      alt={order.imageAlt}
-                      className="h-56 w-full object-cover rounded-xl"
-                    />
-                  )}
-                  <div>
-                    <h2 id="dress-detail-title" className="font-playfair text-xl">
-                      {order.dress}
-                    </h2>
-                    <p className="mt-2 text-xs text-[#874e57]">{order.category}</p>
-                    <p className="mt-4 text-sm">Kích cỡ: {order.size}</p>
-                    <p className="mt-2 text-sm">
-                      Trạng thái hiện tại:{' '}
-                      <span className="font-medium text-[#874e57]">{order.statusLabel}</span>
-                    </p>
-                  </div>
+                <div className="mt-5 space-y-5">
+                  {order.items.map((item, index) => (
+                    <article key={item._id || `${item.dressId}-${index}`} className="grid gap-5 border-b border-[#EEDECF] pb-4 last:border-b-0 sm:grid-cols-[120px_1fr]">
+                      {(item.image || order.image) && <img src={item.image || order.image} alt={item.name} className="h-40 w-28 rounded-xl object-cover" />}
+                      <div>
+                        <h3 className="font-playfair text-xl">{item.name || 'Lễ phục'}</h3>
+                        <p className="mt-2 text-sm">Kích cỡ: {item.size || 'Theo đơn hàng'}</p>
+                        <p className="mt-2 text-sm">Tiền thuê: {formatVnd(item.rentPrice)}</p>
+                        <p className="mt-2 text-sm">Tiền cọc: {formatVnd(item.depositAmount)}</p>
+                      </div>
+                    </article>
+                  ))}
                 </div>
               </section>
 
@@ -430,6 +427,26 @@ export default function OrderDetailPage() {
                 </p>
               </section>
             </div>
+
+            <section className="mt-6 rounded-2xl border border-[#EEDECF] bg-white p-6" aria-labelledby="signed-contract-title">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h2 id="signed-contract-title" className="font-playfair text-xl">Hợp Đồng Đã Ký</h2>
+                  <p className="mt-2 text-sm text-stone-500">
+                    {order.contract?.contractCode || order.contractCode
+                      ? `Mã hợp đồng: ${order.contract?.contractCode || order.contractCode}`
+                      : 'Xem thông tin hợp đồng đã lưu của đơn thuê.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsContractOpen(true)}
+                  className="account-button-secondary inline-flex items-center gap-2"
+                >
+                  <FileSignature size={16} /> Xem hợp đồng đã ký
+                </button>
+              </div>
+            </section>
 
             {/* ── ACTION BUTTONS ── */}
             <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white p-5 border border-[#EEDECF] shadow-xs">
@@ -472,6 +489,12 @@ export default function OrderDetailPage() {
                 order={order}
                 onClose={() => setIsInspectionOpen(false)}
                 onUpdated={fetchOrderDetail}
+              />
+            )}
+            {isContractOpen && (
+              <SignedContractModal
+                orderId={order._id || order.id}
+                onClose={() => setIsContractOpen(false)}
               />
             )}
           </>
