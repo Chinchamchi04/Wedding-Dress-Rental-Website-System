@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Order from '../models/Order.model.js';
 import User from '../models/User.model.js';
 import Contract from '../models/Contract.model.js';
+import ContractTemplate from '../models/ContractTemplate.model.js';
 import ReturnInspection from '../models/ReturnInspection.model.js';
 import Payment from '../models/Payment.model.js';
 const fail = (status, message) => { throw Object.assign(new Error(message), { statusCode: status }); };
@@ -45,10 +46,50 @@ export async function listOrders(userId) {
 }
 export async function orderDetail(userId, identifier) {
     const order = await ownOrder(userId, identifier);
-    const [inspection, contract] = await Promise.all([
-        getInspection(userId, identifier),
-        Contract.findOne({ orderId: order._id }).select('contractCode templateName status signedAt signedMethod contractPdfUrl clauses').lean(),
-    ]);
+    let contract = await Contract.findOne({
+        $or: [{ orderId: order._id }, { contractCode: order.contractCode }],
+    }).select('contractCode templateName status signedAt signedMethod contractPdfUrl clauses').lean();
+
+    // Nếu đơn chưa có bản ghi Contract trong DB, tự động gắn template hợp đồng pháp lý đầy đủ
+    if (!contract) {
+        try {
+            const defaultTemplate = await ContractTemplate.findOne({
+                $or: [{ code: 'TPL-HC-01' }, { isDefault: true }],
+            }).lean();
+            const firstItem = order.items?.[0] || {};
+            const created = await Contract.create({
+                contractCode: order.contractCode || `HĐ-${order.orderCode}`,
+                orderId: order._id,
+                customerId: order.customerId || userId || null,
+                templateId: defaultTemplate?._id || null,
+                templateName: defaultTemplate?.name || 'Hợp Đồng Thuê Lễ Phục Cưới Cao Cấp (Haute Couture)',
+                customerName: order.customerName || order.brideName || 'Cô Dâu UniBridal',
+                phone: order.customerPhone || order.phone || '',
+                idCard: order.customerCccd || order.cccd || '',
+                dressInfo: {
+                    name: firstItem.name || 'Váy Cưới Haute Couture',
+                    code: firstItem.code || 'UB-HC-2026',
+                    size: firstItem.size || 'S',
+                    image: firstItem.image || '',
+                },
+                startDate: order.rentalStartDate || new Date(),
+                endDate: order.rentalEndDate || new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
+                rentalPrice: order.totalRentPrice || 0,
+                depositAmount: order.totalDeposit || 0,
+                totalValue: order.totalPayment || 0,
+                status: order.status === 'completed' ? 'completed' : 'active',
+                signedAt: order.createdAt || new Date(),
+                signedMethod: 'Chữ ký điện tử trực tuyến',
+                packageType: `Gói ${order.rentalDays || 4} Ngày Tiêu Chuẩn`,
+                clauses: defaultTemplate?.clauses || [],
+            });
+            contract = created.toObject();
+        } catch (e) {
+            console.error('[ON DEMAND CONTRACT CREATE ERROR]', e.message);
+        }
+    }
+
+    const inspection = await getInspection(userId, identifier);
     return { ...order.toObject(), inspection, contract };
 }
 export async function cancelOrder(userId, identifier) {

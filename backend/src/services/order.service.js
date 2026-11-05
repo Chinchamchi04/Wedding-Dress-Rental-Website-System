@@ -1,6 +1,7 @@
 import Order from '../models/Order.model.js';
 import ReturnInspection from '../models/ReturnInspection.model.js';
 import Contract from '../models/Contract.model.js';
+import ContractTemplate from '../models/ContractTemplate.model.js';
 import User from '../models/User.model.js';
 import {
   sendInspectionNotificationEmail,
@@ -139,6 +140,44 @@ export const createOrder = async (orderData, currentUser = null) => {
   });
 
   await newOrder.save();
+
+  // Tự động khởi tạo hợp đồng điện tử có hiệu lực pháp lý
+  try {
+    const defaultTemplate = await ContractTemplate.findOne({
+      $or: [{ code: 'TPL-HC-01' }, { isDefault: true }],
+    }).lean();
+
+    const firstItem = newOrder.items[0] || {};
+    await Contract.create({
+      contractCode: newOrder.contractCode,
+      orderId: newOrder._id,
+      customerId: newOrder.customerId || null,
+      templateId: defaultTemplate?._id || null,
+      templateName: defaultTemplate?.name || 'Hợp Đồng Thuê Lễ Phục Cưới Cao Cấp (Haute Couture)',
+      customerName: newOrder.customerName || 'Cô Dâu UniBridal',
+      phone: newOrder.customerPhone || '0908123888',
+      idCard: newOrder.customerCccd || '',
+      dressInfo: {
+        dressId: firstItem.dressId || null,
+        name: firstItem.name || 'Váy Cưới Haute Couture',
+        code: firstItem.code || 'UB-HC-2026',
+        size: firstItem.size || 'S',
+        image: firstItem.image || '',
+      },
+      startDate: newOrder.rentalStartDate,
+      endDate: newOrder.rentalEndDate,
+      rentalPrice: newOrder.totalRentPrice,
+      depositAmount: newOrder.totalDeposit,
+      totalValue: newOrder.totalPayment,
+      status: 'active',
+      signedAt: new Date(),
+      signedMethod: 'Chữ ký điện tử trực tuyến',
+      packageType: `Gói ${newOrder.rentalDays} Ngày Tiêu Chuẩn`,
+      clauses: defaultTemplate?.clauses || [],
+    });
+  } catch (contractErr) {
+    console.error('[AUTO CREATE CONTRACT ERROR]:', contractErr.message);
+  }
 
   // Tự động gửi email xác nhận đặt cọc thành công
   try {
