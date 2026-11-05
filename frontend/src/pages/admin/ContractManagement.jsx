@@ -27,7 +27,8 @@ import {
   Plus,
   Check,
   AlertTriangle,
-  FileCheck2,
+  UserCheck,
+  UserX,
   RefreshCw
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -131,6 +132,8 @@ export default function ContractManagement() {
             id: ord.contractCode || (`HD-${ord.orderCode || (ord._id ? String(ord._id).slice(-6).toUpperCase() : '001')}`),
             orderCode: ord.orderCode,
             orderId: ord._id || ord.id,
+            customerId: ord.customerId,
+            hasAccount: Boolean(ord.customerId || ord.hasAccount),
             customerName: ord.customerName || ord.userId?.fullName || 'Khách hàng',
             phone: ord.customerPhone || ord.userId?.phone || '—',
             idCard: ord.idCard || '001198012345',
@@ -525,12 +528,38 @@ export default function ContractManagement() {
               <tbody className="divide-y divide-[#F6EEEB]">
                 {filteredContracts.map((item) => (
                   <tr key={item.id} className="hover:bg-[#FCFAF8] transition-colors group">
-                    <td className="py-4 px-4 font-mono font-bold text-[#733F49] text-xs">
-                      {item.id}
+                    <td className="py-4 px-4">
+                      <div className="font-mono font-bold text-[#733F49] text-xs">
+                        {item.id}
+                      </div>
+                      {item.orderCode && (
+                        <div className="text-[10.5px] text-[#847374] font-mono mt-0.5">
+                          Đơn: <span className="font-semibold text-[#5F333B]">{item.orderCode}</span>
+                        </div>
+                      )}
                     </td>
 
                     <td className="py-4 px-4">
-                      <div className="font-semibold text-[#302626]">{item.customerName}</div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-semibold text-[#302626]">{item.customerName}</span>
+                        {item.hasAccount || item.customerId ? (
+                          <span
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-[#FAF0EC] text-[#733F49] border border-[#F2D8D4] shrink-0"
+                            title="Khách hàng thành viên có tài khoản UniBridal"
+                          >
+                            <UserCheck size={10} className="text-[#B8737D]" />
+                            <span>Thành Viên</span>
+                          </span>
+                        ) : (
+                          <span
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-[#F5F2F0] text-[#7A6A6B] border border-[#E8DFDC] shrink-0"
+                            title="Khách vãng lai thuê trực tiếp (Chưa có tài khoản)"
+                          >
+                            <UserX size={10} className="text-[#A39192]" />
+                            <span>Khách Vãng Lai</span>
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-[#7A6A6B] flex items-center gap-1.5 mt-0.5">
                         <Phone size={11} className="text-[#A39192]" />
                         <span>{item.phone}</span>
@@ -538,19 +567,12 @@ export default function ContractManagement() {
                     </td>
 
                     <td className="py-4 px-4">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={item.dressImage}
-                          alt={item.dressName}
-                          className="w-10 h-12 object-cover rounded-md border border-[#EFE5E1] shrink-0"
-                        />
-                        <div className="min-w-0">
-                          <div className="font-medium text-[#302626] truncate max-w-[180px]">
-                            {item.dressName}
-                          </div>
-                          <div className="text-xs text-[#A39192] mt-0.5">
-                            {item.dressCode} · <span className="text-[#87565C]">{item.dressSize}</span>
-                          </div>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-[#302626]">
+                          {item.dressName}
+                        </div>
+                        <div className="text-xs text-[#A39192] mt-0.5">
+                          {item.dressCode} · <span className="text-[#87565C] font-medium">{item.dressSize}</span>
                         </div>
                       </div>
                     </td>
@@ -607,17 +629,6 @@ export default function ContractManagement() {
                             title="Xác nhận đã ký hợp đồng tại chỗ"
                           >
                             <CheckCircle2 size={17} />
-                          </button>
-                        )}
-
-                        {item.status === 'active' && (
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateStatus(item.id, 'completed')}
-                            className="p-2 rounded-lg text-[#5F333B] hover:bg-[#F2E4DE] transition-colors cursor-pointer"
-                            title="Hoàn thành hợp đồng & Hoàn cọc"
-                          >
-                            <FileCheck2 size={17} />
                           </button>
                         )}
 
@@ -861,8 +872,16 @@ export default function ContractManagement() {
                       Văn Bản Hợp Đồng Điện Tử #{selectedContract.id}
                     </h3>
                     <p className="text-xs text-[#7A6A6B]">
+                      {selectedContract.orderCode ? `Gắn liền với Đơn thuê #${selectedContract.orderCode} • ` : ''}
                       Mẫu: {selectedContract.templateName}
                     </p>
+                    <div className="text-[11px] text-[#847374] mt-0.5">
+                      {selectedContract.status === 'completed' ? (
+                        <span className="font-semibold text-emerald-700">✓ Đã Hoàn Thành Cùng Đơn Thuê</span>
+                      ) : selectedContract.status === 'active' ? (
+                        <span className="text-[#87565C]">Trạng thái: Có hiệu lực (Sẽ tự động hoàn tất khi đơn thuê hoàn thành trả đồ & quyết toán)</span>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
 
@@ -875,17 +894,6 @@ export default function ContractManagement() {
                     >
                       <CheckCircle2 size={14} />
                       <span>Kích Hoạt Hợp Đồng</span>
-                    </button>
-                  )}
-
-                  {selectedContract.status === 'active' && (
-                    <button
-                      type="button"
-                      onClick={() => handleUpdateStatus(selectedContract.id, 'completed')}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#733F49] hover:bg-[#5C323A] text-white text-xs font-semibold cursor-pointer"
-                    >
-                      <FileCheck2 size={14} />
-                      <span>Hoàn Thành &amp; Hoàn Cọc</span>
                     </button>
                   )}
 

@@ -41,6 +41,7 @@ import {
   Info,
   Plus,
   Minus,
+  Zap,
 } from 'lucide-react';
 import { message } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
@@ -48,16 +49,22 @@ import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import { getDressById } from '../../services/dressService';
 import { getCart, resolveCartItem, clearCart } from '../../services/cartService';
-import { getDressBookedDates } from '../../services/orderService';
+import { getDressBookedDates, createOrder } from '../../services/orderService';
+import { simulateVietQRPaymentApi } from '../../services/paymentService';
 import { HIEU_SIGNATURE_BASE64 } from '../../assets/images/signatureHieuBase64';
 import unibridalEmblem from '../../assets/logo_emblem.png';
 
 // Helper: Chuyển đổi định dạng ngày DD/MM/YYYY sang YYYY-MM-DD và ngược lại
 function toIsoDateString(val) {
   if (!val) return '';
-  if (val.includes('-')) return val.split('T')[0];
-  if (val.includes('/')) {
-    const parts = val.split('/');
+  if (val instanceof Date) {
+    return isNaN(val.getTime()) ? '' : val.toISOString().split('T')[0];
+  }
+  const str = String(val).trim();
+  if (!str || str === 'undefined' || str === 'null' || str === 'Invalid Date') return '';
+  if (str.includes('-')) return str.split('T')[0];
+  if (str.includes('/')) {
+    const parts = str.split('/');
     if (parts.length === 3) {
       const d = parts[0].padStart(2, '0');
       const m = parts[1].padStart(2, '0');
@@ -65,23 +72,23 @@ function toIsoDateString(val) {
       return `${y}-${m}-${d}`;
     }
   }
-  const d = new Date(val);
+  const d = new Date(str);
   return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
 }
 
 function toDisplayDateString(val) {
   if (!val) return '';
-  if (val.includes('/')) return val;
-  if (val.includes('-')) {
-    const parts = val.split('T')[0].split('-');
+  const str = String(val).trim();
+  if (!str || str === 'undefined' || str === 'null' || str === 'Invalid Date') return '';
+  if (str.includes('/')) return str;
+  if (str.includes('-')) {
+    const parts = str.split('T')[0].split('-');
     if (parts.length === 3) {
       return `${parts[2]}/${parts[1]}/${parts[0]}`;
     }
   }
-  return val;
+  return str;
 }
-
-import { createOrder } from '../../services/orderService';
 
 // Chữ ký nghệ thuật đại diện Bên A (Ông Kim Xuân Hiếu - Tổng Giám Đốc)
 function DirectorSignatureAndStamp({ className = "h-28", isSmall = false }) {
@@ -403,11 +410,14 @@ export default function CheckoutPage() {
     const initialWedding = '20/11/2026';
     const initialDays = !isNaN(daysParam) && daysParam >= 1 && daysParam <= 30 ? daysParam : 4;
 
-    if (startDateParam && endDateParam) {
+    const validStart = startDateParam && startDateParam !== 'undefined' && startDateParam !== 'null' ? toDisplayDateString(startDateParam) : null;
+    const validEnd = endDateParam && endDateParam !== 'undefined' && endDateParam !== 'null' ? toDisplayDateString(endDateParam) : null;
+
+    if (validStart && validEnd) {
       return {
-        startDate: toDisplayDateString(startDateParam),
+        startDate: validStart,
         weddingDate: initialWedding,
-        endDate: toDisplayDateString(endDateParam),
+        endDate: validEnd,
       };
     }
     return computeScheduleFromWedding(initialWedding, initialDays);
@@ -1291,8 +1301,8 @@ export default function CheckoutPage() {
         depositOption,
         paymentMethod: 'vietqr',
         paymentStatus: 'deposit_paid',
-        rentalStartDate: rentalSchedule.startDate,
-        rentalEndDate: rentalSchedule.endDate,
+        rentalStartDate: toIsoDateString(rentalSchedule?.startDate) || new Date().toISOString().split('T')[0],
+        rentalEndDate: toIsoDateString(rentalSchedule?.endDate) || new Date(Date.now() + (Number(rentalDays) || 4) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         rentalDays,
         items: (orderItems && orderItems.length > 0 ? orderItems : [activeDress]).filter(Boolean).map((item, idx) => {
           const itemDailyPrice = Number(item.price || item.rentPrice) || 0;
@@ -1350,6 +1360,189 @@ export default function CheckoutPage() {
         setIsSubmitting(false);
       }
     }, 1800);
+  };
+
+  // Tạo đơn và chuyển hướng thẳng sang Cổng VietQR Gateway chuyên biệt
+  const handleProceedToVietQRGateway = async () => {
+    if (isSubmitting || isVerifyingPayment) return;
+    if (!isContractSigned) {
+      message.warning('Nàng vui lòng ký xác nhận hợp đồng ở Bước 2 trước khi chuyển sang Cổng VietQR.');
+      setCurrentStep(2);
+      return;
+    }
+
+    setIsSubmitting(true);
+    message.loading({
+      content: '⚡ Đang khởi tạo đơn thuê và chuyển hướng sang Cổng thanh toán VietQR...',
+      key: 'vietqr_redirect',
+      duration: 1.5,
+    });
+
+    const generatedOrderCode = `UB-2026-${Math.floor(100 + Math.random() * 900)}`;
+    const generatedContractCode = `HĐ-${generatedOrderCode}`;
+
+    const orderPayload = {
+      orderCode: generatedOrderCode,
+      customerName: brideName.trim() || 'Cô Dâu UniBridal',
+      brideName: brideName.trim() || 'Cô Dâu UniBridal',
+      customerPhone: phone.trim() || '0908123888',
+      phone: phone.trim() || '0908123888',
+      customerEmail: email.trim() || 'codau.unibridal@gmail.com',
+      email: email.trim() || 'codau.unibridal@gmail.com',
+      customerCccd: cccd.trim() || '079198000123',
+      cccd: cccd.trim() || '079198000123',
+      shippingAddress: address.trim() || 'Showroom UniBridal Q.1 TP.HCM',
+      contractCode: generatedContractCode,
+      contractSignature: contractSignature || brideName || 'Cô Dâu UniBridal',
+      measurements,
+      depositOption,
+      paymentMethod: 'vietqr',
+      paymentStatus: 'pending_payment',
+      rentalStartDate: toIsoDateString(rentalSchedule?.startDate) || new Date().toISOString().split('T')[0],
+      rentalEndDate: toIsoDateString(rentalSchedule?.endDate) || new Date(Date.now() + (Number(rentalDays) || 4) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      rentalDays,
+      items: (orderItems && orderItems.length > 0 ? orderItems : [activeDress]).filter(Boolean).map((item, idx) => {
+        const itemDailyPrice = Number(item.price || item.rentPrice) || 0;
+        return {
+          dressId: item.id || item._id,
+          name: item.name,
+          code: item.code || `UB-HC-2026-0${idx + 1}`,
+          size: item.size || selectedSize,
+          rentPrice: itemDailyPrice * Math.max(1, Number(rentalDays) || 1),
+          dailyPrice: itemDailyPrice,
+          rentalDays,
+          depositAmount: Number(item.deposit || item.depositAmount) || 15000000,
+          image: item.images?.[0] || item.image,
+        };
+      }),
+      totalRentPrice,
+      totalDeposit: depositCollateral,
+      depositPaidAmount: amountToPayToday,
+      totalPayment: totalRentPrice + depositCollateral,
+      deliveryMethod: 'showroom',
+      notes: `Hôn lễ ngày ${rentalSchedule.weddingDate}. Đã ký hợp đồng điện tử và tạo mã cọc qua Cổng VietQR Gateway.`,
+    };
+
+    try {
+      const res = await createOrder(orderPayload);
+      const savedOrder = res?.data || orderPayload;
+      try {
+        localStorage.setItem('unibridal-last-order', JSON.stringify(savedOrder));
+        clearCart();
+        localStorage.removeItem('unibridal_cart');
+        localStorage.removeItem('unibridal-rental-cart');
+        window.dispatchEvent(new Event('unibridal-cart-updated'));
+      } catch {}
+
+      navigate(`/thanh-toan-vietqr/${savedOrder.orderCode}`);
+    } catch (err) {
+      message.error(err.message || 'Không thể tạo đơn hàng, vui lòng thử lại.');
+      setIsSubmitting(false);
+    }
+  };
+
+  // Giả lập thanh toán VietQR thành công trong chế độ Sandbox Test Mode
+  const handleSimulateVietQRPayment = async () => {
+    if (isSubmitting || isVerifyingPayment) return;
+
+    if (!isContractSigned) {
+      setIsContractSigned(true);
+      setContractSignature(brideName.trim() || 'Cô Dâu UniBridal');
+      message.info('Chế độ Test: Đã tự động hoàn tất ký hợp đồng số cho cô dâu!');
+    }
+
+    setIsVerifyingPayment(true);
+    message.loading({
+      content: '⚡ [VietQR Sandbox]: Đang mô phỏng giao dịch chuyển khoản Techcombank Napas 24/7...',
+      key: 'payment_confirm',
+      duration: 1.5,
+    });
+
+    setTimeout(async () => {
+      setIsVerifyingPayment(false);
+      setIsSubmitting(true);
+
+      const generatedOrderCode = `UB-2026-${Math.floor(100 + Math.random() * 900)}`;
+      const generatedContractCode = `HĐ-${generatedOrderCode}`;
+
+      const orderPayload = {
+        orderCode: generatedOrderCode,
+        customerName: brideName.trim() || 'Cô Dâu UniBridal',
+        brideName: brideName.trim() || 'Cô Dâu UniBridal',
+        customerPhone: phone.trim() || '0908123888',
+        phone: phone.trim() || '0908123888',
+        customerEmail: email.trim() || 'codau.unibridal@gmail.com',
+        email: email.trim() || 'codau.unibridal@gmail.com',
+        customerCccd: cccd.trim() || '079198000123',
+        cccd: cccd.trim() || '079198000123',
+        shippingAddress: address.trim() || 'Showroom UniBridal Q.1 TP.HCM',
+        contractCode: generatedContractCode,
+        contractSignature: contractSignature || brideName || 'Cô Dâu UniBridal',
+        measurements,
+        depositOption,
+        paymentMethod: 'vietqr',
+        paymentStatus: 'deposit_paid',
+        rentalStartDate: toIsoDateString(rentalSchedule?.startDate) || new Date().toISOString().split('T')[0],
+        rentalEndDate: toIsoDateString(rentalSchedule?.endDate) || new Date(Date.now() + (Number(rentalDays) || 4) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        rentalDays,
+        items: (orderItems && orderItems.length > 0 ? orderItems : [activeDress]).filter(Boolean).map((item, idx) => {
+          const itemDailyPrice = Number(item.price || item.rentPrice) || 0;
+          return {
+            dressId: item.id || item._id,
+            name: item.name,
+            code: item.code || `UB-HC-2026-0${idx + 1}`,
+            size: item.size || selectedSize,
+            rentPrice: itemDailyPrice * Math.max(1, Number(rentalDays) || 1),
+            dailyPrice: itemDailyPrice,
+            rentalDays,
+            depositAmount: Number(item.deposit || item.depositAmount) || 15000000,
+            image: item.images?.[0] || item.image,
+          };
+        }),
+        totalRentPrice,
+        totalDeposit: depositCollateral,
+        depositPaidAmount: amountToPayToday,
+        totalPayment: totalRentPrice + depositCollateral,
+        deliveryMethod: 'showroom',
+        notes: `Hôn lễ ngày ${rentalSchedule.weddingDate}. Đã thanh toán trọn gói gồm tiền thuê và cọc bảo lãnh 50% giá trị (${formatCurrencyVND(depositCollateral)} - Hoàn trả khi trả váy). Phương thức: Chuyển khoản VietQR 24/7 Techcombank [Test Mode Sandbox].`,
+      };
+
+      try {
+        const res = await createOrder(orderPayload);
+        const savedOrder = res?.data || orderPayload;
+        setCreatedOrder(savedOrder);
+
+        // Gọi API mô phỏng thanh toán VietQR
+        await simulateVietQRPaymentApi({
+          orderId: savedOrder._id || savedOrder.id,
+          orderCode: savedOrder.orderCode,
+          amount: amountToPayToday,
+          senderName: brideName || 'Cô Dâu Test',
+        });
+
+        try {
+          localStorage.setItem('unibridal-last-order', JSON.stringify(savedOrder));
+        } catch {}
+
+        try {
+          clearCart();
+          localStorage.removeItem('unibridal_cart');
+          localStorage.removeItem('unibridal-rental-cart');
+          window.dispatchEvent(new Event('unibridal-cart-updated'));
+        } catch {}
+
+        setIsSuccessModalOpen(true);
+        message.success({
+          content: `✓ [Sandbox Test]: Đã nhận thanh toán ${formatCurrencyVND(amountToPayToday)} qua VietQR Techcombank! Hợp đồng & Lịch thuê đã được kích hoạt.`,
+          key: 'payment_confirm',
+          duration: 3.5,
+        });
+      } catch (error) {
+        message.error(error.message || 'Không thể tạo đơn thuê thử nghiệm, vui lòng thử lại.');
+      } finally {
+        setIsSubmitting(false);
+      }
+    }, 1200);
   };
 
   const copyToClipboard = (text) => {
@@ -2824,8 +3017,72 @@ export default function CheckoutPage() {
                         <span className="text-[#6B5C5D]">Xác nhận chuyển khoản & bấm nút <strong>Xác nhận</strong> bên dưới</span>
                       </div>
                     </div>
+
+                    {/* VietQR Test Sandbox Card */}
+                    <div className="p-5 rounded-2xl bg-gradient-to-r from-[#FAF0EC] via-[#FFF8F6] to-[#FAF0EC] border-2 border-dashed border-[#D4AF37] relative overflow-hidden shadow-xs animate-fade-in">
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="flex items-start gap-3.5">
+                          <div className="w-11 h-11 rounded-xl bg-[#FAF0EC] border border-[#D4AF37] text-[#854D0E] flex items-center justify-center shrink-0 shadow-xs">
+                            <Sparkles className="w-5 h-5 text-[#854D0E]" />
+                          </div>
+                          <div>
+                            <div className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-[#854D0E] uppercase tracking-wider">
+                              <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse"></span>
+                              <span>VIETQR SANDBOX TEST MODE (CHẾ ĐỘ THỬ NGHIỆM)</span>
+                            </div>
+                            <h4 className="font-jakarta font-extrabold text-[15px] text-[#2C2523] m-0 mt-0.5">
+                              Mô Phỏng Chuyển Khoản Techcombank 24/7 Thành Công
+                            </h4>
+                            <p className="text-[12px] text-[#6B5C5D] m-0 mt-1 leading-relaxed">
+                              Dành cho Giảng viên / Tester kiểm thử: Bấm nút dưới để giả lập hệ thống nhận được tiền cọc, tự động gửi email và kích hoạt đơn thuê mà không cần chuyển tiền thật.
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleSimulateVietQRPayment}
+                          disabled={isSubmitting || isVerifyingPayment}
+                          className="w-full sm:w-auto shrink-0 px-5 py-3.5 rounded-xl bg-gradient-to-r from-[#854D0E] to-[#A16207] hover:from-[#713F12] hover:to-[#854D0E] text-white font-jakarta text-[13px] font-bold shadow-md hover:shadow-lg transition-all cursor-pointer border-0 flex items-center justify-center gap-2 active:scale-95"
+                        >
+                          <Zap className="w-4 h-4 text-amber-300" />
+                          <span>⚡ Test Chuyển Khoản 1-Click</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </section>
+
+                {/* Dedicated VietQR Gateway Redirect Banner */}
+                <div className="p-5 rounded-2xl bg-gradient-to-r from-[#FAF0EC] via-[#FFF8F6] to-[#FAF0EC] border border-[#D4AF37]/50 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-11 h-11 rounded-xl bg-[#733F49] text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <QrCode className="w-5 h-5 text-[#E6C687]" />
+                    </div>
+                    <div>
+                      <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#854D0E] uppercase tracking-wider">
+                        <Sparkles className="w-3 h-3 text-[#D4AF37]" />
+                        <span>CỔNG THANH TOÁN VIETQR GATEWAY CHUYÊN BIỆT</span>
+                      </div>
+                      <h4 className="font-jakarta font-bold text-[15px] text-[#2C2523] m-0 mt-0.5">
+                        Mở App Ngân Hàng Tự Động & Check Trạng Thái Real-time
+                      </h4>
+                      <p className="text-[12px] text-[#6B5C5D] m-0 mt-0.5">
+                        Chuyển hướng sang trang cổng VietQR toàn màn hình với đếm ngược 15:00 và hỗ trợ mở thẳng App VCB, Techcombank, MB, VPBank...
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={isSubmitting || isVerifyingPayment}
+                    onClick={handleProceedToVietQRGateway}
+                    className="w-full md:w-auto shrink-0 px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#733F49] via-[#854F55] to-[#733F49] hover:from-[#5F323B] hover:to-[#5F323B] text-white font-jakarta text-[13.5px] font-bold shadow-md hover:shadow-lg transition-all cursor-pointer border-0 flex items-center justify-center gap-2 active:scale-95"
+                  >
+                    <span>⚡ Chuyển Hướng Sang Cổng VietQR</span>
+                    <ArrowRight className="w-4 h-4 text-[#E6C687]" />
+                  </button>
+                </div>
 
                 {/* Confirm Final Payment Button */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">

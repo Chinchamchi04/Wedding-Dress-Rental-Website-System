@@ -167,13 +167,13 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
   const handleLogout = () => {
     setIsUserMenuOpen(false);
     setMobileMenuOpen(false);
+    navigate('/', { replace: true });
     logout();
     clearProfile();
     if (onLogout) {
       onLogout();
       return;
     }
-    navigate('/');
   };
 
   const handleMouseEnter = () => {

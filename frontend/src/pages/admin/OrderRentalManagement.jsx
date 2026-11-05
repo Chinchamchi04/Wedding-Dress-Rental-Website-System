@@ -25,6 +25,8 @@ import {
   FolderArchive,
   Banknote,
   CreditCard,
+  UserCheck,
+  UserX,
 } from 'lucide-react';
 import HangerIcon from '../../components/common/HangerIcon';
 import {
@@ -443,9 +445,18 @@ function InspectionModal({ order, onClose, onSuccess }) {
 
           {/* Dải thông tin tóm tắt đơn hàng gọn gàng 1 dòng */}
           <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-lg bg-[#FAF5F2] border border-[#F0E6E2] text-[11.5px]">
-            <div>
+            <div className="flex items-center gap-1.5">
               <span className="text-[#8C7D7E]">Khách hàng: </span>
               <strong className="text-[#2C2523]">{order.customerName}</strong>
+              {order.hasAccount || order.customerId ? (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#FAF0EC] text-[#733F49] border border-[#F2D8D4]">
+                  <UserCheck size={10} className="text-[#B8737D]" /> Thành Viên
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-medium bg-[#F5F2F0] text-[#7A6A6B] border border-[#E8DFDC]">
+                  <UserX size={10} className="text-[#A39192]" /> Khách Vãng Lai
+                </span>
+              )}
             </div>
             <div>
               <span className="text-[#8C7D7E]">Ngày thuê: </span>
@@ -708,7 +719,18 @@ function RefundModal({ order, onClose, onSuccess }) {
           <div className="p-3.5 rounded-xl bg-[#FAF5F2] border border-[#F0E6E2] space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[#8C7D7E]">Khách hàng nhận hoàn cọc:</span>
-              <span className="font-bold text-[#2C2523] text-[13px]">{order.customerName}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-[#2C2523] text-[13px]">{order.customerName}</span>
+                {order.hasAccount || order.customerId ? (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9.5px] font-bold bg-[#FAF0EC] text-[#733F49] border border-[#F2D8D4]">
+                    <UserCheck size={10} className="text-[#B8737D]" /> Thành Viên
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9.5px] font-medium bg-[#F5F2F0] text-[#7A6A6B] border border-[#E8DFDC]">
+                    <UserX size={10} className="text-[#A39192]" /> Khách Vãng Lai
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[#8C7D7E]">Số điện thoại liên hệ:</span>
@@ -1286,11 +1308,39 @@ export default function OrderRentalManagement() {
 
                       {/* Khách hàng */}
                       <td className="py-4 px-4">
-                        <div className="text-[13.5px] font-semibold text-[#2C2523] leading-tight">
-                          {order.customerName || '—'}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[13.5px] font-semibold text-[#2C2523] leading-tight">
+                            {order.customerName || '—'}
+                          </span>
+                          {/* Dấu hiệu nhận biết đơn CÓ TÀI KHOẢN vs KHÔNG CÓ TÀI KHOẢN (Guest) */}
+                          {order.hasAccount || order.customerId ? (
+                            <span
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-[#FAF0EC] text-[#733F49] border border-[#F2D8D4] shrink-0"
+                              title="Khách hàng thành viên đã có tài khoản UniBridal"
+                            >
+                              <UserCheck size={11} className="text-[#B8737D]" />
+                              <span>Thành Viên</span>
+                            </span>
+                          ) : (
+                            <span
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-[#F5F2F0] text-[#7A6A6B] border border-[#E8DFDC] shrink-0"
+                              title="Khách vãng lai thuê trực tiếp (Chưa tạo tài khoản)"
+                            >
+                              <UserX size={11} className="text-[#A39192]" />
+                              <span>Khách Vãng Lai</span>
+                            </span>
+                          )}
                         </div>
-                        <div className="text-[11.5px] text-[#8A797A] mt-0.5">
-                          {order.customerPhone || '—'}
+                        <div className="text-[11.5px] text-[#8A797A] mt-1 flex items-center gap-1.5">
+                          <span>{order.customerPhone || '—'}</span>
+                          {order.customerEmail && (
+                            <>
+                              <span className="text-[#D0C0BE]">•</span>
+                              <span className="truncate max-w-[120px] text-[#7A6A6B]" title={order.customerEmail}>
+                                {order.customerEmail}
+                              </span>
+                            </>
+                          )}
                         </div>
                       </td>
 

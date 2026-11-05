@@ -10,6 +10,7 @@ import chatRoutes from './routes/chat.routes.js';
 import messageRoutes from './routes/message.routes.js';
 import userRoutes from './routes/user.routes.js';
 import categoryRoutes from './routes/category.routes.js';
+import paymentRoutes from './routes/payment.routes.js';
 import apiRouter from './routes/index.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 
@@ -62,6 +63,7 @@ app.use('/api/conversations', chatRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/payment', paymentRoutes);
 app.use('/api', apiRouter);
 
 // Bắt lỗi tập trung
