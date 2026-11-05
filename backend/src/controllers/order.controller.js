@@ -126,8 +126,10 @@ export const approveReturnInspection = async (req, res, next) => {
     const result = await customer.confirmInspection(req.user._id, req.params.id, req.body);
     res.status(200).json({
       success: true,
-      message: 'Đã xác nhận biên bản. Showroom sẽ đối soát và xử lý hoàn cọc.',
+      message: 'Đã xác nhận biên bản kiểm định. Đơn hàng đã hoàn tất thành công.',
       data: result,
+      order: result.order,
+      inspection: result.inspection,
     });
   } catch (error) {
     next(error);

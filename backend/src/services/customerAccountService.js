@@ -115,8 +115,13 @@ export async function confirmInspection(userId, identifier, bankData = {}) {
     const inspection = await ReturnInspection.findOne({ orderId: order._id });
     if (!inspection)
         fail(404, 'Đơn chưa có biên bản kiểm định.');
-    if (inspection.customerStatus === 'approved')
+    if (inspection.customerStatus === 'approved') {
+        if (order.status !== 'completed' && order.status !== 'complete') {
+            order.status = 'completed';
+            await order.save();
+        }
         return { order: order.toObject(), inspection: await getInspection(userId, identifier) };
+    }
     if (inspection.finalRefundAmount > 0 && (!String(bankData.bankName || '').trim() || !/^\d{6,30}$/.test(String(bankData.accountNumber || '').trim()) || !String(bankData.accountHolder || '').trim())) {
         fail(400, 'Vui lòng nhập ngân hàng, số tài khoản (6–30 chữ số) và tên chủ tài khoản hợp lệ.');
     }
@@ -126,8 +131,13 @@ export async function confirmInspection(userId, identifier, bankData = {}) {
         } }, { new: true, runValidators: true });
     if (!updated)
         fail(409, 'Biên bản vừa thay đổi. Vui lòng tải lại.');
-    // Customer confirmation is not a bank transfer and does not complete the order.
-    return { order: order.toObject(), inspection: await getInspection(userId, identifier) };
+    // Khi khách ấn duyệt -> cập nhật đơn hàng thành hoàn tất (completed)
+    order.status = 'completed';
+    if (typeof order.save === 'function') {
+        await order.save();
+    }
+    const orderObj = typeof order.toObject === 'function' ? order.toObject() : order;
+    return { order: orderObj, inspection: await getInspection(userId, identifier) };
 }
 export async function disputeInspection(userId, identifier, reason) {
     const order = await ownOrder(userId, identifier);

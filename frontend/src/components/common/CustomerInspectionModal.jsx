@@ -102,9 +102,10 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
         notes: notes.trim(),
       };
       const res = await approveReturnInspection(order._id || order.id, bankData);
-      if (!res?.inspection) throw new Error('Máy chủ chưa xác nhận biên bản. Vui lòng tải lại.');
-      setInspection(res.inspection);
-      message.success('Đã gửi xác nhận biên bản và tài khoản nhận tiền cho showroom.');
+      const insp = res?.inspection || res?.data?.inspection || res?.data;
+      if (!insp) throw new Error('Máy chủ chưa xác nhận biên bản. Vui lòng tải lại.');
+      setInspection(insp);
+      message.success('Đã duyệt biên bản kiểm định thành công! Đơn hàng đã hoàn tất.');
       setStep('inspection');
       if (onUpdated) onUpdated();
     } catch (err) {
