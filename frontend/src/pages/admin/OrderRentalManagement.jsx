@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
-import { message, Modal, Radio, Input } from 'antd';
+import { message, Modal, Radio, Input, Dropdown } from 'antd';
 import {
   Search,
   ChevronDown,
@@ -141,30 +141,12 @@ function StatusBadge({ status, order }) {
 }
 
 function UpdateStatusDropdown({ order, onUpdated }) {
-  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const dropdownRef = useRef(null);
   const nexts = NEXT_STATUSES[order.status] || [];
-
-  // Tự động đóng dropdown khi click ra ngoài
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setOpen(false);
-      }
-    }
-    if (open) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [open]);
 
   if (nexts.length === 0) return null;
 
   const handleChange = async (newStatus) => {
-    setOpen(false);
     setLoading(true);
     try {
       await updateOrderStatus(order._id, newStatus);
@@ -177,50 +159,54 @@ function UpdateStatusDropdown({ order, onUpdated }) {
     }
   };
 
+  const menuItems = [
+    {
+      key: 'header',
+      type: 'group',
+      label: (
+        <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C7A7B] block py-0.5">
+          Chuyển bước tiếp theo
+        </span>
+      ),
+      children: nexts.map((s) => {
+        const cfg = STATUS_CONFIG[s] || { label: s };
+        const isCancel = s === 'cancelled';
+        return {
+          key: s,
+          label: (
+            <div className="flex items-center justify-between py-1 min-w-[175px]">
+              <span className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full shrink-0 ${isCancel ? 'bg-red-500' : 'bg-[#733F49]'}`} />
+                <span className={`text-[12.5px] font-medium ${isCancel ? 'text-red-600' : 'text-[#4A3E3F]'}`}>
+                  {cfg.label}
+                </span>
+              </span>
+              <ChevronRight size={13} className="text-[#8C7A7B] opacity-50" />
+            </div>
+          ),
+          onClick: () => handleChange(s),
+        };
+      }),
+    },
+  ];
+
   return (
-    <div ref={dropdownRef} className="relative inline-block text-left whitespace-normal">
+    <Dropdown
+      menu={{ items: menuItems }}
+      trigger={['click']}
+      placement="bottomRight"
+      disabled={loading}
+    >
       <button
         type="button"
         disabled={loading}
-        onClick={() => setOpen((v) => !v)}
         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF2EE] border border-[#EFE2DC] text-[12px] text-[#554748] font-medium hover:bg-[#F3E7E2] hover:text-[#733F49] transition-all disabled:opacity-60 cursor-pointer shadow-2xs"
       >
         <SlidersHorizontal size={12} className="text-[#846E63]" />
         <span>Cập nhật</span>
-        <ChevronDown size={12} className={`transition-transform text-[#846E63] ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown size={12} className="text-[#846E63]" />
       </button>
-
-      {open && (
-        <div className="absolute right-0 top-full mt-1.5 w-52 bg-white rounded-xl shadow-2xl border border-[#EFE5E1] py-1.5 z-50 flex flex-col divide-y divide-[#F9F0EB]">
-          <div className="px-3.5 py-1.5 bg-[#FCF8F5] text-[10.5px] font-bold uppercase tracking-wider text-[#8C7A7B]">
-            Chuyển bước tiếp theo
-          </div>
-          <div className="py-1 flex flex-col">
-            {nexts.map((s) => {
-              const cfg = STATUS_CONFIG[s] || { label: s };
-              const isCancel = s === 'cancelled';
-              return (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => handleChange(s)}
-                  className={`w-full flex items-center justify-between px-3.5 py-2 text-left text-[12px] transition-colors font-medium border-0 bg-transparent cursor-pointer ${isCancel
-                      ? 'text-red-600 hover:bg-red-50 hover:text-red-700'
-                      : 'text-[#4A3E3F] hover:bg-[#FAF4EE] hover:text-[#733F49]'
-                    }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full shrink-0 ${isCancel ? 'bg-red-500' : 'bg-[#733F49]'}`} />
-                    <span>{cfg.label}</span>
-                  </span>
-                  <ChevronRight size={13} className="opacity-40" />
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
+    </Dropdown>
   );
 }
 
@@ -1195,7 +1181,7 @@ export default function OrderRentalManagement() {
 
       {/* Main Table */}
       <div className="bg-white rounded-2xl border border-[#EFE5E1] shadow-xs overflow-hidden mb-6">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto min-h-[260px]">
           <table className="w-full text-left border-collapse min-w-[960px]">
             <thead>
               <tr className="border-b border-[#F2E5E0] bg-[#FFF6F3]">
