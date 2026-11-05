@@ -399,52 +399,56 @@ export default function OrderDetailPage() {
 
               {/* Finance */}
               <section
-                className="rounded-2xl bg-white px-5 py-6 sm:px-7 border border-[#EEDECF]"
+                className="rounded-2xl bg-white px-5 py-6 sm:px-7 border border-[#EEDECF] flex flex-col justify-between"
                 aria-labelledby="invoice-title"
               >
-                <p className="account-overline text-[#874e57]">
-                  Tài chính &amp; ký quỹ <Landmark size={15} className="float-right" />
-                </p>
-                <h2 id="invoice-title" className="mt-2 font-playfair text-xl">
-                  Phí Thuê &amp; Tiền Cọc Theo Đơn
-                </h2>
-                <dl className="mt-5 space-y-3 text-sm">
-                  <div className="flex justify-between gap-3">
-                    <dt>Tổng phí thuê trọn gói</dt>
-                    <dd className="font-semibold">{formatVnd(order.amount)}</dd>
-                  </div>
-                  <div className="flex justify-between gap-3 border-t border-[#eee2df] pt-3">
-                    <dt>Tiền cọc bảo lãnh</dt>
-                    <dd className="font-semibold text-[#874e57]">{formatVnd(order.deposit)}</dd>
-                  </div>
-                </dl>
-                <p className="mt-5 rounded-lg bg-[#fcf0ed] p-4 text-xs leading-5 text-[#66504d]">
-                  Số tiền trên ghi nhận theo hợp đồng thuê. Tiền cọc sẽ được hoàn tất chuyển
-                  trả vào tài khoản của nàng sau khi chuyên viên UniBridal thu hồi và kiểm định
-                  lễ phục.
-                </p>
-              </section>
-            </div>
-
-            <section className="mt-6 rounded-2xl border border-[#EEDECF] bg-white p-6" aria-labelledby="signed-contract-title">
-              <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <h2 id="signed-contract-title" className="font-playfair text-xl">Hợp Đồng Đã Ký</h2>
-                  <p className="mt-2 text-sm text-stone-500">
-                    {order.contract?.contractCode || order.contractCode
-                      ? `Mã hợp đồng: ${order.contract?.contractCode || order.contractCode}`
-                      : 'Xem thông tin hợp đồng đã lưu của đơn thuê.'}
+                  <div className="flex items-center justify-between">
+                    <p className="account-overline text-[#874e57]">
+                      Tài chính &amp; ký quỹ
+                    </p>
+                    <Landmark size={15} className="text-[#874e57]" />
+                  </div>
+                  <h2 id="invoice-title" className="mt-2 font-playfair text-xl">
+                    Phí Thuê &amp; Tiền Cọc Theo Đơn
+                  </h2>
+                  <dl className="mt-4 space-y-3 text-sm">
+                    <div className="flex justify-between gap-3">
+                      <dt>Tổng phí thuê trọn gói</dt>
+                      <dd className="font-semibold">{formatVnd(order.amount)}</dd>
+                    </div>
+                    <div className="flex justify-between gap-3 border-t border-[#eee2df] pt-3">
+                      <dt>Tiền cọc bảo lãnh</dt>
+                      <dd className="font-semibold text-[#874e57]">{formatVnd(order.deposit)}</dd>
+                    </div>
+                  </dl>
+                  <p className="mt-4 rounded-xl bg-[#fcf0ed] p-3 text-xs leading-5 text-[#66504d]">
+                    Số tiền trên ghi nhận theo hợp đồng thuê. Tiền cọc sẽ được hoàn tất chuyển
+                    trả vào tài khoản của nàng sau khi chuyên viên UniBridal thu hồi và kiểm định
+                    lễ phục.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsContractOpen(true)}
-                  className="account-button-secondary inline-flex items-center gap-2"
-                >
-                  <FileSignature size={16} /> Xem hợp đồng đã ký
-                </button>
-              </div>
-            </section>
+
+                {/* Hợp đồng tích hợp ngay trong ô tài chính & bảng giá */}
+                <div className="mt-5 pt-4 border-t border-[#eee2df] flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#874e57] block">HỢP ĐỒNG ĐÃ KÝ</span>
+                    <span className="text-xs text-stone-500 font-mono">
+                      {order.contract?.contractCode || order.contractCode
+                        ? `Mã: ${order.contract?.contractCode || order.contractCode}`
+                        : 'Hợp đồng điện tử đã lưu'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsContractOpen(true)}
+                    className="account-button-secondary inline-flex items-center gap-1.5 text-xs py-2 px-3 rounded-lg"
+                  >
+                    <FileSignature size={15} /> Xem hợp đồng đã ký
+                  </button>
+                </div>
+              </section>
+            </div>
 
             {/* ── ACTION BUTTONS ── */}
             <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white p-5 border border-[#EEDECF] shadow-xs">
