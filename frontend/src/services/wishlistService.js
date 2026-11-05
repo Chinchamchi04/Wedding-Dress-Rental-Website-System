@@ -70,8 +70,8 @@ export function getWishlistIds() {
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
       return parsed
-        .map((item) => (typeof item === 'object' && item !== null ? Number(item?.id) : Number(item)))
-        .filter((id) => !Number.isNaN(id) && id > 0);
+        .map((item) => (typeof item === 'object' && item !== null ? item.id ?? item._id : item))
+        .filter((id) => (typeof id === 'number' && Number.isFinite(id) && id > 0) || (typeof id === 'string' && /^([a-f\d]{24}|\d+)$/.test(id)));
     }
     return [];
   } catch (err) {
@@ -84,9 +84,8 @@ export function getWishlistIds() {
  * Kiểm tra một sản phẩm đã có trong wishlist hay chưa
  */
 export function isWishlisted(id) {
-  const targetId = Number(id);
   const ids = getWishlistIds();
-  return ids.some((itemId) => Number(itemId) === targetId);
+  return ids.some((itemId) => String(itemId) === String(id));
 }
 
 /**
@@ -105,7 +104,7 @@ function saveWishlistIds(ids) {
  * Thêm một sản phẩm vào danh sách yêu thích
  */
 export function addToWishlist(id) {
-  const numId = Number(id);
+  const numId = /^\d+$/.test(String(id)) ? Number(id) : String(id);
   const current = getWishlistIds();
   if (!current.includes(numId)) {
     const updated = [numId, ...current];
@@ -138,7 +137,7 @@ export function clearWishlist() {
  * Đảo trạng thái yêu thích (Thêm nếu chưa có, Xóa nếu đã có)
  */
 export function toggleWishlist(id) {
-  const numId = Number(id);
+  const numId = /^\d+$/.test(String(id)) ? Number(id) : String(id);
   const current = getWishlistIds();
   const exists = current.includes(numId) || current.includes(String(id));
 
@@ -162,10 +161,11 @@ export function getWishlistDresses() {
   // Khớp với DRESS_CATALOG hoặc RECOMMENDED_DRESSES
   return ids.map((id) => {
     const numId = Number(id);
-    const inCatalog = DRESS_CATALOG.find((d) => d.id === numId);
+    const inCatalog = DRESS_CATALOG.find((d) => String(d.id) === String(id)) || (Number.isInteger(numId) && numId > 0 ? DRESS_CATALOG[numId - 1] : null);
     if (inCatalog) {
       return {
         ...inCatalog,
+        id,
         categoryBadge: inCatalog.categoryName ? inCatalog.categoryName.toUpperCase() : 'VÁY CƯỚI CAO CẤP',
         priceFormatted: inCatalog.price || (inCatalog.priceNumber ? formatCurrencyVND(inCatalog.priceNumber) : '5.200.000₫'),
       };
