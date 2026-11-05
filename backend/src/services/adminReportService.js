@@ -52,17 +52,18 @@ export async function dashboard(period = 'month') {
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const [report, orders, customerRole, maintenance, totalAppointments, todayAppointments] = await Promise.all([
+    const [report, orders, customerRole, maintenance, totalAppointments, todayAppointments, totalUsers] = await Promise.all([
         revenueReport(period), Order.find({ createdAt: { $gte: start, $lt: end } }).select('status totalRentPrice createdAt').lean(),
         Role.findOne({ code: 'CUSTOMER' }).select('_id').lean(), Dress.countDocuments({ status: 'maintenance' }),
         Appointment.countDocuments({ appointmentDate: { $gte: start, $lt: end }, status: { $ne: 'cancelled' } }),
         Appointment.countDocuments({ appointmentDate: { $gte: today, $lt: tomorrow }, status: { $ne: 'cancelled' } }),
+        User.countDocuments({}),
     ]);
     const members = customerRole ? await User.countDocuments({ roleId: customerRole._id, isActive: true }) : 0;
     const buckets = reportBuckets(period, start, end);
     const ordersPipeline = Object.fromEntries(['deposit_paid', 'preparing', 'delivered', 'renting', 'returned', 'completed'].map((status) => [status, orders.filter((order) => order.status === status || status === 'completed' && order.status === 'complete').length]));
     return { period, revenue: report.revenue, growthRate: report.growthRate, orderValue: report.orderValue, totalOrders: orders.length, completedOrders: ordersPipeline.completed,
-        maintenance, members, totalAppointments, todayAppointments, ordersPipeline, ordersMissingDepositTransaction: report.ordersMissingDepositTransaction.length,
+        maintenance, members, totalUsers, totalAppointments, todayAppointments, ordersPipeline, ordersMissingDepositTransaction: report.ordersMissingDepositTransaction.length,
         chart: report.chart.map((bucket, index) => ({ ...bucket, orderValue: orders.filter((order) => DEPOSIT_ORDER_STATUSES.includes(order.status) && isInPeriod(order.createdAt, buckets[index].start, buckets[index].end)).reduce((sum, order) => sum + order.totalRentPrice, 0) })),
     };
 }

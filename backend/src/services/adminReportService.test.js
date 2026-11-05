@@ -3,9 +3,27 @@ import assert from 'node:assert/strict';
 import Payment from '../models/Payment.model.js';
 import Order from '../models/Order.model.js';
 import Dress from '../models/Dress.model.js';
-import { revenueReport } from './adminReportService.js';
+import User from '../models/User.model.js';
+import Role from '../models/Role.model.js';
+import Appointment from '../models/Appointment.model.js';
+import { revenueReport, dashboard } from './adminReportService.js';
 const query = (rows) => ({ select() { return this; }, sort() { return this; }, populate() { return this; }, lean: async () => rows });
 afterEach(() => mock.restoreAll());
+test('dashboard counts users of every role separately from active customers', async () => {
+    mock.method(Payment, 'find', () => query([]));
+    mock.method(Payment, 'distinct', async () => []);
+    mock.method(Order, 'find', () => query([]));
+    mock.method(Dress, 'find', () => query([]));
+    mock.method(Dress, 'countDocuments', async () => 0);
+    mock.method(Role, 'findOne', () => query({ _id: 'customer-role' }));
+    mock.method(User, 'countDocuments', async (filter) => filter.roleId ? 5 : 8);
+    mock.method(Appointment, 'countDocuments', async () => 3);
+    const data = await dashboard('month');
+    assert.equal(data.totalUsers, 8);
+    assert.equal(data.members, 5);
+    assert.equal(data.totalOrders, 0);
+    assert.equal(data.totalAppointments, 3);
+});
 test('report and CSV source include more than 100 transactions without counting pending payments', async () => {
     const now = new Date();
     const order = { _id: 'order', orderCode: 'SAMPLE', customerName: 'Sample', items: [{ dressId: 'a', name: 'A', rentPrice: 100 }, { dressId: 'b', name: 'B', rentPrice: 200 }] };

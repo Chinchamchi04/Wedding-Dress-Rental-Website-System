@@ -1,25 +1,19 @@
 import { formatCurrencyVND } from '../../utils/formatCurrency';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Banknote,
-  Gem,
   PackageCheck,
   CalendarDays,
   TrendingUp,
   Sparkles,
-  Clock,
-  CheckCircle2,
   ArrowRight,
-  ShieldCheck,
   Users,
   Layers,
   ArrowUpRight,
-  FileText
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import DashboardChart from '../../components/common/DashboardChart';
-import { roundedChartScale, formatGrowth } from '../../utils/chartScale';
+import { roundedChartScale } from '../../utils/chartScale';
 import { getAdminDashboard } from '../../services/reportService';
 
 const PERIODS = { week: '7 ngày qua', month: 'Tháng này', quarter: 'Quý này', year: 'Năm nay' };
@@ -63,6 +57,7 @@ export default function AdminDashboardPage() {
     return {
       labels: values.map((item) => item.label),
       primary,
+      tooltipValues: values.map((item) => item.orderValue || 0),
       max,
       ticks,
       unit: 'tr',
@@ -105,53 +100,31 @@ export default function AdminDashboardPage() {
       )}
 
       {loading && <p role="status" className="mb-4 text-sm text-stone-500">Đang tải thống kê...</p>}
-      {/* 6 Top Metric Cards Nâng Cấp */}
+      {/* Tổng đơn thuê, lịch hẹn và người dùng */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" aria-label="Chỉ số kinh doanh trọng yếu">
         {[
           {
-            title: 'DOANH THU THỰC NHẬN',
-            value: money(data?.revenue),
-            note: 'Doanh thu cho thuê ròng trong kỳ',
-            growth: data ? formatGrowth(data.growthRate) : null,
-            Icon: TrendingUp,
-            color: 'rose',
-          },
-          {
-            title: 'GIÁ TRỊ ĐƠN ĐÃ ĐẶT CỌC',
-            value: money(data?.orderValue),
-            note: `Ghi nhận từ các đơn hợp đồng hợp lệ`,
-            Icon: Banknote,
-            color: 'gold',
-          },
-          {
-            title: 'TỔNG ĐƠN THUÊ LỄ PHỤC',
+            title: 'TỔNG ĐƠN THUÊ',
             value: data?.totalOrders ?? '—',
             note: `${data?.completedOrders ?? 0} đơn đã hoàn tất & quyết toán`,
             Icon: PackageCheck,
             color: 'rose',
           },
           {
-            title: 'LỊCH HẸN THỬ VÁY VIP',
+            title: 'TỔNG LỊCH HẸN',
             value: data?.totalAppointments ?? '—',
             note: `${data?.todayAppointments ?? '—'} lịch hẹn cần tiếp đón hôm nay`,
             Icon: CalendarDays,
             color: 'gold',
           },
           {
-            title: 'LỄ PHỤC KIỂM ĐỊNH & BẢO DƯỠNG',
-            value: `${data?.maintenance ?? '—'} mẫu`,
-            note: 'Váy vừa hoàn tất cần kiểm định vi khí hậu',
-            Icon: Clock,
-            color: 'rose',
-          },
-          {
-            title: 'CỘNG ĐỒNG NÀNG DÂU',
-            value: data?.members ?? '—',
-            note: 'Tài khoản khách hàng đang hoạt động',
+            title: 'SỐ USER',
+            value: data?.totalUsers ?? '—',
+            note: 'Toàn bộ tài khoản trên hệ thống',
             Icon: Users,
             color: 'gold',
           },
-        ].map(({ title, value, note, growth, Icon, color }) => (
+        ].map(({ title, value, note, Icon, color }) => (
           <article
             key={title}
             className="ub-dashboard-metric admin-metric min-w-0 rounded-2xl border border-[#EFE5E1] bg-white p-5 shadow-xs hover:shadow-md transition-shadow"
@@ -165,7 +138,6 @@ export default function AdminDashboardPage() {
             <div className="text-[28px] font-bold text-[#2C2523] tracking-tight leading-none mb-2 font-serif">{value}</div>
             <div className="flex items-center justify-between text-xs text-[#8A797A] pt-2 border-t border-[#F5EAE6]">
               <span>{note}</span>
-              {growth && <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">{growth}</span>}
             </div>
           </article>
         ))}
@@ -234,6 +206,7 @@ export default function AdminDashboardPage() {
             primaryLabel="Giá trị đơn"
             chartType="bar"
             variant="admin"
+            formatTooltipValue={money}
           />
         )}
       </section>
