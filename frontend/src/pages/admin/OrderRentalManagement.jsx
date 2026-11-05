@@ -59,9 +59,9 @@ const STATUS_CONFIG = {
 /** Các chuyển tiếp status hợp lệ (chỉ tiến, không lui) */
 const NEXT_STATUSES = {
   pending_payment: ['deposit_paid', 'cancelled'],
-  deposit_paid: ['preparing', 'cancelled'],
-  active: ['preparing', 'cancelled'],
-  confirmed: ['preparing', 'cancelled'],
+  deposit_paid: ['delivered', 'cancelled'],
+  active: ['delivered', 'cancelled'],
+  confirmed: ['delivered', 'cancelled'],
   preparing: ['delivered', 'cancelled'],
   delivered: ['renting', 'cancelled'],
   renting: [], // Bắt buộc nhân viên bấm nút [Kiểm Định], không dùng dropdown tùy ý
@@ -74,7 +74,6 @@ const NEXT_STATUSES = {
 const FILTER_OPTIONS = [
   { value: 'all', label: 'Tất Cả Trạng Thái' },
   { value: 'deposit_paid', label: 'Đã Đặt Cọc' },
-  { value: 'preparing', label: 'Đang Chuẩn Bị' },
   { value: 'delivered', label: 'Đã Giao Váy' },
   { value: 'renting', label: 'Đang Thuê' },
   { value: 'returned', label: 'Chờ Hoàn Cọc' },

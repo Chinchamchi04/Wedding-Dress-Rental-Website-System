@@ -36,15 +36,9 @@ const TIMELINE_STEPS = [
     Icon: CheckCircle2,
   },
   {
-    key: 'preparing',
-    label: 'Chuẩn Bị',
-    subLabel: 'Đang chuẩn bị bàn giao',
-    Icon: Package,
-  },
-  {
     key: 'delivered',
-    label: 'Đã Giao',
-    subLabel: 'Váy đã được giao',
+    label: 'Đã Giao Váy',
+    subLabel: 'Váy đã được bàn giao',
     Icon: Truck,
   },
   {
@@ -55,7 +49,7 @@ const TIMELINE_STEPS = [
   },
   {
     key: 'returned',
-    label: 'Đã Trả',
+    label: 'Đã Trả Váy',
     subLabel: 'Váy đã được trả lại',
     Icon: RefreshCcw,
   },
@@ -71,12 +65,12 @@ const TIMELINE_STEPS = [
 const STATUS_STEP_MAP = {
   pending_payment: -1, // chưa cọc
   deposit_paid: 0,
-  preparing: 1,
-  delivered: 2,
-  renting: 3,
-  returned: 4,
-  completed: 5,
-  complete: 5,
+  preparing: 0, // Fallback đơn cũ: hiển thị ở bước Đặt Cọc
+  delivered: 1,
+  renting: 2,
+  returned: 3,
+  completed: 4,
+  complete: 4,
 };
 
 /* ─────────────────────────────────────────────

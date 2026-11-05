@@ -191,11 +191,10 @@ export default function AdminDashboardPage() {
           </Link>
         </div>
 
-        {/* 6 Bước Pipeline Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {/* 5 Bước Pipeline Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {[
             { label: 'Đã Đặt Cọc', count: data?.ordersPipeline?.deposit_paid ?? '—', color: 'border-amber-200 bg-amber-50 text-amber-800' },
-            { label: 'Đang Chuẩn Bị', count: data?.ordersPipeline?.preparing ?? '—', color: 'border-blue-200 bg-blue-50 text-blue-800' },
             { label: 'Đã Giao Váy', count: data?.ordersPipeline?.delivered ?? '—', color: 'border-purple-200 bg-purple-50 text-purple-800' },
             { label: 'Khách Đang Thuê', count: data?.ordersPipeline?.renting ?? '—', color: 'border-indigo-200 bg-indigo-50 text-indigo-800' },
             { label: 'Chờ Kiểm Định', count: data?.ordersPipeline?.returned ?? '—', color: 'border-rose-200 bg-rose-50 text-rose-800' },
