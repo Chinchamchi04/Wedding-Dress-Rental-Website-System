@@ -1135,45 +1135,6 @@ export default function OrderRentalManagement() {
             </button>
           )}
         </div>
-
-        <div className="flex justify-end mt-4">
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setFilterDropdownOpen((v) => !v)}
-              className="flex items-center justify-between gap-3 px-4 py-2 rounded-lg bg-[#FAF2EE] border border-[#EFE2DC] text-[12.5px] text-[#554748] font-medium hover:bg-[#F3E7E2] transition-colors"
-            >
-              <span>{selectedFilterLabel}</span>
-              <ChevronDown
-                size={14}
-                className={`text-[#8C7D7E] transition-transform ${filterDropdownOpen ? 'rotate-180' : ''}`}
-              />
-            </button>
-
-            {filterDropdownOpen && (
-              <div className="absolute right-0 top-full mt-1.5 w-56 bg-white rounded-xl shadow-lg border border-[#EFE5E1] py-1.5 z-20">
-                {FILTER_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => {
-                      setStatusFilter(opt.value);
-                      setActivePage(1);
-                      setFilterDropdownOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-4 py-2 text-left text-[13px] transition-colors ${statusFilter === opt.value
-                        ? 'bg-[#F9EDE9] text-[#733F49] font-bold'
-                        : 'bg-transparent text-[#5F4E50] hover:bg-[#FAF5F2]'
-                      }`}
-                  >
-                    <span>{opt.label}</span>
-                    {statusFilter === opt.value && <Check size={14} />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* View Mode Tabs: Đơn Đang Xử Lý vs Kho Lưu Trữ */}
