@@ -301,10 +301,8 @@ export default function OrderDetailPage() {
   return (
     <AccountLayout
       hideSidebar
-      breadcrumb={[
-        { label: 'Lịch sử đơn hàng', to: '/profile/orders' },
-        { label: order ? `Chi tiết #${order.id}` : 'Chi tiết đơn hàng' },
-      ]}
+      hideBreadcrumb={true}
+      breadcrumb={[]}
     >
       <div className="account-detail-content">
         <div className="mb-4 flex justify-end">
