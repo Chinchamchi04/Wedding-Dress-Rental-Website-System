@@ -366,7 +366,7 @@ export default function CheckoutPage() {
   // 3. Tổng thời gian thuê chính xác = days cố định
   const computeScheduleFromWedding = (weddingDisplayOrIso, days) => {
     const wedIso = toIsoDateString(weddingDisplayOrIso);
-    if (!wedIso) return { startDate: '18/11/2026', weddingDate: '20/11/2026', endDate: '21/11/2026' };
+    if (!wedIso) return { startDate: '', weddingDate: '', endDate: '' };
 
     const validDays = Math.max(1, Math.min(30, Number(days) || 1));
     let beforeDays = 1;
@@ -407,36 +407,48 @@ export default function CheckoutPage() {
 
   // Schedule state (Định dạng hiển thị DD/MM/YYYY)
   const [rentalSchedule, setRentalSchedule] = useState(() => {
-    const initialWedding = '20/11/2026';
-    const initialDays = !isNaN(daysParam) && daysParam >= 1 && daysParam <= 30 ? daysParam : 4;
-
     const validStart = startDateParam && startDateParam !== 'undefined' && startDateParam !== 'null' ? toDisplayDateString(startDateParam) : null;
     const validEnd = endDateParam && endDateParam !== 'undefined' && endDateParam !== 'null' ? toDisplayDateString(endDateParam) : null;
+    const validWedding = searchParams.get('weddingDate') && searchParams.get('weddingDate') !== 'undefined' && searchParams.get('weddingDate') !== 'null'
+      ? toDisplayDateString(searchParams.get('weddingDate'))
+      : null;
 
     if (validStart && validEnd) {
       return {
         startDate: validStart,
-        weddingDate: initialWedding,
+        weddingDate: validWedding || validStart,
         endDate: validEnd,
       };
     }
-    return computeScheduleFromWedding(initialWedding, initialDays);
+
+    if (validWedding) {
+      const initialDays = !isNaN(daysParam) && daysParam >= 1 && daysParam <= 30 ? daysParam : 4;
+      return computeScheduleFromWedding(validWedding, initialDays);
+    }
+
+    // Khi người dùng chưa chọn ngày: BẮT BUỘC để trống, không tự ý điền sẵn ngày giả gây báo trùng lịch sai
+    return {
+      startDate: '',
+      weddingDate: '',
+      endDate: '',
+    };
   });
 
   // Cập nhật số ngày thuê trên Stepper (+ / -)
-  // Tự động phân bổ ngày nhận và ngày trả xoay quanh ngày cưới hiện tại:
+  // Tự động phân bổ ngày nhận và ngày trả xoay quanh ngày cưới hiện tại (nếu đã chọn):
   const handleRentalDaysChange = (newDays) => {
     const clamped = Math.max(1, Math.min(30, Number(newDays) || 1));
     setRentalDays(clamped);
 
     setRentalSchedule((prev) => {
+      if (!prev.weddingDate) return prev;
       return computeScheduleFromWedding(prev.weddingDate, clamped);
     });
   };
 
   // State cho tháng đang xem trên lịch tương tác
   const [calendarViewDate, setCalendarViewDate] = useState(() => {
-    const initialIso = toIsoDateString(rentalSchedule.weddingDate || '20/11/2026');
+    const initialIso = toIsoDateString(rentalSchedule.weddingDate || rentalSchedule.startDate);
     if (initialIso) {
       const parts = initialIso.split('-').map(Number);
       return new Date(parts[0], parts[1] - 1, 1);
@@ -537,9 +549,9 @@ export default function CheckoutPage() {
   // Helper tính ngày cưới mặc định nằm trong khoảng thuê
   const computeWeddingDate = (startDisplayOrIso, days) => {
     const iso = toIsoDateString(startDisplayOrIso);
-    if (!iso) return '20/11/2026';
+    if (!iso) return '';
     const parts = iso.split('-').map(Number);
-    if (parts.length !== 3) return '20/11/2026';
+    if (parts.length !== 3) return '';
     const offset = days <= 3 ? 1 : Math.min(2, Math.floor(days / 2));
     const wedD = new Date(parts[0], parts[1] - 1, parts[2] + offset);
     const pad = (n) => String(n).padStart(2, '0');
@@ -776,6 +788,11 @@ export default function CheckoutPage() {
   // Validation Step 1
   const handleProceedToContract = (e) => {
     e?.preventDefault();
+    if (!rentalSchedule.startDate || !rentalSchedule.weddingDate || !rentalSchedule.endDate) {
+      message.warning('Nàng vui lòng chọn ngày cưới và thời gian thuê trên bảng lịch trước khi tiếp tục!');
+      return;
+    }
+
     if (scheduleConflict) {
       message.error(
         `Khoảng ngày nàng chọn bị trùng với lịch đã đặt trước (${scheduleConflict.formattedRange}). Vui lòng chọn ngày còn trống trên bảng lịch để tiếp tục!`
@@ -1825,7 +1842,7 @@ export default function CheckoutPage() {
                       <div className="relative flex items-center">
                         <input
                           type="date"
-                          value={toIsoDateString(rentalSchedule.startDate)}
+                          value={toIsoDateString(rentalSchedule.startDate) || ''}
                           onChange={(e) => {
                             if (e.target.value) {
                               handleSelectStartDate(e.target.value);
@@ -1835,7 +1852,7 @@ export default function CheckoutPage() {
                         />
                       </div>
                       <span className="text-[10.5px] font-medium text-[#2E7D32] mt-1.5 flex items-center gap-1">
-                        <span>✦</span> Ngày nhận váy
+                        <span>✦</span> {rentalSchedule.startDate ? 'Ngày nhận váy' : 'Chưa chọn ngày nhận'}
                       </span>
                     </div>
 
@@ -1852,7 +1869,7 @@ export default function CheckoutPage() {
                       <div className="relative flex items-center">
                         <input
                           type="date"
-                          value={toIsoDateString(rentalSchedule.weddingDate)}
+                          value={toIsoDateString(rentalSchedule.weddingDate) || ''}
                           onChange={(e) => {
                             if (e.target.value) {
                               handleSelectWeddingDate(e.target.value);
@@ -1862,7 +1879,7 @@ export default function CheckoutPage() {
                         />
                       </div>
                       <span className="text-[10.5px] font-bold text-[#733F49] mt-1.5 flex items-center gap-1">
-                        <span>★</span> Ngày hôn lễ chính thức
+                        <span>★</span> {rentalSchedule.weddingDate ? 'Ngày hôn lễ chính thức' : 'Vui lòng chọn ngày cưới'}
                       </span>
                     </div>
 
@@ -1872,11 +1889,11 @@ export default function CheckoutPage() {
                         <label className="block text-[10.5px] font-bold text-[#733F49] uppercase tracking-wider">
                           NGÀY HOÀN TRẢ VÁY *
                         </label>
-                        <span className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider ${toIsoDateString(rentalSchedule.endDate) === toIsoDateString(rentalSchedule.weddingDate)
+                        <span className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider ${rentalSchedule.endDate && toIsoDateString(rentalSchedule.endDate) === toIsoDateString(rentalSchedule.weddingDate)
                           ? 'bg-[#FFF3E0] text-[#E65100] border border-[#FFE0B2]'
                           : 'bg-[#E8F5E9] text-[#2E7D32] border border-[#C8E6C9]'
                           }`}>
-                          {toIsoDateString(rentalSchedule.endDate) === toIsoDateString(rentalSchedule.weddingDate)
+                          {rentalSchedule.endDate && toIsoDateString(rentalSchedule.endDate) === toIsoDateString(rentalSchedule.weddingDate)
                             ? 'CÙNG NGÀY CƯỚI'
                             : 'SAU NGÀY CƯỚI'}
                         </span>
@@ -1884,8 +1901,8 @@ export default function CheckoutPage() {
                       <div className="relative flex items-center">
                         <input
                           type="date"
-                          min={toIsoDateString(rentalSchedule.startDate)}
-                          value={toIsoDateString(rentalSchedule.endDate)}
+                          min={toIsoDateString(rentalSchedule.startDate) || undefined}
+                          value={toIsoDateString(rentalSchedule.endDate) || ''}
                           onChange={(e) => {
                             if (e.target.value) {
                               handleSelectEndDate(e.target.value);
@@ -1895,9 +1912,11 @@ export default function CheckoutPage() {
                         />
                       </div>
                       <span className="text-[10.5px] font-medium text-[#733F49] mt-1.5 flex items-center gap-1">
-                        <span>✓</span> {toIsoDateString(rentalSchedule.endDate) === toIsoDateString(rentalSchedule.weddingDate)
-                          ? `Trả trước 20:00 (Cùng tối ngày cưới - Gói ${rentalDays} ngày)`
-                          : `Trả trước 20:00 ngày ${rentalSchedule.endDate} (Gói ${rentalDays} ngày)`}
+                        <span>✓</span> {rentalSchedule.endDate ? (
+                          toIsoDateString(rentalSchedule.endDate) === toIsoDateString(rentalSchedule.weddingDate)
+                            ? `Trả trước 20:00 (Cùng tối ngày cưới - Gói ${rentalDays} ngày)`
+                            : `Trả trước 20:00 ngày ${rentalSchedule.endDate} (Gói ${rentalDays} ngày)`
+                        ) : 'Chưa xác định ngày hoàn trả'}
                       </span>
                     </div>
 
@@ -2415,6 +2434,11 @@ export default function CheckoutPage() {
                       <>
                         <AlertCircle className="w-4 h-4 text-stone-500" />
                         <span>LỊCH BỊ TRÙNG — VUI LÒNG ĐỔI NGÀY TRÊN BẢNG LỊCH</span>
+                      </>
+                    ) : !rentalSchedule.startDate || !rentalSchedule.weddingDate ? (
+                      <>
+                        <Calendar className="w-4 h-4" />
+                        <span>VUI LÒNG CHỌN NGÀY THUÊ TRÊN BẢNG LỊCH</span>
                       </>
                     ) : (
                       <>
@@ -3218,11 +3242,16 @@ export default function CheckoutPage() {
                     <AlertCircle className="w-3.5 h-3.5 shrink-0 text-[#DC2626]" />
                     <span>Trùng lịch đã đặt ({scheduleConflict.formattedRange})</span>
                   </div>
+                ) : !rentalSchedule.startDate || !rentalSchedule.endDate ? (
+                  <div className="bg-[#FFF8F5] border border-[#F2D8D4] p-2 rounded-xl text-[#8C4654] text-[11px] flex items-center gap-1.5 font-medium">
+                    <Calendar className="w-3.5 h-3.5 shrink-0 text-[#B8737D]" />
+                    <span>Chưa chọn ngày thuê trên lịch</span>
+                  </div>
                 ) : (
                   <div className="bg-[#F0FDF4] border border-[#BBF7D0] p-2 rounded-xl text-[#15803D] text-[11px] flex items-center justify-between font-bold">
                     <div className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-[#16A34A]" />
-                      <span>Lịch đã đăng ký:</span>
+                      <span>Lịch thuê hợp lệ:</span>
                     </div>
                     <span className="font-mono text-[11.5px] text-[#15803D] bg-white/80 px-2 py-0.5 rounded-md border border-[#BBF7D0]">
                       {rentalSchedule.startDate} – {rentalSchedule.endDate}
