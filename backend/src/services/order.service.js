@@ -401,6 +401,11 @@ export const submitReturnInspection = async (orderId, data, staffUser) => {
   // Upsert: nếu đã có biên bản kiểm định thì cập nhật lại biên bản và số tiền trừ
   let inspection = await ReturnInspection.findOne({ orderId });
   if (inspection) {
+    if (inspection.customerStatus === 'approved' || inspection.customerConfirmed) {
+      const err = new Error('Khách hàng đã duyệt biên bản kiểm định, không thể chỉnh sửa.');
+      err.statusCode = 400;
+      throw err;
+    }
     inspection.staffId = staffUser?._id || inspection.staffId;
     inspection.returnedAt = new Date();
     inspection.lateDays = lateDays;

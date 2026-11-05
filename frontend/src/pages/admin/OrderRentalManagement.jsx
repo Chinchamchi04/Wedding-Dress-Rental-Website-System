@@ -212,10 +212,11 @@ function UpdateStatusDropdown({ order, onUpdated }) {
 function InspectionModal({ order, onClose, onSuccess }) {
   const isCompletedOrder = order.status === 'completed' || order.status === 'complete';
   const isReturnedOrder = order.status === 'returned';
-  const [isEditing, setIsEditing] = useState(!isReturnedOrder);
-  const isReadOnly = isCompletedOrder || (!isEditing && isReturnedOrder);
+  const [customerStatus, setCustomerStatus] = useState(order.inspectionCustomerStatus || order.inspection?.customerStatus || 'pending');
+  const isCustomerApproved = customerStatus === 'approved';
+  const [isEditing, setIsEditing] = useState(!isReturnedOrder && !isCustomerApproved);
+  const isReadOnly = isCompletedOrder || isCustomerApproved || (!isEditing && isReturnedOrder);
 
-  const [customerStatus, setCustomerStatus] = useState('pending');
   const [disputeReason, setDisputeReason] = useState('');
   const [refundBankDetails, setRefundBankDetails] = useState(null);
 
@@ -245,7 +246,12 @@ function InspectionModal({ order, onClose, onSuccess }) {
       .then((res) => {
         const insp = res?.data || res;
         if (insp && (insp.itemsCondition || insp.totalDeduction !== undefined)) {
-          if (insp.customerStatus) setCustomerStatus(insp.customerStatus);
+          if (insp.customerStatus) {
+            setCustomerStatus(insp.customerStatus);
+            if (insp.customerStatus === 'approved') {
+              setIsEditing(false);
+            }
+          }
           if (insp.disputeReason) setDisputeReason(insp.disputeReason);
           if (insp.refundBankDetails) setRefundBankDetails(insp.refundBankDetails);
           if (insp.evidencePhotos?.length) {
@@ -324,6 +330,11 @@ function InspectionModal({ order, onClose, onSuccess }) {
   };
 
   const handleSubmit = async () => {
+    if (isCustomerApproved) {
+      message.error('Khách hàng đã duyệt biên bản kiểm định, hồ sơ đã khóa và không thể chỉnh sửa.');
+      return;
+    }
+
     // Validate không được nhập số tiền lớn hơn váy
     for (const ic of itemsCondition) {
       const maxLimit = ic.maxPrice || order.totalDeposit || order.totalRentPrice || 0;
@@ -370,6 +381,8 @@ function InspectionModal({ order, onClose, onSuccess }) {
               <h3 className="font-playfair text-[15px] font-bold text-[#5F2B36] m-0">
                 {isCompletedOrder
                   ? 'Hồ Sơ Lưu Trữ Đơn Thuê & Quyết Toán Cọc'
+                  : isCustomerApproved
+                  ? 'Biên Bản Kiểm Định Trả Váy (Khách Đã Duyệt)'
                   : isReturnedOrder
                   ? 'Biên Bản Kiểm Định Trả Váy (Đã Kiểm Định)'
                   : 'Kiểm Định Trả Váy & Giám Định Hiện Trạng'}
@@ -404,10 +417,15 @@ function InspectionModal({ order, onClose, onSuccess }) {
 
           {customerStatus === 'approved' && (
             <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 space-y-1">
-              <div className="flex items-center gap-1.5 text-[11.5px]">
-                <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
-                <span>
-                  <strong>Khách hàng đã đồng ý biên bản.</strong> Hệ thống đã tự động hoàn cọc cho khách.
+              <div className="flex items-center justify-between gap-1.5 text-[11.5px] flex-wrap">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+                  <span>
+                    <strong>Khách hàng đã duyệt biên bản.</strong> Hồ sơ đã khóa cố định, không được phép chỉnh sửa.
+                  </span>
+                </div>
+                <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-300">
+                  Đã Khóa Chỉnh Sửa
                 </span>
               </div>
               {refundBankDetails?.accountNumber && (
@@ -590,9 +608,9 @@ function InspectionModal({ order, onClose, onSuccess }) {
                   onClick={onClose}
                   className="flex-1 py-2 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
                 >
-                  {isCompletedOrder ? 'Đóng Hồ Sơ Lưu Trữ' : 'Đóng'}
+                  {isCompletedOrder ? 'Đóng Hồ Sơ Lưu Trữ' : isCustomerApproved ? 'Đóng (Khách Đã Duyệt - Hồ Sơ Đã Khóa)' : 'Đóng'}
                 </button>
-                {!isCompletedOrder && (
+                {!isCompletedOrder && !isCustomerApproved && (
                   <button
                     type="button"
                     onClick={() => setIsEditing(true)}
