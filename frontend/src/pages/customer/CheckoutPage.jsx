@@ -331,14 +331,23 @@ export default function CheckoutPage() {
       setAddress((prev) => (prev ? prev : uData.address));
 
       if (user.measurements) {
-        setMeasurements((prev) => ({
-          ...prev,
-          height: user.measurements.height ? String(user.measurements.height) : prev.height,
-          weight: user.measurements.weight ? String(user.measurements.weight) : prev.weight,
-          bust: user.measurements.bust ? String(user.measurements.bust) : prev.bust,
-          waist: user.measurements.waist ? String(user.measurements.waist) : prev.waist,
-          hips: user.measurements.hips ? String(user.measurements.hips) : prev.hips,
-        }));
+        setMeasurements({
+          height: user.measurements.height ? String(user.measurements.height) : '',
+          weight: user.measurements.weight ? String(user.measurements.weight) : '',
+          bust: user.measurements.bust ? String(user.measurements.bust) : '',
+          waist: user.measurements.waist ? String(user.measurements.waist) : '',
+          hips: user.measurements.hips ? String(user.measurements.hips) : '',
+          heel: user.measurements.heel ? String(user.measurements.heel) : '',
+        });
+      } else {
+        setMeasurements({
+          height: '',
+          weight: '',
+          bust: '',
+          waist: '',
+          hips: '',
+          heel: '',
+        });
       }
     }
   }, [isLoggedIn, user]);
@@ -658,14 +667,26 @@ export default function CheckoutPage() {
   // Selected dress size
   const [selectedSize, setSelectedSize] = useState(sizeParam || 'S');
 
-  // Measurements
-  const [measurements, setMeasurements] = useState({
-    height: '165',
-    weight: '48',
-    bust: '84',
-    waist: '64',
-    hips: '92',
-    heel: '9',
+  // Measurements: Nếu tài khoản chưa lưu số đo thì BẮT BUỘC để trống ('')
+  const [measurements, setMeasurements] = useState(() => {
+    if (user?.measurements) {
+      return {
+        height: user.measurements.height ? String(user.measurements.height) : '',
+        weight: user.measurements.weight ? String(user.measurements.weight) : '',
+        bust: user.measurements.bust ? String(user.measurements.bust) : '',
+        waist: user.measurements.waist ? String(user.measurements.waist) : '',
+        hips: user.measurements.hips ? String(user.measurements.hips) : '',
+        heel: user.measurements.heel ? String(user.measurements.heel) : '',
+      };
+    }
+    return {
+      height: '',
+      weight: '',
+      bust: '',
+      waist: '',
+      hips: '',
+      heel: '',
+    };
   });
 
   // Tăng giảm số đo nhanh bằng nút bấm lên / xuống
@@ -1043,7 +1064,7 @@ export default function CheckoutPage() {
                   Số điện thoại: <strong>${phone}</strong><br />
                   Email: <strong>${email}</strong><br />
                   Địa chỉ nhận: <strong>${address}</strong><br />
-                  Thông số tinh chỉnh: Cao ${measurements.height}cm • Nặng ${measurements.weight}kg • Vòng eo ${measurements.waist}cm
+                  Thông số tinh chỉnh: ${measurements.height && measurements.weight ? `Cao ${measurements.height}cm • Nặng ${measurements.weight}kg • Vòng eo ${measurements.waist || '—'}cm` : 'Chuyên viên showroom hỗ trợ may đo trực tiếp'}
                 </td>
               </tr>
             </table>
@@ -1062,7 +1083,7 @@ export default function CheckoutPage() {
               <p>1.1. Bên A đồng ý cho Bên B thuê tác phẩm váy cưới độc bản thiết kế mang tên <strong>${activeDress?.name}</strong> (Mã tác phẩm: <strong>${activeDress?.code || 'UB-HC-2026'}</strong>), Kích cỡ: <strong>Size ${selectedSize}</strong>.</p>
             `}
             <p>1.2. Tiêu chuẩn bàn giao: Tác phẩm đạt chuẩn Haute Couture, khung xương nẹp corset siết eo công nghệ Pháp, được giặt sấy tiệt trùng ozone sinh học, ủi phẳng phiu và đặt trong Vali VIP Courier bảo quản chống bụi nhiệt trước giờ trao nhận 02 giờ.</p>
-            <p>1.3. Tinh chỉnh may đo: Bên A cung cấp dịch vụ tinh chỉnh nới/siết phom theo đúng số đo chuẩn của Bên B (Chiều cao: ${measurements.height}cm, Cân nặng: ${measurements.weight}kg, Vòng eo: ${measurements.waist}cm).</p>
+            <p>1.3. Tinh chỉnh may đo: Bên A cung cấp dịch vụ tinh chỉnh nới/siết phom theo đúng số đo của Bên B (${measurements.height ? `Chiều cao: ${measurements.height}cm, Cân nặng: ${measurements.weight || '—'}kg, Vòng eo: ${measurements.waist || '—'}cm` : 'Chuyên viên Atelier đo và tinh chỉnh trực tiếp tại Showroom'}).</p>
 
             <div class="clause-heading">ĐIỀU 2: THỜI HẠN THUÊ, PHƯƠNG THỨC GIAO NHẬN & QUY TRÌNH THU HỒI, KIỂM ĐỊNH</div>
             <p>2.1. Tổng thời gian thuê: <strong>${rentalDays} ngày</strong> liên tục.</p>
@@ -2225,6 +2246,7 @@ export default function CheckoutPage() {
                           <div className="relative flex items-center">
                             <input
                               type="text"
+                              placeholder="—"
                               value={measurements.height}
                               onChange={(e) => setMeasurements({ ...measurements, height: e.target.value.replace(/[^0-9.]/g, '') })}
                               className="w-full h-10 sm:h-11 bg-white border border-[#E2D2C2] rounded-xl pl-2 pr-6 font-jakarta font-extrabold text-[16px] text-[#2C2523] text-center tabular-nums focus:outline-none focus:border-[#733F49] shadow-2xs"
@@ -2258,6 +2280,7 @@ export default function CheckoutPage() {
                           <div className="relative flex items-center">
                             <input
                               type="text"
+                              placeholder="—"
                               value={measurements.weight}
                               onChange={(e) => setMeasurements({ ...measurements, weight: e.target.value.replace(/[^0-9.]/g, '') })}
                               className="w-full h-10 sm:h-11 bg-white border border-[#E2D2C2] rounded-xl pl-2 pr-6 font-jakarta font-extrabold text-[16px] text-[#2C2523] text-center tabular-nums focus:outline-none focus:border-[#733F49] shadow-2xs"
@@ -2291,6 +2314,7 @@ export default function CheckoutPage() {
                           <div className="relative flex items-center">
                             <input
                               type="text"
+                              placeholder="—"
                               value={measurements.bust}
                               onChange={(e) => setMeasurements({ ...measurements, bust: e.target.value.replace(/[^0-9.]/g, '') })}
                               className="w-full h-10 sm:h-11 bg-white border border-[#E2D2C2] rounded-xl pl-2 pr-6 font-jakarta font-extrabold text-[16px] text-[#2C2523] text-center tabular-nums focus:outline-none focus:border-[#733F49] shadow-2xs"
@@ -2324,6 +2348,7 @@ export default function CheckoutPage() {
                           <div className="relative flex items-center">
                             <input
                               type="text"
+                              placeholder="—"
                               value={measurements.waist}
                               onChange={(e) => setMeasurements({ ...measurements, waist: e.target.value.replace(/[^0-9.]/g, '') })}
                               className="w-full h-10 sm:h-11 bg-white border-2 border-[#EAB8B8] rounded-xl pl-2 pr-6 font-jakarta font-extrabold text-[16px] text-[#733F49] text-center tabular-nums focus:outline-none focus:border-[#733F49] shadow-2xs"
@@ -2357,6 +2382,7 @@ export default function CheckoutPage() {
                           <div className="relative flex items-center">
                             <input
                               type="text"
+                              placeholder="—"
                               value={measurements.hips}
                               onChange={(e) => setMeasurements({ ...measurements, hips: e.target.value.replace(/[^0-9.]/g, '') })}
                               className="w-full h-10 sm:h-11 bg-white border border-[#E2D2C2] rounded-xl pl-2 pr-6 font-jakarta font-extrabold text-[16px] text-[#2C2523] text-center tabular-nums focus:outline-none focus:border-[#733F49] shadow-2xs"
@@ -2390,6 +2416,7 @@ export default function CheckoutPage() {
                           <div className="relative flex items-center">
                             <input
                               type="text"
+                              placeholder="—"
                               value={measurements.heel}
                               onChange={(e) => setMeasurements({ ...measurements, heel: e.target.value.replace(/[^0-9.]/g, '') })}
                               className="w-full h-10 sm:h-11 bg-white border border-[#E2D2C2] rounded-xl pl-2 pr-6 font-jakarta font-extrabold text-[16px] text-[#2C2523] text-center tabular-nums focus:outline-none focus:border-[#733F49] shadow-2xs"
