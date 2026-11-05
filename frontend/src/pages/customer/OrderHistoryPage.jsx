@@ -123,7 +123,7 @@ function OrderCard({ order, onOpenInspection, onOpenContract }) {
             <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-1.5 font-medium">
                 <CheckCircle2 size={16} className="text-emerald-600" />
-                <span>Nàng đã đồng ý biên bản kiểm định. Vui lòng xem trạng thái hoàn cọc trong biên bản.</span>
+                <span>Nàng đã đồng ý biên bản kiểm định. Vui lòng đợi hệ thống chuyển tiền cọc trong vòng 24h.</span>
               </div>
               <button
                 type="button"

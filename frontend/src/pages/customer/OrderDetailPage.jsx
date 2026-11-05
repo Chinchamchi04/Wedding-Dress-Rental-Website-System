@@ -352,7 +352,7 @@ export default function OrderDetailPage() {
                 </div>
 
                 <p className="text-[12.5px] sm:text-[13px] leading-relaxed text-[#5E4D4F] m-0">
-                  Nàng vui lòng xem hiện trạng váy và số tiền đề nghị hoàn. Sau khi nàng xác nhận, showroom sẽ đối soát và xử lý hoàn cọc; nếu chưa hài lòng nàng có quyền gửi khiếu nại.
+                  Nàng vui lòng xem hiện trạng váy và số tiền đề nghị hoàn. Sau khi nàng xác nhận, hệ thống sẽ đối soát và chuyển tiền cọc trong vòng 24h; nếu chưa hài lòng nàng có quyền gửi khiếu nại.
                 </p>
 
                 <div className="pt-1 flex items-center gap-1.5 text-[11px] text-[#8C7A7B]">

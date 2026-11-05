@@ -284,8 +284,8 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
             <div className="p-3.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[11.5px] text-[#7A6B6C] flex items-start gap-2">
               <Sparkles size={16} className="text-[#B8737D] shrink-0 mt-0.5" />
               <span>
-                Sau khi nàng xác nhận, showroom sẽ đối soát và xử lý số tiền đề nghị hoàn{' '}
-                <strong className="text-emerald-700">{formatVnd(finalRefund)}</strong> về số tài khoản trên, đồng thời gửi email biên nhận tới hộp thư của nàng.
+                Sau khi nàng xác nhận, hệ thống sẽ đối soát và chuyển tiền cọc{' '}
+                <strong className="text-emerald-700">{formatVnd(finalRefund)}</strong> về số tài khoản trên trong vòng 24h, đồng thời gửi email biên nhận tới hộp thư của nàng.
               </span>
             </div>
 
@@ -335,7 +335,9 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
                   </p>
                 </div>
                 <p className="text-[12px] text-emerald-700 m-0">
-                  {inspection?.isRefunded ? 'Đã ghi nhận hoàn cọc:' : 'Số tiền đề nghị hoàn, đang chờ showroom xử lý:'} <strong>{formatVnd(finalRefund)}</strong>.
+                  {inspection?.isRefunded
+                    ? <>Đã hoàn tiền cọc thành công: <strong>{formatVnd(finalRefund)}</strong>.</>
+                    : <>Số tiền hoàn cọc: <strong>{formatVnd(finalRefund)}</strong> (Vui lòng đợi hệ thống chuyển tiền cọc trong vòng 24h).</>}
                 </p>
                 {/* Chi tiết tài khoản đã nhận tiền hoàn cọc nếu có */}
                 {refundBankDetails?.accountNumber && (
