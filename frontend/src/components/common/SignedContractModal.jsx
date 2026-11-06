@@ -350,23 +350,26 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
                   </div>
 
                   <div className="my-2 flex flex-col items-center justify-center min-h-[80px]">
-                    {saved.signature && saved.signatureIsImage ? (
+                    {saved.signature && (saved.signatureIsImage || saved.signature.startsWith('data:image')) ? (
                       <img
                         src={saved.signature}
                         alt="Chữ ký cô dâu"
                         className="max-h-20 w-auto object-contain select-none"
                       />
-                    ) : saved.signature ? (
+                    ) : saved.signature && !saved.signature.startsWith('data:image') ? (
                       <div className="font-serif italic text-2xl text-[#733F49] font-bold tracking-wider px-4 py-2 border-b-2 border-[#733F49]/40">
-                        {saved.signature || order?.contractSignature || customerName}
+                        {saved.signature}
                       </div>
                     ) : (
                       <div className="font-serif italic text-2xl text-[#733F49] font-bold tracking-wider px-4 py-2 border-b-2 border-[#733F49]/40">
-                        {order?.contractSignature || customerName}
+                        {customerName}
                       </div>
                     )}
-                    <div className="mt-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-700 text-[10px] font-bold inline-flex items-center gap-1">
-                      <CheckCircle2 size={13} /> E-SIGNED: {saved.signature || order?.contractSignature || customerName}
+                    <div className="mt-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-700 text-[10px] font-bold inline-flex items-center gap-1 max-w-full">
+                      <CheckCircle2 size={13} className="shrink-0" />
+                      <span className="truncate max-w-[200px]">
+                        E-SIGNED BY {customerName}
+                      </span>
                     </div>
                   </div>
 
