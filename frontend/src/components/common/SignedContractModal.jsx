@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button, Modal } from 'antd';
 import {
   FileSignature,
+  ExternalLink,
   FileText,
   Printer,
   ShieldCheck,
@@ -27,18 +28,14 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
   const [retry, setRetry] = useState(0);
 
   useEffect(() => {
-    if (propOrder) {
-      setOrder(propOrder);
-      setLoading(false);
-      return;
-    }
-    if (!orderId) {
+    setError('');
+    setOrder(propOrder || null);
+    if (propOrder?.contract || !orderId) {
       setLoading(false);
       return;
     }
     let active = true;
     setLoading(true);
-    setError('');
     getOrder(orderId)
       .then((value) => {
         if (active) setOrder(value);
@@ -61,55 +58,17 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
     window.print();
   };
 
-  const customerName = order?.customerName || order?.brideName || 'Cô Dâu UniBridal';
-  const customerPhone = order?.customerPhone || order?.phone || '0908 123 888';
-  const customerCccd = order?.customerCccd || order?.cccd || order?.idCard || 'Đã xác thực tài khoản';
-  const shippingAddress = order?.shippingAddress || 'Nhận trực tiếp tại Showroom UniBridal (186 Nam Kỳ Khởi Nghĩa, Q.3, TP.HCM)';
-  const contractCode = saved.code || order?.contractCode || order?.id || `HĐ-${order?.orderCode || orderId}`;
-  const signedDateStr = saved.signedAt || order?.createdAt || order?.signedAt || new Date();
-
-  // Danh sách váy thuê
-  const items = Array.isArray(order?.items) && order.items.length > 0
-    ? order.items
-    : [
-      {
-        name: order?.dress || order?.dressName || 'Lễ phục cưới Haute Couture',
-        size: order?.size || order?.dressSize || 'S',
-        code: order?.code || order?.dressCode || 'UB-HC-2026',
-        rentPrice: order?.totalRentPrice || order?.rentalPrice || order?.amount || 0,
-        depositAmount: order?.totalDeposit || order?.depositAmount || order?.deposit || 0,
-      },
-    ];
-
-  // Các điều khoản chuẩn của hợp đồng
-  const contractClauses = saved.clauses && saved.clauses.length > 0
-    ? saved.clauses
-    : [
-      {
-        title: 'ĐIỀU 1: ĐỐI TƯỢNG HỢP ĐỒNG & TIÊU CHUẨN LỄ PHỤC CƯỚI',
-        content: '1.1. Bên A đồng ý cho Bên B thuê tác phẩm váy cưới độc bản thiết kế mang tên theo thông tin đơn thuê chi tiết, kích cỡ may đo chuẩn mực theo yêu cầu của Bên B.\n1.2. Tiêu chuẩn bàn giao: Tác phẩm đạt chuẩn Haute Couture, khung xương nẹp corset siết eo công nghệ Pháp, được giặt sấy tiệt trùng sinh học, ủi phẳng phiu và đặt trong Vali VIP Courier bảo quản chống bụi nhiệt trước giờ trao nhận.\n1.3. Tinh chỉnh may đo: Bên A cung cấp dịch vụ tinh chỉnh nới/siết phom theo đúng thông số số đo chuẩn (Chiều cao, Cân nặng, Vòng eo) đã được ghi nhận của Bên B.',
-      },
-      {
-        title: 'ĐIỀU 2: THỜI HẠN THUÊ, PHƯƠNG THỨC GIAO NHẬN & QUY TRÌNH THU HỒI',
-        content: '2.1. Tổng thời gian thuê: Được xác định theo gói ngày Bên B lựa chọn ghi rõ trên đơn thuê.\n2.2. Thời điểm nhận váy: Từ 09:00 ngày bắt đầu thuê tại Showroom UniBridal hoặc bàn giao tận nơi bằng Vali VIP Courier.\n2.3. Phương thức hoàn trả & thu hồi: Trước 20:00 ngày kết thúc thời hạn thuê. Chuyên viên của Bên A chủ động liên hệ hẹn giờ và trực tiếp đến tận địa chỉ của Bên B thu hồi lễ phục trong vali bảo quản niêm phong, thực hiện kiểm định sơ bộ hiện trạng sản phẩm.\n2.4. Hai bên thực hiện ký Biên bản kiểm định bàn giao và thu hồi để ghi nhận hiện trạng đính kết ren, hạt cườm và kết cấu váy tại thời điểm giao và nhận lại.',
-      },
-      {
-        title: 'ĐIỀU 3: GIÁ THUÊ & PHƯƠNG THỨC THANH TOÁN',
-        content: '3.1. Tổng giá trị hợp đồng thuê trọn gói đã bao gồm VAT, dịch vụ giặt hấp khử khuẩn và phí tinh chỉnh phom váy.\n3.2. Tiền đặt cọc giữ lịch độc quyền (50% giá trị hợp đồng): Bên B thanh toán ngay khi ký hợp đồng thông qua cổng chuyển khoản VietQR Napas 24/7 hoặc thẻ ngân hàng.\n3.3. Số tiền thuê còn lại sẽ được Bên B thanh toán dứt điểm tại thời điểm nhận bàn giao lễ phục.',
-      },
-      {
-        title: 'ĐIỀU 4: TIỀN ĐẶT CỌC BẢO LÃNH & CƠ CHẾ HOÀN CỌC',
-        content: '4.1. Tiền đặt cọc bảo lãnh trách nhiệm được Bên B nộp để đảm bảo giữ gìn trang phục cưới nguyên trạng.\n4.2. Số tiền cọc sẽ được hoàn trả 100% cho Bên B trong vòng 02 giờ làm việc qua hình thức chuyển khoản trực tiếp sau khi hoàn tất Biên bản kiểm định thu hồi hiện trạng không phát sinh hư hỏng cấu trúc.\n4.3. Trường hợp phát sinh vết bẩn nhẹ thông thường tẩy được bằng giặt hấp sinh học, Bên A cam kết MIỄN PHÍ và không trừ tiền cọc.',
-      },
-      {
-        title: 'ĐIỀU 5: TRÁCH NHIỆM BẢO QUẢN & BỒI THƯỜNG HƯ TỔN',
-        content: '5.1. Bên B cam kết giữ gìn trang phục cẩn trọng, không tự ý cắt may, ủi nhiệt độ cao hoặc tẩy hóa chất.\n5.2. Trường hợp làm rách ren thủng lớn, cháy vải hoặc đứt gãy gọng siết eo corsetry, Bên B đồng ý chịu chi phí phục chế nguyên trạng theo bảng giá niêm yết tại Atelier hoặc trừ trực tiếp vào quỹ cọc bảo lãnh.',
-      },
-      {
-        title: 'ĐIỀU 6: HIỆU LỰC HỢP ĐỒNG ĐIỆN TỬ',
-        content: '6.1. Hợp đồng điện tử này được khởi tạo và ký kết trực tuyến hợp pháp, có giá trị pháp lý ràng buộc tương đương văn bản ký tay theo Luật Giao dịch điện tử Việt Nam.\n6.2. Hợp đồng có hiệu lực kể từ thời điểm Bên B ký điện tử và thanh toán cọc thành công cho đến khi hai bên hoàn tất biên bản bàn giao, thu hồi và thanh quyết toán cọc.',
-      },
-    ];
+  const customerName = order?.contract?.customerName || order?.customerName || order?.brideName || 'Chưa lưu';
+  const customerPhone = order?.contract?.phone || order?.customerPhone || order?.phone || 'Chưa lưu';
+  const customerCccd = order?.contract?.idCard || order?.customerCccd || order?.cccd || order?.idCard || 'Chưa lưu';
+  const address = order?.shippingAddress;
+  const shippingAddress = (typeof address === 'string' ? address
+    : ['street', 'ward', 'district', 'city'].map((key) => address?.[key]).filter(Boolean).join(', ')) || 'Chưa lưu';
+  const contractCode = saved.code || 'Chưa lưu mã hợp đồng';
+  const signedDateStr = saved.signedAt ? formatShortDate(saved.signedAt) : 'Chưa lưu ngày ký';
+  const items = order?.items || [];
+  const contractClauses = saved.clauses;
+  const canPrint = !loading && !error && !saved.pendingSignature && contractClauses.length > 0;
 
   return (
     <>
@@ -151,6 +110,7 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
             <Button
               type="primary"
               onClick={handlePrint}
+              disabled={!canPrint}
               icon={<Printer size={15} />}
               className="bg-[#733F49]! hover:bg-[#5C323A]! text-white! font-semibold text-xs rounded-lg inline-flex items-center gap-1.5 shadow-xs"
             >
@@ -168,6 +128,7 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
             <div className="flex items-center gap-2">
               <Button
                 onClick={handlePrint}
+                disabled={!canPrint}
                 icon={<Printer size={15} />}
                 className="border-[#D9C4BD] text-[#733F49] hover:bg-[#FAF0EC]"
               >
@@ -192,8 +153,13 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
                 Thử lại
               </Button>
             </div>
+          ) : saved.pendingSignature || !saved.hasDocument ? (
+            <p role="status" className="rounded-xl bg-amber-50 p-5 text-sm text-amber-900">
+              {saved.pendingSignature ? 'Hợp đồng đang chờ ký, chưa có bản đã ký để xem.' : 'Đơn này chưa có file hoặc nội dung hợp đồng đã ký được lưu. Vui lòng liên hệ showroom.'}
+            </p>
           ) : (
             <div id="unibridal-signed-contract-print" className="space-y-6 text-[#2C2523] font-sans">
+              {saved.fileUrl && <a href={saved.fileUrl} target="_blank" rel="noopener noreferrer" className="no-print inline-flex items-center gap-2 text-sm font-semibold text-[#733F49]"><ExternalLink size={16} /> Mở file hợp đồng đã lưu</a>}
               {/* Quốc hiệu tiêu ngữ */}
               <div className="text-center pb-5 border-b border-[#EFE5E1]">
                 <p className="font-bold text-xs uppercase tracking-widest text-[#594B49]">
@@ -210,7 +176,7 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
                   Số: <strong>{contractCode}</strong> / HĐ-UNIBRIDAL · Đơn thuê: <strong>#{order?.orderCode || orderId}</strong>
                 </p>
                 <p className="text-[11px] text-[#847374] italic mt-0.5">
-                  (Khởi tạo và xác thực điện tử ngày {formatShortDate(signedDateStr)})
+                  Ngày ký được lưu: {signedDateStr}
                 </p>
               </div>
 
@@ -263,7 +229,7 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
                       {items.map((it, idx) => (
                         <tr key={it._id || idx} className="hover:bg-[#FCFAF8]">
                           <td className="p-3 font-semibold text-[#2C2523]">{it.name}</td>
-                          <td className="p-3 font-mono text-[#733F49]">{it.code || `UB-HC-${idx + 1}`}</td>
+                          <td className="p-3 font-mono text-[#733F49]">{it.code || it.dressCode || '—'}</td>
                           <td className="p-3 font-bold text-[#87565C]">{it.size || 'Theo tư vấn'}</td>
                           <td className="p-3 font-semibold text-emerald-700">{formatShortDate(order?.rentalStartDate)}</td>
                           <td className="p-3 font-semibold text-[#87565C]">{formatShortDate(order?.rentalEndDate)}</td>
@@ -289,6 +255,7 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
                   II. CÁC ĐIỀU KHOẢN PHÁP LÝ &amp; QUY CHẾ KÝ QUỸ
                 </h3>
                 <div className="space-y-3.5 text-xs text-[#4A3D3C] leading-relaxed">
+                  {!contractClauses.length && <p>Vui lòng mở file hợp đồng đã lưu để xem nội dung đầy đủ.</p>}
                   {contractClauses.map((clause, idx) => (
                     <article key={clause.id || idx} className="p-3.5 rounded-xl border border-[#F0E5DC] bg-white">
                       <h4 className="font-bold text-[#733F49] text-[12.5px] mb-1.5">{clause.title}</h4>
@@ -346,19 +313,17 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
                         alt="Chữ ký cô dâu"
                         className="max-h-20 w-auto object-contain select-none"
                       />
-                    ) : (
+                    ) : saved.signature ? (
                       <div className="font-serif italic text-2xl text-[#733F49] font-bold tracking-wider px-4 py-2 border-b-2 border-[#733F49]/40">
-                        {saved.signature || order?.contractSignature || customerName}
+                        {saved.signature}
                       </div>
-                    )}
-                    <div className="mt-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-700 text-[10px] font-bold inline-flex items-center gap-1">
-                      <CheckCircle2 size={13} /> E-SIGNED: {saved.signature || order?.contractSignature || customerName}
-                    </div>
+                    ) : <p className="text-stone-500">Chưa có chữ ký khách hàng được lưu.</p>}
+                    {saved.signature && <div className="mt-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-700 text-[10px] font-bold inline-flex items-center gap-1"><CheckCircle2 size={13} /> E-SIGNED: {customerName}</div>}
                   </div>
 
                   <div>
                     <strong className="block text-[#2C2523] text-[13px]">{customerName}</strong>
-                    <span className="text-[11px] text-[#847374]">Ký xác nhận ngày {formatShortDate(signedDateStr)}</span>
+                    <span className="text-[11px] text-[#847374]">Ngày ký: {signedDateStr}</span>
                   </div>
                 </div>
               </div>

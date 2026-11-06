@@ -1,12 +1,57 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Alert, ConfigProvider, Form, Input } from 'antd';
-import { Camera, Ruler, Calendar, MapPin, IdCard, Sparkles, CheckCircle2, Info, Lock } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { Alert, ConfigProvider, Form, Input, InputNumber } from 'antd';
+import { Ruler, IdCard, Sparkles, Lock } from 'lucide-react';
 import AccountLayout from '../../components/layout/AccountLayout';
 import { getProfile, saveProfile } from '../../services/profileService';
 import { useAuth } from '../../contexts/AuthContext';
 
-import './ProfilePage.css';
+const measurementRules = [{
+  validator: (_, value) => value == null || value === '' || (Number.isFinite(value) && value > 0 && value <= 500)
+    ? Promise.resolve()
+    : Promise.reject(new Error('Số đo phải lớn hơn 0 và không vượt quá 500.')),
+}];
+
+const measurementFields = [
+  ['height', 'Chiều cao (cm)'],
+  ['weight', 'Cân nặng (kg)'],
+  ['bust', 'Vòng 1 - Ngực (cm)'],
+  ['waist', 'Vòng 2 - Eo (cm)'],
+  ['hips', 'Vòng 3 - Mông (cm)'],
+  ['heel', 'Chiều cao giày cưới dự kiến (cm)'],
+];
+
+function MeasurementField({ name, label }) {
+  const isHeel = name === 'heel';
+  return (
+    <Form.Item name={name} label={<span className="font-semibold uppercase tracking-wider text-[11px]">{label}</span>} rules={isHeel ? undefined : measurementRules}>
+      <InputNumber mode="input" min={0} max={isHeel ? undefined : 500} step={1} size="large" className="!w-full !bg-[#fff8f6]" />
+    </Form.Item>
+  );
+}
+
+const profilePageStyles = `
+:where(.profile-page) :is(h1, h2, h3, h4, p) { margin: 0; }
+:where(.profile-page) button { background-color: transparent; font-family: inherit; cursor: pointer; }
+.profile-page { background: #fff8f6; }
+.profile-main { min-height: 809.5px; }
+.profile-page button, .profile-page a, .profile-page input { -webkit-tap-highlight-color: transparent; }
+.profile-page :is(button, a, input):focus-visible { outline: 2px solid #874e57; outline-offset: 4px; }
+.profile-form .ant-form-item { margin-bottom: 16px; }
+.profile-form .ant-form-item-label { padding-bottom: 4px; }
+.profile-form .ant-form-item-label > label { font-size: 11px; height: auto; color: #514344; }
+.profile-form .ant-input { background: #fff8f6; }
+.profile-form .ant-input:hover, .profile-form .ant-input:focus { border-color: #b8737d; }
+@media (min-width: 1024px) {
+  .profile-identity { padding-top: 14px; padding-bottom: 14px; }
+  .profile-form .ant-form-item { margin-bottom: 12px; }
+  .profile-form .ant-form-item-label, .profile-form .ant-form-item-label > label { line-height: 16px; }
+}
+@media (max-width: 1023px) { .profile-main { min-height: auto; } }
+@media (max-width: 479px) {
+  .profile-cancel { min-width: 95px; }
+}
+`;
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth();
@@ -33,14 +78,10 @@ export default function ProfilePage() {
   const [profileError, setProfileError] = useState('');
   const [reload, setReload] = useState(0);
   const [saved, setSaved] = useState(user || emptyProfile);
-  const [avatar, setAvatar] = useState(user?.avatar || '');
   const [notice, setNotice] = useState(null);
-  const [avatarError, setAvatarError] = useState('');
-  const [readingAvatar, setReadingAvatar] = useState(false);
   const [form] = Form.useForm();
-  const uploadRef = useRef(null);
-  const readerRef = useRef(null);
   const noticeTimerRef = useRef(null);
+  const avatar = saved.avatar || '';
 
   const notify = (type, text) => {
     setNotice({ type, text });
@@ -58,7 +99,6 @@ export default function ProfilePage() {
       .then((profile) => {
         if (!active) return;
         setSaved(profile);
-        setAvatar(profile.avatar);
         form.setFieldsValue(profile);
         updateUser(profile);
       })
@@ -83,8 +123,6 @@ export default function ProfilePage() {
   }, [location.hash]);
 
   useEffect(() => () => {
-    readerRef.current?.abort();
-    readerRef.current = null;
     if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
   }, []);
 
@@ -92,12 +130,7 @@ export default function ProfilePage() {
   const maxBirthday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
   const cancel = () => {
-    readerRef.current?.abort();
-    readerRef.current = null;
-    setReadingAvatar(false);
     form.setFieldsValue(saved);
-    setAvatar(saved.avatar);
-    setAvatarError('');
     notify('info', 'Đã khôi phục thông tin được lưu gần nhất.');
   };
 
@@ -130,35 +163,6 @@ export default function ProfilePage() {
     } finally { setSaving(false); }
   };
 
-  const uploadAvatar = (event) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) return;
-    readerRef.current?.abort();
-    setAvatarError('');
-    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
-      setAvatarError('Chị hỗ trợ file ảnh định dạng PNG, JPG hoặc WEBP.');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setAvatarError('Dung lượng ảnh đại diện tối đa là 5MB.');
-      return;
-    }
-    setReadingAvatar(true);
-    const reader = new FileReader();
-    readerRef.current = reader;
-    reader.onload = () => {
-      setAvatar(reader.result);
-      setReadingAvatar(false);
-      notify('info', 'Ảnh mới đã sẵn sàng. Bấm "Lưu thay đổi" để hoàn tất.');
-    };
-    reader.onerror = () => {
-      setAvatarError('Đọc file ảnh thất bại. Vui lòng thử lại.');
-      setReadingAvatar(false);
-    };
-    reader.readAsDataURL(file);
-  };
-
   return (
     <ConfigProvider
       theme={{
@@ -168,6 +172,9 @@ export default function ProfilePage() {
           borderRadius: 4,
           fontFamily: 'inherit',
           colorText: '#2c2221',
+        },
+        components: {
+          InputNumber: { handleVisible: true },
         },
       }}
     >
@@ -201,11 +208,9 @@ export default function ProfilePage() {
         </div>
       )}
 
+      <style>{profilePageStyles}</style>
       <AccountLayout hideBreadcrumb={true} breadcrumb={[]}>
         <section className="profile-card rounded-2xl bg-white px-5 py-7 sm:px-8 border border-[#F0E5DC] shadow-[0_4px_24px_rgba(44,37,35,0.03)]" aria-labelledby="profile-title">
-          <div className="flex items-center gap-2">
-
-          </div>
           <h1 id="profile-title" className="mt-1 font-playfair text-[26px] sm:text-[28px] font-semibold text-[#2C2523]">
             Hồ Sơ Người Dùng
           </h1>
@@ -213,7 +218,7 @@ export default function ProfilePage() {
           <div className="account-heading-rule mt-3" />
           {profileError && <p role="alert" className="mt-4 text-sm text-red-700">{profileError} <button type="button" onClick={() => setReload((value) => value + 1)} className="underline">Thử lại</button></p>}
 
-          {/* Avatar Upload */}
+          {/* Avatar */}
           <div className="profile-identity mt-6 flex flex-wrap items-center gap-5 border-b border-[#eee2df] pb-6">
             <div className="relative h-20 w-20 overflow-hidden rounded-full border-2 border-[#D498A0] bg-[#fff8f6] shadow-sm">
               {avatar ? (
@@ -223,28 +228,6 @@ export default function ProfilePage() {
                   {saved.name?.charAt(0) || 'U'}
                 </div>
               )}
-              {readingAvatar && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-xs text-white">
-                  ...
-                </div>
-              )}
-            </div>
-            <div>
-              <input
-                ref={uploadRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="hidden"
-                onChange={uploadAvatar}
-              />
-              <button
-                type="button"
-                onClick={() => uploadRef.current?.click()}
-                className="account-button-secondary inline-flex items-center gap-1.5"
-              >
-                <Camera size={14} /> Thay đổi ảnh
-              </button>
-              {avatarError && <p className="mt-1.5 text-xs text-red-700">{avatarError}</p>}
             </div>
           </div>
 
@@ -264,17 +247,17 @@ export default function ProfilePage() {
 
               <div className="grid grid-cols-1 gap-x-5 sm:grid-cols-2">
                 <Form.Item
-                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Họ và tên *</span>}
+                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Họ và tên</span>}
                   name="name"
-                  rules={[{ required: true, message: 'Vui lòng nhập họ và tên của bạn.' }]}
+                  rules={[{ required: true, whitespace: true, message: 'Vui lòng nhập họ và tên của bạn.' }]}
                 >
                   <Input placeholder="Nhập họ và tên cô dâu..." size="large" />
                 </Form.Item>
 
                 <Form.Item
-                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Số điện thoại *</span>}
+                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Số điện thoại</span>}
                   name="phone"
-                  rules={[{ required: true, message: 'Vui lòng nhập số điện thoại liên lạc.' }]}
+                  rules={[{ required: true, whitespace: true, message: 'Vui lòng nhập số điện thoại liên lạc.' }]}
                 >
                   <Input placeholder="Nhập số điện thoại liên hệ..." size="large" />
                 </Form.Item>
@@ -284,7 +267,7 @@ export default function ProfilePage() {
                 <Form.Item
                   label={
                     <span className="font-semibold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                      <span>Địa chỉ email *</span>
+                      <span>Địa chỉ email</span>
                       <Lock size={12} className="text-[#874e57]" />
                       <span className="text-[10px] lowercase text-[#8C7A7B] font-normal tracking-normal">
                         (cố định theo tài khoản)
@@ -334,8 +317,9 @@ export default function ProfilePage() {
 
               <div className="grid grid-cols-1 gap-x-5 sm:grid-cols-2">
                 <Form.Item
-                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Số CCCD / CMND (Lập hợp đồng pháp lý)</span>}
+                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Số CCCD / CMND</span>}
                   name="idCard"
+                  rules={[{ pattern: /^(\d{9}|\d{12})$/, message: 'CCCD/CMND cần gồm 9 hoặc 12 chữ số.' }]}
                 >
                   <Input placeholder="Nhập 12 số CCCD gắn chip..." size="large" />
                 </Form.Item>
@@ -344,7 +328,7 @@ export default function ProfilePage() {
               </div>
 
               <Form.Item
-                label={<span className="font-semibold uppercase tracking-wider text-[11px]">Địa chỉ thường trú hoặc nhận lễ phục tận nhà</span>}
+                label={<span className="font-semibold uppercase tracking-wider text-[11px]">Địa chỉ</span>}
                 name="address"
               >
                 <Input placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố..." size="large" />
@@ -367,61 +351,21 @@ export default function ProfilePage() {
 
 
               <div className="grid grid-cols-2 gap-x-4 sm:grid-cols-4">
-                <Form.Item
-                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Chiều cao (cm)</span>}
-                  name="height"
-                >
-                  <Input placeholder="VD: 165" size="large" />
-                </Form.Item>
-
-                <Form.Item
-                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Cân nặng (kg)</span>}
-                  name="weight"
-                >
-                  <Input placeholder="VD: 50" size="large" />
-                </Form.Item>
-
-                <Form.Item
-                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Vòng 1 - Ngực (cm)</span>}
-                  name="bust"
-                >
-                  <Input placeholder="VD: 84" size="large" />
-                </Form.Item>
-
-                <Form.Item
-                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Vòng 2 - Eo (cm)</span>}
-                  name="waist"
-                >
-                  <Input placeholder="VD: 64" size="large" />
-                </Form.Item>
+                {measurementFields.slice(0, 4).map(([name, label]) => <MeasurementField key={name} name={name} label={label} />)}
               </div>
-
               <div className="grid grid-cols-1 gap-x-5 sm:grid-cols-2">
-                <Form.Item
-                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Vòng 3 - Mông (cm)</span>}
-                  name="hips"
-                >
-                  <Input placeholder="VD: 92" size="large" />
-                </Form.Item>
-
-                <Form.Item
-                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Chiều cao giày cưới dự kiến (cm)</span>}
-                  name="heel"
-                >
-                  <Input placeholder="VD: 7 hoặc 9 (để căn chiều dài tùng váy)" size="large" />
-                </Form.Item>
+                {measurementFields.slice(4).map(([name, label]) => <MeasurementField key={name} name={name} label={label} />)}
               </div>
 
 
             </div>
 
             {/* Submit / Reset Actions */}
-            <p className="text-xs text-stone-500">Ngày sinh, ngày cưới và chiều cao giày được lưu trên thiết bị này.</p>
             <div className="mt-8 flex flex-wrap justify-end gap-3 border-t border-[#eee2df] pt-6">
               <button type="button" onClick={cancel} className="account-button-secondary">
                 HỦY THAY ĐỔI
               </button>
-              <button type="submit" disabled={saving || profileLoading || !!profileError || readingAvatar} className="account-button-primary disabled:opacity-50">
+              <button type="submit" disabled={saving || profileLoading || !!profileError} className="account-button-primary disabled:opacity-50">
                 {saving ? 'ĐANG LƯU...' : 'LƯU THAY ĐỔI'}
               </button>
             </div>

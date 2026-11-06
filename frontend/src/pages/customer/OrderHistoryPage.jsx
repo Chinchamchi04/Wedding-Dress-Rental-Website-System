@@ -1,6 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { message } from 'antd';
 import { Heart, Search, CalendarDays, CheckCircle2, AlertTriangle, FileText } from 'lucide-react';
 import AccountLayout from '../../components/layout/AccountLayout';
 import { useAuth } from '../../contexts/AuthContext';
@@ -8,7 +7,6 @@ import { formatVnd } from '../../services/orderService';
 import { getOrders } from '../../services/customerOrderService';
 import CustomerInspectionModal from '../../components/common/CustomerInspectionModal';
 import SignedContractModal from '../../components/common/SignedContractModal';
-import elysianImage from '../../assets/card1_elysian.jpg';
 
 const tabs = [
   { id: 'all', label: 'Tất cả' },
@@ -90,7 +88,7 @@ function OrderCard({ order, onOpenInspection, onOpenContract }) {
 
               <div className="pt-1 flex items-center gap-1.5 text-[11px] text-[#8C7A7B]">
                 <span>📧</span>
-                <span>Hệ thống đã đồng thời gửi thông báo và bản sao biên bản kiểm định chi tiết về email của nàng.</span>
+                <span>Nàng có thể xem biên bản và trạng thái xử lý hoàn cọc tại đây.</span>
               </div>
             </div>
           )}
@@ -123,7 +121,7 @@ function OrderCard({ order, onOpenInspection, onOpenContract }) {
             <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-1.5 font-medium">
                 <CheckCircle2 size={16} className="text-emerald-600" />
-                <span>Nàng đã đồng ý biên bản kiểm định. Vui lòng đợi hệ thống chuyển tiền cọc trong vòng 24h.</span>
+                <span>Nàng đã duyệt biên bản. Vui lòng xem trạng thái hoàn cọc riêng trong biên bản.</span>
               </div>
               <button
                 type="button"
@@ -157,7 +155,8 @@ function OrderCard({ order, onOpenInspection, onOpenContract }) {
 export default function OrderHistoryPage() {
   const { user, token } = useAuth();
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [reload, setReload] = useState(0);
   const [error, setError] = useState('');
   const [tab, setTab] = useState('all');
   const [query, setQuery] = useState('');
@@ -172,7 +171,10 @@ export default function OrderHistoryPage() {
     } catch {}
   }, []);
 
-  const fetchOrders = () => {
+  const fetchOrders = () => setReload((value) => value + 1);
+
+  useEffect(() => {
+    let active = true;
     if (!token && !user) {
       setOrders([]);
       setLoading(false);
@@ -183,24 +185,18 @@ export default function OrderHistoryPage() {
     setLoading(true);
     getOrders()
       .then((data) => {
-        if (Array.isArray(data)) {
-          setOrders(data);
-        } else {
-          setOrders([]);
-        }
+        if (active) setOrders(data);
       })
       .catch((issue) => {
+        if (!active) return;
         setOrders([]);
         setError(issue.message || 'Không tải được danh sách đơn hàng từ máy chủ.');
       })
       .finally(() => {
-        setLoading(false);
+        if (active) setLoading(false);
       });
-  };
-
-  useEffect(() => {
-    fetchOrders();
-  }, [token, user]);
+    return () => { active = false; };
+  }, [token, user, reload]);
 
   const filtered = useMemo(
     () =>

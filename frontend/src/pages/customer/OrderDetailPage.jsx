@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { message, Modal } from 'antd';
 import {
   ArrowLeft,
   CalendarDays,
@@ -9,19 +8,15 @@ import {
   CheckCircle2,
   Circle,
   Clock,
-  Package,
   Truck,
   RefreshCcw,
   Star,
   XCircle,
-  MessageCircle,
-  Printer,
-  AlertCircle,
   FileSignature,
 } from 'lucide-react';
 import AccountLayout from '../../components/layout/AccountLayout';
 import { formatVnd } from '../../services/orderService';
-import { getOrder, cancelOrder } from '../../services/customerOrderService';
+import { getOrder } from '../../services/customerOrderService';
 import CustomerInspectionModal from '../../components/common/CustomerInspectionModal';
 import SignedContractModal from '../../components/common/SignedContractModal';
 
@@ -95,125 +90,29 @@ function OrderStatusTimeline({ rawStatus }) {
   const activeIndex = STATUS_STEP_MAP[rawStatus] ?? -1;
 
   return (
-    <section
-      className="mt-6 rounded-2xl border border-[#EEDECF] bg-[#FFF9F6] px-5 py-6 sm:px-7"
-      aria-label="Trạng thái đơn hàng"
-    >
-      <p className="mb-5 text-[11px] font-bold uppercase tracking-[1.6px] text-[#BA7A83]">
-        ✦ Hành Trình Lễ Phục Của Nàng
-      </p>
-
-      {/* Desktop: horizontal row */}
-      <div className="hidden sm:flex items-start">
-        {TIMELINE_STEPS.map((step, idx) => {
-          const isCompleted = idx < activeIndex;
-          const isActive = idx === activeIndex;
-          const isPending = idx > activeIndex;
-          const { Icon } = step;
+    <section className="mt-6 rounded-2xl border border-[#EEDECF] bg-[#FFF9F6] px-5 py-6 sm:px-7" aria-label="Trạng thái đơn hàng">
+      <p className="mb-5 text-[11px] font-bold uppercase tracking-[1.6px] text-[#BA7A83]">✦ Hành Trình Lễ Phục Của Nàng</p>
+      <ol className="flex flex-col sm:flex-row sm:items-start">
+        {TIMELINE_STEPS.map(({ key, label, subLabel, Icon }, index) => {
+          const done = index < activeIndex;
+          const active = index === activeIndex;
+          const StepIcon = done ? CheckCircle2 : active ? Icon : Circle;
+          const circleClass = done ? 'bg-[#BA7A83] text-white' : active
+            ? 'border-2 border-[#BA7A83] bg-white text-[#BA7A83]'
+            : 'border border-[#EEDECF] bg-[#EEDECF]/60 text-[#EEDECF]';
 
           return (
-            <React.Fragment key={step.key}>
-              {/* Step node */}
-              <div className="flex flex-1 flex-col items-center gap-2 min-w-0">
-                {/* Circle */}
-                <div className="relative flex items-center justify-center">
-                  {isCompleted && (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#BA7A83] shadow-sm">
-                      <CheckCircle2 className="h-5 w-5 text-white" />
-                    </div>
-                  )}
-                  {isActive && (
-                    <div className="relative flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#BA7A83] bg-white shadow-sm">
-                      <Icon className="h-4 w-4 text-[#BA7A83]" />
-                      {/* Pulsing ring */}
-                      <span className="absolute inset-0 rounded-full animate-ping bg-[#BA7A83]/20" />
-                    </div>
-                  )}
-                  {isPending && (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EEDECF]/60 border border-[#EEDECF]">
-                      <Circle className="h-4 w-4 text-[#EEDECF]" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Label */}
-                <div className="text-center px-1">
-                  <p
-                    className={`text-[11.5px] font-semibold leading-tight ${isCompleted || isActive ? 'text-[#804E55]' : 'text-[#BCAAA4]'
-                      }`}
-                  >
-                    {step.label}
-                  </p>
-                  {isActive && (
-                    <p className="mt-0.5 text-[10px] text-[#BA7A83] leading-tight">
-                      {step.subLabel}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Connector line (not after last) */}
-              {idx < TIMELINE_STEPS.length - 1 && (
-                <div
-                  className={`mt-5 h-0.5 flex-1 min-w-[16px] self-start transition-colors ${idx < activeIndex ? 'bg-[#BA7A83]' : 'bg-[#EEDECF]'
-                    }`}
-                />
+            <li key={key} className="relative flex gap-3 pb-4 last:pb-0 sm:min-w-0 sm:flex-1 sm:flex-col sm:items-center sm:gap-2 sm:pb-0">
+              {index < TIMELINE_STEPS.length - 1 && (
+                <span aria-hidden="true" className={`absolute bottom-0 left-[17px] top-10 w-0.5 sm:bottom-auto sm:left-[calc(50%+20px)] sm:right-[calc(-50%+20px)] sm:top-5 sm:h-0.5 sm:w-auto ${done ? 'bg-[#BA7A83]' : 'bg-[#EEDECF]'}`} />
               )}
-            </React.Fragment>
-          );
-        })}
-      </div>
-
-      {/* Mobile: vertical list */}
-      <ol className="flex flex-col gap-0 sm:hidden">
-        {TIMELINE_STEPS.map((step, idx) => {
-          const isCompleted = idx < activeIndex;
-          const isActive = idx === activeIndex;
-          const isPending = idx > activeIndex;
-          const { Icon } = step;
-          const isLast = idx === TIMELINE_STEPS.length - 1;
-
-          return (
-            <li key={step.key} className="flex gap-3">
-              {/* Left: circle + vertical line */}
-              <div className="flex flex-col items-center">
-                <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
-                  {isCompleted && (
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#BA7A83]">
-                      <CheckCircle2 className="h-4 w-4 text-white" />
-                    </div>
-                  )}
-                  {isActive && (
-                    <div className="relative flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#BA7A83] bg-white">
-                      <Icon className="h-4 w-4 text-[#BA7A83]" />
-                      <span className="absolute inset-0 rounded-full animate-ping bg-[#BA7A83]/20" />
-                    </div>
-                  )}
-                  {isPending && (
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full border border-[#EEDECF] bg-[#EEDECF]/50">
-                      <Circle className="h-3.5 w-3.5 text-[#EEDECF]" />
-                    </div>
-                  )}
-                </div>
-                {!isLast && (
-                  <div
-                    className={`mt-1 w-0.5 flex-1 min-h-[16px] ${idx < activeIndex ? 'bg-[#BA7A83]' : 'bg-[#EEDECF]'
-                      }`}
-                  />
-                )}
-              </div>
-
-              {/* Right: text */}
-              <div className="pb-4">
-                <p
-                  className={`text-sm font-semibold leading-tight ${isCompleted || isActive ? 'text-[#804E55]' : 'text-[#BCAAA4]'
-                    }`}
-                >
-                  {step.label}
-                </p>
-                {(isActive || isCompleted) && (
-                  <p className="mt-0.5 text-[11px] text-[#BA7A83]">{step.subLabel}</p>
-                )}
+              <span className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10 ${circleClass}`}>
+                <StepIcon className="h-4 w-4" />
+                {active && <span className="absolute inset-0 animate-ping rounded-full bg-[#BA7A83]/20" />}
+              </span>
+              <div className="sm:px-1 sm:text-center">
+                <p className={`text-sm font-semibold leading-tight sm:text-[11.5px] ${done || active ? 'text-[#804E55]' : 'text-[#BCAAA4]'}`}>{label}</p>
+                {(active || done) && <p className={`mt-0.5 text-[11px] leading-tight text-[#BA7A83] sm:text-[10px] ${done ? 'sm:hidden' : ''}`}>{subLabel}</p>}
               </div>
             </li>
           );
@@ -231,40 +130,13 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [cancelling, setCancelling] = useState(false);
+  const [reload, setReload] = useState(0);
   const [isInspectionOpen, setIsInspectionOpen] = useState(false);
   const [isContractOpen, setIsContractOpen] = useState(false);
 
   const fetchOrderDetail = () => {
-    getOrder(orderId)
-      .then((data) => {
-        setOrder(data);
-      })
-      .catch((issue) => {
-        setError(issue.message || 'Không tìm thấy thông tin đơn hàng.');
-      });
-  };
-
-  const handleCancelOrder = () => {
-    Modal.confirm({
-      title: 'Xác nhận yêu cầu hủy đơn thuê',
-      content: 'Nàng có chắc chắn muốn hủy đơn thuê này? Tiền cọc sẽ được xử lý hoàn trả theo chính sách hợp đồng của UniBridal.',
-      okText: 'Xác nhận hủy',
-      okType: 'danger',
-      cancelText: 'Đóng',
-      onOk: async () => {
-        setCancelling(true);
-        try {
-          const updated = await cancelOrder(order._id || order.id);
-          setOrder(updated);
-          message.success('Đã hủy đơn thuê. Tiền đã thu (nếu có) cần showroom đối soát hoàn trả riêng.');
-        } catch (issue) {
-          message.error(issue.message || 'Không thể hủy đơn lúc này. Vui lòng liên hệ showroom.');
-        } finally {
-          setCancelling(false);
-        }
-      },
-    });
+    setIsInspectionOpen(false);
+    setReload((value) => value + 1);
   };
 
   useEffect(() => {
@@ -272,6 +144,7 @@ export default function OrderDetailPage() {
     setLoading(true);
     setError('');
     setOrder(null);
+    setIsInspectionOpen(false);
     setIsContractOpen(false);
     getOrder(orderId)
       .then((data) => {
@@ -286,7 +159,9 @@ export default function OrderDetailPage() {
     return () => {
       active = false;
     };
-  }, [orderId]);
+  }, [orderId, reload]);
+
+  const approved = order?.inspection?.customerStatus === 'approved';
 
   return (
     <AccountLayout
@@ -310,7 +185,7 @@ export default function OrderDetailPage() {
           </section>
         ) : error ? (
           <section className="rounded-md bg-white p-8 text-center text-red-700" role="alert">
-            {error}
+            {error} <button type="button" onClick={fetchOrderDetail} className="ml-3 underline">Thử lại</button>
           </section>
         ) : (
           <>
@@ -326,7 +201,7 @@ export default function OrderDetailPage() {
             </div>
 
             {/* ── BANNER BIÊN BẢN KIỂM ĐỊNH & HOÀN CỌC NỔI BẬT ── */}
-            {(order.rawStatus === 'returned' || order.rawStatus === 'completed' || order.inspection) && (
+            {(order.rawStatus === 'returned' || order.inspection) && (
               <div className="mt-5 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#FFF4F0] via-[#FFF8F5] to-[#FFF1EC] border-2 border-[#E7BFB5] shadow-sm space-y-3 font-jakarta transition-all">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">
@@ -335,8 +210,8 @@ export default function OrderDetailPage() {
                       <span className="relative inline-flex rounded-full h-3 w-3 bg-[#8C4654]"></span>
                     </span>
                     <span className="font-playfair font-bold text-[#5F2B36] text-[15px] sm:text-[16px] tracking-wide">
-                      {order.rawStatus === 'completed'
-                        ? '✦ Đơn Hàng Đã Hoàn Tất • Biên Bản Kiểm Định Đã Được Nàng Duyệt'
+                      {approved
+                        ? '✦ Biên Bản Kiểm Định Đã Được Nàng Duyệt'
                         : '✦ Showroom đã lập Biên Bản Kiểm Định Trả Váy'}
                     </span>
                   </div>
@@ -346,7 +221,7 @@ export default function OrderDetailPage() {
                     className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#733F49] to-[#8C4654] hover:from-[#5A2D35] hover:to-[#733F49] text-white text-xs font-bold transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg border-0 shrink-0"
                   >
                     <span>
-                      {order.rawStatus === 'completed'
+                      {approved
                         ? 'Xem Lại Biên Bản Đã Duyệt'
                         : 'Xem Biên Bản & Xác Nhận Hoàn Cọc'}
                     </span>
@@ -354,9 +229,9 @@ export default function OrderDetailPage() {
                 </div>
 
                 <p className="text-[12.5px] sm:text-[13px] leading-relaxed text-[#5E4D4F] m-0">
-                  {order.rawStatus === 'completed'
-                    ? 'Nàng đã duyệt biên bản kiểm định thành công. Vui lòng đợi hệ thống chuyển tiền cọc trong vòng 24h. Cảm ơn nàng đã lựa chọn UniBridal Haute Couture!'
-                    : 'Nàng vui lòng xem hiện trạng váy và số tiền đề nghị hoàn. Sau khi nàng xác nhận, hệ thống sẽ đối soát và chuyển tiền cọc trong vòng 24h; nếu chưa hài lòng nàng có quyền gửi khiếu nại.'}
+                  {approved
+                    ? 'Nàng đã duyệt biên bản kiểm định. Đơn thuê đã hoàn tất; trạng thái hoàn cọc được theo dõi riêng trong biên bản.'
+                    : 'Nàng vui lòng kiểm tra hiện trạng váy và số tiền đề nghị hoàn. Showroom sẽ đối soát và xử lý hoàn cọc sau khi nàng xác nhận; nếu chưa đồng ý, nàng có thể gửi khiếu nại.'}
                 </p>
 
                 <div className="pt-1 flex items-center gap-1.5 text-[11px] text-[#8C7A7B]">

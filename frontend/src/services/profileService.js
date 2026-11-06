@@ -4,7 +4,8 @@ const addressText = (address) => typeof address === 'string' ? address : ['stree
 const measurementKeys = ['height', 'weight', 'bust', 'waist', 'hips', 'heel'];
 function localExtras(id) {
     try {
-        return JSON.parse(localStorage.getItem(extrasKey(id)) || '{}');
+        const extras = JSON.parse(localStorage.getItem(extrasKey(id)) || '{}');
+        return extras && typeof extras === 'object' && !Array.isArray(extras) ? extras : {};
     }
     catch {
         return {};
@@ -18,12 +19,10 @@ function normalize(profile) {
         address: addressText(profile.address),
         addressParts: profile.address,
         ...Object.fromEntries(measurementKeys.map((key) => [key, profile.measurements?.[key] ?? ''])),
-        gender: profile.gender || extras.gender || 'unspecified',
-        birthday: profile.birthday ? String(profile.birthday).split('T')[0] : (extras.birthday || ''),
-        weddingDate: profile.weddingDate ? String(profile.weddingDate).split('T')[0] : (extras.weddingDate || ''),
-        heel: profile.measurements?.heel != null && profile.measurements?.heel !== ''
-            ? String(profile.measurements.heel)
-            : (extras.heel || ''),
+        gender: profile.gender ?? extras.gender ?? 'unspecified',
+        birthday: profile.birthday === undefined ? (extras.birthday || '') : String(profile.birthday || '').split('T')[0],
+        weddingDate: profile.weddingDate === undefined ? (extras.weddingDate || '') : String(profile.weddingDate || '').split('T')[0],
+        heel: profile.measurements?.heel === undefined ? (extras.heel ?? '') : (profile.measurements.heel ?? ''),
     };
 }
 export const getProfile = async () => normalize((await axiosClient.get('/profile')).data);
@@ -34,26 +33,22 @@ export const saveProfile = async (profile) => {
         measurementKeys.map((key) => [key, profile[key] === '' || profile[key] == null ? null : Number(profile[key])])
     );
     const res = await axiosClient.put('/profile', {
-        name: profile.name,
-        email: profile.email,
-        phone: profile.phone,
-        avatar: profile.avatar,
-        address,
-        idCard: profile.idCard,
+        name: profile.name, email: profile.email, phone: profile.phone,
+        address, idCard: profile.idCard,
         gender: profile.gender,
         birthday: profile.birthday || null,
         weddingDate: profile.weddingDate || null,
         measurements,
     });
-    // Đồng bộ vào bộ nhớ tạm
-    const extras = Object.fromEntries(['gender', 'birthday', 'weddingDate', 'heel'].map((key) => [key, profile[key] || '']));
+    // Cache hỗ trợ phiên bản API cũ; dữ liệu server luôn được ưu tiên.
+    const extras = Object.fromEntries(['gender', 'birthday', 'weddingDate', 'heel'].map((key) => [key, profile[key] ?? '']));
     try {
         localStorage.setItem(extrasKey(res.data.id || res.data._id), JSON.stringify(extras));
     }
     catch { /* Server save remains successful when device storage is full. */ }
     const updated = normalize(res.data);
-    const storage = localStorage.getItem('token') ? localStorage : sessionStorage;
     try {
+        const storage = localStorage.getItem('token') ? localStorage : sessionStorage;
         storage.setItem('user', JSON.stringify(updated));
     }
     catch { /* AuthContext also keeps the current profile in memory. */ }

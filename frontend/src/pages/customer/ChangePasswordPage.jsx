@@ -22,7 +22,9 @@ export default function ChangePasswordPage() {
     { label: 'Chứa ký tự đặc biệt (!@#$%...)', pass: /[^A-Za-z0-9]/.test(values.next) },
   ];
 
-  const score = rules.filter((rule) => rule.pass).length;
+  const hasMinLength = rules[0].pass;
+  const passedRules = rules.filter((rule) => rule.pass).length;
+  const score = hasMinLength ? passedRules : Math.min(passedRules, 1);
   const label = score <= 1 ? 'YẾU' : score === 2 ? 'TRUNG BÌNH' : score === 3 ? 'KHÁ' : 'MẠNH (RẤT AN TOÀN)';
   const same = values.confirm && values.next === values.confirm;
 
@@ -36,7 +38,8 @@ export default function ChangePasswordPage() {
   };
 
   const submit = async () => {
-    if (!values.current || score < 2 || !same || values.next === values.current) {
+    setTouched({ current: true, next: true, confirm: true });
+    if (!values.current || !hasMinLength || score < 2 || !same || values.next === values.current) {
       setNotice({ type: 'error', text: 'Vui lòng kiểm tra lại các trường mật khẩu.' });
       return;
     }
@@ -162,7 +165,10 @@ export default function ChangePasswordPage() {
               </div>
             </div>
 
-            {touched.next && values.next && score < 2 && (
+            {touched.next && !hasMinLength && (
+              <p className="mt-2 text-xs text-red-700">Mật khẩu mới phải có tối thiểu 6 ký tự.</p>
+            )}
+            {touched.next && hasMinLength && score < 2 && (
               <p className="mt-2 text-xs text-red-700">Mật khẩu mới còn yếu. Hãy thêm chữ hoa, số hoặc ký tự đặc biệt.</p>
             )}
             {touched.next && values.next && values.next === values.current && (
