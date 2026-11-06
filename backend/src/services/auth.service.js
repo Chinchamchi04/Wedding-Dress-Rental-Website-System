@@ -241,10 +241,11 @@ export const authService = {
       throw err;
     }
 
-    const roleCode = (user.roleId?.code || 'CUSTOMER').toUpperCase();
+    const roleCode = user.roleId?.code || 'CUSTOMER';
+    const roleUpper = roleCode.toUpperCase();
 
     // Tài khoản do Admin lập HOẶC tài khoản nội bộ (ADMIN, STAFF, MANAGER) không yêu cầu mã OTP kích hoạt
-    if (user.createdByAdmin || ['ADMIN', 'STAFF', 'MANAGER'].includes(roleCode)) {
+    if (user.createdByAdmin || ['ADMIN', 'STAFF', 'MANAGER'].includes(roleUpper)) {
       if (!user.isEmailVerified) {
         user.isEmailVerified = true;
         user.emailVerificationOtp = null;

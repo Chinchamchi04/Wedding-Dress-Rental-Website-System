@@ -34,7 +34,16 @@ export async function listOrders(userId) {
     const paid = new Map();
     refunds.forEach((payment) => paid.set(String(payment.orderId), (paid.get(String(payment.orderId)) || 0) + payment.amount));
     const byOrder = new Map(inspections.map((inspection) => [String(inspection.orderId), { ...inspection, isRefunded: inspection.finalRefundAmount <= 0 || (paid.get(String(inspection.orderId)) || 0) >= inspection.finalRefundAmount }]));
-    return orders.map((order) => ({ ...order, inspection: byOrder.get(String(order._id)) || null }));
+    return orders.map((order) => {
+        const insp = byOrder.get(String(order._id)) || null;
+        let status = order.status;
+        const isCustomerApproved = insp?.customerStatus === 'approved' || insp?.customerConfirmed;
+        if (isCustomerApproved && status !== 'completed' && status !== 'complete') {
+            status = 'completed';
+            Order.updateOne({ _id: order._id }, { $set: { status: 'completed' } }).catch(() => {});
+        }
+        return { ...order, status, inspection: insp };
+    });
 }
 export async function orderDetail(userId, identifier) {
     const order = await ownOrder(userId, identifier);
@@ -45,7 +54,13 @@ export async function orderDetail(userId, identifier) {
             .select('contractCode templateName customerName phone idCard status signedAt signedMethod contractPdfUrl clauses')
             .lean(),
     ]);
-    return { ...order.toObject(), inspection, contract };
+    const orderObj = order.toObject();
+    const isCustomerApproved = inspection?.customerStatus === 'approved' || inspection?.customerConfirmed;
+    if (isCustomerApproved && orderObj.status !== 'completed' && orderObj.status !== 'complete') {
+        orderObj.status = 'completed';
+        Order.updateOne({ _id: order._id }, { $set: { status: 'completed' } }).catch(() => {});
+    }
+    return { ...orderObj, inspection, contract };
 }
 export async function cancelOrder(userId, identifier) {
     const order = await ownOrder(userId, identifier);

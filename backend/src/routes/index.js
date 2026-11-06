@@ -14,6 +14,8 @@ router.post('/dresses', optionalAuthenticate, handle(account.createDress));
 router.put('/dresses/:id', optionalAuthenticate, handle(account.updateDress));
 router.patch('/dresses/:id', optionalAuthenticate, handle(account.updateDress));
 router.delete('/dresses/:id', optionalAuthenticate, handle(account.deleteDress));
+router.get('/profile/wishlist', authenticate, handle(account.getWishlist));
+router.put('/profile/wishlist', authenticate, handle(account.updateWishlist));
 router.get('/profile', authenticate, handle(account.profile));
 router.put('/profile', authenticate, handle(account.updateProfile));
 router.patch('/profile/password', authenticate, handle(account.changePassword));

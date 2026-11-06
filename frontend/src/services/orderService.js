@@ -22,14 +22,19 @@ export const formatVnd = (value) => formatCurrencyVND(value);
 export function mapOrder(order) {
   if (!order) return null;
   const item = order.items?.[0] || {};
-  const [status, statusLabel] = STATUS[order.status] || ['active', order.statusLabel || order.status || 'Đang xử lý'];
+  let currentRawStatus = order.status;
+  const isApproved = order.inspection?.customerStatus === 'approved' || order.inspection?.customerConfirmed;
+  if (isApproved && currentRawStatus !== 'cancelled') {
+    currentRawStatus = 'completed';
+  }
+  const [status, statusLabel] = STATUS[currentRawStatus] || ['active', order.statusLabel || currentRawStatus || 'Đang xử lý'];
   return {
     id: order.orderCode || order.id || order._id,
     _id: order._id || order.id,
     orderCode: order.orderCode || order.id,
     status,
     statusLabel,
-    rawStatus: order.status,
+    rawStatus: currentRawStatus,
     date: fmtDate(order.rentalStartDate || order.createdAt || order.date),
     dress: order.items?.map((entry) => entry.name).filter(Boolean).join(', ') || order.dress || 'Lễ phục',
     image: order.image || (item.image ? dressImage({ image: item.image }) : typeof item.dressId === 'object' && item.dressId ? dressImage(item.dressId) : elysianImage),

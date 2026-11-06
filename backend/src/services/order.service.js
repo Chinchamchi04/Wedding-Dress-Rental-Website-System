@@ -270,11 +270,19 @@ export const getAllOrders = async (filters = {}) => {
 
   const enrichedOrders = orders.map((o) => {
     const hasAccount = Boolean(o.customerId && String(o.customerId).trim() !== '');
+    const insp = inspectionMap.get(String(o._id)) || null;
+    let status = o.status;
+    const isCustomerApproved = insp?.customerStatus === 'approved' || insp?.customerConfirmed;
+    if (isCustomerApproved && status !== 'completed' && status !== 'complete') {
+      status = 'completed';
+      Order.updateOne({ _id: o._id }, { $set: { status: 'completed' } }).catch(() => {});
+    }
     return {
       ...o,
+      status,
       hasAccount,
       isGuest: !hasAccount,
-      inspection: inspectionMap.get(String(o._id)) || null,
+      inspection: insp,
     };
   });
 
@@ -302,8 +310,15 @@ export const getOrderByIdOrCode = async (idOrCode) => {
     throw new Error('Không tìm thấy thông tin đơn thuê.');
   }
   const inspection = await ReturnInspection.findOne({ orderId: order._id }).lean();
+  let status = order.status;
+  const isCustomerApproved = inspection?.customerStatus === 'approved' || inspection?.customerConfirmed;
+  if (isCustomerApproved && status !== 'completed' && status !== 'complete') {
+    status = 'completed';
+    Order.updateOne({ _id: order._id }, { $set: { status: 'completed' } }).catch(() => {});
+  }
   return {
     ...order,
+    status,
     inspection: inspection || null,
   };
 };
