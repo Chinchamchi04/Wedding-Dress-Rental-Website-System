@@ -2873,74 +2873,7 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                {/* 1. CHỌN HÌNH THỨC ĐẶT CỌC */}
-                <section className="bg-white rounded-2xl border border-[#F0E5DC] shadow-[0_4px_24px_rgba(44,37,35,0.03)] p-6 sm:p-7">
-                  <div className="flex items-center gap-3 pb-4 border-b border-[#F5EDE8] mb-5">
-                    <div className="w-10 h-10 rounded-xl bg-[#FAF0EC] flex items-center justify-center text-[#B8737D]">
-                      <Briefcase className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h2 className="font-playfair text-[19px] sm:text-[21px] font-semibold text-[#2C2523] m-0">
-                        Chọn Phương Án Đặt Cọc Giữ Lịch
-                      </h2>
-                      <p className="text-[12px] text-[#847374] m-0 mt-0.5">
-                        Thanh toán cọc ngay để khóa lịch váy độc quyền không nhận thêm lịch khác
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Option 1: 50% deposit */}
-                    <div
-                      onClick={() => setDepositOption('deposit30')}
-                      className={`rounded-2xl p-5 border cursor-pointer transition-all relative ${depositOption === 'deposit30'
-                        ? 'border-[#733F49] bg-[#FAF3F0] ring-2 ring-[#733F49]/20 shadow-xs'
-                        : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white'
-                        }`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-jakarta font-bold text-[14px] text-[#2C2523]">
-                          Đặt cọc giữ lịch 50%
-                        </span>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FAF0EC] text-[#733F49]">
-                          PHỔ BIẾN NHẤT
-                        </span>
-                      </div>
-                      <div className="font-jakarta font-extrabold text-[22px] text-[#733F49] mb-1 tabular-nums tracking-tight">
-                        {formatCurrencyVND(Math.round(totalRentPrice * 0.5))}
-                      </div>
-                      <p className="text-[11.5px] text-[#6B5C5D] m-0 leading-relaxed">
-                        Thanh toán 50% hôm nay để giữ lịch. Phần còn lại {formatCurrencyVND(Math.round(totalRentPrice * 0.5))} thanh toán khi nhận bàn giao váy.
-                      </p>
-                    </div>
-
-                    {/* Option 2: 100% full pay */}
-                    <div
-                      onClick={() => setDepositOption('full100')}
-                      className={`rounded-2xl p-5 border cursor-pointer transition-all relative ${depositOption === 'full100'
-                        ? 'border-[#733F49] bg-[#FAF3F0] ring-2 ring-[#733F49]/20 shadow-xs'
-                        : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white'
-                        }`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-jakarta font-bold text-[14px] text-[#2C2523]">
-                          Thanh toán 100% trọn gói
-                        </span>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#E8F5E9] text-[#2E7D32]">
-                          TẶNG VOAN REN CAO CẤP
-                        </span>
-                      </div>
-                      <div className="font-jakarta font-extrabold text-[22px] text-[#733F49] mb-1 tabular-nums tracking-tight">
-                        {formatCurrencyVND(totalRentPrice)}
-                      </div>
-                      <p className="text-[11.5px] text-[#6B5C5D] m-0 leading-relaxed">
-                        Thanh toán toàn bộ phí thuê váy hôm nay. Tặng miễn phí mượn bộ voan cài đầu ren Pháp đồng bộ trị giá 1.500.000₫.
-                      </p>
-                    </div>
-                  </div>
-                </section>
-
-                {/* 2. THANH TOÁN ĐẶT CỌC CHUYỂN KHOẢN */}
+                {/* THANH TOÁN ĐẶT CỌC CHUYỂN KHOẢN */}
                 <section className="bg-white rounded-2xl border border-[#F0E5DC] shadow-[0_4px_24px_rgba(44,37,35,0.03)] p-6 sm:p-7">
                   <div className="flex items-center gap-3 pb-4 border-b border-[#F5EDE8] mb-6">
                     <div className="w-10 h-10 rounded-xl bg-[#FAF0EC] flex items-center justify-center text-[#B8737D]">
