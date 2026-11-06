@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
-import { message, Modal, Radio, Input, Dropdown } from 'antd';
+import { message, Modal, Radio, Input, Dropdown, notification } from 'antd';
 import {
   Search,
   ChevronDown,
@@ -17,6 +17,7 @@ import {
   Download,
   RefreshCw,
   AlertTriangle,
+  AlertCircle,
   Camera,
   UploadCloud,
   Archive,
@@ -73,6 +74,7 @@ const NEXT_STATUSES = {
 
 const FILTER_OPTIONS = [
   { value: 'all', label: 'Tất Cả Trạng Thái' },
+  { value: 'disputed', label: '⚠️ Khách Khiếu Nại' },
   { value: 'deposit_paid', label: 'Đã Đặt Cọc' },
   { value: 'delivered', label: 'Đã Giao Váy' },
   { value: 'renting', label: 'Đang Thuê' },
@@ -106,11 +108,12 @@ function calcLate(rentalEndDate) {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function StatusBadge({ status, order }) {
-  if (status === 'returned') {
-    const custStatus = order?.inspection?.customerStatus;
-    if (custStatus === 'disputed') {
+  const custStatus = order?.inspection?.customerStatus || order?.inspectionCustomerStatus;
+  if (status === 'returned' || status === 'disputed' || custStatus === 'disputed') {
+    if (custStatus === 'disputed' || status === 'disputed') {
       return (
-        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#FEE2E2] text-[#991B1B] border border-[#FECACA]">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#FEE2E2] text-[#991B1B] border border-[#FECACA] animate-pulse">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-600"></span>
           Khách Khiếu Nại
         </span>
       );
@@ -940,6 +943,64 @@ export default function OrderRentalManagement() {
     };
   }, [globalStats, orders]);
 
+  // ── Đơn hàng có khiếu nại từ khách hàng ─────────────────────────────────
+  const disputedOrders = useMemo(() => {
+    return orders.filter(
+      (o) =>
+        o.inspection?.customerStatus === 'disputed' ||
+        o.inspectionCustomerStatus === 'disputed' ||
+        o.status === 'disputed'
+    );
+  }, [orders]);
+
+  const notifiedDisputesRef = useRef(new Set());
+
+  // Hiển thị thông báo nổi lên (pop-up notification) ngay khi phát hiện đơn hàng có khiếu nại
+  useEffect(() => {
+    if (disputedOrders.length > 0) {
+      disputedOrders.forEach((ord) => {
+        const key = `dispute_${ord._id || ord.orderCode}`;
+        if (!notifiedDisputesRef.current.has(key)) {
+          notifiedDisputesRef.current.add(key);
+          notification.error({
+            key,
+            message: (
+              <span className="font-bold text-red-900 text-[13.5px]">
+                ⚠️ CÓ ĐƠN KHIẾU NẠI CẦN XỬ LÝ GẤP
+              </span>
+            ),
+            description: (
+              <div className="space-y-1.5 text-xs font-jakarta">
+                <p className="m-0 text-[#2C2523]">
+                  Đơn hàng <strong>#{ord.orderCode}</strong> — Khách hàng <strong>{ord.customerName}</strong> ({ord.customerPhone || 'SĐT'}) vừa gửi khiếu nại về biên bản kiểm định.
+                </p>
+                {ord.inspection?.disputeReason && (
+                  <p className="m-0 text-red-700 italic bg-red-50 p-2 rounded-lg border border-red-200">
+                    "{ord.inspection.disputeReason}"
+                  </p>
+                )}
+                <div className="pt-1.5 flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      notification.destroy(key);
+                      setInspectionOrder(ord);
+                    }}
+                    className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold border-0 cursor-pointer shadow-xs transition-colors"
+                  >
+                    Xem &amp; Xử Lý Ngay →
+                  </button>
+                </div>
+              </div>
+            ),
+            duration: 12,
+            placement: 'topRight',
+          });
+        }
+      });
+    }
+  }, [disputedOrders]);
+
   // ── Client-side filter (for demo fallback & search) ───────────────────────
   const filteredOrders = useMemo(() => {
     const qRaw = searchTerm.trim().toLowerCase();
@@ -954,11 +1015,26 @@ export default function OrderRentalManagement() {
         (o.customerPhone || '').includes(cleanQ) ||
         (o.items || []).some((it) => (it.name || '').toLowerCase().includes(qRaw));
 
-      const matchStatus = statusFilter === 'all' || o.status === statusFilter;
+      const isDisputed =
+        o.inspection?.customerStatus === 'disputed' ||
+        o.inspectionCustomerStatus === 'disputed' ||
+        o.status === 'disputed';
+
+      const matchStatus =
+        statusFilter === 'all'
+          ? true
+          : statusFilter === 'disputed'
+          ? isDisputed
+          : o.status === statusFilter;
 
       // Khi người dùng đang tìm kiếm cụ thể: Hiển thị ngay kết quả kể cả đơn nằm ở Kho Lưu Trữ
       if (cleanQ) {
         return matchSearch && matchStatus;
+      }
+
+      // Khi lọc đơn khiếu nại: Hiển thị luôn không phân biệt active/archived
+      if (statusFilter === 'disputed') {
+        return matchSearch && isDisputed;
       }
 
       // Khi không tìm kiếm: Phân tách rõ ràng giữa Đơn Đang Xử Lý và Kho Lưu Trữ
@@ -1005,6 +1081,70 @@ export default function OrderRentalManagement() {
           Theo dõi và quản lý toàn bộ đơn thuê váy cưới — cập nhật trạng thái vòng đời, kiểm định trả váy và hoàn cọc.
         </p>
       </div>
+
+      {/* Banner thông báo nổi bật khi có đơn khiếu nại */}
+      {disputedOrders.length > 0 && (
+        <div className="mb-8 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#FEF2F2] via-[#FFF1F2] to-[#FEF2F2] border-2 border-red-300 shadow-md space-y-3 font-jakarta animate-fadeIn">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-3 w-3 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
+              </span>
+              <span className="font-bold text-red-900 text-[14px] sm:text-[15.5px] flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+                <span>CẢNH BÁO: CÓ {disputedOrders.length} ĐƠN HÀNG ĐANG BỊ KHÁCH KHIẾU NẠI!</span>
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter('disputed');
+                setActivePage(1);
+              }}
+              className="text-xs font-bold text-red-700 hover:text-red-900 underline cursor-pointer bg-transparent border-0"
+            >
+              Lọc danh sách {disputedOrders.length} đơn khiếu nại →
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {disputedOrders.map((ord) => (
+              <div
+                key={ord._id || ord.orderCode}
+                className="p-3.5 bg-white/95 rounded-xl border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-2xs"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-mono font-bold text-red-800 bg-red-100 px-2.5 py-0.5 rounded-md border border-red-200">
+                      #{ord.orderCode}
+                    </span>
+                    <strong className="text-gray-900 text-[13px]">{ord.customerName}</strong>
+                    <span className="text-gray-500 font-medium">({ord.customerPhone || 'Không có SĐT'})</span>
+                    <span className="text-stone-300">•</span>
+                    <span className="text-stone-700 font-medium">
+                      {ord.items?.[0]?.name || ord.dress || 'Lễ phục'}
+                    </span>
+                  </div>
+                  {ord.inspection?.disputeReason && (
+                    <p className="text-red-700 italic m-0 bg-red-50/80 p-2 rounded-lg border border-red-100">
+                      <strong>Lý do khiếu nại:</strong> "{ord.inspection.disputeReason}"
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setInspectionOrder(ord)}
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs transition-all flex items-center justify-center gap-1.5 border-0"
+                >
+                  <AlertCircle size={14} />
+                  <span>Xem &amp; Xử Lý Khiếu Nại Ngay</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 4 Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
@@ -1249,9 +1389,20 @@ export default function OrderRentalManagement() {
                 filteredOrders.map((order) => {
                   const firstItem = order.items?.[0] || {};
                   const canInspect = order.status === 'renting' || order.status === 'delivered';
+                  const isDisputed =
+                    order.inspection?.customerStatus === 'disputed' ||
+                    order.inspectionCustomerStatus === 'disputed' ||
+                    order.status === 'disputed';
 
                   return (
-                    <tr key={order._id || order.orderCode} className="hover:bg-[#FCF9F7] transition-colors">
+                    <tr
+                      key={order._id || order.orderCode}
+                      className={`transition-colors ${
+                        isDisputed
+                          ? 'bg-red-50/40 hover:bg-red-50/70 border-l-4 border-l-red-500'
+                          : 'hover:bg-[#FCF9F7]'
+                      }`}
+                    >
                       {/* Mã đơn */}
                       <td className="py-4 px-5">
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -1368,15 +1519,28 @@ export default function OrderRentalManagement() {
                               <ShieldCheck size={13} />
                               <span>Kiểm Định Trả Váy</span>
                             </button>
-                          ) : order.status === 'returned' ? (
+                          ) : order.status === 'returned' || isDisputed ? (
                             <button
                               type="button"
                               onClick={() => setInspectionOrder(order)}
-                              title="Xem biên bản kiểm định hiện trạng (Chờ khách duyệt & nhận hoàn cọc tự động)"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF0EB] text-[#733F49] text-[12px] font-bold hover:bg-[#F3E2DB] transition-all cursor-pointer border border-[#ECD9D3]"
+                              title={isDisputed ? 'Khách đã gửi khiếu nại — Nhấn để xem và đối soát xử lý' : 'Xem biên bản kiểm định hiện trạng'}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all cursor-pointer border ${
+                                isDisputed
+                                  ? 'bg-red-600 text-white hover:bg-red-700 border-red-600 shadow-xs'
+                                  : 'bg-[#FAF0EB] text-[#733F49] hover:bg-[#F3E2DB] border-[#ECD9D3]'
+                              }`}
                             >
-                              <Eye size={13} />
-                              <span>Xem Kiểm Định</span>
+                              {isDisputed ? (
+                                <>
+                                  <AlertTriangle size={13} />
+                                  <span>Xử Lý Khiếu Nại</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Eye size={13} />
+                                  <span>Xem Kiểm Định</span>
+                                </>
+                              )}
                             </button>
                           ) : (
                             <UpdateStatusDropdown

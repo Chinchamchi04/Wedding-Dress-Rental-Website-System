@@ -234,7 +234,16 @@ export const getMyOrders = async (userId) => {
 
 export const getAllOrders = async (filters = {}) => {
   const query = {};
-  if (filters.status) query.status = filters.status;
+  if (filters.status === 'disputed') {
+    const disputedInspections = await ReturnInspection.find({ customerStatus: 'disputed' }).select('orderId').lean();
+    const disputedOrderIds = disputedInspections.map((i) => i.orderId);
+    query.$or = [
+      { _id: { $in: disputedOrderIds } },
+      { status: 'disputed' }
+    ];
+  } else if (filters.status) {
+    query.status = filters.status;
+  }
   if (filters.search) {
     const rawSearch = String(filters.search).trim();
     const cleanSearch = rawSearch.replace(/^[#\s]+/, ''); // Loại bỏ ký tự # nếu người dùng nhập "#UB-2026-0012"
