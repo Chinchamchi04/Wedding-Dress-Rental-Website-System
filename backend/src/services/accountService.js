@@ -23,6 +23,9 @@ const publicUser = (user) => ({
   measurements: user.measurements || {},
   address: user.address || {},
   idCard: user.idCard || '',
+  gender: user.gender || 'unspecified',
+  birthday: user.birthday ? new Date(user.birthday).toISOString().split('T')[0] : '',
+  weddingDate: user.weddingDate ? new Date(user.weddingDate).toISOString().split('T')[0] : '',
 });
 
 const tokenFor = (user) => jwt.sign(
@@ -97,6 +100,15 @@ export async function updateProfile(user, data) {
     if (idCard && !/^(\d{9}|\d{12})$/.test(idCard)) fail(400, 'CCCD/CMND cần gồm 9 hoặc 12 chữ số.');
     user.idCard = idCard;
   }
+  if (data.gender !== undefined) {
+    user.gender = ['female', 'male', 'unspecified'].includes(data.gender) ? data.gender : 'unspecified';
+  }
+  if (data.birthday !== undefined) {
+    user.birthday = data.birthday ? new Date(data.birthday) : null;
+  }
+  if (data.weddingDate !== undefined) {
+    user.weddingDate = data.weddingDate ? new Date(data.weddingDate) : null;
+  }
   if (data.address !== undefined) {
     const address = typeof data.address === 'string' ? { street: data.address } : data.address;
     if (!address || typeof address !== 'object' || Array.isArray(address)) fail(400, 'Địa chỉ không hợp lệ.');
@@ -104,11 +116,11 @@ export async function updateProfile(user, data) {
   }
   if (data.measurements !== undefined) {
     const measurements = {};
-    for (const key of ['height', 'weight', 'bust', 'waist', 'hips']) {
+    for (const key of ['height', 'weight', 'bust', 'waist', 'hips', 'heel']) {
       const value = data.measurements?.[key];
       measurements[key] = value === '' || value == null ? null : Number(value);
-      if (measurements[key] !== null && (!Number.isFinite(measurements[key]) || measurements[key] <= 0 || measurements[key] > 500)) {
-        fail(400, 'Số đo cần là số dương hợp lệ, không vượt quá 500.');
+      if (measurements[key] !== null && (!Number.isFinite(measurements[key]) || measurements[key] < 0 || measurements[key] > 500)) {
+        fail(400, 'Số đo cần là số hợp lệ, không vượt quá 500.');
       }
     }
     user.measurements = measurements;

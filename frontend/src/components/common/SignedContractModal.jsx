@@ -20,17 +20,25 @@ import { formatCurrencyVND } from '../../utils/formatCurrency';
 import { formatShortDate } from '../../utils/formatDate';
 import { HIEU_SIGNATURE_BASE64 } from '../../assets/images/signatureHieuBase64';
 
-export default function SignedContractModal({ orderId, onClose }) {
-  const [order, setOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
+export default function SignedContractModal({ orderId, order: propOrder, onClose }) {
+  const [order, setOrder] = useState(propOrder || null);
+  const [loading, setLoading] = useState(!propOrder);
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
 
   useEffect(() => {
+    if (propOrder) {
+      setOrder(propOrder);
+      setLoading(false);
+      return;
+    }
+    if (!orderId) {
+      setLoading(false);
+      return;
+    }
     let active = true;
     setLoading(true);
     setError('');
-    setOrder(null);
     getOrder(orderId)
       .then((value) => {
         if (active) setOrder(value);
@@ -44,7 +52,7 @@ export default function SignedContractModal({ orderId, onClose }) {
     return () => {
       active = false;
     };
-  }, [orderId, retry]);
+  }, [orderId, propOrder, retry]);
 
   const saved = getSignedContract(order);
 
@@ -55,21 +63,21 @@ export default function SignedContractModal({ orderId, onClose }) {
 
   const customerName = order?.customerName || order?.brideName || 'Cô Dâu UniBridal';
   const customerPhone = order?.customerPhone || order?.phone || '0908 123 888';
-  const customerCccd = order?.customerCccd || order?.cccd || 'Đã xác thực tài khoản';
+  const customerCccd = order?.customerCccd || order?.cccd || order?.idCard || 'Đã xác thực tài khoản';
   const shippingAddress = order?.shippingAddress || 'Nhận trực tiếp tại Showroom UniBridal (186 Nam Kỳ Khởi Nghĩa, Q.3, TP.HCM)';
-  const contractCode = saved.code || order?.contractCode || `HĐ-${order?.orderCode || orderId}`;
-  const signedDateStr = saved.signedAt || order?.createdAt || new Date();
+  const contractCode = saved.code || order?.contractCode || order?.id || `HĐ-${order?.orderCode || orderId}`;
+  const signedDateStr = saved.signedAt || order?.createdAt || order?.signedAt || new Date();
 
   // Danh sách váy thuê
   const items = Array.isArray(order?.items) && order.items.length > 0
     ? order.items
     : [
       {
-        name: order?.dress || 'Lễ phục cưới Haute Couture',
-        size: order?.size || 'S',
-        code: order?.code || 'UB-HC-2026',
-        rentPrice: order?.totalRentPrice || order?.amount || 0,
-        depositAmount: order?.totalDeposit || order?.deposit || 0,
+        name: order?.dress || order?.dressName || 'Lễ phục cưới Haute Couture',
+        size: order?.size || order?.dressSize || 'S',
+        code: order?.code || order?.dressCode || 'UB-HC-2026',
+        rentPrice: order?.totalRentPrice || order?.rentalPrice || order?.amount || 0,
+        depositAmount: order?.totalDeposit || order?.depositAmount || order?.deposit || 0,
       },
     ];
 
@@ -340,11 +348,11 @@ export default function SignedContractModal({ orderId, onClose }) {
                       />
                     ) : (
                       <div className="font-serif italic text-2xl text-[#733F49] font-bold tracking-wider px-4 py-2 border-b-2 border-[#733F49]/40">
-                        {customerName}
+                        {saved.signature || order?.contractSignature || customerName}
                       </div>
                     )}
                     <div className="mt-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-700 text-[10px] font-bold inline-flex items-center gap-1">
-                      <CheckCircle2 size={13} /> E-SIGNED: {customerName}
+                      <CheckCircle2 size={13} /> E-SIGNED: {saved.signature || order?.contractSignature || customerName}
                     </div>
                   </div>
 

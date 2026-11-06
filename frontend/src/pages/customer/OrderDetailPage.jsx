@@ -139,9 +139,8 @@ function OrderStatusTimeline({ rawStatus }) {
                 {/* Label */}
                 <div className="text-center px-1">
                   <p
-                    className={`text-[11.5px] font-semibold leading-tight ${
-                      isCompleted || isActive ? 'text-[#804E55]' : 'text-[#BCAAA4]'
-                    }`}
+                    className={`text-[11.5px] font-semibold leading-tight ${isCompleted || isActive ? 'text-[#804E55]' : 'text-[#BCAAA4]'
+                      }`}
                   >
                     {step.label}
                   </p>
@@ -156,9 +155,8 @@ function OrderStatusTimeline({ rawStatus }) {
               {/* Connector line (not after last) */}
               {idx < TIMELINE_STEPS.length - 1 && (
                 <div
-                  className={`mt-5 h-0.5 flex-1 min-w-[16px] self-start transition-colors ${
-                    idx < activeIndex ? 'bg-[#BA7A83]' : 'bg-[#EEDECF]'
-                  }`}
+                  className={`mt-5 h-0.5 flex-1 min-w-[16px] self-start transition-colors ${idx < activeIndex ? 'bg-[#BA7A83]' : 'bg-[#EEDECF]'
+                    }`}
                 />
               )}
             </React.Fragment>
@@ -199,9 +197,8 @@ function OrderStatusTimeline({ rawStatus }) {
                 </div>
                 {!isLast && (
                   <div
-                    className={`mt-1 w-0.5 flex-1 min-h-[16px] ${
-                      idx < activeIndex ? 'bg-[#BA7A83]' : 'bg-[#EEDECF]'
-                    }`}
+                    className={`mt-1 w-0.5 flex-1 min-h-[16px] ${idx < activeIndex ? 'bg-[#BA7A83]' : 'bg-[#EEDECF]'
+                      }`}
                   />
                 )}
               </div>
@@ -209,9 +206,8 @@ function OrderStatusTimeline({ rawStatus }) {
               {/* Right: text */}
               <div className="pb-4">
                 <p
-                  className={`text-sm font-semibold leading-tight ${
-                    isCompleted || isActive ? 'text-[#804E55]' : 'text-[#BCAAA4]'
-                  }`}
+                  className={`text-sm font-semibold leading-tight ${isCompleted || isActive ? 'text-[#804E55]' : 'text-[#BCAAA4]'
+                    }`}
                 >
                   {step.label}
                 </p>
@@ -412,7 +408,7 @@ export default function OrderDetailPage() {
                     <Landmark size={15} className="text-[#874e57]" />
                   </div>
                   <h2 id="invoice-title" className="mt-2 font-playfair text-xl">
-                    Phí Thuê &amp; Tiền Cọc Theo Đơn
+                    Tiền Cọc Theo Đơn
                   </h2>
                   <dl className="mt-4 space-y-3 text-sm">
                     <div className="flex justify-between gap-3">
