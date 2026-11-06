@@ -265,18 +265,18 @@ function InspectionModal({ order, onClose, onSuccess }) {
                   insp.itemsCondition.find((c) => String(c.dressId) === String(it.dressId));
                 return match
                   ? {
-                      ...it,
-                      condition: match.condition || it.condition,
-                      damageNotes: match.note || match.damageNotes || '',
-                      compensation: match.repairFee ?? match.compensation ?? 0,
-                    }
+                    ...it,
+                    condition: match.condition || it.condition,
+                    damageNotes: match.note || match.damageNotes || '',
+                    compensation: match.repairFee ?? match.compensation ?? 0,
+                  }
                   : it;
               })
             );
           }
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [order._id]);
 
   // Xử lý chụp ảnh / tải ảnh bằng chứng hiện trạng váy
@@ -382,13 +382,13 @@ function InspectionModal({ order, onClose, onSuccess }) {
                 {isCompletedOrder
                   ? 'Hồ Sơ Lưu Trữ Đơn Thuê & Quyết Toán Cọc'
                   : isCustomerApproved
-                  ? 'Biên Bản Kiểm Định Trả Váy (Khách Đã Duyệt)'
-                  : isReturnedOrder
-                  ? 'Biên Bản Kiểm Định Trả Váy (Đã Kiểm Định)'
-                  : 'Kiểm Định Trả Váy & Giám Định Hiện Trạng'}
+                    ? 'Biên Bản Kiểm Định Trả Váy (Khách Đã Duyệt)'
+                    : isReturnedOrder
+                      ? 'Biên Bản Kiểm Định Trả Váy (Đã Kiểm Định)'
+                      : 'Kiểm Định Trả Váy & Giám Định Hiện Trạng'}
               </h3>
               <p className="text-[10.5px] text-[#8C7D7E] m-0">
-                Đơn #{order.orderCode} • Showroom Atelier kiểm tra phom dáng &amp; phụ kiện
+                Đơn #{order.orderCode}
               </p>
             </div>
           </div>
@@ -421,7 +421,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
                   <span>
-                    <strong>Khách hàng đã duyệt biên bản.</strong> Hồ sơ đã khóa cố định, không được phép chỉnh sửa.
+                    <strong>Khách hàng đã duyệt biên bản.</strong>
                   </span>
                 </div>
                 <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-300">
@@ -668,7 +668,7 @@ function RefundModal({ order, onClose, onSuccess }) {
           setInspectionData(insp);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [order._id]);
 
   const lateDays = inspectionData?.lateDays ?? calcLate(order.rentalEndDate);
@@ -1146,18 +1146,16 @@ export default function OrderRentalManagement() {
           <button
             type="button"
             onClick={() => { setViewMode('active'); setStatusFilter('all'); setActivePage(1); }}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all cursor-pointer ${
-              viewMode === 'active'
-                ? 'bg-[#733F49] text-white shadow-md'
-                : 'bg-white border border-[#EFE5E1] text-[#7A6B6C] hover:bg-[#FAF4F0]'
-            }`}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all cursor-pointer ${viewMode === 'active'
+              ? 'bg-[#733F49] text-white shadow-md'
+              : 'bg-white border border-[#EFE5E1] text-[#7A6B6C] hover:bg-[#FAF4F0]'
+              }`}
           >
             <SlidersHorizontal size={14} />
             <span>Đơn Đang Xử Lý</span>
             <span
-              className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                viewMode === 'active' ? 'bg-white/20 text-white' : 'bg-[#FAF0EC] text-[#733F49]'
-              }`}
+              className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${viewMode === 'active' ? 'bg-white/20 text-white' : 'bg-[#FAF0EC] text-[#733F49]'
+                }`}
             >
               {activeOrdersCount}
             </span>
@@ -1166,18 +1164,16 @@ export default function OrderRentalManagement() {
           <button
             type="button"
             onClick={() => { setViewMode('archived'); setStatusFilter('all'); setActivePage(1); }}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all cursor-pointer ${
-              viewMode === 'archived'
-                ? 'bg-[#1E8347] text-white shadow-md'
-                : 'bg-white border border-[#EFE5E1] text-[#7A6B6C] hover:bg-[#FAF4F0]'
-            }`}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all cursor-pointer ${viewMode === 'archived'
+              ? 'bg-[#1E8347] text-white shadow-md'
+              : 'bg-white border border-[#EFE5E1] text-[#7A6B6C] hover:bg-[#FAF4F0]'
+              }`}
           >
             <Archive size={14} />
             <span>Kho Lưu Trữ Đơn Hoàn Tất</span>
             <span
-              className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                viewMode === 'archived' ? 'bg-white/20 text-white' : 'bg-[#EAF7EE] text-[#1E8347]'
-              }`}
+              className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${viewMode === 'archived' ? 'bg-white/20 text-white' : 'bg-[#EAF7EE] text-[#1E8347]'
+                }`}
             >
               {archivedOrdersCount}
             </span>
@@ -1450,8 +1446,8 @@ export default function OrderRentalManagement() {
                   type="button"
                   onClick={() => setActivePage(p)}
                   className={`w-8 h-8 rounded-lg font-bold flex items-center justify-center transition-colors ${activePage === p
-                      ? 'bg-[#78434D] text-white shadow-xs'
-                      : 'bg-white border border-[#EFE5E1] shadow-2xs text-[#4A3B3D] hover:bg-[#F5ECE8]'
+                    ? 'bg-[#78434D] text-white shadow-xs'
+                    : 'bg-white border border-[#EFE5E1] shadow-2xs text-[#4A3B3D] hover:bg-[#F5ECE8]'
                     }`}
                 >
                   {p}
