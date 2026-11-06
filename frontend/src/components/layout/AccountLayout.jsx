@@ -86,7 +86,7 @@ export default function AccountLayout({ children, breadcrumb = [], notice, onLog
   const navigate = useNavigate();
   const { logout: logoutAccount } = useAuth();
   const [isBookingOpen, setIsBookingOpen] = useState(false);
-  const logout = onLogout || (() => { logoutAccount(); navigate('/login'); });
+  const logout = onLogout || (() => { navigate('/login', { replace: true }); logoutAccount(); });
 
   const shouldShowBreadcrumb = !hideBreadcrumb && breadcrumb && breadcrumb.length > 0;
 

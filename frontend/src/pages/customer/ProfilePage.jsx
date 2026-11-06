@@ -186,7 +186,7 @@ export default function ProfilePage() {
       )}
 
       <style>{profilePageStyles}</style>
-      <AccountLayout breadcrumb={[{ label: 'Hồ sơ cá nhân' }]}>
+      <AccountLayout hideBreadcrumb={true} breadcrumb={[]}>
         <section className="profile-card rounded-2xl bg-white px-5 py-7 sm:px-8 border border-[#F0E5DC] shadow-[0_4px_24px_rgba(44,37,35,0.03)]" aria-labelledby="profile-title">
           <div className="flex items-center gap-2">
 

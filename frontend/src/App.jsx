@@ -14,6 +14,7 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import DressDetailPage from './pages/customer/DressDetailPage';
 import CartPage from './pages/customer/CartPage';
 import CheckoutPage from './pages/customer/CheckoutPage';
+import VietQRGatewayPage from './pages/customer/VietQRGatewayPage';
 import AppointmentPage from './pages/customer/AppointmentPage';
 import MessagesPage from './pages/customer/MessagesPage';
 import StaffDashboardPage from './pages/staff/StaffDashboardPage';
@@ -59,6 +60,10 @@ export default function App() {
               <Route path="/dat-coc" element={<CheckoutPage />} />
               <Route path="/thanh-toan" element={<CheckoutPage />} />
               <Route path="/ky-hop-dong" element={<CheckoutPage />} />
+              <Route path="/thanh-toan-vietqr/:orderCode" element={<VietQRGatewayPage />} />
+              <Route path="/thanh-toan-vietqr" element={<VietQRGatewayPage />} />
+              <Route path="/payment/vietqr/:orderCode" element={<VietQRGatewayPage />} />
+              <Route path="/payment/vietqr" element={<VietQRGatewayPage />} />
               <Route path="/dat-lich" element={<AppointmentPage />} />
               <Route path="/appointment" element={<AppointmentPage />} />
               <Route path="/booking" element={<AppointmentPage />} />

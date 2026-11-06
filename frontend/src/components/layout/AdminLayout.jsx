@@ -137,8 +137,8 @@ export default function AdminLayout({
   const userRoleText = isStaff ? 'STAFF MODE' : 'ADMIN MODE';
 
   const handleLogout = () => {
+    navigate('/login', { replace: true });
     logout();
-    navigate('/login');
   };
 
   return (

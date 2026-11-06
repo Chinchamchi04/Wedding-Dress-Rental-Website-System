@@ -41,6 +41,7 @@ import {
   Info,
   Plus,
   Minus,
+  Zap,
 } from 'lucide-react';
 import { message } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
@@ -48,16 +49,22 @@ import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import { getDressById } from '../../services/dressService';
 import { getCart, resolveCartItem, clearCart } from '../../services/cartService';
-import { getDressBookedDates } from '../../services/orderService';
+import { getDressBookedDates, createOrder } from '../../services/orderService';
+import { simulateVietQRPaymentApi } from '../../services/paymentService';
 import { HIEU_SIGNATURE_BASE64 } from '../../assets/images/signatureHieuBase64';
 import unibridalEmblem from '../../assets/logo_emblem.png';
 
 // Helper: Chuyển đổi định dạng ngày DD/MM/YYYY sang YYYY-MM-DD và ngược lại
 function toIsoDateString(val) {
   if (!val) return '';
-  if (val.includes('-')) return val.split('T')[0];
-  if (val.includes('/')) {
-    const parts = val.split('/');
+  if (val instanceof Date) {
+    return isNaN(val.getTime()) ? '' : val.toISOString().split('T')[0];
+  }
+  const str = String(val).trim();
+  if (!str || str === 'undefined' || str === 'null' || str === 'Invalid Date') return '';
+  if (str.includes('-')) return str.split('T')[0];
+  if (str.includes('/')) {
+    const parts = str.split('/');
     if (parts.length === 3) {
       const d = parts[0].padStart(2, '0');
       const m = parts[1].padStart(2, '0');
@@ -65,23 +72,23 @@ function toIsoDateString(val) {
       return `${y}-${m}-${d}`;
     }
   }
-  const d = new Date(val);
+  const d = new Date(str);
   return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
 }
 
 function toDisplayDateString(val) {
   if (!val) return '';
-  if (val.includes('/')) return val;
-  if (val.includes('-')) {
-    const parts = val.split('T')[0].split('-');
+  const str = String(val).trim();
+  if (!str || str === 'undefined' || str === 'null' || str === 'Invalid Date') return '';
+  if (str.includes('/')) return str;
+  if (str.includes('-')) {
+    const parts = str.split('T')[0].split('-');
     if (parts.length === 3) {
       return `${parts[2]}/${parts[1]}/${parts[0]}`;
     }
   }
-  return val;
+  return str;
 }
-
-import { createOrder } from '../../services/orderService';
 
 // Chữ ký nghệ thuật đại diện Bên A (Ông Kim Xuân Hiếu - Tổng Giám Đốc)
 function DirectorSignatureAndStamp({ className = "h-28", isSmall = false }) {
@@ -324,14 +331,23 @@ export default function CheckoutPage() {
       setAddress((prev) => (prev ? prev : uData.address));
 
       if (user.measurements) {
-        setMeasurements((prev) => ({
-          ...prev,
-          height: user.measurements.height ? String(user.measurements.height) : prev.height,
-          weight: user.measurements.weight ? String(user.measurements.weight) : prev.weight,
-          bust: user.measurements.bust ? String(user.measurements.bust) : prev.bust,
-          waist: user.measurements.waist ? String(user.measurements.waist) : prev.waist,
-          hips: user.measurements.hips ? String(user.measurements.hips) : prev.hips,
-        }));
+        setMeasurements({
+          height: user.measurements.height ? String(user.measurements.height) : '',
+          weight: user.measurements.weight ? String(user.measurements.weight) : '',
+          bust: user.measurements.bust ? String(user.measurements.bust) : '',
+          waist: user.measurements.waist ? String(user.measurements.waist) : '',
+          hips: user.measurements.hips ? String(user.measurements.hips) : '',
+          heel: user.measurements.heel ? String(user.measurements.heel) : '',
+        });
+      } else {
+        setMeasurements({
+          height: '',
+          weight: '',
+          bust: '',
+          waist: '',
+          hips: '',
+          heel: '',
+        });
       }
     }
   }, [isLoggedIn, user]);
@@ -359,7 +375,7 @@ export default function CheckoutPage() {
   // 3. Tổng thời gian thuê chính xác = days cố định
   const computeScheduleFromWedding = (weddingDisplayOrIso, days) => {
     const wedIso = toIsoDateString(weddingDisplayOrIso);
-    if (!wedIso) return { startDate: '18/11/2026', weddingDate: '20/11/2026', endDate: '21/11/2026' };
+    if (!wedIso) return { startDate: '', weddingDate: '', endDate: '' };
 
     const validDays = Math.max(1, Math.min(30, Number(days) || 1));
     let beforeDays = 1;
@@ -400,33 +416,48 @@ export default function CheckoutPage() {
 
   // Schedule state (Định dạng hiển thị DD/MM/YYYY)
   const [rentalSchedule, setRentalSchedule] = useState(() => {
-    const initialWedding = '20/11/2026';
-    const initialDays = !isNaN(daysParam) && daysParam >= 1 && daysParam <= 30 ? daysParam : 4;
+    const validStart = startDateParam && startDateParam !== 'undefined' && startDateParam !== 'null' ? toDisplayDateString(startDateParam) : null;
+    const validEnd = endDateParam && endDateParam !== 'undefined' && endDateParam !== 'null' ? toDisplayDateString(endDateParam) : null;
+    const validWedding = searchParams.get('weddingDate') && searchParams.get('weddingDate') !== 'undefined' && searchParams.get('weddingDate') !== 'null'
+      ? toDisplayDateString(searchParams.get('weddingDate'))
+      : null;
 
-    if (startDateParam && endDateParam) {
+    if (validStart && validEnd) {
       return {
-        startDate: toDisplayDateString(startDateParam),
-        weddingDate: initialWedding,
-        endDate: toDisplayDateString(endDateParam),
+        startDate: validStart,
+        weddingDate: validWedding || validStart,
+        endDate: validEnd,
       };
     }
-    return computeScheduleFromWedding(initialWedding, initialDays);
+
+    if (validWedding) {
+      const initialDays = !isNaN(daysParam) && daysParam >= 1 && daysParam <= 30 ? daysParam : 4;
+      return computeScheduleFromWedding(validWedding, initialDays);
+    }
+
+    // Khi người dùng chưa chọn ngày: BẮT BUỘC để trống, không tự ý điền sẵn ngày giả gây báo trùng lịch sai
+    return {
+      startDate: '',
+      weddingDate: '',
+      endDate: '',
+    };
   });
 
   // Cập nhật số ngày thuê trên Stepper (+ / -)
-  // Tự động phân bổ ngày nhận và ngày trả xoay quanh ngày cưới hiện tại:
+  // Tự động phân bổ ngày nhận và ngày trả xoay quanh ngày cưới hiện tại (nếu đã chọn):
   const handleRentalDaysChange = (newDays) => {
     const clamped = Math.max(1, Math.min(30, Number(newDays) || 1));
     setRentalDays(clamped);
 
     setRentalSchedule((prev) => {
+      if (!prev.weddingDate) return prev;
       return computeScheduleFromWedding(prev.weddingDate, clamped);
     });
   };
 
   // State cho tháng đang xem trên lịch tương tác
   const [calendarViewDate, setCalendarViewDate] = useState(() => {
-    const initialIso = toIsoDateString(rentalSchedule.weddingDate || '20/11/2026');
+    const initialIso = toIsoDateString(rentalSchedule.weddingDate || rentalSchedule.startDate);
     if (initialIso) {
       const parts = initialIso.split('-').map(Number);
       return new Date(parts[0], parts[1] - 1, 1);
@@ -527,9 +558,9 @@ export default function CheckoutPage() {
   // Helper tính ngày cưới mặc định nằm trong khoảng thuê
   const computeWeddingDate = (startDisplayOrIso, days) => {
     const iso = toIsoDateString(startDisplayOrIso);
-    if (!iso) return '20/11/2026';
+    if (!iso) return '';
     const parts = iso.split('-').map(Number);
-    if (parts.length !== 3) return '20/11/2026';
+    if (parts.length !== 3) return '';
     const offset = days <= 3 ? 1 : Math.min(2, Math.floor(days / 2));
     const wedD = new Date(parts[0], parts[1] - 1, parts[2] + offset);
     const pad = (n) => String(n).padStart(2, '0');
@@ -636,14 +667,26 @@ export default function CheckoutPage() {
   // Selected dress size
   const [selectedSize, setSelectedSize] = useState(sizeParam || 'S');
 
-  // Measurements
-  const [measurements, setMeasurements] = useState({
-    height: '165',
-    weight: '48',
-    bust: '84',
-    waist: '64',
-    hips: '92',
-    heel: '9',
+  // Measurements: Nếu tài khoản chưa lưu số đo thì BẮT BUỘC để trống ('')
+  const [measurements, setMeasurements] = useState(() => {
+    if (user?.measurements) {
+      return {
+        height: user.measurements.height ? String(user.measurements.height) : '',
+        weight: user.measurements.weight ? String(user.measurements.weight) : '',
+        bust: user.measurements.bust ? String(user.measurements.bust) : '',
+        waist: user.measurements.waist ? String(user.measurements.waist) : '',
+        hips: user.measurements.hips ? String(user.measurements.hips) : '',
+        heel: user.measurements.heel ? String(user.measurements.heel) : '',
+      };
+    }
+    return {
+      height: '',
+      weight: '',
+      bust: '',
+      waist: '',
+      hips: '',
+      heel: '',
+    };
   });
 
   // Tăng giảm số đo nhanh bằng nút bấm lên / xuống
@@ -766,6 +809,11 @@ export default function CheckoutPage() {
   // Validation Step 1
   const handleProceedToContract = (e) => {
     e?.preventDefault();
+    if (!rentalSchedule.startDate || !rentalSchedule.weddingDate || !rentalSchedule.endDate) {
+      message.warning('Nàng vui lòng chọn ngày cưới và thời gian thuê trên bảng lịch trước khi tiếp tục!');
+      return;
+    }
+
     if (scheduleConflict) {
       message.error(
         `Khoảng ngày nàng chọn bị trùng với lịch đã đặt trước (${scheduleConflict.formattedRange}). Vui lòng chọn ngày còn trống trên bảng lịch để tiếp tục!`
@@ -1016,7 +1064,7 @@ export default function CheckoutPage() {
                   Số điện thoại: <strong>${phone}</strong><br />
                   Email: <strong>${email}</strong><br />
                   Địa chỉ nhận: <strong>${address}</strong><br />
-                  Thông số tinh chỉnh: Cao ${measurements.height}cm • Nặng ${measurements.weight}kg • Vòng eo ${measurements.waist}cm
+                  Thông số tinh chỉnh: ${measurements.height && measurements.weight ? `Cao ${measurements.height}cm • Nặng ${measurements.weight}kg • Vòng eo ${measurements.waist || '—'}cm` : 'Chuyên viên showroom hỗ trợ may đo trực tiếp'}
                 </td>
               </tr>
             </table>
@@ -1035,7 +1083,7 @@ export default function CheckoutPage() {
               <p>1.1. Bên A đồng ý cho Bên B thuê tác phẩm váy cưới độc bản thiết kế mang tên <strong>${activeDress?.name}</strong> (Mã tác phẩm: <strong>${activeDress?.code || 'UB-HC-2026'}</strong>), Kích cỡ: <strong>Size ${selectedSize}</strong>.</p>
             `}
             <p>1.2. Tiêu chuẩn bàn giao: Tác phẩm đạt chuẩn Haute Couture, khung xương nẹp corset siết eo công nghệ Pháp, được giặt sấy tiệt trùng ozone sinh học, ủi phẳng phiu và đặt trong Vali VIP Courier bảo quản chống bụi nhiệt trước giờ trao nhận 02 giờ.</p>
-            <p>1.3. Tinh chỉnh may đo: Bên A cung cấp dịch vụ tinh chỉnh nới/siết phom theo đúng số đo chuẩn của Bên B (Chiều cao: ${measurements.height}cm, Cân nặng: ${measurements.weight}kg, Vòng eo: ${measurements.waist}cm).</p>
+            <p>1.3. Tinh chỉnh may đo: Bên A cung cấp dịch vụ tinh chỉnh nới/siết phom theo đúng số đo của Bên B (${measurements.height ? `Chiều cao: ${measurements.height}cm, Cân nặng: ${measurements.weight || '—'}kg, Vòng eo: ${measurements.waist || '—'}cm` : 'Chuyên viên Atelier đo và tinh chỉnh trực tiếp tại Showroom'}).</p>
 
             <div class="clause-heading">ĐIỀU 2: THỜI HẠN THUÊ, PHƯƠNG THỨC GIAO NHẬN & QUY TRÌNH THU HỒI, KIỂM ĐỊNH</div>
             <p>2.1. Tổng thời gian thuê: <strong>${rentalDays} ngày</strong> liên tục.</p>
@@ -1291,8 +1339,8 @@ export default function CheckoutPage() {
         depositOption,
         paymentMethod: 'vietqr',
         paymentStatus: 'deposit_paid',
-        rentalStartDate: rentalSchedule.startDate,
-        rentalEndDate: rentalSchedule.endDate,
+        rentalStartDate: toIsoDateString(rentalSchedule?.startDate) || new Date().toISOString().split('T')[0],
+        rentalEndDate: toIsoDateString(rentalSchedule?.endDate) || new Date(Date.now() + (Number(rentalDays) || 4) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         rentalDays,
         items: (orderItems && orderItems.length > 0 ? orderItems : [activeDress]).filter(Boolean).map((item, idx) => {
           const itemDailyPrice = Number(item.price || item.rentPrice) || 0;
@@ -1350,6 +1398,189 @@ export default function CheckoutPage() {
         setIsSubmitting(false);
       }
     }, 1800);
+  };
+
+  // Tạo đơn và chuyển hướng thẳng sang Cổng VietQR Gateway chuyên biệt
+  const handleProceedToVietQRGateway = async () => {
+    if (isSubmitting || isVerifyingPayment) return;
+    if (!isContractSigned) {
+      message.warning('Nàng vui lòng ký xác nhận hợp đồng ở Bước 2 trước khi chuyển sang Cổng VietQR.');
+      setCurrentStep(2);
+      return;
+    }
+
+    setIsSubmitting(true);
+    message.loading({
+      content: '⚡ Đang khởi tạo đơn thuê và chuyển hướng sang Cổng thanh toán VietQR...',
+      key: 'vietqr_redirect',
+      duration: 1.5,
+    });
+
+    const generatedOrderCode = `UB-2026-${Math.floor(100 + Math.random() * 900)}`;
+    const generatedContractCode = `HĐ-${generatedOrderCode}`;
+
+    const orderPayload = {
+      orderCode: generatedOrderCode,
+      customerName: brideName.trim() || 'Cô Dâu UniBridal',
+      brideName: brideName.trim() || 'Cô Dâu UniBridal',
+      customerPhone: phone.trim() || '0908123888',
+      phone: phone.trim() || '0908123888',
+      customerEmail: email.trim() || 'codau.unibridal@gmail.com',
+      email: email.trim() || 'codau.unibridal@gmail.com',
+      customerCccd: cccd.trim() || '079198000123',
+      cccd: cccd.trim() || '079198000123',
+      shippingAddress: address.trim() || 'Showroom UniBridal Q.1 TP.HCM',
+      contractCode: generatedContractCode,
+      contractSignature: contractSignature || brideName || 'Cô Dâu UniBridal',
+      measurements,
+      depositOption,
+      paymentMethod: 'vietqr',
+      paymentStatus: 'pending_payment',
+      rentalStartDate: toIsoDateString(rentalSchedule?.startDate) || new Date().toISOString().split('T')[0],
+      rentalEndDate: toIsoDateString(rentalSchedule?.endDate) || new Date(Date.now() + (Number(rentalDays) || 4) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      rentalDays,
+      items: (orderItems && orderItems.length > 0 ? orderItems : [activeDress]).filter(Boolean).map((item, idx) => {
+        const itemDailyPrice = Number(item.price || item.rentPrice) || 0;
+        return {
+          dressId: item.id || item._id,
+          name: item.name,
+          code: item.code || `UB-HC-2026-0${idx + 1}`,
+          size: item.size || selectedSize,
+          rentPrice: itemDailyPrice * Math.max(1, Number(rentalDays) || 1),
+          dailyPrice: itemDailyPrice,
+          rentalDays,
+          depositAmount: Number(item.deposit || item.depositAmount) || 15000000,
+          image: item.images?.[0] || item.image,
+        };
+      }),
+      totalRentPrice,
+      totalDeposit: depositCollateral,
+      depositPaidAmount: amountToPayToday,
+      totalPayment: totalRentPrice + depositCollateral,
+      deliveryMethod: 'showroom',
+      notes: `Hôn lễ ngày ${rentalSchedule.weddingDate}. Đã ký hợp đồng điện tử và tạo mã cọc qua Cổng VietQR Gateway.`,
+    };
+
+    try {
+      const res = await createOrder(orderPayload);
+      const savedOrder = res?.data || orderPayload;
+      try {
+        localStorage.setItem('unibridal-last-order', JSON.stringify(savedOrder));
+        clearCart();
+        localStorage.removeItem('unibridal_cart');
+        localStorage.removeItem('unibridal-rental-cart');
+        window.dispatchEvent(new Event('unibridal-cart-updated'));
+      } catch {}
+
+      navigate(`/thanh-toan-vietqr/${savedOrder.orderCode}`);
+    } catch (err) {
+      message.error(err.message || 'Không thể tạo đơn hàng, vui lòng thử lại.');
+      setIsSubmitting(false);
+    }
+  };
+
+  // Giả lập thanh toán VietQR thành công trong chế độ Sandbox Test Mode
+  const handleSimulateVietQRPayment = async () => {
+    if (isSubmitting || isVerifyingPayment) return;
+
+    if (!isContractSigned) {
+      setIsContractSigned(true);
+      setContractSignature(brideName.trim() || 'Cô Dâu UniBridal');
+      message.info('Chế độ Test: Đã tự động hoàn tất ký hợp đồng số cho cô dâu!');
+    }
+
+    setIsVerifyingPayment(true);
+    message.loading({
+      content: '⚡ [VietQR Sandbox]: Đang mô phỏng giao dịch chuyển khoản Techcombank Napas 24/7...',
+      key: 'payment_confirm',
+      duration: 1.5,
+    });
+
+    setTimeout(async () => {
+      setIsVerifyingPayment(false);
+      setIsSubmitting(true);
+
+      const generatedOrderCode = `UB-2026-${Math.floor(100 + Math.random() * 900)}`;
+      const generatedContractCode = `HĐ-${generatedOrderCode}`;
+
+      const orderPayload = {
+        orderCode: generatedOrderCode,
+        customerName: brideName.trim() || 'Cô Dâu UniBridal',
+        brideName: brideName.trim() || 'Cô Dâu UniBridal',
+        customerPhone: phone.trim() || '0908123888',
+        phone: phone.trim() || '0908123888',
+        customerEmail: email.trim() || 'codau.unibridal@gmail.com',
+        email: email.trim() || 'codau.unibridal@gmail.com',
+        customerCccd: cccd.trim() || '079198000123',
+        cccd: cccd.trim() || '079198000123',
+        shippingAddress: address.trim() || 'Showroom UniBridal Q.1 TP.HCM',
+        contractCode: generatedContractCode,
+        contractSignature: contractSignature || brideName || 'Cô Dâu UniBridal',
+        measurements,
+        depositOption,
+        paymentMethod: 'vietqr',
+        paymentStatus: 'deposit_paid',
+        rentalStartDate: toIsoDateString(rentalSchedule?.startDate) || new Date().toISOString().split('T')[0],
+        rentalEndDate: toIsoDateString(rentalSchedule?.endDate) || new Date(Date.now() + (Number(rentalDays) || 4) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        rentalDays,
+        items: (orderItems && orderItems.length > 0 ? orderItems : [activeDress]).filter(Boolean).map((item, idx) => {
+          const itemDailyPrice = Number(item.price || item.rentPrice) || 0;
+          return {
+            dressId: item.id || item._id,
+            name: item.name,
+            code: item.code || `UB-HC-2026-0${idx + 1}`,
+            size: item.size || selectedSize,
+            rentPrice: itemDailyPrice * Math.max(1, Number(rentalDays) || 1),
+            dailyPrice: itemDailyPrice,
+            rentalDays,
+            depositAmount: Number(item.deposit || item.depositAmount) || 15000000,
+            image: item.images?.[0] || item.image,
+          };
+        }),
+        totalRentPrice,
+        totalDeposit: depositCollateral,
+        depositPaidAmount: amountToPayToday,
+        totalPayment: totalRentPrice + depositCollateral,
+        deliveryMethod: 'showroom',
+        notes: `Hôn lễ ngày ${rentalSchedule.weddingDate}. Đã thanh toán trọn gói gồm tiền thuê và cọc bảo lãnh 50% giá trị (${formatCurrencyVND(depositCollateral)} - Hoàn trả khi trả váy). Phương thức: Chuyển khoản VietQR 24/7 Techcombank [Test Mode Sandbox].`,
+      };
+
+      try {
+        const res = await createOrder(orderPayload);
+        const savedOrder = res?.data || orderPayload;
+        setCreatedOrder(savedOrder);
+
+        // Gọi API mô phỏng thanh toán VietQR
+        await simulateVietQRPaymentApi({
+          orderId: savedOrder._id || savedOrder.id,
+          orderCode: savedOrder.orderCode,
+          amount: amountToPayToday,
+          senderName: brideName || 'Cô Dâu Test',
+        });
+
+        try {
+          localStorage.setItem('unibridal-last-order', JSON.stringify(savedOrder));
+        } catch {}
+
+        try {
+          clearCart();
+          localStorage.removeItem('unibridal_cart');
+          localStorage.removeItem('unibridal-rental-cart');
+          window.dispatchEvent(new Event('unibridal-cart-updated'));
+        } catch {}
+
+        setIsSuccessModalOpen(true);
+        message.success({
+          content: `✓ [Sandbox Test]: Đã nhận thanh toán ${formatCurrencyVND(amountToPayToday)} qua VietQR Techcombank! Hợp đồng & Lịch thuê đã được kích hoạt.`,
+          key: 'payment_confirm',
+          duration: 3.5,
+        });
+      } catch (error) {
+        message.error(error.message || 'Không thể tạo đơn thuê thử nghiệm, vui lòng thử lại.');
+      } finally {
+        setIsSubmitting(false);
+      }
+    }, 1200);
   };
 
   const copyToClipboard = (text) => {
@@ -1632,7 +1863,7 @@ export default function CheckoutPage() {
                       <div className="relative flex items-center">
                         <input
                           type="date"
-                          value={toIsoDateString(rentalSchedule.startDate)}
+                          value={toIsoDateString(rentalSchedule.startDate) || ''}
                           onChange={(e) => {
                             if (e.target.value) {
                               handleSelectStartDate(e.target.value);
@@ -1642,7 +1873,7 @@ export default function CheckoutPage() {
                         />
                       </div>
                       <span className="text-[10.5px] font-medium text-[#2E7D32] mt-1.5 flex items-center gap-1">
-                        <span>✦</span> Ngày nhận váy
+                        <span>✦</span> {rentalSchedule.startDate ? 'Ngày nhận váy' : 'Chưa chọn ngày nhận'}
                       </span>
                     </div>
 
@@ -1659,7 +1890,7 @@ export default function CheckoutPage() {
                       <div className="relative flex items-center">
                         <input
                           type="date"
-                          value={toIsoDateString(rentalSchedule.weddingDate)}
+                          value={toIsoDateString(rentalSchedule.weddingDate) || ''}
                           onChange={(e) => {
                             if (e.target.value) {
                               handleSelectWeddingDate(e.target.value);
@@ -1669,7 +1900,7 @@ export default function CheckoutPage() {
                         />
                       </div>
                       <span className="text-[10.5px] font-bold text-[#733F49] mt-1.5 flex items-center gap-1">
-                        <span>★</span> Ngày hôn lễ chính thức
+                        <span>★</span> {rentalSchedule.weddingDate ? 'Ngày hôn lễ chính thức' : 'Vui lòng chọn ngày cưới'}
                       </span>
                     </div>
 
@@ -1679,11 +1910,11 @@ export default function CheckoutPage() {
                         <label className="block text-[10.5px] font-bold text-[#733F49] uppercase tracking-wider">
                           NGÀY HOÀN TRẢ VÁY *
                         </label>
-                        <span className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider ${toIsoDateString(rentalSchedule.endDate) === toIsoDateString(rentalSchedule.weddingDate)
+                        <span className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider ${rentalSchedule.endDate && toIsoDateString(rentalSchedule.endDate) === toIsoDateString(rentalSchedule.weddingDate)
                           ? 'bg-[#FFF3E0] text-[#E65100] border border-[#FFE0B2]'
                           : 'bg-[#E8F5E9] text-[#2E7D32] border border-[#C8E6C9]'
                           }`}>
-                          {toIsoDateString(rentalSchedule.endDate) === toIsoDateString(rentalSchedule.weddingDate)
+                          {rentalSchedule.endDate && toIsoDateString(rentalSchedule.endDate) === toIsoDateString(rentalSchedule.weddingDate)
                             ? 'CÙNG NGÀY CƯỚI'
                             : 'SAU NGÀY CƯỚI'}
                         </span>
@@ -1691,8 +1922,8 @@ export default function CheckoutPage() {
                       <div className="relative flex items-center">
                         <input
                           type="date"
-                          min={toIsoDateString(rentalSchedule.startDate)}
-                          value={toIsoDateString(rentalSchedule.endDate)}
+                          min={toIsoDateString(rentalSchedule.startDate) || undefined}
+                          value={toIsoDateString(rentalSchedule.endDate) || ''}
                           onChange={(e) => {
                             if (e.target.value) {
                               handleSelectEndDate(e.target.value);
@@ -1702,9 +1933,11 @@ export default function CheckoutPage() {
                         />
                       </div>
                       <span className="text-[10.5px] font-medium text-[#733F49] mt-1.5 flex items-center gap-1">
-                        <span>✓</span> {toIsoDateString(rentalSchedule.endDate) === toIsoDateString(rentalSchedule.weddingDate)
-                          ? `Trả trước 20:00 (Cùng tối ngày cưới - Gói ${rentalDays} ngày)`
-                          : `Trả trước 20:00 ngày ${rentalSchedule.endDate} (Gói ${rentalDays} ngày)`}
+                        <span>✓</span> {rentalSchedule.endDate ? (
+                          toIsoDateString(rentalSchedule.endDate) === toIsoDateString(rentalSchedule.weddingDate)
+                            ? `Trả trước 20:00 (Cùng tối ngày cưới - Gói ${rentalDays} ngày)`
+                            : `Trả trước 20:00 ngày ${rentalSchedule.endDate} (Gói ${rentalDays} ngày)`
+                        ) : 'Chưa xác định ngày hoàn trả'}
                       </span>
                     </div>
 
@@ -2013,6 +2246,7 @@ export default function CheckoutPage() {
                           <div className="relative flex items-center">
                             <input
                               type="text"
+                              placeholder="—"
                               value={measurements.height}
                               onChange={(e) => setMeasurements({ ...measurements, height: e.target.value.replace(/[^0-9.]/g, '') })}
                               className="w-full h-10 sm:h-11 bg-white border border-[#E2D2C2] rounded-xl pl-2 pr-6 font-jakarta font-extrabold text-[16px] text-[#2C2523] text-center tabular-nums focus:outline-none focus:border-[#733F49] shadow-2xs"
@@ -2046,6 +2280,7 @@ export default function CheckoutPage() {
                           <div className="relative flex items-center">
                             <input
                               type="text"
+                              placeholder="—"
                               value={measurements.weight}
                               onChange={(e) => setMeasurements({ ...measurements, weight: e.target.value.replace(/[^0-9.]/g, '') })}
                               className="w-full h-10 sm:h-11 bg-white border border-[#E2D2C2] rounded-xl pl-2 pr-6 font-jakarta font-extrabold text-[16px] text-[#2C2523] text-center tabular-nums focus:outline-none focus:border-[#733F49] shadow-2xs"
@@ -2079,6 +2314,7 @@ export default function CheckoutPage() {
                           <div className="relative flex items-center">
                             <input
                               type="text"
+                              placeholder="—"
                               value={measurements.bust}
                               onChange={(e) => setMeasurements({ ...measurements, bust: e.target.value.replace(/[^0-9.]/g, '') })}
                               className="w-full h-10 sm:h-11 bg-white border border-[#E2D2C2] rounded-xl pl-2 pr-6 font-jakarta font-extrabold text-[16px] text-[#2C2523] text-center tabular-nums focus:outline-none focus:border-[#733F49] shadow-2xs"
@@ -2112,6 +2348,7 @@ export default function CheckoutPage() {
                           <div className="relative flex items-center">
                             <input
                               type="text"
+                              placeholder="—"
                               value={measurements.waist}
                               onChange={(e) => setMeasurements({ ...measurements, waist: e.target.value.replace(/[^0-9.]/g, '') })}
                               className="w-full h-10 sm:h-11 bg-white border-2 border-[#EAB8B8] rounded-xl pl-2 pr-6 font-jakarta font-extrabold text-[16px] text-[#733F49] text-center tabular-nums focus:outline-none focus:border-[#733F49] shadow-2xs"
@@ -2145,6 +2382,7 @@ export default function CheckoutPage() {
                           <div className="relative flex items-center">
                             <input
                               type="text"
+                              placeholder="—"
                               value={measurements.hips}
                               onChange={(e) => setMeasurements({ ...measurements, hips: e.target.value.replace(/[^0-9.]/g, '') })}
                               className="w-full h-10 sm:h-11 bg-white border border-[#E2D2C2] rounded-xl pl-2 pr-6 font-jakarta font-extrabold text-[16px] text-[#2C2523] text-center tabular-nums focus:outline-none focus:border-[#733F49] shadow-2xs"
@@ -2178,6 +2416,7 @@ export default function CheckoutPage() {
                           <div className="relative flex items-center">
                             <input
                               type="text"
+                              placeholder="—"
                               value={measurements.heel}
                               onChange={(e) => setMeasurements({ ...measurements, heel: e.target.value.replace(/[^0-9.]/g, '') })}
                               className="w-full h-10 sm:h-11 bg-white border border-[#E2D2C2] rounded-xl pl-2 pr-6 font-jakarta font-extrabold text-[16px] text-[#2C2523] text-center tabular-nums focus:outline-none focus:border-[#733F49] shadow-2xs"
@@ -2222,6 +2461,11 @@ export default function CheckoutPage() {
                       <>
                         <AlertCircle className="w-4 h-4 text-stone-500" />
                         <span>LỊCH BỊ TRÙNG — VUI LÒNG ĐỔI NGÀY TRÊN BẢNG LỊCH</span>
+                      </>
+                    ) : !rentalSchedule.startDate || !rentalSchedule.weddingDate ? (
+                      <>
+                        <Calendar className="w-4 h-4" />
+                        <span>VUI LÒNG CHỌN NGÀY THUÊ TRÊN BẢNG LỊCH</span>
                       </>
                     ) : (
                       <>
@@ -2824,8 +3068,72 @@ export default function CheckoutPage() {
                         <span className="text-[#6B5C5D]">Xác nhận chuyển khoản & bấm nút <strong>Xác nhận</strong> bên dưới</span>
                       </div>
                     </div>
+
+                    {/* VietQR Test Sandbox Card */}
+                    <div className="p-5 rounded-2xl bg-gradient-to-r from-[#FAF0EC] via-[#FFF8F6] to-[#FAF0EC] border-2 border-dashed border-[#D4AF37] relative overflow-hidden shadow-xs animate-fade-in">
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="flex items-start gap-3.5">
+                          <div className="w-11 h-11 rounded-xl bg-[#FAF0EC] border border-[#D4AF37] text-[#854D0E] flex items-center justify-center shrink-0 shadow-xs">
+                            <Sparkles className="w-5 h-5 text-[#854D0E]" />
+                          </div>
+                          <div>
+                            <div className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-[#854D0E] uppercase tracking-wider">
+                              <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse"></span>
+                              <span>VIETQR SANDBOX TEST MODE (CHẾ ĐỘ THỬ NGHIỆM)</span>
+                            </div>
+                            <h4 className="font-jakarta font-extrabold text-[15px] text-[#2C2523] m-0 mt-0.5">
+                              Mô Phỏng Chuyển Khoản Techcombank 24/7 Thành Công
+                            </h4>
+                            <p className="text-[12px] text-[#6B5C5D] m-0 mt-1 leading-relaxed">
+                              Dành cho Giảng viên / Tester kiểm thử: Bấm nút dưới để giả lập hệ thống nhận được tiền cọc, tự động gửi email và kích hoạt đơn thuê mà không cần chuyển tiền thật.
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleSimulateVietQRPayment}
+                          disabled={isSubmitting || isVerifyingPayment}
+                          className="w-full sm:w-auto shrink-0 px-5 py-3.5 rounded-xl bg-gradient-to-r from-[#854D0E] to-[#A16207] hover:from-[#713F12] hover:to-[#854D0E] text-white font-jakarta text-[13px] font-bold shadow-md hover:shadow-lg transition-all cursor-pointer border-0 flex items-center justify-center gap-2 active:scale-95"
+                        >
+                          <Zap className="w-4 h-4 text-amber-300" />
+                          <span>⚡ Test Chuyển Khoản 1-Click</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </section>
+
+                {/* Dedicated VietQR Gateway Redirect Banner */}
+                <div className="p-5 rounded-2xl bg-gradient-to-r from-[#FAF0EC] via-[#FFF8F6] to-[#FAF0EC] border border-[#D4AF37]/50 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-11 h-11 rounded-xl bg-[#733F49] text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <QrCode className="w-5 h-5 text-[#E6C687]" />
+                    </div>
+                    <div>
+                      <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#854D0E] uppercase tracking-wider">
+                        <Sparkles className="w-3 h-3 text-[#D4AF37]" />
+                        <span>CỔNG THANH TOÁN VIETQR GATEWAY CHUYÊN BIỆT</span>
+                      </div>
+                      <h4 className="font-jakarta font-bold text-[15px] text-[#2C2523] m-0 mt-0.5">
+                        Mở App Ngân Hàng Tự Động & Check Trạng Thái Real-time
+                      </h4>
+                      <p className="text-[12px] text-[#6B5C5D] m-0 mt-0.5">
+                        Chuyển hướng sang trang cổng VietQR toàn màn hình với đếm ngược 15:00 và hỗ trợ mở thẳng App VCB, Techcombank, MB, VPBank...
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={isSubmitting || isVerifyingPayment}
+                    onClick={handleProceedToVietQRGateway}
+                    className="w-full md:w-auto shrink-0 px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#733F49] via-[#854F55] to-[#733F49] hover:from-[#5F323B] hover:to-[#5F323B] text-white font-jakarta text-[13.5px] font-bold shadow-md hover:shadow-lg transition-all cursor-pointer border-0 flex items-center justify-center gap-2 active:scale-95"
+                  >
+                    <span>⚡ Chuyển Hướng Sang Cổng VietQR</span>
+                    <ArrowRight className="w-4 h-4 text-[#E6C687]" />
+                  </button>
+                </div>
 
                 {/* Confirm Final Payment Button */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
@@ -2961,11 +3269,16 @@ export default function CheckoutPage() {
                     <AlertCircle className="w-3.5 h-3.5 shrink-0 text-[#DC2626]" />
                     <span>Trùng lịch đã đặt ({scheduleConflict.formattedRange})</span>
                   </div>
+                ) : !rentalSchedule.startDate || !rentalSchedule.endDate ? (
+                  <div className="bg-[#FFF8F5] border border-[#F2D8D4] p-2 rounded-xl text-[#8C4654] text-[11px] flex items-center gap-1.5 font-medium">
+                    <Calendar className="w-3.5 h-3.5 shrink-0 text-[#B8737D]" />
+                    <span>Chưa chọn ngày thuê trên lịch</span>
+                  </div>
                 ) : (
                   <div className="bg-[#F0FDF4] border border-[#BBF7D0] p-2 rounded-xl text-[#15803D] text-[11px] flex items-center justify-between font-bold">
                     <div className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-[#16A34A]" />
-                      <span>Lịch đã đăng ký:</span>
+                      <span>Lịch thuê hợp lệ:</span>
                     </div>
                     <span className="font-mono text-[11.5px] text-[#15803D] bg-white/80 px-2 py-0.5 rounded-md border border-[#BBF7D0]">
                       {rentalSchedule.startDate} – {rentalSchedule.endDate}

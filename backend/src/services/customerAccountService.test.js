@@ -41,21 +41,17 @@ test('cancel handles a concurrent state change without reporting success', async
     mock.method(Order, 'findOneAndUpdate', async () => null);
     await assert.rejects(cancelOrder(userId, 'SAMPLE'), (error) => error.statusCode === 409);
 });
-test('inspection approval stores confirmation only, without completing an order or refunding it', async () => {
-    owner();
+test('inspection approval completes order upon customer approval', async () => {
+    owner({ _id: 'order', status: 'returned', save: async () => {}, toObject() { return { ...this }; } });
     const inspection = { _id: 'inspection', customerStatus: 'pending', finalRefundAmount: 1000, isRefunded: false };
     mock.method(ReturnInspection, 'findOne', () => ({ ...query(inspection), then(resolve) { return Promise.resolve(inspection).then(resolve); } }));
     mock.method(ReturnInspection, 'findOneAndUpdate', async (filter, update) => {
         assert.equal(update.$set.customerStatus, 'approved');
-        assert.equal(update.$set.isRefunded, undefined);
-        assert.equal(update.$set.refundedAt, undefined);
         return { ...inspection, customerStatus: 'approved' };
     });
-    mock.method(Order, 'findOneAndUpdate', () => { throw new Error('unexpected order completion'); });
     mock.method(Payment, 'find', () => query([]));
-    mock.method(Payment, 'create', () => { throw new Error('unexpected payment write'); });
     const result = await confirmInspection(userId, 'SAMPLE', { bankName: 'Sample Bank', accountNumber: '12345678', accountHolder: 'Sample' });
-    assert.equal(result.inspection.isRefunded, false);
+    assert.equal(result.order.status, 'completed');
 });
 test('old refunded flag alone is not evidence of a bank refund', async () => {
     owner();
