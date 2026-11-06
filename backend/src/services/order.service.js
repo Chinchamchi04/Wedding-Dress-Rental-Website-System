@@ -274,12 +274,17 @@ export const getAllOrders = async (filters = {}) => {
   ]);
 
   const orderIds = orders.map((o) => o._id);
-  const inspections = await ReturnInspection.find({ orderId: { $in: orderIds } }).lean();
+  const [inspections, contracts] = await Promise.all([
+    ReturnInspection.find({ orderId: { $in: orderIds } }).lean(),
+    Contract.find({ orderId: { $in: orderIds } }).lean(),
+  ]);
   const inspectionMap = new Map(inspections.map((i) => [String(i.orderId), i]));
+  const contractMap = new Map(contracts.map((c) => [String(c.orderId), c]));
 
   const enrichedOrders = orders.map((o) => {
     const hasAccount = Boolean(o.customerId && String(o.customerId).trim() !== '');
     const insp = inspectionMap.get(String(o._id)) || null;
+    const contract = contractMap.get(String(o._id)) || null;
     let status = o.status;
     const isCustomerApproved = insp?.customerStatus === 'approved' || insp?.customerConfirmed;
     if (isCustomerApproved && status !== 'completed' && status !== 'complete') {
@@ -292,6 +297,7 @@ export const getAllOrders = async (filters = {}) => {
       hasAccount,
       isGuest: !hasAccount,
       inspection: insp,
+      contract: contract || o.contract || null,
     };
   });
 

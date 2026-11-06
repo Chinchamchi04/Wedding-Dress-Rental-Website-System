@@ -24,6 +24,9 @@ import {
   CreditCard,
   Layers,
   ArrowRight,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
   Plus,
   Check,
   AlertTriangle,
@@ -85,6 +88,7 @@ export default function ContractManagement() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [sortBySigned, setSortBySigned] = useState('desc'); // 'desc': mới nhất -> cũ nhất, 'asc': cũ nhất -> mới nhất
   const [selectedContract, setSelectedContract] = useState(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -149,7 +153,17 @@ export default function ContractManagement() {
             depositAmount: ord.totalDeposit || 15000000,
             totalValue: (ord.totalRentPrice || 5200000) + (ord.totalDeposit || 15000000),
             status,
-            signedAt: ord.createdAt ? new Date(ord.createdAt).toLocaleString('vi-VN') : '2026-11-01',
+            signedAt: ord.contract?.signedAt
+              ? new Date(ord.contract.signedAt).toLocaleString('vi-VN')
+              : ord.createdAt
+              ? new Date(ord.createdAt).toLocaleString('vi-VN')
+              : '—',
+            rawSignedAt: ord.contract?.signedAt || ord.createdAt || null,
+            signedAtTime: ord.contract?.signedAt
+              ? new Date(ord.contract.signedAt).getTime()
+              : ord.createdAt
+              ? new Date(ord.createdAt).getTime()
+              : 0,
             signedMethod: ord.contractSignature ? 'Chữ ký điện tử UniBridal' : 'Ký số điện tử',
             contractSignature: ord.contractSignature || ord.customerName || ord.brideName || '',
             rawOrder: ord,
@@ -177,7 +191,7 @@ export default function ContractManagement() {
   }, []);
 
   const filteredContracts = useMemo(() => {
-    return contracts.filter((item) => {
+    const list = contracts.filter((item) => {
       const matchSearch =
         item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -186,7 +200,13 @@ export default function ContractManagement() {
       const matchStatus = selectedStatus === 'all' || item.status === selectedStatus;
       return matchSearch && matchStatus;
     });
-  }, [contracts, searchTerm, selectedStatus]);
+
+    return list.sort((a, b) => {
+      const timeA = a.signedAtTime || (a.rawSignedAt ? new Date(a.rawSignedAt).getTime() : 0);
+      const timeB = b.signedAtTime || (b.rawSignedAt ? new Date(b.rawSignedAt).getTime() : 0);
+      return sortBySigned === 'desc' ? timeB - timeA : timeA - timeB;
+    });
+  }, [contracts, searchTerm, selectedStatus, sortBySigned]);
 
   const stats = useMemo(() => {
     return {
@@ -250,7 +270,11 @@ export default function ContractManagement() {
         const signedAt = newStatus === 'active' && !c.signedAt
           ? new Date().toLocaleString('vi-VN')
           : c.signedAt;
-        return { ...c, status: newStatus, signedAt };
+        const rawSignedAt = newStatus === 'active' && !c.rawSignedAt
+          ? new Date().toISOString()
+          : c.rawSignedAt;
+        const signedAtTime = rawSignedAt ? new Date(rawSignedAt).getTime() : c.signedAtTime;
+        return { ...c, status: newStatus, signedAt, rawSignedAt, signedAtTime };
       }
       return c;
     });
@@ -484,7 +508,18 @@ export default function ContractManagement() {
             />
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
+          <div className="flex items-center gap-2.5 flex-wrap overflow-x-auto pb-1 md:pb-0">
+            {/* Nút sắp xếp theo thời gian ký */}
+            <button
+              type="button"
+              onClick={() => setSortBySigned((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF2EE] border border-[#EFE2DC] text-xs font-bold text-[#5F333B] hover:bg-[#F3E7E2] transition-colors cursor-pointer shrink-0 shadow-2xs"
+              title="Nhấp để đảo chiều sắp xếp theo thời gian ký"
+            >
+              <ArrowUpDown size={13} className="text-[#B8737D]" />
+              <span>Thời gian ký: {sortBySigned === 'desc' ? 'Mới nhất ↓' : 'Cũ nhất ↑'}</span>
+            </button>
+
             {[
               { id: 'all', label: 'Tất cả' },
               { id: 'active', label: 'Có hiệu lực' },
@@ -518,7 +553,22 @@ export default function ContractManagement() {
                   <th className="py-3.5 px-4">Trang Phục Thuê</th>
                   <th className="py-3.5 px-4">Thời Gian Thuê</th>
                   <th className="py-3.5 px-4">Tiền Thuê &amp; Cọc</th>
-                  <th className="py-3.5 px-4">Trạng Thái</th>
+                  <th
+                    className="py-3.5 px-4 cursor-pointer select-none hover:text-[#733F49] transition-colors"
+                    onClick={() => setSortBySigned((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
+                    title="Nhấp để sắp xếp theo thời gian ký"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Trạng Thái</span>
+                      <span className="text-[#B8737D] inline-flex items-center" title={`Sắp xếp: ${sortBySigned === 'desc' ? 'Mới nhất ↓' : 'Cũ nhất ↑'}`}>
+                        {sortBySigned === 'desc' ? (
+                          <ArrowDown size={13} className="text-[#733F49]" />
+                        ) : (
+                          <ArrowUp size={13} className="text-[#733F49]" />
+                        )}
+                      </span>
+                    </div>
+                  </th>
                   <th className="py-3.5 px-4 text-right">Thao Tác</th>
                 </tr>
               </thead>
