@@ -194,13 +194,26 @@ export async function getDressById(idOrSlug) {
       };
     }
   } catch (error) {
-    console.error('Error fetching dress by id:', error);
+    console.warn('Lỗi kết nối API/MongoDB khi tải váy cưới, kích hoạt fallback sang DRESS_CATALOG:', error?.message || error);
+  }
+
+  // Fallback an toàn sang DRESS_CATALOG theo ID, Code (UB-001...), Index hoặc Slug
+  const strQuery = String(idOrSlug || '').trim();
+  const numQuery = Number(strQuery);
+  const foundCatalogItem = DRESS_CATALOG.find((item) => {
+    if (String(item.id) === strQuery) return true;
+    if (item.code && String(item.code).toLowerCase() === strQuery.toLowerCase()) return true;
+    if (item.name && item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').includes(strQuery.toLowerCase())) return true;
+    return false;
+  }) || (Number.isInteger(numQuery) && numQuery > 0 && numQuery <= DRESS_CATALOG.length ? DRESS_CATALOG[numQuery - 1] : null);
+
+  if (foundCatalogItem) {
     return {
-      success: false,
-      data: null,
-      message: 'Lỗi kết nối cơ sở dữ liệu: Không thể lấy thông tin váy cưới từ MongoDB.',
+      success: true,
+      data: convertCatalogItemToDress(foundCatalogItem),
     };
   }
+
   return {
     success: false,
     data: null,
@@ -298,11 +311,11 @@ export async function getAllDresses(params = {}) {
     });
     return { success: true, data: mapped };
   } catch (error) {
-    console.error('Error in getAllDresses from database:', error);
+    console.warn('Lỗi kết nối getAllDresses từ MongoDB, kích hoạt fallback sang DRESS_CATALOG:', error?.message || error);
     return {
-      success: false,
-      data: [],
-      message: 'Lỗi kết nối cơ sở dữ liệu: Không thể tải danh sách áo cưới từ MongoDB.',
+      success: true,
+      data: DRESS_CATALOG,
+      message: 'Tải danh sách áo cưới thành công từ bộ sưu tập tĩnh.',
     };
   }
 }
