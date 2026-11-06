@@ -266,7 +266,6 @@ export const authService = {
       throw err;
     }
 
-    const roleCode = user.roleId?.code || 'CUSTOMER';
     const token = generateToken(user, roleCode);
 
     return {

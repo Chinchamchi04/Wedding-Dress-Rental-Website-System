@@ -4,7 +4,8 @@ const addressText = (address) => typeof address === 'string' ? address : ['stree
 const measurementKeys = ['height', 'weight', 'bust', 'waist', 'hips'];
 function localExtras(id) {
     try {
-        return JSON.parse(localStorage.getItem(extrasKey(id)) || '{}');
+        const extras = JSON.parse(localStorage.getItem(extrasKey(id)) || '{}');
+        return extras && typeof extras === 'object' && !Array.isArray(extras) ? extras : {};
     }
     catch {
         return {};
@@ -21,7 +22,7 @@ function normalize(profile) {
         gender: extras.gender || 'unspecified',
         birthday: extras.birthday || '',
         weddingDate: extras.weddingDate || '',
-        heel: extras.heel || '',
+        heel: extras.heel ?? '',
     };
 }
 export const getProfile = async () => normalize((await axiosClient.get('/profile')).data);
@@ -29,19 +30,19 @@ export const saveProfile = async (profile) => {
     const address = profile.address === addressText(profile.addressParts)
         ? profile.addressParts : { street: profile.address || '', ward: '', district: '', city: '' };
     const res = await axiosClient.put('/profile', {
-        name: profile.name, email: profile.email, phone: profile.phone, avatar: profile.avatar,
+        name: profile.name, email: profile.email, phone: profile.phone,
         address, idCard: profile.idCard,
         measurements: Object.fromEntries(measurementKeys.map((key) => [key, profile[key] === '' || profile[key] == null ? null : Number(profile[key])])),
     });
     // Only fields absent from the existing User schema stay on this device.
-    const extras = Object.fromEntries(['gender', 'birthday', 'weddingDate', 'heel'].map((key) => [key, profile[key] || '']));
+    const extras = Object.fromEntries(['gender', 'birthday', 'weddingDate', 'heel'].map((key) => [key, profile[key] ?? '']));
     try {
         localStorage.setItem(extrasKey(res.data.id || res.data._id), JSON.stringify(extras));
     }
     catch { /* Server save remains successful when device storage is full. */ }
     const updated = { ...normalize(res.data), ...extras };
-    const storage = localStorage.getItem('token') ? localStorage : sessionStorage;
     try {
+        const storage = localStorage.getItem('token') ? localStorage : sessionStorage;
         storage.setItem('user', JSON.stringify(updated));
     }
     catch { /* AuthContext also keeps the current profile in memory. */ }

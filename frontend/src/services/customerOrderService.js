@@ -4,7 +4,12 @@ import { savedContractUrl } from '../utils/signedContract';
 const path = (id) => `/account/orders/${encodeURIComponent(id)}`;
 export const getOrders = async () => (await axiosClient.get('/account/orders')).data.map(mapOrder);
 export const getOrder = async (id) => {
-  const order = mapOrder((await axiosClient.get(path(id))).data);
+  const raw = (await axiosClient.get(path(id))).data;
+  const order = {
+    ...mapOrder(raw),
+    customerPhone: raw.customerPhone || raw.contract?.phone || '',
+    customerCccd: raw.customerCccd || raw.contract?.idCard || '',
+  };
   if (order.contract) {
     order.contract = {
       ...order.contract,

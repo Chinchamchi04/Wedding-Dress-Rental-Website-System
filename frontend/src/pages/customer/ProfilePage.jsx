@@ -6,6 +6,29 @@ import AccountLayout from '../../components/layout/AccountLayout';
 import { getProfile, saveProfile } from '../../services/profileService';
 import { useAuth } from '../../contexts/AuthContext';
 
+const measurementRules = [{
+  validator: (_, value) => value == null || value === '' || (Number.isFinite(value) && value > 0 && value <= 500)
+    ? Promise.resolve()
+    : Promise.reject(new Error('Số đo phải lớn hơn 0 và không vượt quá 500.')),
+}];
+
+const measurementFields = [
+  ['height', 'Chiều cao (cm)'],
+  ['weight', 'Cân nặng (kg)'],
+  ['bust', 'Vòng 1 - Ngực (cm)'],
+  ['waist', 'Vòng 2 - Eo (cm)'],
+  ['hips', 'Vòng 3 - Mông (cm)'],
+  ['heel', 'Chiều cao giày cưới dự kiến (cm)'],
+];
+
+function MeasurementField({ name, label }) {
+  const isHeel = name === 'heel';
+  return (
+    <Form.Item name={name} label={<span className="font-semibold uppercase tracking-wider text-[11px]">{label}</span>} rules={isHeel ? undefined : measurementRules}>
+      <InputNumber mode="input" min={0} max={isHeel ? undefined : 500} step={1} size="large" className="!w-full !bg-[#fff8f6]" />
+    </Form.Item>
+  );
+}
 
 const profilePageStyles = `
 :where(.profile-page) :is(h1, h2, h3, h4, p) { margin: 0; }
@@ -188,9 +211,6 @@ export default function ProfilePage() {
       <style>{profilePageStyles}</style>
       <AccountLayout hideBreadcrumb={true} breadcrumb={[]}>
         <section className="profile-card rounded-2xl bg-white px-5 py-7 sm:px-8 border border-[#F0E5DC] shadow-[0_4px_24px_rgba(44,37,35,0.03)]" aria-labelledby="profile-title">
-          <div className="flex items-center gap-2">
-
-          </div>
           <h1 id="profile-title" className="mt-1 font-playfair text-[26px] sm:text-[28px] font-semibold text-[#2C2523]">
             Hồ Sơ Người Dùng
           </h1>
@@ -229,7 +249,7 @@ export default function ProfilePage() {
                 <Form.Item
                   label={<span className="font-semibold uppercase tracking-wider text-[11px]">Họ và tên</span>}
                   name="name"
-                  rules={[{ required: true, message: 'Vui lòng nhập họ và tên của bạn.' }]}
+                  rules={[{ required: true, whitespace: true, message: 'Vui lòng nhập họ và tên của bạn.' }]}
                 >
                   <Input placeholder="Nhập họ và tên cô dâu..." size="large" />
                 </Form.Item>
@@ -237,7 +257,7 @@ export default function ProfilePage() {
                 <Form.Item
                   label={<span className="font-semibold uppercase tracking-wider text-[11px]">Số điện thoại</span>}
                   name="phone"
-                  rules={[{ required: true, message: 'Vui lòng nhập số điện thoại liên lạc.' }]}
+                  rules={[{ required: true, whitespace: true, message: 'Vui lòng nhập số điện thoại liên lạc.' }]}
                 >
                   <Input placeholder="Nhập số điện thoại liên hệ..." size="large" />
                 </Form.Item>
@@ -299,6 +319,7 @@ export default function ProfilePage() {
                 <Form.Item
                   label={<span className="font-semibold uppercase tracking-wider text-[11px]">Số CCCD / CMND</span>}
                   name="idCard"
+                  rules={[{ pattern: /^(\d{9}|\d{12})$/, message: 'CCCD/CMND cần gồm 9 hoặc 12 chữ số.' }]}
                 >
                   <Input placeholder="Nhập 12 số CCCD gắn chip..." size="large" />
                 </Form.Item>
@@ -330,49 +351,10 @@ export default function ProfilePage() {
 
 
               <div className="grid grid-cols-2 gap-x-4 sm:grid-cols-4">
-                <Form.Item
-                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Chiều cao (cm)</span>}
-                  name="height"
-                >
-                  <InputNumber mode="input" min={0} step={1} size="large" className="!w-full !bg-[#fff8f6]" />
-                </Form.Item>
-
-                <Form.Item
-                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Cân nặng (kg)</span>}
-                  name="weight"
-                >
-                  <InputNumber mode="input" min={0} step={1} size="large" className="!w-full !bg-[#fff8f6]" />
-                </Form.Item>
-
-                <Form.Item
-                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Vòng 1 - Ngực (cm)</span>}
-                  name="bust"
-                >
-                  <InputNumber mode="input" min={0} step={1} size="large" className="!w-full !bg-[#fff8f6]" />
-                </Form.Item>
-
-                <Form.Item
-                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Vòng 2 - Eo (cm)</span>}
-                  name="waist"
-                >
-                  <InputNumber mode="input" min={0} step={1} size="large" className="!w-full !bg-[#fff8f6]" />
-                </Form.Item>
+                {measurementFields.slice(0, 4).map(([name, label]) => <MeasurementField key={name} name={name} label={label} />)}
               </div>
-
               <div className="grid grid-cols-1 gap-x-5 sm:grid-cols-2">
-                <Form.Item
-                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Vòng 3 - Mông (cm)</span>}
-                  name="hips"
-                >
-                  <InputNumber mode="input" min={0} step={1} size="large" className="!w-full !bg-[#fff8f6]" />
-                </Form.Item>
-
-                <Form.Item
-                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Chiều cao giày cưới dự kiến (cm)</span>}
-                  name="heel"
-                >
-                  <InputNumber mode="input" min={0} step={1} size="large" className="!w-full !bg-[#fff8f6]" />
-                </Form.Item>
+                {measurementFields.slice(4).map(([name, label]) => <MeasurementField key={name} name={name} label={label} />)}
               </div>
 
 

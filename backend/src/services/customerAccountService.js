@@ -2,24 +2,16 @@ import mongoose from 'mongoose';
 import Order from '../models/Order.model.js';
 import User from '../models/User.model.js';
 import Contract from '../models/Contract.model.js';
-import ContractTemplate from '../models/ContractTemplate.model.js';
 import ReturnInspection from '../models/ReturnInspection.model.js';
 import Payment from '../models/Payment.model.js';
 const fail = (status, message) => { throw Object.assign(new Error(message), { statusCode: status }); };
-// An explicitly assigned order belongs only to that account. Contact matching
-// supports existing guest orders without changing their customerId.
+// Profile contacts are editable and cannot prove ownership of a guest order.
+// Personal endpoints only expose orders explicitly assigned to this account.
 async function ownerFilter(userId) {
-    const user = await User.findById(userId).select('email phone').lean();
+    const user = await User.findById(userId).select('_id').lean();
     if (!user)
         fail(401, 'Vui lòng đăng nhập lại.');
-    const contacts = [];
-    if (user.email)
-        contacts.push({ customerEmail: user.email });
-    if (user.phone)
-        contacts.push({ customerPhone: user.phone });
-    return contacts.length
-        ? { $or: [{ customerId: userId }, { customerId: null, $or: contacts }] }
-        : { customerId: userId };
+    return { customerId: userId };
 }
 async function ownOrder(userId, identifier) {
     const identity = mongoose.isValidObjectId(identifier) ? { _id: identifier } : { orderCode: String(identifier).toUpperCase() };
@@ -46,50 +38,13 @@ export async function listOrders(userId) {
 }
 export async function orderDetail(userId, identifier) {
     const order = await ownOrder(userId, identifier);
-    let contract = await Contract.findOne({
-        $or: [{ orderId: order._id }, { contractCode: order.contractCode }],
-    }).select('contractCode templateName status signedAt signedMethod contractPdfUrl clauses').lean();
-
-    // Nếu đơn chưa có bản ghi Contract trong DB, tự động gắn template hợp đồng pháp lý đầy đủ
-    if (!contract) {
-        try {
-            const defaultTemplate = await ContractTemplate.findOne({
-                $or: [{ code: 'TPL-HC-01' }, { isDefault: true }],
-            }).lean();
-            const firstItem = order.items?.[0] || {};
-            const created = await Contract.create({
-                contractCode: order.contractCode || `HĐ-${order.orderCode}`,
-                orderId: order._id,
-                customerId: order.customerId || userId || null,
-                templateId: defaultTemplate?._id || null,
-                templateName: defaultTemplate?.name || 'Hợp Đồng Thuê Lễ Phục Cưới Cao Cấp (Haute Couture)',
-                customerName: order.customerName || order.brideName || 'Cô Dâu UniBridal',
-                phone: order.customerPhone || order.phone || '',
-                idCard: order.customerCccd || order.cccd || '',
-                dressInfo: {
-                    name: firstItem.name || 'Váy Cưới Haute Couture',
-                    code: firstItem.code || 'UB-HC-2026',
-                    size: firstItem.size || 'S',
-                    image: firstItem.image || '',
-                },
-                startDate: order.rentalStartDate || new Date(),
-                endDate: order.rentalEndDate || new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
-                rentalPrice: order.totalRentPrice || 0,
-                depositAmount: order.totalDeposit || 0,
-                totalValue: order.totalPayment || 0,
-                status: order.status === 'completed' ? 'completed' : 'active',
-                signedAt: order.createdAt || new Date(),
-                signedMethod: 'Chữ ký điện tử trực tuyến',
-                packageType: `Gói ${order.rentalDays || 4} Ngày Tiêu Chuẩn`,
-                clauses: defaultTemplate?.clauses || [],
-            });
-            contract = created.toObject();
-        } catch (e) {
-            console.error('[ON DEMAND CONTRACT CREATE ERROR]', e.message);
-        }
-    }
-
-    const inspection = await getInspection(userId, identifier);
+    // Viewing a saved contract must never create one or infer a signature.
+    const [inspection, contract] = await Promise.all([
+        getInspection(userId, identifier),
+        Contract.findOne({ orderId: order._id })
+            .select('contractCode templateName customerName phone idCard status signedAt signedMethod contractPdfUrl clauses')
+            .lean(),
+    ]);
     return { ...order.toObject(), inspection, contract };
 }
 export async function cancelOrder(userId, identifier) {
@@ -115,6 +70,8 @@ export async function confirmInspection(userId, identifier, bankData = {}) {
     const inspection = await ReturnInspection.findOne({ orderId: order._id });
     if (!inspection)
         fail(404, 'Đơn chưa có biên bản kiểm định.');
+    if (!['returned', 'completed', 'complete'].includes(order.status))
+        fail(409, 'Chỉ có thể duyệt biên bản của đơn đã trả váy. Vui lòng tải lại hoặc liên hệ showroom.');
     if (inspection.customerStatus === 'approved') {
         if (order.status !== 'completed' && order.status !== 'complete') {
             order.status = 'completed';
@@ -133,11 +90,9 @@ export async function confirmInspection(userId, identifier, bankData = {}) {
         fail(409, 'Biên bản vừa thay đổi. Vui lòng tải lại.');
     // Khi khách ấn duyệt -> cập nhật đơn hàng thành hoàn tất (completed)
     order.status = 'completed';
-    if (typeof order.save === 'function') {
-        await order.save();
-    }
-    const orderObj = typeof order.toObject === 'function' ? order.toObject() : order;
-    return { order: orderObj, inspection: await getInspection(userId, identifier) };
+    await order.save();
+    // Completing the rental does not create a refund transaction.
+    return { order: order.toObject(), inspection: await getInspection(userId, identifier) };
 }
 export async function disputeInspection(userId, identifier, reason) {
     const order = await ownOrder(userId, identifier);

@@ -1,5 +1,5 @@
 import { formatCurrencyVND } from '../../utils/formatCurrency';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Banknote,
   LockKeyhole,
@@ -385,7 +385,7 @@ const revenueReportStyles = `
 .ub-revenue-growth.is-negative { color: #b42318; background: #fef3f2; }
 `;
 
-const money = (value) => formatCurrencyVND(value || 0);
+const money = (value) => value == null ? '—' : formatCurrencyVND(value);
 
 const PERIODS = {
   week: '7 ngày qua',
@@ -403,7 +403,7 @@ function MetricCard({ title, value, Icon, note, growth, isShield }) {
           <Icon size={19} />
         </i>
       </div>
-      <strong>{value == null ? '—' : money(value)}</strong>
+      <strong>{money(value)}</strong>
       <div className="ub-revenue-metric-foot">
         <p>{note}</p>
         {growth != null && <span className={`ub-revenue-growth ${growth < 0 ? 'is-negative' : ''}`}>{formatGrowth(growth)}</span>}
@@ -444,10 +444,7 @@ function LuxuryRevenueChart({ entries = [] }) {
   });
 
   // Find peak point
-  const peakPoint = useMemo(() => {
-    if (points.length === 0) return null;
-    return points.reduce((prev, curr) => ((curr.item.revenue || 0) > (prev.item.revenue || 0) ? curr : prev), points[0]);
-  }, [points]);
+  const peakPoint = points.reduce((peak, point) => !peak || point.item.revenue > peak.item.revenue ? point : peak, null);
 
   const hoveredItem = hoveredIndex !== null ? entries[hoveredIndex] : null;
   const hoveredPoint = hoveredIndex !== null ? points[hoveredIndex] : null;
@@ -637,7 +634,6 @@ export default function RevenueReportPage() {
       })
       .catch((err) => {
         if (!active) return;
-        console.error('Error fetching revenue report:', err);
         setError('Không thể kết nối cơ sở dữ liệu để tải báo cáo doanh thu.');
         setLoading(false);
       });
@@ -647,11 +643,7 @@ export default function RevenueReportPage() {
     };
   }, [period, reload]);
 
-  const avgOrderValue = useMemo(() => {
-    if (!report) return null;
-    if (!report.orders) return 0;
-    return Math.round((report.orderValue || 0) / (report.activeOrdersCount || 1));
-  }, [report]);
+  const avgOrderValue = report ? Math.round((report.orderValue || 0) / (report.activeOrdersCount || 1)) : null;
 
   return (
     <DashboardLayout
@@ -663,7 +655,7 @@ export default function RevenueReportPage() {
       <div className="ub-revenue-page">
         <style>{revenueReportStyles}</style>
         {error && (
-          <div className="p-4 mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
+          <div role="alert" className="p-4 mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
             <AlertCircle size={18} />
             <span>{error}</span><button type="button" className="underline" onClick={() => setReload((value) => value + 1)}>Thử lại</button>
           </div>
@@ -707,9 +699,8 @@ export default function RevenueReportPage() {
                 key={key}
                 type="button"
                 className={period === key ? 'is-active' : ''}
-                onClick={() => {
-                  setPeriod(key);
-                }}
+                aria-pressed={period === key}
+                onClick={() => setPeriod(key)}
               >
                 {label}
               </button>
@@ -736,8 +727,10 @@ export default function RevenueReportPage() {
             <div className="py-20 text-center text-sm text-stone-500">
               Đang tải dữ liệu biểu đồ từ MongoDB...
             </div>
+          ) : report ? (
+            <LuxuryRevenueChart key={period} entries={report.chart || []} />
           ) : (
-            <LuxuryRevenueChart entries={report?.chart || []} />
+            <p className="py-20 text-center text-sm text-stone-500">Chưa tải được dữ liệu biểu đồ.</p>
           )}
 
           <div className="ub-revenue-chart-foot">
@@ -756,7 +749,7 @@ export default function RevenueReportPage() {
         </section>
 
         {/* NÂNG CẤP: Phân tích cơ cấu dòng tiền & Top váy cưới doanh thu cao nhất */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-5 my-6" aria-label="Phân tích chuyên sâu doanh thu">
+        {report && <section className="grid grid-cols-1 lg:grid-cols-12 gap-5 my-6" aria-label="Phân tích chuyên sâu doanh thu">
           {/* Card Trái: Cơ Cấu Dòng Tiền */}
           <div className="lg:col-span-5 bg-white rounded-2xl border border-[#EFE5E1] p-6 shadow-xs flex flex-col justify-between">
             <div>
@@ -916,7 +909,7 @@ export default function RevenueReportPage() {
               <span className="font-semibold text-emerald-700">Theo giao dịch thành công</span>
             </div>
           </div>
-        </section>
+        </section>}
 
       </div>
     </DashboardLayout>
