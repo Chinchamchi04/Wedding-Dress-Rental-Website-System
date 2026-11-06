@@ -18,6 +18,7 @@ const publicUser = (user) => ({
   phone: user.phone,
   avatar: user.avatar || '',
   role: user.roleId?.code?.toLowerCase() || user.role || 'customer',
+  wishlist: (user.wishlist || []).filter(Boolean).map((d) => String(d._id || d)),
   fullName: user.fullName,
   measurements: user.measurements || {},
   address: user.address || {},
@@ -217,4 +218,22 @@ export async function deleteDress(id) {
   const dress = await Dress.findByIdAndUpdate(id, { $set: { status: 'retired' } }, { new: true });
   if (!dress) fail(404, 'Không tìm thấy mẫu váy cưới.');
   return dress;
+}
+
+export async function getWishlist(user) {
+  const account = await User.findById(user._id).lean();
+  return (account?.wishlist || []).filter(Boolean).map((d) => String(d._id || d));
+}
+
+export async function updateWishlist(user, { dressIds }) {
+  if (!Array.isArray(dressIds)) fail(400, 'dressIds phải là một mảng danh sách ID.');
+  const validObjectIds = dressIds
+    .filter((id) => mongoose.isValidObjectId(id))
+    .map((id) => new mongoose.Types.ObjectId(id));
+  const account = await User.findByIdAndUpdate(
+    user._id,
+    { wishlist: validObjectIds },
+    { new: true }
+  ).lean();
+  return (account?.wishlist || []).filter(Boolean).map((d) => String(d._id || d));
 }

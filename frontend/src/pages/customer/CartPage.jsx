@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, CalendarDays, CheckCircle2, Heart, LockKeyhole, Minus, Phone, Plus, ShieldCheck, ShoppingBag, Sparkles, Trash2, X } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
-import { CART_EVENT, addToCart, getCart, refreshCartWithDresses, removeFromCart, resolveCartItem, updateCartDays } from '../../services/cartService';
+import { CART_EVENT, addToCart, clearCart, getCart, refreshCartWithDresses, removeFromCart, resolveCartItem, updateCartDays } from '../../services/cartService';
 import { getWishlistIds, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
 import { getDressesFromApi } from '../../services/dressApiService';
+import logoEmblemImg from '../../assets/logo_emblem.png';
 import './CartPage.css';
 
 import { formatCurrencyVND } from '../../utils/formatCurrency';
@@ -19,6 +20,9 @@ function CartItem({ item, onUpdate, onRemove, onWishlist, isWishlisted }) {
       <ProductImage className="cart-product-image" {...(item.detailHref === null ? {} : { to: item.detailHref || `/dresses/${item.id}`, 'aria-label': `Xem ${item.name}` })}>
         <img src={item.image} alt={item.name} />
         {item.code && <span>{item.code}</span>}
+        <div style={{ position: 'absolute', bottom: '6px', right: '6px', zIndex: 10, pointerEvents: 'none', userSelect: 'none' }} title="UniBridal Haute Couture">
+          <img src={logoEmblemImg} alt="UniBridal Emblem" style={{ width: '30px', height: '30px', objectFit: 'contain', filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.35))' }} />
+        </div>
       </ProductImage>
       <div className="cart-product-body">
         <div className="cart-product-heading">
@@ -125,13 +129,14 @@ export default function CartPage() {
   const mismatchedDays = selectedDays.length > 1;
   const checkoutBlocked = !items.length || hasUnavailable || catalogLoading || !!catalogError || mismatchedDays;
   const handleRent = (dress) => { addToCart(dress); setSelectedProduct(dress); setIsConsultationOpen(true); };
+  const handleClearCart = () => { if (!items || items.length === 0) return; clearCart(); setStoredItems([]); showMessage("Đã xóa tất cả sản phẩm khỏi giỏ thuê váy."); };
 
   return (
     <div className="cart-page">
       <Header onOpenBooking={() => { setSelectedProduct(null); setIsConsultationOpen(true); }} />
       <main>
         <section className="cart-hero" aria-labelledby="cart-title">
-          <span className="cart-hero-label"><Sparkles size={13} /> WEDDING DRESS RENTAL</span>
+          <span className="cart-hero-label"><Sparkles size={13} /> THUÊ VÁY CƯỚI CAO CẤP</span>
           <h1 id="cart-title">Giỏ Hàng Của Nàng</h1>
           <p>Lưu giữ những tác phẩm Haute Couture hoàn mỹ cho khoảnh khắc bước vào lễ đường vĩnh cửu.</p>
           <span className="cart-hero-rule" />
@@ -141,7 +146,7 @@ export default function CartPage() {
         {mismatchedDays && <p role="alert" className="mb-4 text-sm text-amber-800">Các váy trong cùng đơn cần chọn cùng số ngày thuê. Vui lòng điều chỉnh trước khi đặt thuê.</p>}
         <div className="cart-content">
           <section className="cart-saved" aria-labelledby="cart-saved-title">
-            <div className="cart-section-bar"><h2 id="cart-saved-title">Tác phẩm trong giỏ thuê</h2><span><LockKeyhole size={13} /> Lịch thuê được xác nhận sau khi tư vấn</span></div>
+            <div className="cart-section-bar"><div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap" }}><h2 id="cart-saved-title">Tác phẩm trong giỏ thuê {items.length > 0 ? `(${items.length})` : ""}</h2>{items.length > 0 && (<button type="button" onClick={handleClearCart} style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "4px 12px", borderRadius: "999px", backgroundColor: "#fff", border: "1px solid #e0bcbc", color: "#b84f58", fontSize: "11.5px", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#fff0f0"; e.currentTarget.style.color = "#963740"; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#fff"; e.currentTarget.style.color = "#b84f58"; }} title="Xóa tất cả sản phẩm khỏi giỏ thuê"><Trash2 size={13} /><span>Xóa tất cả</span></button>)}</div><span><LockKeyhole size={13} /> Lịch thuê được xác nhận sau khi tư vấn</span></div>
             {items.length ? <div className="cart-items">{items.map((item) => <CartItem key={item.id} item={item} onUpdate={updateCartDays} onRemove={removeFromCart} onWishlist={handleWishlist} isWishlisted={isWishlisted(item.id)} />)}</div> : <div className="cart-empty"><ShoppingBag size={38} strokeWidth={1.3} /><h3>Giỏ thuê của nàng đang trống</h3><p>Khám phá những tuyệt tác được tuyển chọn dành riêng cho ngày trọng đại.</p><Link to="/collection">Khám phá bộ sưu tập <ArrowRight size={16} /></Link></div>}
             {wishlist.length > 0 && <div className="cart-wishlist" id="cart-wishlist"><h3><Heart size={17} fill="currentColor" /> Danh sách yêu thích ({wishlist.length})</h3><div>{wishlist.map((dress) => <div className="cart-wishlist-item" key={dress.id}><img src={dress.image} alt="" /><span>{dress.name}</span><button type="button" onClick={() => handleWishlist(dress)} aria-label={`Bỏ ${dress.name} khỏi yêu thích`}><X size={16} /></button></div>)}</div></div>}
           </section>
@@ -170,7 +175,7 @@ export default function CartPage() {
           </aside>
         </div>
 
-        <section className="cart-recommendations" aria-labelledby="cart-recommend-title"><div className="cart-recommend-head"><div><span className="cart-eyebrow">RECOMMENDED FOR YOU</span><h2 id="cart-recommend-title">Có Thể Nàng Cũng Yêu Thích</h2><p>Ba mẫu váy hiện có trong bộ sưu tập UniBridal.</p></div><Link to="/collection">KHÁM PHÁ THÊM <ArrowRight size={15} /></Link></div><div className="cart-recommend-grid">{recommendations.map((dress) => <article className="cart-recommend-card" key={dress.id}><div className="cart-recommend-image"><div><img src={dress.image} alt={dress.name} /></div><span>{dress.collection}</span><button type="button" aria-label={`${isWishlisted(dress.id) ? 'Bỏ' : 'Lưu'} ${dress.name} ${isWishlisted(dress.id) ? 'khỏi' : 'vào'} yêu thích`} aria-pressed={isWishlisted(dress.id)} onClick={() => handleWishlist(dress)}><Heart size={19} fill={isWishlisted(dress.id) ? 'currentColor' : 'none'} /></button></div><div className="cart-recommend-body"><div className="cart-recommend-meta"><span>{dress.style}</span><span>✦ SIZE {dress.size}</span></div><h3>{dress.name}</h3><p>Mẫu váy đang có trong bộ sưu tập UniBridal.</p><div className="cart-recommend-price"><strong>{money(dress.price)}</strong><span>/ giá niêm yết</span></div><div className="cart-recommend-actions"><button type="button" onClick={() => handleAdd(dress)}><ShoppingBag size={14} /> Thêm Vào Giỏ</button><button type="button" onClick={() => handleRent(dress)}>Liên hệ thuê</button></div></div></article>)}</div></section>
+        <section className="cart-recommendations" aria-labelledby="cart-recommend-title"><div className="cart-recommend-head"><div><span className="cart-eyebrow">RECOMMENDED FOR YOU</span><h2 id="cart-recommend-title">Có Thể Nàng Cũng Yêu Thích</h2><p>Ba mẫu váy hiện có trong bộ sưu tập UniBridal.</p></div><Link to="/collection">KHÁM PHÁ THÊM <ArrowRight size={15} /></Link></div><div className="cart-recommend-grid">{recommendations.map((dress) => <article className="cart-recommend-card" key={dress.id}><div className="cart-recommend-image"><div><img src={dress.image} alt={dress.name} /></div><div style={{ position: 'absolute', bottom: '10px', right: '12px', zIndex: 10, pointerEvents: 'none', userSelect: 'none' }} title="UniBridal Haute Couture"><img src={logoEmblemImg} alt="UniBridal Emblem" style={{ width: '36px', height: '36px', objectFit: 'contain', filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.35))' }} /></div><span>{dress.collection}</span><button type="button" aria-label={`${isWishlisted(dress.id) ? 'Bỏ' : 'Lưu'} ${dress.name} ${isWishlisted(dress.id) ? 'khỏi' : 'vào'} yêu thích`} aria-pressed={isWishlisted(dress.id)} onClick={() => handleWishlist(dress)}><Heart size={19} fill={isWishlisted(dress.id) ? 'currentColor' : 'none'} /></button></div><div className="cart-recommend-body"><div className="cart-recommend-meta"><span>{dress.style}</span><span>✦ SIZE {dress.size}</span></div><h3>{dress.name}</h3><p>Mẫu váy đang có trong bộ sưu tập UniBridal.</p><div className="cart-recommend-price"><strong>{money(dress.price)}</strong><span>/ giá niêm yết</span></div><div className="cart-recommend-actions"><button type="button" onClick={() => handleAdd(dress)}><ShoppingBag size={14} /> Thêm Vào Giỏ</button><button type="button" onClick={() => handleRent(dress)}>Liên hệ thuê</button></div></div></article>)}</div></section>
       </main>
       <Footer />
       {message && <div className="cart-toast" role="status">{message}</div>}

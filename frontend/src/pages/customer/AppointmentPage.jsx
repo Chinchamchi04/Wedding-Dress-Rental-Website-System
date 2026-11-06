@@ -962,11 +962,11 @@ export default function AppointmentPage() {
                         </div>
                         <Link
                           to="/collection"
-                          target="_blank"
+
                           className="text-[12px] font-bold text-[#733F49] hover:underline flex items-center gap-1 shrink-0"
                         >
                           <span>Xem toàn bộ BST</span>
-                          <ExternalLink className="w-3.5 h-3.5" />
+                          <ArrowRight className="w-3.5 h-3.5" />
                         </Link>
                       </div>
 
