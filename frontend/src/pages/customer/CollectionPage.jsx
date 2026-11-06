@@ -10,12 +10,12 @@ import Footer from '../../components/layout/Footer';
 import { useAuth } from '../../contexts/AuthContext';
 import { addToCart } from '../../services/cartService';
 import { getWishlistIds, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
-import { getAllDresses } from '../../services/dressService';
+import { getAllDresses, formatCurrencyVND } from '../../services/dressService';
 
 import logoEmblemImg from '../../assets/logo_emblem.png';
 import { DRESS_CATALOG } from '../../data/dressCatalog';
 
-// Danh mục Phom Dáng chuẩn Haute Couture đồng bộ 8 danh mục hệ thống
+// Danh mục Phom Dáng chuẩn Haute Couture 5 dòng thiết kế chủ đạo
 const SILHOUETTE_OPTIONS = [
   { id: 'all', label: 'Tất cả (All)' },
   { id: 'ballgown', label: 'Công Chúa Bồng Xòe (Ballgown)' },
@@ -23,8 +23,6 @@ const SILHOUETTE_OPTIONS = [
   { id: 'a-line', label: 'Chữ A Thanh Lịch (A-line)' },
   { id: 'silk-gown', label: 'Lụa Satin Tối Giản (Silk Gown)' },
   { id: 'princess', label: 'Váy Cưới Hoàng Gia (Princess)' },
-  { id: 'traditional', label: 'Áo Dài Cưới Truyền Thống (Traditional)' },
-  { id: 'tuxedo', label: 'Vest Cưới & Tuxedo (Tuxedo)' },
 ];
 
 // Danh mục Chất Liệu Thượng Hạng
@@ -74,37 +72,31 @@ export default function CollectionPage() {
   const [toastMessage, setToastMessage] = useState(null);
 
   // Danh mục sản phẩm (kết hợp dữ liệu chuẩn Figma 72 mẫu + backend API nếu có)
-  const [catalogItems, setCatalogItems] = useState(DRESS_CATALOG);
+  const [catalogItems, setCatalogItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
+    setError('');
     getAllDresses()
       .then((res) => {
         if (!active) return;
-        const apiDresses = res?.data;
-        if (Array.isArray(apiDresses) && apiDresses.length > 0) {
-          // Kết nối backend nếu có dữ liệu mới
-          const merged = [...DRESS_CATALOG];
-          apiDresses.forEach((d) => {
-            const foundIndex = merged.findIndex(
-              (m) => String(m.id) === String(d.id || d._id) || String(m.code) === String(d.code)
-            );
-            if (foundIndex >= 0) {
-              merged[foundIndex] = {
-                ...merged[foundIndex],
-                ...d,
-                name: d.name || merged[foundIndex].name,
-                priceNumber: d.price || d.rentPrice || merged[foundIndex].priceNumber,
-                status: d.status || merged[foundIndex].status,
-                image: (d.images && d.images[0]) || merged[foundIndex].image,
-              };
-            }
-          });
-          setCatalogItems(merged);
+        if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
+          setCatalogItems(res.data);
+          setError('');
+        } else {
+          setCatalogItems(DRESS_CATALOG);
+          setError('');
         }
+        setLoading(false);
       })
-      .catch(() => {
-        // Fallback giữ nguyên 72 mẫu thiết kế độc bản
+      .catch((err) => {
+        if (!active) return;
+        setCatalogItems(DRESS_CATALOG);
+        setError('');
+        setLoading(false);
       });
 
     return () => {
@@ -145,9 +137,10 @@ export default function CollectionPage() {
   // Toggle Wishlist
   const handleToggleWishlist = (id) => {
     const result = toggleWishlist(id);
+    setWishlistIds(getWishlistIds());
     showToast(
       result.isAdded
-        ? 'Đã thêm váy vào danh sách yêu thích'
+        ? 'Đã thêm váy vào danh sách yêu thích ♥'
         : 'Đã xóa váy khỏi danh sách yêu thích'
     );
   };
@@ -254,13 +247,44 @@ export default function CollectionPage() {
       }
 
       // Lọc chất liệu (nếu có chọn)
-      if (selectedMaterials.length > 0 && !selectedMaterials.includes(dress.material)) {
-        return false;
+      if (selectedMaterials.length > 0) {
+        const matchesMaterial = selectedMaterials.some((mat) => {
+          if (!dress.material) return false;
+          const dressMat = dress.material.toLowerCase();
+          const targetMat = mat.toLowerCase();
+          if (dressMat.includes(targetMat)) return true;
+          if (targetMat.includes('ren') && (dressMat.includes('ren') || dressMat.includes('lace'))) return true;
+          if (targetMat.includes('mikado') && (dressMat.includes('mikado') || dressMat.includes('lụa') || dressMat.includes('silk'))) return true;
+          if (targetMat.includes('satin') && (dressMat.includes('satin') || dressMat.includes('tơ tằm'))) return true;
+          if (targetMat.includes('swarovski') && (dressMat.includes('swarovski') || dressMat.includes('pha lê') || dressMat.includes('crystal') || dressMat.includes('đính kết'))) return true;
+          return false;
+        });
+        if (!matchesMaterial) {
+          return false;
+        }
       }
 
-      // Lọc mức giá (chỉ áp dụng khi người dùng đã chủ động tương tác hoặc bấm áp dụng bộ lọc)
-      if (isFilterApplied && selectedPriceRanges.length > 0 && !selectedPriceRanges.includes(dress.priceCategory)) {
-        return false;
+      // Lọc mức giá thuê theo giá sản phẩm thực tế ở bảng dresses (rentPrice / priceNumber)
+      if (selectedPriceRanges.length > 0) {
+        const price = typeof dress.rentPrice === 'number'
+          ? dress.rentPrice
+          : typeof dress.priceNumber === 'number'
+          ? dress.priceNumber
+          : typeof dress.price === 'number'
+          ? dress.price
+          : (parseInt(String(dress.price || '0').replace(/\D/g, ''), 10) || 0);
+
+        const matchesPrice = selectedPriceRanges.some((rangeId) => {
+          if (rangeId === 'under-5') return price < 5000000;
+          if (rangeId === '5-10') return price >= 5000000 && price <= 10000000;
+          if (rangeId === '10-20') return price > 10000000 && price <= 20000000;
+          if (rangeId === 'vip') return price > 20000000;
+          return false;
+        });
+
+        if (!matchesPrice) {
+          return false;
+        }
       }
 
       // Lọc từ khóa tìm kiếm
@@ -295,7 +319,7 @@ export default function CollectionPage() {
   }, [filteredProducts, currentPage]);
 
   // Số lượng bộ lọc đang hoạt động
-  const activeFiltersCount = (selectedSilhouette !== 'all' ? 1 : 0) + selectedMaterials.length + (isFilterApplied ? selectedPriceRanges.length : 0) + (appliedSearch ? 1 : 0);
+  const activeFiltersCount = (selectedSilhouette !== 'all' ? 1 : 0) + selectedMaterials.length + selectedPriceRanges.length + (appliedSearch ? 1 : 0);
 
   return (
     <div className="relative min-h-screen bg-[#FDFBF7] text-[#2C2523] flex flex-col font-jakarta selection:bg-[#FCEEE9] selection:text-[#B8737D]">
@@ -329,7 +353,7 @@ export default function CollectionPage() {
             <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white border border-[#F3D8D8] shadow-xs mb-4">
               <span className="w-1.5 h-1.5 rounded-full bg-[#B8737D]"></span>
               <span className="font-jakarta font-bold text-[10.5px] uppercase tracking-[1.4px] text-[#B8737D]">
-                WEDDING DRESS RENTAL
+                THUÊ VÁY CƯỚI CAO CẤP
               </span>
             </div>
 
@@ -445,7 +469,7 @@ export default function CollectionPage() {
                 </span>
               ))}
 
-              {isFilterApplied && selectedPriceRanges.map((priceId) => {
+              {selectedPriceRanges.map((priceId) => {
                 const opt = PRICE_RANGE_OPTIONS.find((p) => p.id === priceId);
                 return (
                   <span
@@ -729,7 +753,10 @@ export default function CollectionPage() {
                   {paginatedProducts.map((dress) => {
                     const isWishlisted = Boolean(
                       Array.isArray(wishlistIds) &&
-                      wishlistIds.some((w) => (typeof w === 'object' ? w?.id : w) == dress.id)
+                      wishlistIds.some((w) => {
+                        const wId = typeof w === 'object' && w !== null ? w?.id : w;
+                        return String(wId) === String(dress.id) || (dress.code && String(wId) === String(dress.code));
+                      })
                     );
 
                     return (
@@ -766,13 +793,17 @@ export default function CollectionPage() {
                                 e.stopPropagation();
                                 handleToggleWishlist(dress.id);
                               }}
-                              className="absolute top-3.5 right-3.5 w-[34px] h-[34px] rounded-[8px] bg-white flex items-center justify-center text-[#4A3E3F] hover:text-[#BA7A83] border border-[#EEDECF] shadow-[0px_2px_8px_rgba(0,0,0,0.06)] cursor-pointer z-10 transition-transform active:scale-90 p-0"
+                              className={`absolute top-3.5 right-3.5 w-[34px] h-[34px] rounded-[8px] bg-white flex items-center justify-center border shadow-[0px_2px_8px_rgba(0,0,0,0.06)] cursor-pointer z-10 transition-all duration-200 active:scale-90 p-0 ${
+                                isWishlisted
+                                  ? 'border-red-200 bg-red-50/70 text-red-500'
+                                  : 'border-[#EEDECF] text-[#4A3E3F] hover:text-red-500 hover:border-red-200'
+                              }`}
                               style={{ borderRadius: '8px' }}
-                              title="Yêu thích"
+                              title={isWishlisted ? 'Bỏ yêu thích' : 'Yêu thích'}
                             >
                               <Heart
-                                className={`w-4 h-4 transition-colors ${
-                                  isWishlisted ? 'fill-[#BA7A83] text-[#BA7A83]' : 'text-[#4A3E3F]'
+                                className={`w-4 h-4 transition-all duration-200 ${
+                                  isWishlisted ? 'fill-red-500 text-red-500 scale-110' : 'text-[#4A3E3F]'
                                 }`}
                               />
                             </button>
@@ -807,54 +838,56 @@ export default function CollectionPage() {
                         </div>
 
                         {/* Thông Tin Chi Tiết Thẻ */}
-                        <div className="p-5 flex flex-col flex-1 justify-between">
-                          <div>
-                            {/* Rating & Size Row */}
-                            <div className="flex items-center justify-between text-[11.5px] font-jakarta mb-2.5">
-                              <div className="flex items-center gap-1.5 text-[#2C2523]">
-                                <span className="text-[#C68A4C] text-[13px] leading-none">★</span>
-                                <span className="font-bold text-[12px]">{Number(dress.rating || 4.9).toFixed(1)}</span>
-                                <span className="text-[#695C4E] font-medium text-[11.5px] ml-0.5">
-                                  ({dress.rentCount})
-                                </span>
-                              </div>
-
-                              {dress.id === 6 ? (
-                                <div className="text-right leading-tight text-[#514344] font-semibold text-[11px] tracking-wider uppercase">
-                                  <div>Size: Custom</div>
-                                  <div className="mt-0.5">Fit</div>
-                                </div>
-                              ) : (
-                                <span className="text-[#514344] font-semibold uppercase tracking-wider text-[11px]">
-                                  {dress.size}
-                                </span>
-                              )}
+                        <div className="p-5 flex flex-col flex-1">
+                          {/* Rating & Size Row */}
+                          <div className="flex items-center justify-between text-[11.5px] font-jakarta mb-1">
+                            <div className="flex items-center gap-1.5 text-[#2C2523]">
+                              <span className="text-[#C68A4C] text-[13px] leading-none">★</span>
+                              <span className="font-bold text-[12px]">{Number(dress.rating || 4.9).toFixed(1)}</span>
+                              <span className="text-[#695C4E] font-medium text-[11.5px] ml-0.5">
+                                ({dress.rentCount})
+                              </span>
                             </div>
 
-                            {/* Tên Thiết Kế */}
-                            <h3 className="font-playfair text-[22px] sm:text-[23px] font-semibold text-[#2C2523] group-hover:text-[#BA7A83] transition-colors leading-[1.25] tracking-tight mb-4 min-h-[58px] flex items-center">
+                            {dress.id === 6 ? (
+                              <div className="text-right leading-tight text-[#514344] font-semibold text-[11px] tracking-wider uppercase">
+                                <div>Size: Custom</div>
+                                <div className="mt-0.5">Fit</div>
+                              </div>
+                            ) : (
+                              <span className="text-[#514344] font-semibold uppercase tracking-wider text-[11px]">
+                                {dress.size}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Tên Thiết Kế - Căn giữa tự nhiên giữa Size và Giá tiền khi tên chỉ có 1 dòng */}
+                          <div className="min-h-[54px] flex items-center my-1.5">
+                            <h3 className="font-playfair text-[21px] sm:text-[22px] font-semibold text-[#2C2523] group-hover:text-[#BA7A83] transition-colors leading-[1.25] tracking-tight line-clamp-2 m-0 text-left">
                               {dress.name}
                             </h3>
                           </div>
 
-                          {/* Giá Thuê & Tiền Cọc */}
-                          <div className="pt-2">
-                            <div className="flex items-baseline gap-1.5 mb-1.5">
-                              <span className="font-playfair font-bold text-[28px] sm:text-[30px] leading-tight text-[#BA7A83] tracking-tight">
-                                {dress.price}
+                          {/* Giá Thuê & Tiền Cọc - Đặt sát tự nhiên ngay dưới tên sản phẩm */}
+                          <div className="mb-3.5">
+                            <div className="flex items-baseline gap-1.5 mb-1">
+                              <span className="font-playfair font-bold text-[26px] sm:text-[28px] leading-tight text-[#BA7A83] tracking-tight">
+                                {formatCurrencyVND(dress.priceNumber || dress.price)}
                               </span>
                               <span className="font-jakarta text-[12px] font-medium text-[#695C4E] ml-1">
                                 / 1 ngày
                               </span>
                             </div>
 
-                            <p className="font-jakarta text-[11.5px] leading-[18px] text-[#695C4E] mb-4 m-0">
-                              Tiền cọc bảo lãnh: <strong className="font-semibold text-[#2C2523]">{dress.depositAmount}</strong>
+                            <p className="font-jakarta text-[11.5px] leading-[17px] text-[#695C4E] m-0">
+                              Tiền cọc bảo lãnh: <strong className="font-semibold text-[#2C2523]">{formatCurrencyVND(dress.depositAmount)}</strong>
                               <br />
-                              <span className="text-[#7A6B6C]">{dress.depositPolicy}</span>
+                              <span className="text-[#7A6B6C]">{dress.depositPolicy || '(Hoàn cọc tức thì)'}</span>
                             </p>
+                          </div>
 
-                            {/* Nút Bấm: Thêm Vào Giỏ & Thuê Ngay (Chỉ hiện nút Giỏ Hàng khi đã đăng nhập) */}
+                          {/* Nút Bấm: Thêm Vào Giỏ & Thuê Ngay (Đẩy sát đáy card với mt-auto) */}
+                          <div className="mt-auto pt-1">
                             {isLoggedIn ? (
                               <div className="grid grid-cols-2 gap-2.5">
                                 <button
@@ -893,7 +926,6 @@ export default function CollectionPage() {
                                 </button>
                               </div>
                             )}
-
                           </div>
                         </div>
 

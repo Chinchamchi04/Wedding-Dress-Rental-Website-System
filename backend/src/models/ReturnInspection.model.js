@@ -50,6 +50,7 @@ const returnInspectionSchema = new mongoose.Schema(
       min: 0,
     },
     itemsCondition: [itemConditionSchema],
+    evidencePhotos: [{ type: String }],
     totalDeduction: {
       type: Number,
       default: 0,
@@ -64,11 +65,34 @@ const returnInspectionSchema = new mongoose.Schema(
       type: Number,
       required: true, // Tiền hoàn trả khách = Cọc ban đầu - Tổng khấu trừ
     },
+    refundBankDetails: {
+      bankName: { type: String, default: '' },
+      accountNumber: { type: String, default: '' },
+      accountHolder: { type: String, default: '' },
+      notes: { type: String, default: '' },
+    },
     isRefunded: {
       type: Boolean,
       default: false,
     },
     refundedAt: {
+      type: Date,
+      default: null,
+    },
+    customerStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'disputed'],
+      default: 'pending',
+    },
+    customerConfirmedAt: {
+      type: Date,
+      default: null,
+    },
+    disputeReason: {
+      type: String,
+      default: '',
+    },
+    disputeCreatedAt: {
       type: Date,
       default: null,
     },

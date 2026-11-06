@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { getAllOrdersAdmin, createOrder, updateOrderStatus } from '../../services/orderService';
+import { formatCurrencyVND } from '../../utils/formatCurrency';
 import AdminLayout from '../../components/layout/AdminLayout';
 import {
   Search,
@@ -74,132 +75,11 @@ const DRESS_OPTIONS = [
   }
 ];
 
-const MOCK_CONTRACTS = [
-  {
-    id: 'HD-UB-2026-089',
-    customerName: 'Nguyễn Khánh Linh',
-    phone: '0912 345 678',
-    idCard: '001198012345',
-    dressName: 'Elysian Rose Ballgown',
-    dressCode: 'BGW-2026',
-    dressSize: 'Size S (Eo 62-66cm)',
-    dressImage: 'https://images.unsplash.com/photo-1594552072238-b8a33785b261?auto=format&fit=crop&w=600&q=80',
-    templateName: 'Hợp đồng Thuê Váy Cưới Haute Couture Tiêu Chuẩn',
-    startDate: '2026-10-24',
-    endDate: '2026-10-27',
-    rentalPrice: 5200000,
-    depositAmount: 15000000,
-    totalValue: 20200000,
-    status: 'active',
-    signedAt: '2026-10-20 14:30',
-    signedMethod: 'SmartOTP eID',
-    staffInCharge: 'Trần Bích Ngọc',
-    packageType: 'Gói 3 Ngày Tiêu Chuẩn',
-    note: 'Đã fitting tinh chỉnh eo giảm 1.5cm ngày 19/10.'
-  },
-  {
-    id: 'HD-UB-2026-088',
-    customerName: 'Trần Thảo My',
-    phone: '0988 765 432',
-    idCard: '079199009876',
-    dressName: 'Bespoke Atelier Tailoring Gown',
-    dressCode: 'BESPOKE-2026',
-    dressSize: 'May đo cá nhân hóa',
-    dressImage: 'https://images.unsplash.com/photo-1546804784-896d0dca3800?auto=format&fit=crop&w=600&q=80',
-    templateName: 'Hợp đồng Đặt May Đo Độc Bản & Thuê Nước Đầu',
-    startDate: '2026-11-05',
-    endDate: '2026-11-10',
-    rentalPrice: 18500000,
-    depositAmount: 30000000,
-    totalValue: 48500000,
-    status: 'active',
-    signedAt: '2026-10-18 11:15',
-    signedMethod: 'Chữ ký điện tử VNPT CA',
-    staffInCharge: 'Lê Hoàng Minh',
-    packageType: 'May đo Bespoke Nước Đầu',
-    note: 'Đính kết hạt pha lê Swarovski thủ công 100%.'
-  },
-  {
-    id: 'HD-UB-2026-082',
-    customerName: 'Phạm Hoàng Anh',
-    phone: '0903 112 233',
-    idCard: '031197004567',
-    dressName: 'Celeste Royal Mermaid',
-    dressCode: 'MER-2026',
-    dressSize: 'Size M (Eo 68-72cm)',
-    dressImage: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80',
-    templateName: 'Hợp đồng Thuê Váy Cưới Haute Couture Tiêu Chuẩn',
-    startDate: '2026-10-28',
-    endDate: '2026-10-31',
-    rentalPrice: 6500000,
-    depositAmount: 18000000,
-    totalValue: 24500000,
-    status: 'pending_signature',
-    signedAt: null,
-    signedMethod: 'Chờ khách hàng ký OTP',
-    staffInCharge: 'Trần Bích Ngọc',
-    packageType: 'Gói 3 Ngày Tiêu Chuẩn',
-    note: 'Khách đã thanh toán cọc 30% giữ lịch ngày 19/10.'
-  },
-  {
-    id: 'HD-UB-2026-076',
-    customerName: 'Lê Quỳnh Như',
-    phone: '0938 999 888',
-    idCard: '048196001234',
-    dressName: 'Lumière Minimalist Silk A-Line',
-    dressCode: 'ALINE-2026',
-    dressSize: 'Size S (Eo 64-68cm)',
-    dressImage: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=600&q=80',
-    templateName: 'Hợp đồng Thuê Váy Cưới Haute Couture Tiêu Chuẩn',
-    startDate: '2026-10-15',
-    endDate: '2026-10-18',
-    rentalPrice: 3800000,
-    depositAmount: 10000000,
-    totalValue: 13800000,
-    status: 'completed',
-    signedAt: '2026-10-12 09:40',
-    signedMethod: 'SmartOTP eID',
-    staffInCharge: 'Vũ Thị Hằng',
-    packageType: 'Gói 3 Ngày Tiêu Chuẩn',
-    note: 'Váy trả đúng hạn, nghiệm thu 10/10 không tì vết. Đã giải ngân hoàn cọc 10.000.000đ.'
-  },
-  {
-    id: 'HD-UB-2026-061',
-    customerName: 'Vũ Thanh Hương',
-    phone: '0966 223 344',
-    idCard: '025199003322',
-    dressName: 'Monet 3D Floral Couture Gown',
-    dressCode: 'MONET-2026',
-    dressSize: 'Size L (Eo 74-78cm)',
-    dressImage: 'https://images.unsplash.com/photo-1549416878-b9ca35c2d47b?auto=format&fit=crop&w=600&q=80',
-    templateName: 'Hợp đồng Thuê Váy Cưới Haute Couture Tiêu Chuẩn',
-    startDate: '2026-10-09',
-    endDate: '2026-10-13',
-    rentalPrice: 7200000,
-    depositAmount: 20000000,
-    totalValue: 27200000,
-    status: 'disputed',
-    signedAt: '2026-10-05 10:10',
-    signedMethod: 'SmartOTP eID',
-    staffInCharge: 'Lê Hoàng Minh',
-    packageType: 'Gói 4 Ngày Mở Rộng',
-    note: 'Trả váy trễ 1 ngày + vết bẩn rượu vang phần đuôi, đang xử lý trừ cọc 2.500.000đ.'
-  }
-];
-
-const fmtVnd = (num) => `${Number(num || 0).toLocaleString('vi-VN')}₫`;
+const fmtVnd = (num) => formatCurrencyVND(num);
 
 export default function ContractManagement() {
-  const [contracts, setContracts] = useState(() => {
-    try {
-      const saved = localStorage.getItem('unibridal_contracts_local');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    return MOCK_CONTRACTS;
-  });
+  const [contracts, setContracts] = useState([]);
+  const [error, setError] = useState('');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -266,7 +146,7 @@ export default function ContractManagement() {
             totalValue: (ord.totalRentPrice || 5200000) + (ord.totalDeposit || 15000000),
             status,
             signedAt: ord.createdAt ? new Date(ord.createdAt).toLocaleString('vi-VN') : '2026-11-01',
-            signedMethod: ord.contractSignature ? 'Ký số điện tử UniBridal Pass' : 'SmartOTP eID',
+            signedMethod: ord.contractSignature ? 'Chữ ký điện tử UniBridal' : 'Ký số điện tử',
             staffInCharge: 'Chuyên viên Atelier',
             packageType: 'Gói Thuê Lễ Phục Tiêu Chuẩn',
             note: ord.notes || 'Hợp đồng điện tử kèm biên nhận cọc bảo lãnh.'
@@ -278,12 +158,15 @@ export default function ContractManagement() {
           const ids = new Set(liveContracts.map((c) => c.id));
           const uniquePrev = prev.filter((p) => !ids.has(p.id));
           const combined = [...liveContracts, ...uniquePrev];
-          try { localStorage.setItem('unibridal_contracts_local', JSON.stringify(combined)); } catch {}
+          try { localStorage.setItem('unibridal_contracts_local', JSON.stringify(combined)); } catch { }
           return combined;
         });
+        setError('');
+      } else {
+        setContracts([]);
       }
-    } catch {
-      // Giữ nguyên contracts hiện có
+    } catch (err) {
+      setError('Lỗi kết nối cơ sở dữ liệu: Không thể tải danh sách hợp đồng từ hệ thống.');
     } finally {
       setLoading(false);
     }
@@ -327,13 +210,13 @@ export default function ContractManagement() {
       case 'pending_signature':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-            <Clock size={13} /> Chờ Ký OTP
+            <Clock size={13} /> Chờ Ký
           </span>
         );
       case 'completed':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#F3ECE8] text-[#705856] border border-[#E8DDD8]">
-            <CheckCircle2 size={13} /> Đã Thanh Lý
+            <CheckCircle2 size={13} /> Đã Hoàn Thành
           </span>
         );
       case 'disputed':
@@ -373,7 +256,7 @@ export default function ContractManagement() {
     });
 
     setContracts(updated);
-    try { localStorage.setItem('unibridal_contracts_local', JSON.stringify(updated)); } catch {}
+    try { localStorage.setItem('unibridal_contracts_local', JSON.stringify(updated)); } catch { }
 
     if (selectedContract && selectedContract.id === contractId) {
       setSelectedContract((prev) => ({
@@ -390,12 +273,12 @@ export default function ContractManagement() {
         if (newStatus === 'completed') orderBackendStatus = 'completed';
         if (newStatus === 'disputed') orderBackendStatus = 'returned';
         await updateOrderStatus(target.orderId, orderBackendStatus);
-      } catch {}
+      } catch { }
     }
 
     const labels = {
       active: 'Đã kích hoạt hợp đồng có hiệu lực pháp lý!',
-      completed: 'Đã thanh lý hợp đồng & giải ngân hoàn cọc cho khách hàng!',
+      completed: 'Hợp đồng đã hoàn thành & giải ngân hoàn cọc cho khách hàng!',
       disputed: 'Đã chuyển hợp đồng sang trạng thái đối soát bồi thường cọc!'
     };
     showToast(labels[newStatus] || 'Đã cập nhật trạng thái hợp đồng thành công!');
@@ -457,11 +340,11 @@ export default function ContractManagement() {
         contractSignature: newContractObj.customerName,
         status: 'active'
       });
-    } catch {}
+    } catch { }
 
     const updatedList = [newContractObj, ...contracts];
     setContracts(updatedList);
-    try { localStorage.setItem('unibridal_contracts_local', JSON.stringify(updatedList)); } catch {}
+    try { localStorage.setItem('unibridal_contracts_local', JSON.stringify(updatedList)); } catch { }
 
     setIsCreateOpen(false);
     setNewCustomerName('');
@@ -501,6 +384,11 @@ export default function ContractManagement() {
       `}</style>
 
       <div className="space-y-6">
+        {error && (
+          <div role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+            <span className="font-semibold">⚠️ Lỗi kết nối Cơ sở dữ liệu:</span> {error}
+          </div>
+        )}
         {/* Toast Notification */}
         {toastMsg && (
           <div className="fixed bottom-6 right-6 z-50 bg-[#302626] text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-sm animate-fade-in border border-amber-900/30">
@@ -512,11 +400,7 @@ export default function ContractManagement() {
         {/* Top Header & Breadcrumb */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#EFE5E1] pb-5">
           <div>
-            <div className="flex items-center gap-2 text-xs text-[#9E8B89] mb-1">
-              <span>Quản trị UniBridal</span>
-              <span>/</span>
-              <span className="text-[#733F49] font-medium">Hợp đồng điện tử</span>
-            </div>
+
             <h1 className="text-2xl lg:text-3xl font-serif font-bold text-[#302626]">
               Quản Lý Hợp Đồng Thuê Váy Cưới
             </h1>
@@ -567,15 +451,15 @@ export default function ContractManagement() {
           </div>
 
           <div className="bg-white p-4 rounded-xl border border-[#EFE5E1] shadow-xs">
-            <span className="text-xs text-[#8A797A] font-medium block">CHỜ KHÁCH KÝ OTP</span>
+            <span className="text-xs text-[#8A797A] font-medium block">CHỜ KHÁCH KÝ</span>
             <div className="text-2xl font-bold text-amber-600 mt-1">{stats.pending}</div>
-            <div className="text-[11px] text-[#8A797A] mt-1">Cần nhắc nhở trước ngày fitting</div>
+            <div className="text-[11px] text-[#8A797A] mt-1">Cần ký trước ngày fitting / nhận váy</div>
           </div>
 
           <div className="bg-white p-4 rounded-xl border border-[#EFE5E1] shadow-xs">
-            <span className="text-xs text-[#8A797A] font-medium block">ĐÃ THANH LÝ AN TOÀN</span>
+            <span className="text-xs text-[#8A797A] font-medium block">ĐÃ HOÀN THÀNH</span>
             <div className="text-2xl font-bold text-emerald-700 mt-1">{stats.completed}</div>
-            <div className="text-[11px] text-emerald-600 mt-1">Hoàn cọc 100% nguyên vẹn</div>
+            <div className="text-[11px] text-emerald-600 mt-1">Đã giải ngân &amp; hoàn tất cọc</div>
           </div>
 
           <div className="bg-white p-4 rounded-xl border border-[#EFE5E1] shadow-xs">
@@ -604,19 +488,18 @@ export default function ContractManagement() {
             {[
               { id: 'all', label: 'Tất cả' },
               { id: 'active', label: 'Có hiệu lực' },
-              { id: 'pending_signature', label: 'Chờ ký OTP' },
-              { id: 'completed', label: 'Đã thanh lý' },
+              { id: 'pending_signature', label: 'Chờ ký' },
+              { id: 'completed', label: 'Đã hoàn thành' },
               { id: 'disputed', label: 'Đang xử lý cọc' }
             ].map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setSelectedStatus(tab.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                  selectedStatus === tab.id
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${selectedStatus === tab.id
                     ? 'bg-[#733F49] text-white shadow-xs'
                     : 'bg-[#F9ECE8] text-[#6E5957] hover:bg-[#F2DFD9]'
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -644,9 +527,6 @@ export default function ContractManagement() {
                   <tr key={item.id} className="hover:bg-[#FCFAF8] transition-colors group">
                     <td className="py-4 px-4 font-mono font-bold text-[#733F49] text-xs">
                       {item.id}
-                      <span className="block text-[10px] text-[#A39192] font-sans font-normal mt-0.5">
-                        NV: {item.staffInCharge}
-                      </span>
                     </td>
 
                     <td className="py-4 px-4">
@@ -735,7 +615,7 @@ export default function ContractManagement() {
                             type="button"
                             onClick={() => handleUpdateStatus(item.id, 'completed')}
                             className="p-2 rounded-lg text-[#5F333B] hover:bg-[#F2E4DE] transition-colors cursor-pointer"
-                            title="Thanh lý hợp đồng & Hoàn cọc"
+                            title="Hoàn thành hợp đồng & Hoàn cọc"
                           >
                             <FileCheck2 size={17} />
                           </button>
@@ -746,23 +626,11 @@ export default function ContractManagement() {
                             type="button"
                             onClick={() => handleSendReminder(item)}
                             className="p-2 rounded-lg text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer"
-                            title="Gửi lại mã nhắc ký OTP qua SMS/Email"
+                            title="Gửi nhắc ký hợp đồng qua SMS/Email"
                           >
                             <Send size={16} />
                           </button>
                         )}
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedContract(item);
-                            setTimeout(() => window.print(), 200);
-                          }}
-                          className="p-2 rounded-lg text-[#7A6A6B] hover:bg-[#F5EAE6] transition-colors cursor-pointer"
-                          title="In / Xuất PDF"
-                        >
-                          <Printer size={16} />
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -1017,7 +885,7 @@ export default function ContractManagement() {
                       className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#733F49] hover:bg-[#5C323A] text-white text-xs font-semibold cursor-pointer"
                     >
                       <FileCheck2 size={14} />
-                      <span>Thanh Lý &amp; Hoàn Cọc</span>
+                      <span>Hoàn Thành &amp; Hoàn Cọc</span>
                     </button>
                   )}
 
@@ -1162,7 +1030,7 @@ export default function ContractManagement() {
                   <div>
                     <p className="font-bold uppercase text-[#733F49]">ĐẠI DIỆN BÊN B (KHÁCH HÀNG)</p>
                     <p className="text-[#A39192] italic mt-1">
-                      {selectedContract.signedAt ? 'Xác thực định danh eKYC & SmartOTP' : 'Chưa thực hiện ký điện tử'}
+                      {selectedContract.signedAt ? 'Xác thực chữ ký số điện tử' : 'Chưa thực hiện ký điện tử'}
                     </p>
                     <div className="h-20 flex items-center justify-center">
                       {selectedContract.signedAt ? (
@@ -1172,7 +1040,7 @@ export default function ContractManagement() {
                         </div>
                       ) : (
                         <div className="border border-dashed border-amber-400 rounded-lg p-2 bg-amber-50 text-amber-700 text-xs">
-                          Chờ khách hàng nhập mã OTP xác thực
+                          Chờ khách hàng ký xác nhận hợp đồng
                         </div>
                       )}
                     </div>

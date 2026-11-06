@@ -38,70 +38,41 @@ export function mapOrder(order) {
     style: order.style || 'Theo đơn hàng',
     amount: order.totalRentPrice || order.amount || 0,
     deposit: order.totalDeposit || order.deposit || 0,
+    totalDeposit: order.totalDeposit || order.deposit || 0,
+    totalRentPrice: order.totalRentPrice || order.amount || 0,
+    rentalStartDate: order.rentalStartDate,
+    rentalEndDate: order.rentalEndDate,
+    actualReturnDate: order.actualReturnDate,
     rentalDates: order.rentalDates || `${fmtDate(order.rentalStartDate)} – ${fmtDate(order.rentalEndDate)}`,
     fitting: order.fitting || 'Liên hệ showroom để xác nhận',
     shippingAddress: order.shippingAddress,
     items: order.items || [],
+    inspection: order.inspection || null,
   };
 }
-
-// Dữ liệu mẫu dự phòng khi Backend chưa khởi chạy
-const DEMO_ORDERS = [
-  {
-    id: 'UB-2025-089',
-    _id: 'ord_demo_001',
-    orderCode: 'UB-2025-089',
-    status: 'active',
-    statusLabel: 'Đang Chuẩn Bị Bàn Giao',
-    date: '20/11/2025',
-    dress: 'Elysian Rose Ballgown',
-    image: elysianImage,
-    imageAlt: 'Mẫu váy cưới Elysian Rose Ballgown',
-    category: 'Haute Couture',
-    size: 'S (Eo 64–68cm)',
-    style: 'Corset Siết Eo',
-    amount: 4700000,
-    deposit: 15000000,
-    rentalDates: '18/11/2025 – 21/11/2025',
-    fitting: 'Phòng Fitting VIP Nam Kỳ Khởi Nghĩa',
-  },
-  {
-    id: 'UB-2025-042',
-    _id: 'ord_demo_002',
-    orderCode: 'UB-2025-042',
-    status: 'complete',
-    statusLabel: 'Đã Hoàn Tất & Hoàn Cọc',
-    date: '15/05/2025',
-    dress: 'Aurora Pearl Sheath',
-    image: auroraImage,
-    imageAlt: 'Mẫu váy cưới Aurora Pearl Sheath',
-    category: 'Giới thiệu 3 ngày',
-    size: 'S',
-    style: 'Sheath',
-    amount: 4800000,
-    deposit: 12000000,
-    rentalDates: '12/05/2025 – 15/05/2025',
-    fitting: 'Private Suite UniBridal',
-  },
-];
 
 /**
  * Lấy danh sách toàn bộ đơn thuê (Admin / Staff) hoặc đơn cá nhân (Customer)
  * @param {Object} params - { status, customerId, page, limit }
  */
 export async function getOrders(params = {}) {
+  // Dọn dẹp cache fake cũ trong localStorage nếu có
+  try {
+    localStorage.removeItem('unibridal-orders');
+  } catch {}
+
   try {
     const res = await axiosClient.get('/orders/my', { params });
     const list = Array.isArray(res.data) ? res.data : (Array.isArray(res) ? res : res.data?.data || []);
-    if (list && list.length >= 0) {
+    if (Array.isArray(list)) {
       return list.map(mapOrder);
     }
   } catch (error) {
-    // Không ném lỗi nếu là lỗi xác thực
+    // Không đăng nhập hoặc lỗi kết nối -> trả về mảng rỗng, không tự tạo mock
+    return [];
   }
 
-  const cached = localStorage.getItem('unibridal-orders');
-  return (cached ? JSON.parse(cached) : []).map(mapOrder);
+  return [];
 }
 
 /**
@@ -111,7 +82,8 @@ export async function getOrders(params = {}) {
 export async function getOrder(idOrCode) {
   try {
     const res = await axiosClient.get(`/orders/my/${encodeURIComponent(idOrCode)}`);
-    if (res?.data) return mapOrder(res.data);
+    const raw = res?.data?.data || res?.data;
+    if (raw) return mapOrder(raw);
   } catch (error) {
     // Thử endpoint chung
   }
@@ -121,13 +93,10 @@ export async function getOrder(idOrCode) {
     const raw = res?.data?.data || res?.data;
     if (raw) return mapOrder(raw);
   } catch (error) {
-    // Fallback demo
+    // Lỗi
   }
 
-  const cached = JSON.parse(localStorage.getItem('unibridal-orders') || '[]');
-  const all = [...cached, ...DEMO_ORDERS];
-  const found = all.find((o) => o.id === idOrCode || o._id === idOrCode || o.orderCode === idOrCode);
-  return mapOrder(found || DEMO_ORDERS[0]);
+  throw new Error('Không tìm thấy đơn hàng trong cơ sở dữ liệu.');
 }
 
 export const getOrderById = getOrder;
@@ -140,24 +109,7 @@ export async function createOrder(orderData) {
   try {
     return await axiosClient.post('/orders', orderData);
   } catch (error) {
-    const newOrder = {
-      id: `UB-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`,
-      _id: `ord_${Date.now()}`,
-      orderCode: `UB-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`,
-      status: 'pending',
-      statusLabel: 'Chờ Xác Nhận',
-      date: new Date().toLocaleDateString('vi-VN'),
-      createdAt: new Date().toISOString(),
-      ...orderData,
-    };
-    const cached = JSON.parse(localStorage.getItem('unibridal-orders') || '[]');
-    cached.unshift(newOrder);
-    localStorage.setItem('unibridal-orders', JSON.stringify(cached));
-    return {
-      success: true,
-      message: 'Đặt đơn thuê thành công (Offline Demo)',
-      data: newOrder,
-    };
+    throw new Error(error.response?.data?.message || error.message || 'Không thể tạo đơn thuê, vui lòng thử lại.');
   }
 }
 
@@ -177,13 +129,41 @@ export async function updateOrderStatus(orderId, status) {
 /**
  * Lập biên bản kiểm định tình trạng váy khi trả (Return Inspection)
  * @param {string} orderId
- * @param {Object} inspectionData - { condition, damageNotes, penaltyFee, refundDepositAmount, inspectorStaffId }
+ * @param {Object} inspectionData - { itemsCondition, evidencePhotos }
  */
 export async function submitReturnInspection(orderId, inspectionData) {
   try {
     return await axiosClient.post(`/orders/${orderId}/inspection`, inspectionData);
   } catch (error) {
     return { success: true, message: 'Lập biên bản hoàn trả thành công (Offline Demo)' };
+  }
+}
+
+/**
+ * Khách hàng đồng ý biên bản kiểm định -> Tự động hoàn cọc và cập nhật STK ngân hàng
+ * @param {string} orderId
+ * @param {Object} bankData - { bankName, accountNumber, accountHolder, notes }
+ */
+export async function approveReturnInspection(orderId, bankData = {}) {
+  try {
+    const res = await axiosClient.post(`/orders/${orderId}/inspection/approve`, bankData);
+    return res.data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+/**
+ * Khách hàng khiếu nại biên bản kiểm định
+ * @param {string} orderId
+ * @param {Object} data - { reason }
+ */
+export async function disputeReturnInspection(orderId, data) {
+  try {
+    const res = await axiosClient.post(`/orders/${orderId}/inspection/dispute`, data);
+    return res.data;
+  } catch (error) {
+    throw error;
   }
 }
 
@@ -203,13 +183,10 @@ export async function getDressBookedDates(dressId) {
 }
 
 export function getDemoOrders() {
-  return DEMO_ORDERS.map(mapOrder);
+  return [];
 }
 
-export function getDemoOrder(id) {
-  const item = DEMO_ORDERS.find((order) => order.id === id);
-  return mapOrder(item);
-}
+export function getDemoOrder(id) { return null; }
 
 /**
  * Lấy toàn bộ danh sách đơn thuê (Admin)
@@ -222,14 +199,16 @@ export async function getAllOrdersAdmin(params = {}) {
     const total = res.pagination?.total ?? res.total ?? list.length;
     const page = res.pagination?.page ?? res.page ?? 1;
     const totalPages = res.pagination?.totalPages ?? res.totalPages ?? 1;
+    const stats = res.stats || null;
     return {
       orders: list,
       total,
       page,
       totalPages,
+      stats,
     };
   } catch (error) {
-    return { orders: [], total: 0, page: 1, totalPages: 1 };
+    return { orders: [], total: 0, page: 1, totalPages: 1, stats: null };
   }
 }
 

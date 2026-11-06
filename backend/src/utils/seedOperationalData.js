@@ -16,8 +16,14 @@ import User from '../models/User.model.js';
 async function seedData() {
   try {
     console.log('Connecting to MongoDB...');
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log('Connected to MongoDB!');
+    try {
+      await mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 3000 });
+      console.log('Connected to MongoDB (Atlas)!');
+    } catch (e) {
+      console.warn('Atlas unreachable. Connecting to local MongoDB...');
+      await mongoose.connect('mongodb://127.0.0.1:27017/wedding_dress_rental');
+      console.log('Connected to local MongoDB!');
+    }
 
     // Get real dresses from database
     const dresses = await Dress.find().limit(20).lean();

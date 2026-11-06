@@ -22,8 +22,10 @@ import RevenueReportPage from './pages/admin/RevenueReportPage';
 import OrderRentalManagement from './pages/admin/OrderRentalManagement';
 import InventoryManagement from './pages/admin/InventoryManagement';
 import CustomerCareManagement from './pages/admin/CustomerCareManagement';
+import AppointmentManagement from './pages/admin/AppointmentManagement';
 import ContractManagement from './pages/admin/ContractManagement';
 import ContractTemplateManagement from './pages/admin/ContractTemplateManagement';
+import AccountManagement from './pages/admin/AccountManagement';
 import NotFoundPage from './pages/common/NotFoundPage';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import ScrollToTop from './components/common/ScrollToTop';
@@ -45,6 +47,7 @@ export default function App() {
               <Route path="/wishlist" element={<ProtectedRoute allowedRoles={['customer', 'staff', 'admin']}><WishlistPage /></ProtectedRoute>} />
               <Route path="/yeu-thich" element={<ProtectedRoute allowedRoles={['customer', 'staff', 'admin']}><WishlistPage /></ProtectedRoute>} />
               <Route path="/collection" element={<CollectionPage />} />
+              <Route path="/collections" element={<CollectionPage />} />
               <Route path="/bo-suu-tap" element={<CollectionPage />} />
               <Route path="/cart" element={<ProtectedRoute allowedRoles={['customer', 'staff', 'admin']}><CartPage /></ProtectedRoute>} />
               <Route path="/checkout" element={<CheckoutPage />} />
@@ -82,6 +85,8 @@ export default function App() {
               <Route path="/staff/dashboard" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><StaffDashboardPage /></ProtectedRoute>} />
               <Route path="/staff/don-thue" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><OrderRentalManagement /></ProtectedRoute>} />
               <Route path="/staff/orders" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><OrderRentalManagement /></ProtectedRoute>} />
+              <Route path="/staff/lich-hen" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><AppointmentManagement /></ProtectedRoute>} />
+              <Route path="/staff/appointments" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><AppointmentManagement /></ProtectedRoute>} />
               <Route path="/staff/kho-hang" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><InventoryManagement /></ProtectedRoute>} />
               <Route path="/staff/inventory" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><InventoryManagement /></ProtectedRoute>} />
               <Route path="/staff/cham-soc-khach-hang" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><CustomerCareManagement /></ProtectedRoute>} />
@@ -96,6 +101,8 @@ export default function App() {
               <Route path="/admin/revenue" element={<Navigate to="/admin/reports/revenue" replace />} />
               <Route path="/admin/don-thue" element={<ProtectedRoute allowedRoles={['admin']}><OrderRentalManagement /></ProtectedRoute>} />
               <Route path="/admin/orders" element={<ProtectedRoute allowedRoles={['admin']}><OrderRentalManagement /></ProtectedRoute>} />
+              <Route path="/admin/lich-hen" element={<ProtectedRoute allowedRoles={['admin']}><AppointmentManagement /></ProtectedRoute>} />
+              <Route path="/admin/appointments" element={<ProtectedRoute allowedRoles={['admin']}><AppointmentManagement /></ProtectedRoute>} />
               <Route path="/admin/kho-hang" element={<ProtectedRoute allowedRoles={['admin']}><InventoryManagement /></ProtectedRoute>} />
               <Route path="/admin/inventory" element={<ProtectedRoute allowedRoles={['admin']}><InventoryManagement /></ProtectedRoute>} />
               <Route path="/admin/cham-soc-khach-hang" element={<ProtectedRoute allowedRoles={['admin']}><CustomerCareManagement /></ProtectedRoute>} />
@@ -104,9 +111,14 @@ export default function App() {
               <Route path="/admin/contracts" element={<ProtectedRoute allowedRoles={['admin']}><ContractManagement /></ProtectedRoute>} />
               <Route path="/admin/mau-hop-dong" element={<ProtectedRoute allowedRoles={['admin']}><ContractTemplateManagement /></ProtectedRoute>} />
               <Route path="/admin/contract-templates" element={<ProtectedRoute allowedRoles={['admin']}><ContractTemplateManagement /></ProtectedRoute>} />
+              <Route path="/admin/accounts" element={<ProtectedRoute allowedRoles={['admin']}><AccountManagement /></ProtectedRoute>} />
+              <Route path="/admin/users" element={<Navigate to="/admin/accounts" replace />} />
+              <Route path="/admin/tai-khoan" element={<Navigate to="/admin/accounts" replace />} />
               
               {/* Common Aliases */}
+              <Route path="/quan-ly-tai-khoan" element={<ProtectedRoute allowedRoles={['admin']}><AccountManagement /></ProtectedRoute>} />
               <Route path="/quan-ly-don-thue" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><OrderRentalManagement /></ProtectedRoute>} />
+              <Route path="/quan-ly-lich-hen" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><AppointmentManagement /></ProtectedRoute>} />
               <Route path="/quan-ly-kho-hang" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><InventoryManagement /></ProtectedRoute>} />
               <Route path="/cham-soc-khach-hang" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><CustomerCareManagement /></ProtectedRoute>} />
               <Route path="/quan-ly-hop-dong" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><ContractManagement /></ProtectedRoute>} />

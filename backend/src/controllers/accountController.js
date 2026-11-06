@@ -11,3 +11,8 @@ export const orders = async (req, res) => ok(res, 'Lấy danh sách đơn hàng 
 export const order = async (req, res) => ok(res, 'Lấy chi tiết đơn hàng thành công.', await account.getOrder(req.user._id, req.params.id));
 export const dresses = async (req, res) => ok(res, 'Lấy danh sách sản phẩm thành công.', await account.listDresses());
 export const dressDetail = async (req, res) => ok(res, 'Lấy chi tiết sản phẩm thành công.', await account.getDressDetail(req.params.id));
+export const createDress = async (req, res) => ok(res, 'Thêm mới mẫu váy cưới thành công.', await account.createDress(req.body), 201);
+export const updateDress = async (req, res) => ok(res, 'Cập nhật mẫu váy cưới thành công.', await account.updateDress(req.params.id, req.body));
+export const deleteDress = async (req, res) => ok(res, 'Xóa/ẩn mẫu váy cưới thành công.', await account.deleteDress(req.params.id));
+export const getWishlist = async (req, res) => ok(res, 'Lấy danh sách yêu thích thành công.', await account.getWishlist(req.user));
+export const updateWishlist = async (req, res) => ok(res, 'Cập nhật danh sách yêu thích thành công.', await account.updateWishlist(req.user, req.body));

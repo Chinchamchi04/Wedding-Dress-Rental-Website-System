@@ -9,6 +9,7 @@ import card1Img from '../../assets/card1_elysian.jpg';
 import card2Img from '../../assets/card2_celeste.jpg';
 import card3Img from '../../assets/card3_lumiere.jpg';
 import card4Img from '../../assets/card4_monet.jpg';
+import logoEmblemImg from '../../assets/logo_emblem.png';
 
 const products = [
   {
@@ -62,11 +63,9 @@ const products = [
 ];
 
 const renderPriceWithDong = (priceVal) => {
-  if (priceVal === undefined || priceVal === null) return '5.200.000 ₫';
-  const str =
-    typeof priceVal === 'number'
-      ? new Intl.NumberFormat('vi-VN').format(priceVal)
-      : String(priceVal).replace(/[^0-9.]/g, '');
+  if (priceVal === undefined || priceVal === null || priceVal === '') return '5.200.000 ₫';
+  const num = typeof priceVal === 'number' ? priceVal : Number(String(priceVal).replace(/[^0-9]/g, ''));
+  const str = !isNaN(num) ? Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '5.200.000';
   return (
     <span>
       {str}
@@ -76,11 +75,9 @@ const renderPriceWithDong = (priceVal) => {
 };
 
 const renderDepositWithDong = (amountVal) => {
-  if (amountVal === undefined || amountVal === null) return '15.000.000 ₫';
-  const str =
-    typeof amountVal === 'number'
-      ? new Intl.NumberFormat('vi-VN').format(amountVal)
-      : String(amountVal).replace(/[^0-9.]/g, '');
+  if (amountVal === undefined || amountVal === null || amountVal === '') return '15.000.000 ₫';
+  const num = typeof amountVal === 'number' ? amountVal : Number(String(amountVal).replace(/[^0-9]/g, ''));
+  const str = !isNaN(num) ? Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '15.000.000';
   return (
     <span>
       {str}
@@ -92,7 +89,8 @@ const renderDepositWithDong = (amountVal) => {
 const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: propWishlistedIds }) => {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
-  const [items, setItems] = useState(products);
+  const [items, setItems] = useState([]);
+  const [error, setError] = useState('');
   const [internalWishlistIds, setInternalWishlistIds] = useState(() => getWishlistIds());
 
   useEffect(() => {
@@ -115,23 +113,30 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
           const mapped = res.data.slice(0, 4).map((d, index) => ({
             id: d.id || d._id || index + 1,
             slug: d.slug,
-            name: d.name || products[index]?.name,
-            badgeMain: d.collectionTag?.split(' ')?.[0] || products[index]?.badgeMain || 'HAUTE COUTURE',
-            badgeSub: d.silhouette ? `Dáng ${d.silhouette}` : products[index]?.badgeSub || 'Có sẵn',
+            name: d.name,
+            badgeMain: d.collectionTag?.split(' ')?.[0] || 'HAUTE COUTURE',
+            badgeSub: d.silhouette ? `Dáng ${d.silhouette}` : 'Có sẵn',
             rating: Number(d.rating || 4.9).toFixed(1),
             rentCount: `${d.rentCount || 88} lượt thuê`,
             size: d.sizes?.length
               ? `Size: ${d.sizes.map((s) => (typeof s === 'string' ? s : s.id || s.label)).join(' - ')}`
               : 'Size: S - M',
-            price: d.price || d.rentPrice || products[index]?.price,
-            depositAmount: d.depositAmount || products[index]?.depositAmount,
-            image: dressImage(d) || products[index]?.image || card1Img,
+            price: d.price || d.rentPrice || 5000000,
+            depositAmount: d.depositAmount || 15000000,
+            image: dressImage(d) || card1Img,
           }));
           setItems(mapped);
+          setError('');
+        } else if (isMounted) {
+          setItems([]);
+          setError('Lỗi kết nối cơ sở dữ liệu: Không có dữ liệu váy cưới từ MongoDB.');
         }
       })
-      .catch(() => {
-        // Fallback default products
+      .catch((err) => {
+        if (isMounted) {
+          setItems([]);
+          setError('Lỗi kết nối cơ sở dữ liệu: Không thể kết nối tới máy chủ MongoDB.');
+        }
       });
 
     return () => {
@@ -163,7 +168,7 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
               Array.isArray(wishlistedIds) &&
               wishlistedIds.some((w) => {
                 const wId = typeof w === 'object' && w !== null ? w?.id : w;
-                return String(wId) === String(item.id) || Number(wId) === Number(item.id);
+                return String(wId) === String(item.id) || (item.code && String(wId) === String(item.code));
               })
             );
             return (
@@ -205,25 +210,40 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
                           onToggleWishlist(item.id);
                         } else {
                           toggleWishlist(item.id);
+                          setInternalWishlistIds(getWishlistIds());
                         }
                       }}
-                      className="absolute top-4 right-4 w-[36px] h-[36px] rounded-[12px] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] flex items-center justify-center text-[#4A3E3D] hover:text-[#B26B74] border-0 cursor-pointer z-10 transition-transform hover:scale-105 active:scale-90 p-0"
-                      title="Yêu thích"
+                      className={`absolute top-4 right-4 w-[36px] h-[36px] rounded-[12px] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] flex items-center justify-center border cursor-pointer z-10 transition-all hover:scale-105 active:scale-90 p-0 ${
+                        isWishlisted ? 'border-red-200 bg-red-50/70 text-red-500' : 'border-transparent text-[#4A3E3D] hover:text-red-500'
+                      }`}
+                      title={isWishlisted ? 'Bỏ yêu thích' : 'Yêu thích'}
                       aria-label="Yêu thích"
                     >
                       <Heart
-                        className={`w-[17px] h-[17px] ${isWishlisted ? 'fill-[#B26B74] text-[#B26B74]' : 'text-[#4A3E3D]'}`}
+                        className={`w-[17px] h-[17px] transition-all duration-200 ${isWishlisted ? 'fill-red-500 text-red-500 scale-110' : 'text-[#4A3E3D]'}`}
                         strokeWidth={1.65}
                       />
                     </button>
                   )}
+
+                  {/* Logo UniBridal Watermark ở góc ảnh */}
+                  <div
+                    className="absolute bottom-3 right-3.5 z-10 pointer-events-none select-none transition-transform duration-300 group-hover:scale-110"
+                    title="UniBridal Haute Couture"
+                  >
+                    <img
+                      src={logoEmblemImg}
+                      alt="UniBridal Emblem"
+                      className="w-[42px] h-[42px] object-contain drop-shadow-[0px_2px_6px_rgba(0,0,0,0.35)]"
+                    />
+                  </div>
                 </div>
 
                 {/* Details Bottom */}
                 <div className="px-5 pt-6 sm:pt-6.5 pb-4 flex flex-col justify-start">
                   <div>
                     {/* Rating & Size Row */}
-                    <div className="flex items-center justify-between text-[12px] font-jakarta mb-2">
+                    <div className="flex items-center justify-between text-[12px] font-jakarta mb-1">
                       <div className="flex items-center gap-1.5 text-[#B26B74]">
                         <span className="font-bold">★ {Number(item.rating || 4.9).toFixed(1)}</span>
                         <span className="text-[#C69098] font-normal">({item.rentCount})</span>
@@ -233,9 +253,9 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
                       </span>
                     </div>
 
-                    {/* Product Name */}
-                    <div className="min-h-[48px] mb-3.5 flex items-start">
-                      <h3 className="font-playfair text-[20px] sm:text-[21px] leading-[26px] font-semibold text-[#231A19] m-0 text-left">
+                    {/* Product Name - Căn giữa tự nhiên giữa Size và Giá tiền khi tên 1 dòng */}
+                    <div className="min-h-[52px] my-1.5 flex items-center">
+                      <h3 className="font-playfair text-[20px] sm:text-[21px] leading-[25px] font-semibold text-[#231A19] m-0 text-left line-clamp-2">
                         {item.name}
                       </h3>
                     </div>

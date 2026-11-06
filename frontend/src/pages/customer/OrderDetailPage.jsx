@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import AccountLayout from '../../components/layout/AccountLayout';
 import { formatVnd, getOrder, updateOrderStatus } from '../../services/orderService';
+import { CustomerInspectionModal } from './OrderHistoryPage';
 
 /* ─────────────────────────────────────────────
    STATUS TIMELINE CONFIG
@@ -237,6 +238,17 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [cancelling, setCancelling] = useState(false);
+  const [isInspectionOpen, setIsInspectionOpen] = useState(false);
+
+  const fetchOrderDetail = () => {
+    getOrder(orderId)
+      .then((data) => {
+        setOrder(data);
+      })
+      .catch((issue) => {
+        setError(issue.message || 'Không tìm thấy thông tin đơn hàng.');
+      });
+  };
 
   const handleCancelOrder = () => {
     Modal.confirm({
@@ -320,6 +332,39 @@ export default function OrderDetailPage() {
                 Lịch thuê: {order.rentalDates}
               </p>
             </div>
+
+            {/* ── BANNER BIÊN BẢN KIỂM ĐỊNH & HOÀN CỌC NỔI BẬT ── */}
+            {(order.rawStatus === 'returned' || order.inspection) && (
+              <div className="mt-5 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#FFF4F0] via-[#FFF8F5] to-[#FFF1EC] border-2 border-[#E7BFB5] shadow-sm space-y-3 font-jakarta transition-all">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-3 w-3 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#B8737D] opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-[#8C4654]"></span>
+                    </span>
+                    <span className="font-playfair font-bold text-[#5F2B36] text-[15px] sm:text-[16px] tracking-wide">
+                      ✦ Showroom đã lập Biên Bản Kiểm Định Trả Váy
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsInspectionOpen(true)}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#733F49] to-[#8C4654] hover:from-[#5A2D35] hover:to-[#733F49] text-white text-xs font-bold transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg border-0 shrink-0"
+                  >
+                    <span>Xem Biên Bản &amp; Xác Nhận Hoàn Cọc</span>
+                  </button>
+                </div>
+
+                <p className="text-[12.5px] sm:text-[13px] leading-relaxed text-[#5E4D4F] m-0">
+                  Nàng vui lòng xem chi tiết hiện trạng váy và số tiền cọc được hoàn lại. Khi nàng đồng ý, hệ thống sẽ tự động hoàn cọc ngay lập tức; nếu chưa hài lòng nàng có quyền gửi đơn khiếu nại.
+                </p>
+
+                <div className="pt-1 flex items-center gap-1.5 text-[11px] text-[#8C7A7B]">
+                  <span>📧</span>
+                  <span>Hệ thống đã đồng thời gửi thông báo và bản sao biên bản kiểm định chi tiết về email của nàng.</span>
+                </div>
+              </div>
+            )}
 
             {/* ── STATUS TIMELINE ── */}
             <OrderStatusTimeline rawStatus={order.rawStatus} />
@@ -420,6 +465,15 @@ export default function OrderDetailPage() {
                 </button>
               </div>
             </div>
+
+            {/* Modal Biên Bản Kiểm Định & Quyết Toán Hoàn Cọc */}
+            {isInspectionOpen && (
+              <CustomerInspectionModal
+                order={order}
+                onClose={() => setIsInspectionOpen(false)}
+                onUpdated={fetchOrderDetail}
+              />
+            )}
           </>
         )}
       </div>

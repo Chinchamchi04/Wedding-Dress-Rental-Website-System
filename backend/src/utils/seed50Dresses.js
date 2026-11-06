@@ -619,7 +619,12 @@ const DRESS_DATA = [
 async function seedDresses() {
   try {
     console.log('Connecting to MongoDB...');
-    await mongoose.connect(process.env.MONGO_URI);
+    try {
+      await mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 3000 });
+    } catch (e) {
+      console.warn('Atlas unreachable. Connecting to local MongoDB...');
+      await mongoose.connect('mongodb://127.0.0.1:27017/wedding_dress_rental');
+    }
     console.log('Connected to MongoDB successfully!');
 
     // 1. Ensure categories exist

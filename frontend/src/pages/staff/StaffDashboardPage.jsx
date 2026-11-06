@@ -25,26 +25,10 @@ import {
 
 const PERIODS = { week: '7 ngày qua', month: 'Tháng này', quarter: 'Quý này' };
 
-const MOCK_STAFF_DASHBOARD = {
-  totalOrders: 24,
-  completedOrders: 18,
-  todayDeliveries: 4,
-  maintenance: 2,
-  ordersMissingDepositTransaction: 0,
-  chart: [
-    { label: 'T2', orders: 4, completed: 3 },
-    { label: 'T3', orders: 6, completed: 5 },
-    { label: 'T4', orders: 3, completed: 3 },
-    { label: 'T5', orders: 5, completed: 4 },
-    { label: 'T6', orders: 7, completed: 6 },
-    { label: 'T7', orders: 9, completed: 8 },
-    { label: 'CN', orders: 8, completed: 7 },
-  ],
-};
-
 export default function StaffDashboardPage() {
   const [period, setPeriod] = useState('week');
-  const [data, setData] = useState(MOCK_STAFF_DASHBOARD);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [appointments, setAppointments] = useState([]);
   const [loadingApt, setLoadingApt] = useState(false);
@@ -56,7 +40,8 @@ export default function StaffDashboardPage() {
       const list = Array.isArray(res?.data) ? res.data : (res?.data?.data || []);
       setAppointments(list);
     } catch {
-      // ignore
+      setAppointments([]);
+      message.error('Lỗi kết nối cơ sở dữ liệu khi tải danh sách lịch hẹn.');
     } finally {
       setLoadingApt(false);
     }
@@ -81,15 +66,20 @@ export default function StaffDashboardPage() {
   useEffect(() => {
     let active = true;
     setError('');
+    setLoading(true);
     getStaffDashboard(period)
       .then((value) => {
         if (!active) return;
         if (value) {
-          setData(value);
+          setData(value?.data || value);
         }
+        setLoading(false);
       })
-      .catch(() => {
-        if (active) setData(MOCK_STAFF_DASHBOARD);
+      .catch((err) => {
+        if (!active) return;
+        setData(null);
+        setError('Lỗi kết nối cơ sở dữ liệu: Không thể tải dữ liệu bảng điều khiển từ máy chủ MongoDB.');
+        setLoading(false);
       });
     return () => {
       active = false;
@@ -145,7 +135,11 @@ export default function StaffDashboardPage() {
       subtitle="Theo dõi tiến độ đơn hàng và lịch hẹn tiếp đón cô dâu hôm nay"
       activeNav="dashboard"
     >
-      {error && <p role="alert" className="mb-4 text-sm text-red-700">{error}</p>}
+      {error && (
+        <div role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <span className="font-semibold">⚠️ Lỗi kết nối Cơ sở dữ liệu:</span> {error}
+        </div>
+      )}
       {data?.ordersMissingDepositTransaction > 0 && (
         <p role="alert" className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
           Có {data.ordersMissingDepositTransaction} đơn đã chuyển sang trạng thái đặt cọc nhưng chưa có giao dịch cọc thành công. Vui lòng đối soát với bộ phận thu ngân.
