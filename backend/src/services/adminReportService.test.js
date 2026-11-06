@@ -1,0 +1,34 @@
+import test, { mock, afterEach } from 'node:test';
+import assert from 'node:assert/strict';
+import Payment from '../models/Payment.model.js';
+import Order from '../models/Order.model.js';
+import Dress from '../models/Dress.model.js';
+import { revenueReport } from './adminReportService.js';
+const query = (rows) => ({ select() { return this; }, sort() { return this; }, populate() { return this; }, lean: async () => rows });
+afterEach(() => mock.restoreAll());
+test('report and CSV source include more than 100 transactions without counting pending payments', async () => {
+    const now = new Date();
+    const order = { _id: 'order', orderCode: 'SAMPLE', customerName: 'Sample', items: [{ dressId: 'a', name: 'A', rentPrice: 100 }, { dressId: 'b', name: 'B', rentPrice: 200 }] };
+    const payments = Array.from({ length: 125 }, (_, index) => ({ _id: 'payment-' + index, orderId: order, transactionType: 'rental_payment', status: index === 124 ? 'pending' : 'success', amount: 300, paidAt: now, createdAt: now }));
+    mock.method(Payment, 'find', (filter) => query(filter.status === 'success' ? payments.filter((p) => p.status === 'success') : payments));
+    mock.method(Payment, 'distinct', async () => []);
+    mock.method(Order, 'find', () => query([]));
+    mock.method(Dress, 'find', () => query([]));
+    const report = await revenueReport('month');
+    assert.equal(report.transactions.length, 125);
+    assert.equal(report.revenue, 124 * 300);
+    assert.equal(report.topDresses.reduce((sum, dress) => sum + dress.totalRevenue, 0), report.rentalRevenue);
+    assert.equal(report.chart.reduce((sum, row) => sum + row.revenue, 0), report.revenue);
+});
+test('empty report has zero totals, zero percentages and no invented growth or ranking', async () => {
+    mock.method(Payment, 'find', () => query([]));
+    mock.method(Payment, 'distinct', async () => []);
+    mock.method(Order, 'find', () => query([]));
+    mock.method(Dress, 'find', () => query([]));
+    const report = await revenueReport('month');
+    assert.equal(report.revenue, 0);
+    assert.equal(report.growthRate, 0);
+    assert.equal(report.financialBreakdown.rentalPercentage, 0);
+    assert.equal(report.financialBreakdown.depositPercentage, 0);
+    assert.deepEqual(report.topDresses, []);
+});

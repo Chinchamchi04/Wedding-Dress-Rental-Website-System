@@ -129,7 +129,7 @@ export function getWishlistIds() {
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
       return parsed
-        .map((item) => (typeof item === 'object' && item !== null ? String(item?.id) : String(item)))
+        .map((item) => (typeof item === 'object' && item !== null ? String(item?.id ?? item?._id ?? item) : String(item)))
         .filter((id) => Boolean(id && id !== 'null' && id !== 'undefined' && id !== 'NaN'));
     }
     return [];
@@ -275,10 +275,12 @@ export function getWishlistDresses() {
   return ids.map((id) => {
     let strId = String(id);
     if (LEGACY_REC_MAP[strId]) strId = LEGACY_REC_MAP[strId];
-    const inCatalog = DRESS_CATALOG.find((d) => String(d.id) === strId || (d.code && String(d.code) === strId));
+    const numId = Number(strId);
+    const inCatalog = DRESS_CATALOG.find((d) => String(d.id) === strId || (d.code && String(d.code) === strId)) || (Number.isInteger(numId) && numId > 0 ? DRESS_CATALOG[numId - 1] : null);
     if (inCatalog) {
       return {
         ...inCatalog,
+        id,
         categoryBadge: inCatalog.categoryName ? inCatalog.categoryName.toUpperCase() : 'VÁY CƯỚI CAO CẤP',
         priceFormatted: inCatalog.price || (inCatalog.priceNumber ? formatCurrencyVND(inCatalog.priceNumber) : '5.200.000₫'),
       };

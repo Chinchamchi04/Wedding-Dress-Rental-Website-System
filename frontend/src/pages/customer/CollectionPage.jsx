@@ -23,23 +23,88 @@ const SILHOUETTE_OPTIONS = [
   { id: 'a-line', label: 'Chữ A Thanh Lịch (A-line)' },
   { id: 'silk-gown', label: 'Lụa Satin Tối Giản (Silk Gown)' },
   { id: 'princess', label: 'Váy Cưới Hoàng Gia (Princess)' },
+  { id: 'traditional', label: 'Áo Dài Cưới Truyền Thống (Traditional)' },
 ];
 
-// Danh mục Chất Liệu Thượng Hạng
+// Danh mục Chất Liệu Thượng Hạng (Khớp với chất liệu thực tế của toàn bộ mẫu váy)
 const MATERIAL_OPTIONS = [
-  'Ren 3D Floral',
+  'Ren 3D / Ren Pháp',
   'Lụa Mikado Ý',
   'Satin Tơ Tằm Tự Nhiên',
-  'Đính Kết Pha Lê Swarovski',
+  'Đính Pha Lê Swarovski',
+  'Voan Tulle Thụy Sĩ',
+  'Gấm & Dạ Cao Cấp',
 ];
 
-// Danh mục Mức Giá Thuê
+// Danh mục Mức Giá Thuê chuẩn theo giá thực tế trong cơ sở dữ liệu (3.2tr - 8.9tr+)
 const PRICE_RANGE_OPTIONS = [
   { id: 'under-5', label: 'Dưới 5 triệu' },
-  { id: '5-10', label: '5 - 10 triệu' },
-  { id: '10-20', label: '10 - 20 triệu' },
-  { id: 'vip', label: 'Haute Couture VIP (> 20 triệu)' },
+  { id: '5-7', label: '5 – 7 triệu' },
+  { id: '7-9', label: '7 – 9 triệu' },
+  { id: 'above-9', label: 'Trên 9 triệu (Haute Couture VIP)' },
 ];
+
+// Helper: Kiểm tra phom dáng khớp linh hoạt với dữ liệu váy
+const matchSilhouette = (dress, targetId) => {
+  if (!targetId || targetId === 'all') return true;
+  const target = targetId.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const cat = (dress.category || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const sil = (dress.silhouette || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const name = (dress.name || '').toLowerCase();
+
+  if (cat.includes(target) || sil.includes(target)) return true;
+  if (target === 'ballgown' && (sil.includes('ballgown') || cat.includes('ballgown') || name.includes('ballgown') || name.includes('bồng'))) return true;
+  if (target === 'mermaid' && (sil.includes('mermaid') || cat.includes('mermaid') || name.includes('mermaid') || name.includes('đuôi cá'))) return true;
+  if (target === 'aline' && (sil.includes('aline') || cat.includes('aline') || sil.includes('line') || name.includes('chữ a') || name.includes('a-line'))) return true;
+  if (target === 'silkgown' && (sil.includes('silk') || sil.includes('sheath') || cat.includes('silk') || name.includes('lụa') || name.includes('silk'))) return true;
+  if (target === 'princess' && (sil.includes('princess') || cat.includes('princess') || name.includes('princess') || name.includes('hoàng gia'))) return true;
+  if (target === 'traditional' && (sil.includes('traditional') || sil.includes('aodai') || cat.includes('traditional') || name.includes('áo dài'))) return true;
+  if (target === 'tuxedo' && (sil.includes('tuxedo') || sil.includes('vest') || cat.includes('tuxedo') || name.includes('vest') || name.includes('tuxedo'))) return true;
+  return false;
+};
+
+// Helper: Kiểm tra chất liệu khớp theo từ khóa linh hoạt
+const matchMaterial = (dressMaterial = '', selectedMaterials = []) => {
+  if (!selectedMaterials || selectedMaterials.length === 0) return true;
+  const dMat = (dressMaterial || '').toLowerCase();
+  return selectedMaterials.some((selected) => {
+    const s = selected.toLowerCase();
+    if (s.includes('ren') && (dMat.includes('ren') || dMat.includes('lace') || dMat.includes('chantilly') || dMat.includes('guipure') || dMat.includes('3d'))) return true;
+    if (s.includes('mikado') && (dMat.includes('mikado') || dMat.includes('lụa') || dMat.includes('silk') || dMat.includes('crepe'))) return true;
+    if (s.includes('satin') && (dMat.includes('satin') || dMat.includes('tơ tằm') || dMat.includes('tơ sống'))) return true;
+    if ((s.includes('pha lê') || s.includes('swarovski')) && (dMat.includes('pha lê') || dMat.includes('swarovski') || dMat.includes('kim tuyến') || dMat.includes('cườm') || dMat.includes('ánh kim') || dMat.includes('crystal'))) return true;
+    if ((s.includes('voan') || s.includes('tulle')) && (dMat.includes('voan') || dMat.includes('tulle') || dMat.includes('organza'))) return true;
+    if ((s.includes('gấm') || s.includes('dạ')) && (dMat.includes('gấm') || dMat.includes('dạ') || dMat.includes('tweed') || dMat.includes('len'))) return true;
+    return dMat.includes(s);
+  });
+};
+
+// Helper: Kiểm tra mức giá khớp theo số tiền thực tế (Realtime)
+const matchPrice = (dress, selectedRanges = []) => {
+  if (!selectedRanges || selectedRanges.length === 0) return true;
+  const price = Number(dress.priceNumber || dress.price || dress.rentPrice) || 0;
+  return selectedRanges.some((rangeId) => {
+    switch (rangeId) {
+      case 'under-5':
+        return price < 5000000;
+      case '5-7':
+        return price >= 5000000 && price <= 7000000;
+      case '7-9':
+        return price > 7000000 && price <= 9000000;
+      case 'above-9':
+        return price > 9000000;
+      // Khớp tương thích ngược với params cũ
+      case '5-10':
+        return price >= 5000000 && price <= 10000000;
+      case '10-20':
+        return price >= 7000000;
+      case 'vip':
+        return price >= 7500000;
+      default:
+        return true;
+    }
+  });
+};
 
 const ITEMS_PER_PAGE = 9;
 
@@ -172,7 +237,7 @@ export default function CollectionPage() {
     setAppliedSearch('');
     setCurrentPage(1);
     setSearchParams({});
-    showToast('Đã xóa tất cả bộ lọc');
+    showToast('Đã đặt lại toàn bộ bộ lọc về mặc định');
   };
 
   // Xóa từng bộ lọc đơn lẻ
@@ -206,18 +271,16 @@ export default function CollectionPage() {
     }
   };
 
-  // Toggle Material
+  // Toggle Material (Lọc Realtime)
   const handleToggleMaterial = (mat) => {
-    setIsFilterApplied(true);
     setCurrentPage(1);
     setSelectedMaterials((prev) =>
       prev.includes(mat) ? prev.filter((m) => m !== mat) : [...prev, mat]
     );
   };
 
-  // Toggle Price Range
+  // Toggle Price Range (Lọc Realtime)
   const handleTogglePriceRange = (rangeId) => {
-    setIsFilterApplied(true);
     setCurrentPage(1);
     setSelectedPriceRanges((prev) =>
       prev.includes(rangeId) ? prev.filter((r) => r !== rangeId) : [...prev, rangeId]
@@ -231,83 +294,47 @@ export default function CollectionPage() {
     setCurrentPage(1);
   };
 
-  // Lọc và Sắp xếp danh sách
+  // Lọc và Sắp xếp danh sách (Hoàn toàn REALTIME)
   const filteredProducts = useMemo(() => {
     return catalogItems.filter((dress) => {
-      // Lọc phom dáng
-      if (selectedSilhouette !== 'all') {
-        const normCat = (dress.category || dress.silhouette || '').toLowerCase().replace(/\s+/g, '-');
-        const target = selectedSilhouette.toLowerCase().replace(/\s+/g, '-');
-        const isMatch = normCat === target || 
-          (target === 'sheath' && normCat === 'silk-gown') ||
-          (target === 'silk-gown' && normCat === 'sheath');
-        if (!isMatch) {
-          return false;
-        }
+      // 1. Lọc phom dáng
+      if (!matchSilhouette(dress, selectedSilhouette)) {
+        return false;
       }
 
-      // Lọc chất liệu (nếu có chọn)
-      if (selectedMaterials.length > 0) {
-        const matchesMaterial = selectedMaterials.some((mat) => {
-          if (!dress.material) return false;
-          const dressMat = dress.material.toLowerCase();
-          const targetMat = mat.toLowerCase();
-          if (dressMat.includes(targetMat)) return true;
-          if (targetMat.includes('ren') && (dressMat.includes('ren') || dressMat.includes('lace'))) return true;
-          if (targetMat.includes('mikado') && (dressMat.includes('mikado') || dressMat.includes('lụa') || dressMat.includes('silk'))) return true;
-          if (targetMat.includes('satin') && (dressMat.includes('satin') || dressMat.includes('tơ tằm'))) return true;
-          if (targetMat.includes('swarovski') && (dressMat.includes('swarovski') || dressMat.includes('pha lê') || dressMat.includes('crystal') || dressMat.includes('đính kết'))) return true;
-          return false;
-        });
-        if (!matchesMaterial) {
-          return false;
-        }
+      // 2. Lọc chất liệu
+      if (!matchMaterial(dress.material, selectedMaterials)) {
+        return false;
       }
 
-      // Lọc mức giá thuê theo giá sản phẩm thực tế ở bảng dresses (rentPrice / priceNumber)
-      if (selectedPriceRanges.length > 0) {
-        const price = typeof dress.rentPrice === 'number'
-          ? dress.rentPrice
-          : typeof dress.priceNumber === 'number'
-          ? dress.priceNumber
-          : typeof dress.price === 'number'
-          ? dress.price
-          : (parseInt(String(dress.price || '0').replace(/\D/g, ''), 10) || 0);
-
-        const matchesPrice = selectedPriceRanges.some((rangeId) => {
-          if (rangeId === 'under-5') return price < 5000000;
-          if (rangeId === '5-10') return price >= 5000000 && price <= 10000000;
-          if (rangeId === '10-20') return price > 10000000 && price <= 20000000;
-          if (rangeId === 'vip') return price > 20000000;
-          return false;
-        });
-
-        if (!matchesPrice) {
-          return false;
-        }
+      // 3. Lọc mức giá thuê (theo số tiền thực tế trong DB)
+      if (!matchPrice(dress, selectedPriceRanges)) {
+        return false;
       }
 
-      // Lọc từ khóa tìm kiếm
+      // 4. Lọc từ khóa tìm kiếm
       if (appliedSearch) {
-        const query = appliedSearch.toLowerCase();
+        const query = appliedSearch.toLowerCase().trim();
         const matchName = dress.name?.toLowerCase().includes(query);
-        const matchCategory = dress.categoryName?.toLowerCase().includes(query);
-        const matchMaterial = dress.material?.toLowerCase().includes(query);
+        const matchCategory = dress.categoryName?.toLowerCase().includes(query) || dress.silhouette?.toLowerCase().includes(query);
+        const matchMaterialName = dress.material?.toLowerCase().includes(query);
         const matchBadge = dress.badgeMain?.toLowerCase().includes(query) || (dress.badgeSub && dress.badgeSub.toLowerCase().includes(query));
 
-        if (!matchName && !matchCategory && !matchMaterial && !matchBadge) {
+        if (!matchName && !matchCategory && !matchMaterialName && !matchBadge) {
           return false;
         }
       }
 
       return true;
     }).sort((a, b) => {
-      if (sortBy === 'price-asc') return (a.priceNumber || 0) - (b.priceNumber || 0);
-      if (sortBy === 'price-desc') return (b.priceNumber || 0) - (a.priceNumber || 0);
-      if (sortBy === 'rating') return parseFloat(b.rating || 4.9) - parseFloat(a.rating || 4.9);
+      const priceA = Number(a.priceNumber || a.price || a.rentPrice) || 0;
+      const priceB = Number(b.priceNumber || b.price || b.rentPrice) || 0;
+      if (sortBy === 'price-asc') return priceA - priceB;
+      if (sortBy === 'price-desc') return priceB - priceA;
+      if (sortBy === 'rating') return parseFloat(b.rating || 5.0) - parseFloat(a.rating || 5.0);
       return 0; // popular / default
     });
-  }, [catalogItems, selectedSilhouette, selectedMaterials, selectedPriceRanges, isFilterApplied, appliedSearch, sortBy]);
+  }, [catalogItems, selectedSilhouette, selectedMaterials, selectedPriceRanges, appliedSearch, sortBy]);
 
   // Tổng số trang
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
@@ -476,7 +503,7 @@ export default function CollectionPage() {
                     key={priceId}
                     className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E6DAC8] text-[11.5px] font-medium text-[#2C2523] shadow-xs"
                   >
-                    Giá: {opt?.label}
+                    Giá: {opt?.label || priceId}
                     <button
                       type="button"
                       onClick={() => handleRemovePrice(priceId)}
@@ -653,22 +680,36 @@ export default function CollectionPage() {
                 </div>
               </div>
 
-              {/* BUTTON: ÁP DỤNG BỘ LỌC */}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsFilterApplied(true);
-                  setCurrentPage(1);
-                  setIsMobileFilterOpen(false);
-                  showToast(`Đã áp dụng bộ lọc: Tìm thấy ${filteredProducts.length} kết quả`);
-                }}
-                className="w-full py-3 rounded-[14px] bg-[#BA7A83] hover:bg-[#a86a73] text-white font-jakarta text-[12.5px] font-semibold tracking-[0.8px] uppercase flex items-center justify-center gap-2 transition-all shadow-[0px_4px_16px_rgba(186,122,131,0.25)] border-0 cursor-pointer active:scale-[0.98]"
-              >
-                <div className="w-4 h-4 rounded-full border border-white flex items-center justify-center">
-                  <Check className="w-2.5 h-2.5 stroke-[3] text-white" />
-                </div>
-                <span>Áp Dụng Bộ Lọc</span>
-              </button>
+              {/* BUTTONS: XEM KẾT QUẢ REALTIME & ĐẶT LẠI */}
+              <div className="space-y-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileFilterOpen(false);
+                    if (gridTopRef.current) {
+                      gridTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                    showToast(`Tìm thấy ${filteredProducts.length} thiết kế phù hợp`);
+                  }}
+                  className="w-full py-3 rounded-[14px] bg-[#BA7A83] hover:bg-[#a86a73] text-white font-jakarta text-[12.5px] font-semibold tracking-[0.8px] uppercase flex items-center justify-center gap-2 transition-all shadow-[0px_4px_16px_rgba(186,122,131,0.25)] border-0 cursor-pointer active:scale-[0.98]"
+                >
+                  <div className="w-4 h-4 rounded-full border border-white flex items-center justify-center">
+                    <Check className="w-2.5 h-2.5 stroke-[3] text-white" />
+                  </div>
+                  <span>Xem {filteredProducts.length} Thiết Kế</span>
+                </button>
+
+                {activeFiltersCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearFilters}
+                    className="w-full py-2.5 rounded-[14px] bg-[#FFF5F2] hover:bg-[#FDECE6] text-[#B8737D] font-jakarta text-[12px] font-semibold transition-all border border-[#EEDECF] cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>Đặt lại tất cả ({activeFiltersCount})</span>
+                  </button>
+                )}
+              </div>
             </aside>
 
             {/* CỘT CHÍNH: LƯỚI SẢN PHẨM & THANH SẮP XẾP */}

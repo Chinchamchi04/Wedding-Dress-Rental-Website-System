@@ -238,38 +238,6 @@
   font-size: 12px;
 }
 
-.ub-revenue-chart-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.ub-revenue-chart-modes {
-  display: inline-flex;
-  gap: 3px;
-  padding: 3px;
-  border-radius: 6px;
-  background: #F8EFEA;
-}
-
-.ub-revenue-chart-modes button {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  color: #6C5854;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.ub-revenue-chart-modes button.is-active {
-  background: #FFFFFF;
-  color: var(--wine);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-}
-
 /* SVG Chart Visualization */
 .ub-revenue-chart-scroll {
   position: relative;
@@ -370,13 +338,6 @@
   height: 12px;
   border-radius: 3px;
   background: linear-gradient(180deg, #B8737D, #733F49);
-}
-
-.ub-revenue-legend-line {
-  width: 18px;
-  height: 3px;
-  border-radius: 2px;
-  background: var(--gold);
 }
 
 .ub-revenue-peak-badge {
@@ -776,3 +737,5 @@
     min-width: 100%;
   }
 }
+
+.ub-revenue-growth.is-negative { color: #b42318; background: #fef3f2; }

@@ -57,12 +57,13 @@ function saveCart(items) {
 }
 
 export function refreshCartWithDresses(dresses) {
+  const byId = new Map(dresses.map((dress) => [String(dress._id || dress.id), dress]));
   const byCode = new Map(dresses.map((dress) => [dress.code, dress]));
   const byName = new Map(dresses.map((dress) => [dress.name, dress]));
   return saveCart(getCart().map((item) => {
     const existing = CART_CATALOG[item.id];
-    const dress = byCode.get(item.code) || byName.get(item.name || existing?.name);
-    return dress ? { ...item, code: dress.code, name: dress.name, image: dress.image, price: dress.rentPrice, deposit: dress.depositAmount, status: dress.status, unavailable: dress.status === 'retired' } : { ...item, unavailable: true };
+    const dress = byId.get(String(item.id)) || byCode.get(item.code) || byName.get(item.name || existing?.name);
+    return dress ? { ...item, code: dress.code, name: dress.name, image: dress.image, price: dress.rentPrice, deposit: dress.depositAmount, status: dress.status, unavailable: dress.status !== 'available' } : { ...item, unavailable: true };
   }));
 }
 

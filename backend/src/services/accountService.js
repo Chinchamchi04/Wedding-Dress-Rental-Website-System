@@ -19,6 +19,10 @@ const publicUser = (user) => ({
   avatar: user.avatar || '',
   role: user.roleId?.code?.toLowerCase() || user.role || 'customer',
   wishlist: (user.wishlist || []).filter(Boolean).map((d) => String(d._id || d)),
+  fullName: user.fullName,
+  measurements: user.measurements || {},
+  address: user.address || {},
+  idCard: user.idCard || '',
 });
 
 const tokenFor = (user) => jwt.sign(
@@ -88,6 +92,27 @@ export async function updateProfile(user, data) {
   }
 
   Object.assign(user, { fullName: name, phone, avatar: data.avatar || user.avatar || '' });
+  if (data.idCard !== undefined) {
+    const idCard = String(data.idCard).trim();
+    if (idCard && !/^(\d{9}|\d{12})$/.test(idCard)) fail(400, 'CCCD/CMND cần gồm 9 hoặc 12 chữ số.');
+    user.idCard = idCard;
+  }
+  if (data.address !== undefined) {
+    const address = typeof data.address === 'string' ? { street: data.address } : data.address;
+    if (!address || typeof address !== 'object' || Array.isArray(address)) fail(400, 'Địa chỉ không hợp lệ.');
+    user.address = Object.fromEntries(['street', 'ward', 'district', 'city'].map((key) => [key, String(address[key] ?? '').trim()]));
+  }
+  if (data.measurements !== undefined) {
+    const measurements = {};
+    for (const key of ['height', 'weight', 'bust', 'waist', 'hips']) {
+      const value = data.measurements?.[key];
+      measurements[key] = value === '' || value == null ? null : Number(value);
+      if (measurements[key] !== null && (!Number.isFinite(measurements[key]) || measurements[key] <= 0 || measurements[key] > 500)) {
+        fail(400, 'Số đo cần là số dương hợp lệ, không vượt quá 500.');
+      }
+    }
+    user.measurements = measurements;
+  }
   await user.save();
   return publicUser(user);
 }

@@ -290,6 +290,8 @@ export async function getAllDresses(params = {}) {
         badgeSub: d.sizes?.length ? `Size: ${d.sizes.join(' - ')}` : 'Đủ size',
         size: d.sizes?.length ? `Size: ${d.sizes.join(' - ')}` : 'Size: S - M',
         sizes: d.sizes,
+        material: d.material || 'Lụa Mikado Ý & Ren Pháp',
+        silhouette: d.silhouette || 'Ballgown',
         category: (d.silhouette || 'ballgown').toLowerCase().replace(/\s+/g, '-'),
         categoryName: d.silhouette || 'Ballgown',
       };

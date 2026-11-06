@@ -6,30 +6,7 @@ import AccountLayout from '../../components/layout/AccountLayout';
 import { getProfile, saveProfile } from '../../services/profileService';
 import { useAuth } from '../../contexts/AuthContext';
 
-const profileStyles = `
-:where(.profile-page) :is(h1, h2, h3, h4, p) { margin: 0; }
-:where(.profile-page) button { background-color: transparent; font-family: inherit; cursor: pointer; }
-.profile-page { background: #fff8f6; }
-.profile-main { min-height: 809.5px; }
-.profile-page button, .profile-page a, .profile-page input { -webkit-tap-highlight-color: transparent; }
-.profile-page :is(button, a, input):focus-visible { outline: 2px solid #874e57; outline-offset: 4px; }
-.profile-form .ant-form-item { margin-bottom: 16px; }
-.profile-form .ant-form-item-label { padding-bottom: 4px; }
-.profile-form .ant-form-item-label > label { font-size: 11px; height: auto; color: #514344; }
-.profile-form .ant-input { background: #fff8f6; }
-.profile-form .ant-input:hover, .profile-form .ant-input:focus { border-color: #b8737d; }
-.profile-footer { background: #fff1ed; min-height: 378px; }
-@media (min-width: 1024px) {
-  .profile-identity { padding-top: 14px; padding-bottom: 14px; }
-  .profile-form .ant-form-item { margin-bottom: 12px; }
-  .profile-form .ant-form-item-label, .profile-form .ant-form-item-label > label { line-height: 16px; }
-}
-@media (max-width: 1023px) { .profile-main { min-height: auto; } }
-@media (max-width: 479px) {
-  .profile-cancel { min-width: 95px; }
-  .profile-card { padding-left: 18px; padding-right: 18px; }
-}
-`;
+import './ProfilePage.css';
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth();
@@ -51,6 +28,10 @@ export default function ProfilePage() {
     hips: '',
     heel: '',
   };
+  const [saving, setSaving] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileError, setProfileError] = useState('');
+  const [reload, setReload] = useState(0);
   const [saved, setSaved] = useState(user || emptyProfile);
   const [avatar, setAvatar] = useState(user?.avatar || '');
   const [notice, setNotice] = useState(null);
@@ -71,6 +52,8 @@ export default function ProfilePage() {
 
   useEffect(() => {
     let active = true;
+    setProfileLoading(true);
+    setProfileError('');
     getProfile()
       .then((profile) => {
         if (!active) return;
@@ -80,12 +63,12 @@ export default function ProfilePage() {
         updateUser(profile);
       })
       .catch((error) => {
-        if (active) notify('error', error.message || 'Không tải được thông tin hồ sơ.');
-      });
+        if (active) setProfileError(error.message || 'Không tải được thông tin hồ sơ.');
+      }).finally(() => { if (active) setProfileLoading(false); });
     return () => {
       active = false;
     };
-  }, [form]);
+  }, [form, reload]);
 
   // Tự động cuộn đến mục số đo khi có hash #measurements
   useEffect(() => {
@@ -135,6 +118,7 @@ export default function ProfilePage() {
       idCard: values.idCard?.trim(),
       avatar,
     };
+    setSaving(true);
     try {
       const updated = await saveProfile(profile);
       setSaved(updated);
@@ -143,7 +127,7 @@ export default function ProfilePage() {
       notify('success', 'Đã cập nhật thông tin hồ sơ & số đo vóc dáng thành công.');
     } catch (error) {
       notify('error', error.message || 'Không thể cập nhật hồ sơ. Vui lòng thử lại.');
-    }
+    } finally { setSaving(false); }
   };
 
   const uploadAvatar = (event) => {
@@ -187,7 +171,6 @@ export default function ProfilePage() {
         },
       }}
     >
-      <style>{profileStyles}</style>
 
       {/* Floating Notification Toast */}
       {notice && (
@@ -201,8 +184,8 @@ export default function ProfilePage() {
                     {notice.type === 'success'
                       ? 'Thành công'
                       : notice.type === 'error'
-                      ? 'Lỗi'
-                      : 'Thông báo'}
+                        ? 'Lỗi'
+                        : 'Thông báo'}
                   </span>
                   <span className="text-[12px] text-[#554543] mt-0.5 leading-snug">
                     {notice.text}
@@ -218,7 +201,7 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <AccountLayout breadcrumb={[{ label: 'Hồ sơ cá nhân' }]}>
+      <AccountLayout hideBreadcrumb={true} breadcrumb={[]}>
         <section className="profile-card rounded-2xl bg-white px-5 py-7 sm:px-8 border border-[#F0E5DC] shadow-[0_4px_24px_rgba(44,37,35,0.03)]" aria-labelledby="profile-title">
           <div className="flex items-center gap-2">
 
@@ -228,6 +211,7 @@ export default function ProfilePage() {
           </h1>
 
           <div className="account-heading-rule mt-3" />
+          {profileError && <p role="alert" className="mt-4 text-sm text-red-700">{profileError} <button type="button" onClick={() => setReload((value) => value + 1)} className="underline">Thử lại</button></p>}
 
           {/* Avatar Upload */}
           <div className="profile-identity mt-6 flex flex-wrap items-center gap-5 border-b border-[#eee2df] pb-6">
@@ -288,7 +272,7 @@ export default function ProfilePage() {
                 </Form.Item>
 
                 <Form.Item
-                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Số điện thoại (Zalo) *</span>}
+                  label={<span className="font-semibold uppercase tracking-wider text-[11px]">Số điện thoại *</span>}
                   name="phone"
                   rules={[{ required: true, message: 'Vui lòng nhập số điện thoại liên lạc.' }]}
                 >
@@ -432,12 +416,13 @@ export default function ProfilePage() {
             </div>
 
             {/* Submit / Reset Actions */}
+            <p className="text-xs text-stone-500">Ngày sinh, ngày cưới và chiều cao giày được lưu trên thiết bị này.</p>
             <div className="mt-8 flex flex-wrap justify-end gap-3 border-t border-[#eee2df] pt-6">
               <button type="button" onClick={cancel} className="account-button-secondary">
                 HỦY THAY ĐỔI
               </button>
-              <button type="submit" className="account-button-primary">
-                LƯU THAY ĐỔI
+              <button type="submit" disabled={saving || profileLoading || !!profileError || readingAvatar} className="account-button-primary disabled:opacity-50">
+                {saving ? 'ĐANG LƯU...' : 'LƯU THAY ĐỔI'}
               </button>
             </div>
           </Form>
