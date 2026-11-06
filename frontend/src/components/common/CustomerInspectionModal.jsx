@@ -137,6 +137,21 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
     }
   };
 
+  const handleRequestClose = () => {
+    if (customerStatus === 'pending' && !inspection?.customerConfirmed) {
+      Modal.confirm({
+        title: 'Lưu ý bắt buộc xác nhận hoàn cọc',
+        content: 'Đây là bước bắt buộc để showroom đối soát hiện trạng và giải ngân hoàn tiền cọc bảo lãnh về tài khoản của nàng. Nàng có chắc muốn đóng tạm thời không?',
+        okText: 'Tiếp tục xem biên bản',
+        cancelText: 'Đóng tạm thời',
+        okButtonProps: { style: { backgroundColor: '#733F49', borderColor: '#733F49' } },
+        onCancel: () => onClose(),
+      });
+      return;
+    }
+    onClose();
+  };
+
   const getConditionLabel = (cond) => {
     switch (cond) {
       case 'good':
@@ -166,6 +181,12 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
               {step === 'bank_form' ? <CreditCard size={22} /> : <ShieldCheck size={22} />}
             </div>
             <div>
+              {customerStatus === 'pending' && (
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-bold uppercase tracking-wider mb-1">
+                  <Sparkles size={11} />
+                  <span>Bắt Buộc Xác Nhận</span>
+                </div>
+              )}
               <h3 className="font-playfair text-xl font-bold text-[#5F2B36] m-0">
                 {step === 'bank_form'
                   ? needsBankDetails ? 'Điền Tài Khoản Nhận Hoàn Cọc' : 'Xác Nhận Biên Bản Kiểm Định'
@@ -178,8 +199,9 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleRequestClose}
             className="w-8 h-8 rounded-full bg-[#FAF2EE] text-[#7A6B6C] hover:text-[#5F2B36] flex items-center justify-center transition-colors cursor-pointer border-0"
+            title="Đóng tạm thời"
           >
             <X size={16} />
           </button>
@@ -357,13 +379,13 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
                 )}
               </div>
             ) : (
-              <div className="p-4 rounded-2xl bg-[#FFF6F3] border border-[#F3DDD7] text-[#5F2B36] space-y-1">
-                <div className="flex items-center gap-2 font-bold text-[13px]">
-                  <Clock size={16} className="text-[#B8737D]" />
-                  <span>Chờ nàng xác nhận biên bản kiểm định</span>
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-[#FFF5F2] via-[#FFF9F6] to-[#FFF5F2] border-2 border-[#E8BDB4] text-[#5F2B36] space-y-1.5 shadow-2xs">
+                <div className="flex items-center gap-2 font-bold text-[13.5px] text-[#8C3A48]">
+                  <AlertTriangle size={17} className="text-[#B8737D] shrink-0" />
+                  <span>⚡ Yêu Cầu Bắt Buộc: Xác Nhận Biên Bản Kiểm Định & Quyết Toán Hoàn Cọc</span>
                 </div>
-                <p className="text-[12px] text-[#7A6B6C] m-0">
-                  Vui lòng kiểm tra hiện trạng váy và số tiền đề nghị hoàn trước khi xác nhận. Nàng chỉ cần cung cấp tài khoản ngân hàng nếu có khoản cọc được hoàn; nếu chưa đồng ý, nàng có thể gửi khiếu nại.
+                <p className="text-[12px] text-[#6B5A5C] m-0 leading-relaxed">
+                  Quý khách bắt buộc kiểm tra hiện trạng lễ phục và bấm xác nhận biên bản để showroom hoàn tất đơn hàng và giải ngân hoàn tiền cọc bảo lãnh về tài khoản; nếu có điểm chưa đồng ý, quý khách có thể bấm gửi khiếu nại trực tiếp.
                 </p>
               </div>
             )}

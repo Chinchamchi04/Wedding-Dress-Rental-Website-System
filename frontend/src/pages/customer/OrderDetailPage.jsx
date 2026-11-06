@@ -44,8 +44,8 @@ const TIMELINE_STEPS = [
   },
   {
     key: 'returned',
-    label: 'Đã Trả Váy',
-    subLabel: 'Váy đã được trả lại',
+    label: 'Đang Kiểm Định',
+    subLabel: 'Kiểm định & hoàn cọc',
     Icon: RefreshCcw,
   },
   {
@@ -148,7 +148,14 @@ export default function OrderDetailPage() {
     setIsContractOpen(false);
     getOrder(orderId)
       .then((data) => {
-        if (active) setOrder(data);
+        if (active) {
+          setOrder(data);
+          const isApproved = data?.inspection?.customerStatus === 'approved' || data?.inspection?.customerConfirmed;
+          // Tự động mở màn hình bắt buộc khách hàng xem biên bản và xác nhận hoàn cọc
+          if (!isApproved && (data?.rawStatus === 'returned' || data?.inspection)) {
+            setIsInspectionOpen(true);
+          }
+        }
       })
       .catch((issue) => {
         if (active) setError(issue.message || 'Không tìm thấy thông tin đơn hàng.');
@@ -212,7 +219,7 @@ export default function OrderDetailPage() {
                     <span className="font-playfair font-bold text-[#5F2B36] text-[15px] sm:text-[16px] tracking-wide">
                       {approved
                         ? '✦ Biên Bản Kiểm Định Đã Được Nàng Duyệt'
-                        : '✦ Showroom đã lập Biên Bản Kiểm Định Trả Váy'}
+                        : '✦ Yêu Cầu Bắt Buộc: Xem Biên Bản Kiểm Định & Xác Nhận Hoàn Cọc'}
                     </span>
                   </div>
                   <button

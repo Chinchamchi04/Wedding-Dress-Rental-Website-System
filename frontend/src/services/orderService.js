@@ -10,7 +10,7 @@ const STATUS = {
   preparing: ['active', 'Đang chuẩn bị bàn giao'],
   delivered: ['active', 'Đã bàn giao'],
   renting: ['active', 'Đang thuê'],
-  returned: ['active', 'Đã trả váy'],
+  returned: ['active', 'Đang kiểm định'],
   completed: ['complete', 'Hoàn tất'],
   complete: ['complete', 'Hoàn tất'],
   cancelled: ['cancelled', 'Đã hủy'],
