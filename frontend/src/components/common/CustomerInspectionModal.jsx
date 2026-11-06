@@ -27,7 +27,7 @@ const POPULAR_BANKS = [
  * Modal Biên Bản Kiểm Định & Quyết Toán Hoàn Cọc (Khách Hàng)
  */
 export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
-  const [inspection, setInspection] = useState(order?.inspection || null);
+  const [inspection, setInspection] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [step, setStep] = useState('inspection'); // 'inspection' | 'bank_form'
@@ -48,13 +48,11 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
+    setError('');
     getReturnInspection(order._id || order.id)
       .then((res) => {
-        if (!active) return;
-        const insp = res?.data || res;
-        if (insp && (insp.itemsCondition || insp.totalDeduction !== undefined)) {
-          setInspection(insp);
-        }
+        if (active) setInspection(res);
       })
       .catch((issue) => { if (active) setError(issue.message || 'Không tải được biên bản kiểm định.'); })
       .finally(() => {
@@ -73,39 +71,40 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
   const compensation = itemsCondition.reduce((sum, it) => sum + Number(it.repairFee || 0), 0);
   const totalDeduction = inspection?.totalDeduction ?? (lateFee + compensation);
   const finalRefund = inspection?.finalRefundAmount ?? Math.max(0, initialDeposit - totalDeduction);
+  const needsBankDetails = finalRefund > 0;
   const evidencePhotos = inspection?.evidencePhotos || [];
   const refundBankDetails = inspection?.refundBankDetails || null;
 
   // Bước 2: Khách hàng điền xong STK và bấm xác nhận hoàn cọc
   const handleConfirmRefund = async (e) => {
     e?.preventDefault?.();
+    if (loading || submitting || !inspection || customerStatus !== 'pending') return;
     const finalBank = selectedBank === 'Khác (Tự nhập tên ngân hàng)' ? customBank.trim() : selectedBank;
-    if (!finalBank) {
+    if (needsBankDetails && !finalBank) {
       message.warning('Vui lòng chọn hoặc nhập tên ngân hàng thụ hưởng.');
       return;
     }
-    if (!accountNumber.trim()) {
-      message.warning('Vui lòng nhập số tài khoản ngân hàng (STK) nhận tiền hoàn cọc.');
+    if (needsBankDetails && !/^\d{6,30}$/.test(accountNumber.trim())) {
+      message.warning('Số tài khoản cần gồm 6 đến 30 chữ số.');
       return;
     }
-    if (!accountHolder.trim()) {
+    if (needsBankDetails && !accountHolder.trim()) {
       message.warning('Vui lòng nhập tên chủ tài khoản nhận tiền.');
       return;
     }
 
     setSubmitting(true);
     try {
-      const bankData = {
+      const bankData = needsBankDetails ? {
         bankName: finalBank,
         accountNumber: accountNumber.trim(),
         accountHolder: accountHolder.trim().toUpperCase(),
         notes: notes.trim(),
-      };
+      } : {};
       const res = await approveReturnInspection(order._id || order.id, bankData);
-      const insp = res?.inspection || res?.data?.inspection || res?.data;
-      if (!insp) throw new Error('Máy chủ chưa xác nhận biên bản. Vui lòng tải lại.');
-      setInspection(insp);
-      message.success('Đã duyệt biên bản kiểm định thành công! Đơn hàng đã hoàn tất.');
+      if (!res?.inspection || res.inspection.customerStatus !== 'approved') throw new Error('Máy chủ chưa xác nhận biên bản. Vui lòng tải lại.');
+      setInspection(res.inspection);
+      message.success(needsBankDetails ? 'Đã duyệt biên bản. Đơn đã hoàn tất; khoản hoàn cọc đang chờ showroom xử lý.' : 'Đã duyệt biên bản và hoàn tất đơn. Không có khoản cọc cần hoàn.');
       setStep('inspection');
       if (onUpdated) onUpdated();
     } catch (err) {
@@ -118,6 +117,7 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
   // Khách hàng gửi đơn khiếu nại
   const handleSendDispute = async (e) => {
     e.preventDefault();
+    if (loading || submitting || !inspection || customerStatus !== 'pending') return;
     if (!disputeReason.trim()) {
       message.warning('Vui lòng nhập lý do nàng muốn khiếu nại.');
       return;
@@ -152,6 +152,7 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
     }
   };
 
+  if (loading) return <Modal open title="Biên bản kiểm định" onCancel={onClose} footer={null}><p role="status">Đang tải biên bản kiểm định...</p></Modal>;
   if (error) return <Modal open title="Không tải được biên bản" onCancel={onClose} footer={null}><p role="alert">{error}</p></Modal>;
   if (!loading && !inspection) return <Modal open title="Biên bản kiểm định" onCancel={onClose} footer={null}>Showroom chưa lập biên bản cho đơn này.</Modal>;
 
@@ -167,11 +168,11 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
             <div>
               <h3 className="font-playfair text-xl font-bold text-[#5F2B36] m-0">
                 {step === 'bank_form'
-                  ? 'Điền Tài Khoản Nhận Hoàn Cọc'
+                  ? needsBankDetails ? 'Điền Tài Khoản Nhận Hoàn Cọc' : 'Xác Nhận Biên Bản Kiểm Định'
                   : 'Biên Bản Kiểm Định Trả Váy & Quyết Toán Cọc'}
               </h3>
               <p className="text-xs text-[#8C7D7E] m-0 mt-0.5">
-                Đơn hàng #{order.orderCode || order.id} • {step === 'bank_form' ? 'Nhận chuyển khoản tức thì 100% bảo mật' : 'Lập bởi chuyên viên Atelier UniBridal'}
+                Đơn hàng #{order.orderCode || order.id} • {step === 'bank_form' ? 'Gửi thông tin để showroom đối soát và xử lý hoàn cọc' : 'Lập bởi chuyên viên Atelier UniBridal'}
               </p>
             </div>
           </div>
@@ -186,13 +187,13 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
 
         {/* Nội dung Modal */}
         {step === 'bank_form' ? (
-          /* ================= GIAO DIỆN FORM ĐIỀN STK NHẬN HOÀN CỌC TỰ ĐỘNG ================= */
+          /* Form xác nhận và gửi thông tin để showroom xử lý hoàn cọc */
           <form onSubmit={handleConfirmRefund} className="p-6 space-y-5 text-xs animate-fadeIn">
             {/* Hộp tổng kết tiền hoàn cọc */}
             <div className="p-4 rounded-2xl bg-gradient-to-r from-[#F0FDF4] to-[#DCFCE7] border border-[#BBF7D0] flex items-center justify-between flex-wrap gap-3">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 block">
-                  Số tiền cọc thực nhận được hoàn lại
+                  Số tiền đề nghị hoàn
                 </span>
                 <span className="text-[11px] text-emerald-700">
                   (Tiền cọc ban đầu {formatVnd(initialDeposit)} - Khấu trừ {formatVnd(totalDeduction)})
@@ -204,7 +205,7 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
             </div>
 
             {/* Thông tin điền Form */}
-            <div className="space-y-4 bg-[#FFFDFC] p-5 rounded-2xl border border-[#F2E5E0]">
+            {needsBankDetails && <div className="space-y-4 bg-[#FFFDFC] p-5 rounded-2xl border border-[#F2E5E0]">
               {/* Chọn ngân hàng */}
               <div>
                 <label className="block text-[12px] font-bold text-[#4A3B3D] mb-1.5 flex items-center gap-1.5">
@@ -243,9 +244,13 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
                 <input
                   type="text"
                   required
+                  inputMode="numeric"
+                  pattern="[0-9]{6,30}"
+                  minLength={6}
+                  maxLength={30}
                   placeholder="Nhập số tài khoản ngân hàng của nàng"
                   value={accountNumber}
-                  onChange={(e) => setAccountNumber(e.target.value.replace(/[^0-9A-Za-z]/g, ''))}
+                  onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ''))}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-[#E0D0CA] bg-white text-[14px] font-mono tracking-wider font-semibold text-[#2C2523] outline-none focus:border-[#733F49]"
                 />
               </div>
@@ -279,15 +284,15 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
                   className="w-full px-3.5 py-2 rounded-xl border border-[#E0D0CA] bg-white text-xs text-[#5F4E50] outline-none focus:border-[#733F49]"
                 />
               </div>
-            </div>
+            </div>}
 
             {/* Thông báo cam kết */}
             <div className="p-3.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[11.5px] text-[#7A6B6C] flex items-start gap-2">
               <Sparkles size={16} className="text-[#B8737D] shrink-0 mt-0.5" />
-              <span>
-                Sau khi nàng xác nhận, hệ thống sẽ đối soát và chuyển tiền cọc{' '}
-                <strong className="text-emerald-700">{formatVnd(finalRefund)}</strong> về số tài khoản trên trong vòng 24h, đồng thời gửi email biên nhận tới hộp thư của nàng.
-              </span>
+              {needsBankDetails ? <span>
+                Sau khi nàng xác nhận, showroom sẽ đối soát và xử lý số tiền đề nghị hoàn{' '}
+                <strong className="text-emerald-700">{formatVnd(finalRefund)}</strong> về số tài khoản trên. Gửi xác nhận chưa đồng nghĩa với việc đã chuyển tiền hoàn cọc.
+              </span> : <span>Biên bản này không có khoản cọc cần hoàn. Nàng có thể xác nhận mà không cần cung cấp tài khoản ngân hàng.</span>}
             </div>
 
             {/* Buttons điều hướng */}
@@ -306,7 +311,7 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
                 className="flex-1 py-3 px-5 rounded-xl bg-[#1E8347] text-white font-bold text-xs hover:bg-[#166534] transition-colors cursor-pointer shadow-xs flex items-center justify-center gap-2 border-0 disabled:opacity-50"
               >
                 <CheckCircle2 size={16} />
-                <span>{submitting ? 'Đang gửi xác nhận...' : 'Xác Nhận Biên Bản & Gửi Thông Tin Nhận Tiền'}</span>
+                <span>{submitting ? 'Đang gửi xác nhận...' : needsBankDetails ? 'Xác Nhận Biên Bản & Gửi Thông Tin Nhận Tiền' : 'Xác Nhận Biên Bản'}</span>
               </button>
             </div>
           </form>
@@ -336,9 +341,7 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
                   </p>
                 </div>
                 <p className="text-[12px] text-emerald-700 m-0">
-                  {inspection?.isRefunded
-                    ? <>Đã hoàn tiền cọc thành công: <strong>{formatVnd(finalRefund)}</strong>.</>
-                    : <>Số tiền hoàn cọc: <strong>{formatVnd(finalRefund)}</strong> (Vui lòng đợi hệ thống chuyển tiền cọc trong vòng 24h).</>}
+                  {!needsBankDetails ? 'Biên bản không có khoản cọc cần hoàn.' : <>{inspection?.isRefunded ? 'Đã ghi nhận hoàn cọc:' : 'Số tiền đề nghị hoàn, đang chờ showroom xử lý:'} <strong>{formatVnd(finalRefund)}</strong>.</>}
                 </p>
                 {/* Chi tiết tài khoản đã nhận tiền hoàn cọc nếu có */}
                 {refundBankDetails?.accountNumber && (
@@ -360,7 +363,7 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
                   <span>Chờ nàng xác nhận biên bản kiểm định</span>
                 </div>
                 <p className="text-[12px] text-[#7A6B6C] m-0">
-                  Vui lòng kiểm tra chi tiết hiện trạng váy và số tiền hoàn trả dưới đây. Khi nàng bấm <strong>"Đồng Ý"</strong>, hệ thống sẽ mở form để nàng điền tài khoản ngân hàng (STK) nhận hoàn cọc; nếu nàng thấy chưa hợp lý, nàng có quyền <strong>"Gửi Khiếu Nại"</strong>.
+                  Vui lòng kiểm tra hiện trạng váy và số tiền đề nghị hoàn trước khi xác nhận. Nàng chỉ cần cung cấp tài khoản ngân hàng nếu có khoản cọc được hoàn; nếu chưa đồng ý, nàng có thể gửi khiếu nại.
                 </p>
               </div>
             )}
@@ -372,7 +375,7 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
               </h4>
               {itemsCondition.length === 0 ? (
                 <div className="p-4 rounded-xl border border-[#EFE5E1] bg-[#FAF5F2] text-center text-[#8C7D7E]">
-                  Lễ phục bàn giao nguyên vẹn, đạt chuẩn kiểm định 100%.
+                  Biên bản chưa ghi chi tiết hiện trạng từng lễ phục.
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -514,7 +517,7 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
                     className="flex-1 py-3 px-5 rounded-xl bg-[#1E8347] text-white font-bold text-xs hover:bg-[#166534] transition-colors cursor-pointer shadow-xs flex items-center justify-center gap-2 border-0"
                   >
                     <CheckCircle2 size={16} />
-                    <span>Tôi Đồng Ý Biên Bản &amp; Điền STK Nhận Hoàn Cọc</span>
+                    <span>{needsBankDetails ? 'Tôi Đồng Ý Biên Bản & Điền STK Nhận Hoàn Cọc' : 'Tôi Đồng Ý Biên Bản'}</span>
                   </button>
                 </div>
               ) : (

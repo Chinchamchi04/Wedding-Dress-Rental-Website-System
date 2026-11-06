@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button, Modal } from 'antd';
 import {
   FileSignature,
+  ExternalLink,
   FileText,
   Printer,
   ShieldCheck,
@@ -66,7 +67,7 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
   const customerCccd = order?.customerCccd || order?.cccd || order?.idCard || 'Đã xác thực tài khoản';
   const shippingAddress = order?.shippingAddress || 'Nhận trực tiếp tại Showroom UniBridal (186 Nam Kỳ Khởi Nghĩa, Q.3, TP.HCM)';
   const contractCode = saved.code || order?.contractCode || order?.id || `HĐ-${order?.orderCode || orderId}`;
-  const signedDateStr = saved.signedAt || order?.createdAt || order?.signedAt || new Date();
+  const signedDateStr = saved.signedAt ? formatShortDate(saved.signedAt) : (order?.createdAt ? formatShortDate(order.createdAt) : '2026-11-01');
 
   // Danh sách váy thuê
   const items = Array.isArray(order?.items) && order.items.length > 0
@@ -110,6 +111,7 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
         content: '6.1. Hợp đồng điện tử này được khởi tạo và ký kết trực tuyến hợp pháp, có giá trị pháp lý ràng buộc tương đương văn bản ký tay theo Luật Giao dịch điện tử Việt Nam.\n6.2. Hợp đồng có hiệu lực kể từ thời điểm Bên B ký điện tử và thanh toán cọc thành công cho đến khi hai bên hoàn tất biên bản bàn giao, thu hồi và thanh quyết toán cọc.',
       },
     ];
+  const canPrint = !loading && !error && !saved.pendingSignature;
 
   return (
     <>
@@ -151,6 +153,7 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
             <Button
               type="primary"
               onClick={handlePrint}
+              disabled={!canPrint}
               icon={<Printer size={15} />}
               className="bg-[#733F49]! hover:bg-[#5C323A]! text-white! font-semibold text-xs rounded-lg inline-flex items-center gap-1.5 shadow-xs"
             >
@@ -168,6 +171,7 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
             <div className="flex items-center gap-2">
               <Button
                 onClick={handlePrint}
+                disabled={!canPrint}
                 icon={<Printer size={15} />}
                 className="border-[#D9C4BD] text-[#733F49] hover:bg-[#FAF0EC]"
               >
@@ -192,8 +196,13 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
                 Thử lại
               </Button>
             </div>
+          ) : saved.pendingSignature || !saved.hasDocument ? (
+            <p role="status" className="rounded-xl bg-amber-50 p-5 text-sm text-amber-900">
+              {saved.pendingSignature ? 'Hợp đồng đang chờ ký, chưa có bản đã ký để xem.' : 'Đơn này chưa có file hoặc nội dung hợp đồng đã ký được lưu. Vui lòng liên hệ showroom.'}
+            </p>
           ) : (
             <div id="unibridal-signed-contract-print" className="space-y-6 text-[#2C2523] font-sans">
+              {saved.fileUrl && <a href={saved.fileUrl} target="_blank" rel="noopener noreferrer" className="no-print inline-flex items-center gap-2 text-sm font-semibold text-[#733F49]"><ExternalLink size={16} /> Mở file hợp đồng đã lưu</a>}
               {/* Quốc hiệu tiêu ngữ */}
               <div className="text-center pb-5 border-b border-[#EFE5E1]">
                 <p className="font-bold text-xs uppercase tracking-widest text-[#594B49]">
@@ -210,7 +219,7 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
                   Số: <strong>{contractCode}</strong> / HĐ-UNIBRIDAL · Đơn thuê: <strong>#{order?.orderCode || orderId}</strong>
                 </p>
                 <p className="text-[11px] text-[#847374] italic mt-0.5">
-                  (Khởi tạo và xác thực điện tử ngày {formatShortDate(signedDateStr)})
+                  Ngày ký được lưu: {signedDateStr}
                 </p>
               </div>
 
@@ -263,7 +272,7 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
                       {items.map((it, idx) => (
                         <tr key={it._id || idx} className="hover:bg-[#FCFAF8]">
                           <td className="p-3 font-semibold text-[#2C2523]">{it.name}</td>
-                          <td className="p-3 font-mono text-[#733F49]">{it.code || `UB-HC-${idx + 1}`}</td>
+                          <td className="p-3 font-mono text-[#733F49]">{it.code || it.dressCode || '—'}</td>
                           <td className="p-3 font-bold text-[#87565C]">{it.size || 'Theo tư vấn'}</td>
                           <td className="p-3 font-semibold text-emerald-700">{formatShortDate(order?.rentalStartDate)}</td>
                           <td className="p-3 font-semibold text-[#87565C]">{formatShortDate(order?.rentalEndDate)}</td>
@@ -289,6 +298,7 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
                   II. CÁC ĐIỀU KHOẢN PHÁP LÝ &amp; QUY CHẾ KÝ QUỸ
                 </h3>
                 <div className="space-y-3.5 text-xs text-[#4A3D3C] leading-relaxed">
+                  {!contractClauses.length && <p>Vui lòng mở file hợp đồng đã lưu để xem nội dung đầy đủ.</p>}
                   {contractClauses.map((clause, idx) => (
                     <article key={clause.id || idx} className="p-3.5 rounded-xl border border-[#F0E5DC] bg-white">
                       <h4 className="font-bold text-[#733F49] text-[12.5px] mb-1.5">{clause.title}</h4>
@@ -346,9 +356,13 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
                         alt="Chữ ký cô dâu"
                         className="max-h-20 w-auto object-contain select-none"
                       />
-                    ) : (
+                    ) : saved.signature ? (
                       <div className="font-serif italic text-2xl text-[#733F49] font-bold tracking-wider px-4 py-2 border-b-2 border-[#733F49]/40">
                         {saved.signature || order?.contractSignature || customerName}
+                      </div>
+                    ) : (
+                      <div className="font-serif italic text-2xl text-[#733F49] font-bold tracking-wider px-4 py-2 border-b-2 border-[#733F49]/40">
+                        {order?.contractSignature || customerName}
                       </div>
                     )}
                     <div className="mt-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-700 text-[10px] font-bold inline-flex items-center gap-1">
@@ -358,7 +372,7 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
 
                   <div>
                     <strong className="block text-[#2C2523] text-[13px]">{customerName}</strong>
-                    <span className="text-[11px] text-[#847374]">Ký xác nhận ngày {formatShortDate(signedDateStr)}</span>
+                    <span className="text-[11px] text-[#847374]">Ngày ký: {signedDateStr}</span>
                   </div>
                 </div>
               </div>

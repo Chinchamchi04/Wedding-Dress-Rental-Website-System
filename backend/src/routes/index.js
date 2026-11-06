@@ -31,7 +31,8 @@ router.post('/account/orders/:id/cancel', authenticate, handle(account.cancelOrd
 router.get('/account/orders/:id/inspection', authenticate, handle(account.inspection));
 router.post('/account/orders/:id/inspection/approve', authenticate, handle(account.confirmInspection));
 router.post('/account/orders/:id/inspection/dispute', authenticate, handle(account.disputeInspection));
-router.get('/staff/dashboard', optionalAuthenticate, handle(report.staffDashboard));
+router.get('/staff/dashboard', authenticate, authorize('STAFF', 'ADMIN'), handle(report.staffDashboard));
+router.get('/staff/dashboard/appointments', authenticate, authorize('STAFF', 'ADMIN'), handle(report.staffAppointments));
 router.get('/admin/dashboard', authenticate, authorize('ADMIN'), handle(report.adminDashboard));
 router.get('/admin/revenue', authenticate, authorize('ADMIN'), handle(report.revenue));
 
