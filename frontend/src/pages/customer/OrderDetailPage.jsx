@@ -283,7 +283,7 @@ export default function OrderDetailPage() {
                     <Landmark size={15} className="text-[#874e57]" />
                   </div>
                   <h2 id="invoice-title" className="mt-2 font-playfair text-xl">
-                    Phí Thuê &amp; Tiền Cọc Theo Đơn
+                    Tiền Cọc Theo Đơn
                   </h2>
                   <dl className="mt-4 space-y-3 text-sm">
                     <div className="flex justify-between gap-3">

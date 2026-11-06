@@ -21,17 +21,21 @@ import { formatCurrencyVND } from '../../utils/formatCurrency';
 import { formatShortDate } from '../../utils/formatDate';
 import { HIEU_SIGNATURE_BASE64 } from '../../assets/images/signatureHieuBase64';
 
-export default function SignedContractModal({ orderId, onClose }) {
-  const [order, setOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
+export default function SignedContractModal({ orderId, order: propOrder, onClose }) {
+  const [order, setOrder] = useState(propOrder || null);
+  const [loading, setLoading] = useState(!propOrder);
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
 
   useEffect(() => {
+    setError('');
+    setOrder(propOrder || null);
+    if (propOrder?.contract || !orderId) {
+      setLoading(false);
+      return;
+    }
     let active = true;
     setLoading(true);
-    setError('');
-    setOrder(null);
     getOrder(orderId)
       .then((value) => {
         if (active) setOrder(value);
@@ -45,7 +49,7 @@ export default function SignedContractModal({ orderId, onClose }) {
     return () => {
       active = false;
     };
-  }, [orderId, retry]);
+  }, [orderId, propOrder, retry]);
 
   const saved = getSignedContract(order);
 
@@ -54,9 +58,9 @@ export default function SignedContractModal({ orderId, onClose }) {
     window.print();
   };
 
-  const customerName = order?.contract?.customerName || order?.customerName || 'Chưa lưu';
-  const customerPhone = order?.contract?.phone || order?.customerPhone || 'Chưa lưu';
-  const customerCccd = order?.contract?.idCard || order?.customerCccd || 'Chưa lưu';
+  const customerName = order?.contract?.customerName || order?.customerName || order?.brideName || 'Chưa lưu';
+  const customerPhone = order?.contract?.phone || order?.customerPhone || order?.phone || 'Chưa lưu';
+  const customerCccd = order?.contract?.idCard || order?.customerCccd || order?.cccd || order?.idCard || 'Chưa lưu';
   const address = order?.shippingAddress;
   const shippingAddress = (typeof address === 'string' ? address
     : ['street', 'ward', 'district', 'city'].map((key) => address?.[key]).filter(Boolean).join(', ')) || 'Chưa lưu';

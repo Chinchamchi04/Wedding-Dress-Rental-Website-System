@@ -32,6 +32,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import SignedContractModal from '../../components/common/SignedContractModal';
 
 const DRESS_OPTIONS = [
   {
@@ -134,14 +135,14 @@ export default function ContractManagement() {
             orderId: ord._id || ord.id,
             customerId: ord.customerId,
             hasAccount: Boolean(ord.customerId || ord.hasAccount),
-            customerName: ord.customerName || ord.userId?.fullName || 'Khách hàng',
-            phone: ord.customerPhone || ord.userId?.phone || '—',
-            idCard: ord.idCard || '001198012345',
+            customerName: ord.customerName || ord.brideName || ord.userId?.fullName || 'Khách hàng',
+            phone: ord.customerPhone || ord.phone || ord.userId?.phone || '—',
+            idCard: ord.customerCccd || ord.cccd || ord.idCard || '001198012345',
             dressName: item.name || item.dressId?.name || 'Váy cưới Haute Couture',
             dressCode: item.dressCode || item.dressId?.code || 'BGW-2026',
             dressSize: item.size ? `Size ${item.size}` : 'Size S',
             dressImage: item.image || item.dressId?.image || DRESS_OPTIONS[0].image,
-            templateName: 'Hợp đồng Thuê Váy Cưới Haute Couture Tiêu Chuẩn',
+            templateName: ord.contract?.templateName || 'Hợp đồng Thuê Váy Cưới Haute Couture Tiêu Chuẩn',
             startDate: ord.rentalStartDate ? new Date(ord.rentalStartDate).toISOString().split('T')[0] : '2026-11-01',
             endDate: ord.rentalEndDate ? new Date(ord.rentalEndDate).toISOString().split('T')[0] : '2026-11-04',
             rentalPrice: ord.totalRentPrice || 5200000,
@@ -150,20 +151,16 @@ export default function ContractManagement() {
             status,
             signedAt: ord.createdAt ? new Date(ord.createdAt).toLocaleString('vi-VN') : '2026-11-01',
             signedMethod: ord.contractSignature ? 'Chữ ký điện tử UniBridal' : 'Ký số điện tử',
+            contractSignature: ord.contractSignature || ord.customerName || ord.brideName || '',
+            rawOrder: ord,
             staffInCharge: 'Chuyên viên Atelier',
             packageType: 'Gói Thuê Lễ Phục Tiêu Chuẩn',
             note: ord.notes || 'Hợp đồng điện tử kèm biên nhận cọc bảo lãnh.'
           };
         });
 
-        // Hợp nhất dữ liệu tránh trùng lặp
-        setContracts((prev) => {
-          const ids = new Set(liveContracts.map((c) => c.id));
-          const uniquePrev = prev.filter((p) => !ids.has(p.id));
-          const combined = [...liveContracts, ...uniquePrev];
-          try { localStorage.setItem('unibridal_contracts_local', JSON.stringify(combined)); } catch { }
-          return combined;
-        });
+        // Ưu tiên hiển thị danh sách hợp đồng thực tế từ đơn hàng hệ thống
+        setContracts(liveContracts);
         setError('');
       } else {
         setContracts([]);
@@ -529,9 +526,15 @@ export default function ContractManagement() {
                 {filteredContracts.map((item) => (
                   <tr key={item.id} className="hover:bg-[#FCFAF8] transition-colors group">
                     <td className="py-4 px-4">
-                      <div className="font-mono font-bold text-[#733F49] text-xs">
-                        {item.id}
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenPreview(item)}
+                        className="font-mono font-bold text-[#733F49] hover:underline hover:text-[#5F333B] text-xs text-left cursor-pointer p-0 bg-transparent border-0 flex items-center gap-1.5 group/btn"
+                        title="Xem hợp đồng đã ký kèm chữ ký điện tử hai bên"
+                      >
+                        <FileSignature size={13} className="text-[#C5A880] group-hover/btn:scale-110 transition-transform shrink-0" />
+                        <span>{item.id}</span>
+                      </button>
                       {item.orderCode && (
                         <div className="text-[10.5px] text-[#847374] font-mono mt-0.5">
                           Đơn: <span className="font-semibold text-[#5F333B]">{item.orderCode}</span>
@@ -615,10 +618,11 @@ export default function ContractManagement() {
                         <button
                           type="button"
                           onClick={() => handleOpenPreview(item)}
-                          className="p-2 rounded-lg text-[#733F49] hover:bg-[#F5EAE6] transition-colors cursor-pointer"
-                          title="Xem văn bản hợp đồng chi tiết"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF0EC] text-[#733F49] hover:bg-[#F3E2DB] border border-[#ECD9D3] text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                          title="Xem hợp đồng đã ký kèm chữ ký điện tử hai bên"
                         >
-                          <Eye size={17} />
+                          <Eye size={14} />
+                          <span>Xem Hợp Đồng Đã Ký</span>
                         </button>
 
                         {item.status === 'pending_signature' && (
@@ -857,221 +861,16 @@ export default function ContractManagement() {
           </div>
         )}
 
-        {/* MODAL XEM TRƯỚC VĂN BẢN HỢP ĐỒNG ĐIỆN TỬ */}
+        {/* MODAL XEM HỢP ĐỒNG ĐÃ KÝ KÈM CHỮ KÝ ĐIỆN TỬ */}
         {isPreviewOpen && selectedContract && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
-            <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-[#E8DDD8] overflow-hidden my-8 max-h-[90vh] flex flex-col">
-              {/* Modal Top Bar */}
-              <div className="px-6 py-4 bg-[#FAF5F2] border-b border-[#EFE5E1] flex items-center justify-between shrink-0 no-print">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#733F49] text-white flex items-center justify-center font-bold">
-                    <FileSignature size={18} />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-[#302626]">
-                      Văn Bản Hợp Đồng Điện Tử #{selectedContract.id}
-                    </h3>
-                    <p className="text-xs text-[#7A6A6B]">
-                      {selectedContract.orderCode ? `Gắn liền với Đơn thuê #${selectedContract.orderCode} • ` : ''}
-                      Mẫu: {selectedContract.templateName}
-                    </p>
-                    <div className="text-[11px] text-[#847374] mt-0.5">
-                      {selectedContract.status === 'completed' ? (
-                        <span className="font-semibold text-emerald-700">✓ Đã Hoàn Thành Cùng Đơn Thuê</span>
-                      ) : selectedContract.status === 'active' ? (
-                        <span className="text-[#87565C]">Trạng thái: Có hiệu lực (Sẽ tự động hoàn tất khi đơn thuê hoàn thành trả đồ & quyết toán)</span>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {selectedContract.status === 'pending_signature' && (
-                    <button
-                      type="button"
-                      onClick={() => handleUpdateStatus(selectedContract.id, 'active')}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold cursor-pointer"
-                    >
-                      <CheckCircle2 size={14} />
-                      <span>Kích Hoạt Hợp Đồng</span>
-                    </button>
-                  )}
-
-                  {selectedContract.status === 'active' && (
-                    <button
-                      type="button"
-                      onClick={() => handleUpdateStatus(selectedContract.id, 'disputed')}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-300 text-rose-700 hover:bg-rose-50 text-xs font-semibold cursor-pointer"
-                    >
-                      <AlertTriangle size={14} />
-                      <span>Giữ Cọc Tổn Thất</span>
-                    </button>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={handlePrint}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#D9C4BD] text-xs font-semibold text-[#733F49] hover:bg-white bg-transparent cursor-pointer"
-                  >
-                    <Printer size={14} />
-                    <span>In Hợp Đồng</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsPreviewOpen(false)}
-                    className="p-2 rounded-lg text-[#733F49] hover:bg-[#EFE2DE] transition-colors cursor-pointer"
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Legal Document Content - Printable */}
-              <div
-                id="printable-contract-document"
-                className="p-8 sm:p-12 overflow-y-auto font-serif text-[#2B2321] leading-relaxed space-y-6 text-sm bg-white"
-              >
-                {/* Header Republic & Title */}
-                <div className="text-center space-y-1 pb-6 border-b border-[#EFE5E1]">
-                  <p className="font-sans font-bold text-xs uppercase tracking-widest text-[#7A6A6B]">
-                    CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
-                  </p>
-                  <p className="font-sans text-xs italic text-[#7A6A6B]">
-                    Độc lập – Tự do – Hạnh phúc
-                  </p>
-                  <div className="w-20 h-0.5 bg-[#87565C] mx-auto my-3" />
-                  <h2 className="text-xl sm:text-2xl font-bold text-[#733F49] uppercase pt-2">
-                    HỢP ĐỒNG CHO THUÊ TRANG PHỤC CƯỚI CAO CẤP
-                  </h2>
-                  <p className="font-sans text-xs text-[#9E8B89]">
-                    Số: {selectedContract.id} / HĐ-UNIBRIDAL
-                  </p>
-                </div>
-
-                {/* Parties Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-sans text-xs border border-[#F0E6E2] p-5 rounded-xl bg-[#FDFBF9]">
-                  <div className="space-y-1.5">
-                    <p className="font-bold text-sm text-[#733F49] uppercase font-serif">
-                      BÊN CHO THUÊ (BÊN A)
-                    </p>
-                    <p><b>Đơn vị:</b> UNIBRIDAL FLAGSHIP ATELIER HAUTE COUTURE</p>
-                    <p><b>Đại diện:</b> Bà Trần Bích Ngọc - Quản lý Showroom</p>
-                    <p><b>Địa chỉ:</b> 186 Nam Kỳ Khởi Nghĩa, Phường Võ Thị Sáu, Quận 3, TP.HCM</p>
-                    <p><b>Hotline:</b> 1900 888 2026 · <b>Mã số thuế:</b> 0317892026</p>
-                  </div>
-
-                  <div className="space-y-1.5 border-t md:border-t-0 md:border-l border-[#F0E6E2] pt-4 md:pt-0 md:pl-6">
-                    <p className="font-bold text-sm text-[#733F49] uppercase font-serif">
-                      BÊN THUÊ (BÊN B)
-                    </p>
-                    <p><b>Họ và tên:</b> <span className="font-bold text-[#302626]">{selectedContract.customerName}</span></p>
-                    <p><b>Số CCCD/CMND:</b> {selectedContract.idCard}</p>
-                    <p><b>Số điện thoại:</b> {selectedContract.phone}</p>
-                    <p><b>Địa chỉ nhận trang phục:</b> Nhận trực tiếp tại Private Suite Atelier</p>
-                  </div>
-                </div>
-
-                {/* Terms of Contract */}
-                <div className="space-y-4">
-                  <h4 className="font-bold text-base text-[#733F49]">
-                    ĐIỀU 1: ĐỐI TƯỢNG VÀ THỜI GIAN THUÊ TRANG PHỤC
-                  </h4>
-                  <table className="w-full text-left font-sans text-xs border border-[#EAE0DC]">
-                    <thead className="bg-[#FAF5F2]">
-                      <tr className="border-b border-[#EAE0DC]">
-                        <th className="p-2.5">Trang phục</th>
-                        <th className="p-2.5">Mã số</th>
-                        <th className="p-2.5">Thông số kỹ thuật</th>
-                        <th className="p-2.5">Thời gian nhận</th>
-                        <th className="p-2.5">Thời gian hoàn trả</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td className="p-2.5 font-bold">{selectedContract.dressName}</td>
-                        <td className="p-2.5 font-mono">{selectedContract.dressCode}</td>
-                        <td className="p-2.5">{selectedContract.dressSize}</td>
-                        <td className="p-2.5 font-bold text-emerald-700">{selectedContract.startDate}</td>
-                        <td className="p-2.5 font-bold text-[#87565C]">{selectedContract.endDate}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-
-                  <h4 className="font-bold text-base text-[#733F49] pt-2">
-                    ĐIỀU 2: GIÁ TRỊ HỢP ĐỒNG &amp; TIỀN ĐẶT CỌC BẢO LÃNH
-                  </h4>
-                  <ul className="list-disc pl-5 font-sans text-xs space-y-1.5 text-[#594B49]">
-                    <li><b>Giá thuê trọn gói:</b> {fmtVnd(selectedContract.rentalPrice)} (Đã bao gồm giặt hấp sinh học Pháp &amp; phụ kiện voan cao cấp).</li>
-                    <li><b>Số tiền cọc bảo lãnh trách nhiệm:</b> {fmtVnd(selectedContract.depositAmount)}.</li>
-                    <li>Số tiền cọc sẽ được hoàn trả 100% cho Bên B trong vòng 02 giờ làm việc sau khi Bên A kiểm tra tình trạng váy nguyên vẹn theo biên bản bàn giao.</li>
-                  </ul>
-
-                  <h4 className="font-bold text-base text-[#733F49] pt-2">
-                    ĐIỀU 3: QUY ĐỊNH BẢO QUẢN &amp; XỬ LÝ HƯ TỔN
-                  </h4>
-                  <p className="font-sans text-xs text-[#594B49] leading-relaxed">
-                    Bên B cam kết giữ gìn trang phục cẩn trọng, không tự ý giặt tẩy hóa chất. Trường hợp làm rách ren, cháy vải hoặc đứt gãy gọng siết eo corsetry, Bên B đồng ý chịu chi phí phục chế nguyên trạng theo bảng giá niêm yết tại Atelier hoặc trừ trực tiếp vào quỹ cọc bảo lãnh.
-                  </p>
-
-                  {selectedContract.note && (
-                    <div className="p-3.5 rounded-lg bg-[#FAF5F2] border border-[#EAE0DC] font-sans text-xs text-[#733F49]">
-                      <b>Phụ lục ghi chú đặc biệt:</b> {selectedContract.note}
-                    </div>
-                  )}
-                </div>
-
-                {/* Signatures Block */}
-                <div className="pt-8 border-t border-[#EFE5E1] grid grid-cols-2 gap-8 text-center font-sans text-xs">
-                  <div>
-                    <p className="font-bold uppercase text-[#733F49]">ĐẠI DIỆN BÊN A (SHOWROOM)</p>
-                    <p className="text-[#A39192] italic mt-1">Đã ký bằng chữ ký số Atelier</p>
-                    <div className="h-20 flex items-center justify-center">
-                      <div className="border border-emerald-500 rounded-lg p-2 bg-emerald-50 text-emerald-700 font-bold text-[11px] inline-flex items-center gap-1.5">
-                        <ShieldCheck size={16} />
-                        <span>VERIFIED BY UNIBRIDAL CA</span>
-                      </div>
-                    </div>
-                    <p className="font-bold text-[#302626]">{selectedContract.staffInCharge}</p>
-                  </div>
-
-                  <div>
-                    <p className="font-bold uppercase text-[#733F49]">ĐẠI DIỆN BÊN B (KHÁCH HÀNG)</p>
-                    <p className="text-[#A39192] italic mt-1">
-                      {selectedContract.signedAt ? 'Xác thực chữ ký số điện tử' : 'Chưa thực hiện ký điện tử'}
-                    </p>
-                    <div className="h-20 flex items-center justify-center">
-                      {selectedContract.signedAt ? (
-                        <div className="border border-emerald-500 rounded-lg p-2 bg-emerald-50 text-emerald-700 font-bold text-[11px] inline-flex items-center gap-1.5">
-                          <CheckCircle2 size={16} />
-                          <span>E-SIGNED: {selectedContract.customerName}</span>
-                        </div>
-                      ) : (
-                        <div className="border border-dashed border-amber-400 rounded-lg p-2 bg-amber-50 text-amber-700 text-xs">
-                          Chờ khách hàng ký xác nhận hợp đồng
-                        </div>
-                      )}
-                    </div>
-                    <p className="font-bold text-[#302626]">{selectedContract.customerName}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Modal Footer */}
-              <div className="px-6 py-4 bg-[#FAF5F2] border-t border-[#EFE5E1] flex items-center justify-between shrink-0 no-print">
-                <span className="text-xs text-[#7A6A6B]">
-                  Hợp đồng lưu trữ bảo mật trên Blockchain Ledger UniBridal.
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsPreviewOpen(false)}
-                  className="px-5 py-2 rounded-xl bg-[#733F49] text-white font-semibold text-xs hover:bg-[#5C323A] transition-colors cursor-pointer"
-                >
-                  Đóng
-                </button>
-              </div>
-            </div>
-          </div>
+          <SignedContractModal
+            orderId={selectedContract.orderId || selectedContract.orderCode || selectedContract.id}
+            order={selectedContract.rawOrder || selectedContract}
+            onClose={() => {
+              setIsPreviewOpen(false);
+              setSelectedContract(null);
+            }}
+          />
         )}
       </div>
     </AdminLayout>

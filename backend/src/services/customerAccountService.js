@@ -13,8 +13,15 @@ async function ownerFilter(userId) {
         fail(401, 'Vui lòng đăng nhập lại.');
     return { customerId: userId };
 }
-async function ownOrder(userId, identifier) {
+async function ownOrder(userOrId, identifier) {
     const identity = mongoose.isValidObjectId(identifier) ? { _id: identifier } : { orderCode: String(identifier).toUpperCase() };
+    const role = typeof userOrId === 'object' ? String(userOrId?.roleId?.code || userOrId?.role || '').toUpperCase() : '';
+    if (['ADMIN', 'STAFF', 'MANAGER'].includes(role)) {
+        const order = await Order.findOne(identity);
+        if (!order) fail(404, 'Không tìm thấy thông tin đơn thuê.');
+        return order;
+    }
+    const userId = typeof userOrId === 'object' ? userOrId?._id : userOrId;
     const order = await Order.findOne({ $and: [identity, await ownerFilter(userId)] });
     if (!order)
         fail(404, 'Không tìm thấy đơn thuê thuộc tài khoản của bạn.');
