@@ -20,12 +20,12 @@ function normalize(profile) {
         address: addressText(profile.address),
         addressParts: profile.address,
         ...Object.fromEntries(measurementKeys.map((key) => [key, profile.measurements?.[key] ?? ''])),
-        gender: profile.gender || extras.gender || 'unspecified',
+        gender: profile.gender ?? extras.gender ?? 'unspecified',
         birthday: profile.birthday ? String(profile.birthday).split('T')[0] : (extras.birthday || ''),
         weddingDate: profile.weddingDate ? String(profile.weddingDate).split('T')[0] : (extras.weddingDate || ''),
         heel: profile.measurements?.heel != null && profile.measurements?.heel !== ''
             ? String(profile.measurements.heel)
-            : (extras.heel || ''),
+            : (extras.heel ?? ''),
     };
 }
 
@@ -49,8 +49,8 @@ export const saveProfile = async (profile) => {
         weddingDate: profile.weddingDate || null,
         measurements,
     });
-    // Đồng bộ vào bộ nhớ tạm
-    const extras = Object.fromEntries(['gender', 'birthday', 'weddingDate', 'heel'].map((key) => [key, profile[key] || '']));
+    // Cache hỗ trợ phiên bản API cũ; dữ liệu server luôn được ưu tiên.
+    const extras = Object.fromEntries(['gender', 'birthday', 'weddingDate', 'heel'].map((key) => [key, profile[key] ?? '']));
     try {
         localStorage.setItem(extrasKey(res.data.id || res.data._id), JSON.stringify(extras));
     } catch { /* Server save remains successful when device storage is full. */ }

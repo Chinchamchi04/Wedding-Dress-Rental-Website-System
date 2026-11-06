@@ -28,18 +28,14 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
   const [retry, setRetry] = useState(0);
 
   useEffect(() => {
-    if (propOrder) {
-      setOrder(propOrder);
-      setLoading(false);
-      return;
-    }
-    if (!orderId) {
+    setError('');
+    setOrder(propOrder || null);
+    if (propOrder?.contract || !orderId) {
       setLoading(false);
       return;
     }
     let active = true;
     setLoading(true);
-    setError('');
     getOrder(orderId)
       .then((value) => {
         if (active) setOrder(value);
@@ -62,10 +58,13 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
     window.print();
   };
 
-  const customerName = order?.customerName || order?.brideName || 'Cô Dâu UniBridal';
-  const customerPhone = order?.customerPhone || order?.phone || '0908 123 888';
-  const customerCccd = order?.customerCccd || order?.cccd || order?.idCard || 'Đã xác thực tài khoản';
-  const shippingAddress = order?.shippingAddress || 'Nhận trực tiếp tại Showroom UniBridal (186 Nam Kỳ Khởi Nghĩa, Q.3, TP.HCM)';
+  const customerName = order?.contract?.customerName || order?.customerName || order?.brideName || 'Cô Dâu UniBridal';
+  const customerPhone = order?.contract?.phone || order?.customerPhone || order?.phone || '0908 123 888';
+  const customerCccd = order?.contract?.idCard || order?.customerCccd || order?.cccd || order?.idCard || 'Đã xác thực tài khoản';
+  const address = order?.shippingAddress;
+  const shippingAddress = (typeof address === 'string' ? address
+    : ['street', 'ward', 'district', 'city'].map((key) => address?.[key]).filter(Boolean).join(', '))
+    || 'Nhận trực tiếp tại Showroom UniBridal (186 Nam Kỳ Khởi Nghĩa, Q.3, TP.HCM)';
   const contractCode = saved.code || order?.contractCode || order?.id || `HĐ-${order?.orderCode || orderId}`;
   const signedDateStr = saved.signedAt ? formatShortDate(saved.signedAt) : (order?.createdAt ? formatShortDate(order.createdAt) : '2026-11-01');
 
@@ -111,7 +110,7 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
         content: '6.1. Hợp đồng điện tử này được khởi tạo và ký kết trực tuyến hợp pháp, có giá trị pháp lý ràng buộc tương đương văn bản ký tay theo Luật Giao dịch điện tử Việt Nam.\n6.2. Hợp đồng có hiệu lực kể từ thời điểm Bên B ký điện tử và thanh toán cọc thành công cho đến khi hai bên hoàn tất biên bản bàn giao, thu hồi và thanh quyết toán cọc.',
       },
     ];
-  const canPrint = !loading && !error && !saved.pendingSignature;
+  const canPrint = !loading && !error && !saved.pendingSignature && contractClauses.length > 0;
 
   return (
     <>
@@ -356,21 +355,21 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
                         alt="Chữ ký cô dâu"
                         className="max-h-20 w-auto object-contain select-none"
                       />
-                    ) : saved.signature && !saved.signature.startsWith('data:image') ? (
-                      <div className="font-serif italic text-2xl text-[#733F49] font-bold tracking-wider px-4 py-2 border-b-2 border-[#733F49]/40">
-                        {saved.signature}
-                      </div>
-                    ) : (
+                    ) : saved.signature ? (
                       <div className="font-serif italic text-2xl text-[#733F49] font-bold tracking-wider px-4 py-2 border-b-2 border-[#733F49]/40">
                         {customerName}
                       </div>
+                    ) : (
+                      <p className="text-stone-500 text-sm">Chưa có chữ ký khách hàng được lưu.</p>
                     )}
-                    <div className="mt-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-700 text-[10px] font-bold inline-flex items-center gap-1 max-w-full">
-                      <CheckCircle2 size={13} className="shrink-0" />
-                      <span className="truncate max-w-[200px]">
-                        E-SIGNED BY {customerName}
-                      </span>
-                    </div>
+                    {saved.signature && (
+                      <div className="mt-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-700 text-[10px] font-bold inline-flex items-center gap-1 max-w-full">
+                        <CheckCircle2 size={13} className="shrink-0" />
+                        <span className="truncate max-w-[200px]">
+                          E-SIGNED BY {customerName}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div>
