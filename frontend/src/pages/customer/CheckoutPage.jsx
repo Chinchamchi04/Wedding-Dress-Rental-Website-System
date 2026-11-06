@@ -3037,37 +3037,6 @@ export default function CheckoutPage() {
                   </div>
                 </section>
 
-                {/* Dedicated VietQR Gateway Redirect Banner */}
-                <div className="p-5 rounded-2xl bg-gradient-to-r from-[#FAF0EC] via-[#FFF8F6] to-[#FAF0EC] border border-[#D4AF37]/50 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-11 h-11 rounded-xl bg-[#733F49] text-white flex items-center justify-center shrink-0 shadow-xs">
-                      <QrCode className="w-5 h-5 text-[#E6C687]" />
-                    </div>
-                    <div>
-                      <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#854D0E] uppercase tracking-wider">
-                        <Sparkles className="w-3 h-3 text-[#D4AF37]" />
-                        <span>CỔNG THANH TOÁN VIETQR GATEWAY CHUYÊN BIỆT</span>
-                      </div>
-                      <h4 className="font-jakarta font-bold text-[15px] text-[#2C2523] m-0 mt-0.5">
-                        Mở App Ngân Hàng Tự Động & Check Trạng Thái Real-time
-                      </h4>
-                      <p className="text-[12px] text-[#6B5C5D] m-0 mt-0.5">
-                        Chuyển hướng sang trang cổng VietQR toàn màn hình với đếm ngược 15:00 và hỗ trợ mở thẳng App VCB, Techcombank, MB, VPBank...
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    disabled={isSubmitting || isVerifyingPayment}
-                    onClick={handleProceedToVietQRGateway}
-                    className="w-full md:w-auto shrink-0 px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#733F49] via-[#854F55] to-[#733F49] hover:from-[#5F323B] hover:to-[#5F323B] text-white font-jakarta text-[13.5px] font-bold shadow-md hover:shadow-lg transition-all cursor-pointer border-0 flex items-center justify-center gap-2 active:scale-95"
-                  >
-                    <span>⚡ Chuyển Hướng Sang Cổng VietQR</span>
-                    <ArrowRight className="w-4 h-4 text-[#E6C687]" />
-                  </button>
-                </div>
-
                 {/* Confirm Final Payment Button */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
                   <button
