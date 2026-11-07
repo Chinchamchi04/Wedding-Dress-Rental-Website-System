@@ -47,13 +47,6 @@ const QUICK_SUGGESTIONS = [
     reply:
       'UniBridal sở hữu công nghệ Corsetry siết eo định hình độc quyền: Nếu nàng muốn hóa thân công chúa lộng lẫy thì Ballgown xoè bồng là tuyệt nhất; nếu muốn tôn đường cong quyến rũ thì Mermaid đuôi cá; hoặc A-Line nhẹ nhàng thanh thoát cho mọi vóc dáng. Nàng có thể đặt lịch để chuyên viên trực tiếp đo đạc và tư vấn thử nhé!',
   },
-  {
-    id: 'booking',
-    label: '📅 Đặt lịch thử VIP Fitting Suite',
-    text: 'Mình muốn đặt lịch đến thử váy trực tiếp tại showroom vào cuối tuần.',
-    reply:
-      'Dạ tuyệt vời quá! UniBridal phục vụ phòng thử riêng tư Fitting Suite VIP 1-1 hoàn toàn miễn phí. Nàng có thể bấm nút "Đặt Lịch Thử Váy" trên thanh menu hoặc để lại Số Điện Thoại & Ngày mong muốn tại đây, chuyên viên sẽ liên hệ xác nhận lịch ngay ạ!',
-  },
 ];
 
 // Biểu tượng ngôi sao 4 cánh (FourPointStar) chuẩn theo hình ảnh người dùng
@@ -612,31 +605,12 @@ export default function ChatWidget() {
                 className="flex-1 bg-transparent border-0 outline-none text-[12px] text-[#2C2523] placeholder-[#A69B97] min-w-0"
               />
 
-              {/* Product Picker Button (Icon Giỏ Hàng cạnh nút Mặt Cười) */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowProductPicker(!showProductPicker);
-                  setShowEmojiPicker(false);
-                }}
-                className={`p-1 rounded-md transition-colors border-0 bg-transparent cursor-pointer shrink-0 ${
-                  showProductPicker
-                    ? 'text-[#B8737D] bg-[#FFF2F0]'
-                    : 'text-[#8C7E7E] hover:text-[#B8737D] hover:bg-[#FFF2F0]'
-                }`}
-                title="Chọn mẫu váy cưới để hỏi tư vấn"
-              >
-                <ShoppingBag className="w-4 h-4 stroke-[1.8]" />
-              </button>
-
               {/* Emoji Picker Button */}
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowEmojiPicker(!showEmojiPicker);
-                  setShowProductPicker(false);
                 }}
                 className={`p-1 rounded-md transition-colors border-0 bg-transparent cursor-pointer shrink-0 ${
                   showEmojiPicker
@@ -666,72 +640,6 @@ export default function ChatWidget() {
                 <SendHorizontal className="w-3.5 h-3.5" />
               </button>
             </div>
-
-            {/* Product Picker Popover (Mini) */}
-            {showProductPicker && (
-              <div className="absolute right-2 bottom-full mb-2 bg-white rounded-2xl shadow-[0_16px_36px_rgba(44,37,35,0.2)] border border-[#EFE5DB] p-2.5 z-30 w-[270px] sm:w-[285px]">
-                <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-[#F2E8E0]">
-                  <div className="flex items-center gap-1">
-                    <ShoppingBag className="w-3.5 h-3.5 text-[#B8737D]" />
-                    <span className="text-[11px] font-bold text-[#2C2523] uppercase tracking-wider font-jakarta">
-                      Chọn váy cần hỏi ({filteredDresses.length})
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowProductPicker(false)}
-                    className="w-5 h-5 rounded-full flex items-center justify-center text-[#8C7A7C] hover:bg-[#FAF5F2] hover:text-[#2C2523] border-0 bg-transparent cursor-pointer"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-
-                {/* Search */}
-                <div className="relative mb-2">
-                  <Search className="w-3 h-3 text-[#A89D9B] absolute left-2 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    placeholder="Tìm theo tên váy cưới..."
-                    value={productSearchTerm}
-                    onChange={(e) => setProductSearchTerm(e.target.value)}
-                    className="w-full pl-6 pr-2 py-1 bg-[#FAF8F7] border border-[#EBE0D6] rounded-lg text-[11px] text-[#2C2523] placeholder:text-[#A89D9B] focus:outline-none focus:border-[#B8737D] focus:bg-white transition-all font-jakarta"
-                  />
-                </div>
-
-                {/* List */}
-                <div className="max-h-52 overflow-y-auto space-y-1.5 pr-0.5 [scrollbar-width:thin] [scrollbar-color:#D9A8AE_#FAF5F2]">
-                  {filteredDresses.map((dress) => (
-                    <div
-                      key={dress.id || dress.code}
-                      onClick={() => handleSelectProductToConsult(dress)}
-                      className="flex items-center gap-2 p-1.5 rounded-lg border border-[#F0E6DE] hover:border-[#B8737D] hover:bg-[#FFF8F7] transition-all cursor-pointer group bg-white shadow-2xs"
-                    >
-                      <img
-                        src={dress.image}
-                        alt={dress.name}
-                        className="w-10 h-10 rounded-md object-cover bg-[#FAF7F3] border border-[#F0E6DE] shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        {dress.categoryName && (
-                          <div className="text-[9px] text-[#8C7D7E] font-medium uppercase tracking-wider">
-                            {dress.categoryName}
-                          </div>
-                        )}
-                        <div className="font-jakarta font-bold text-[11.5px] text-[#2C2523] truncate group-hover:text-[#B8737D]">
-                          {dress.name}
-                        </div>
-                        <div className="text-[11px] font-bold text-emerald-600 font-jakarta">
-                          {typeof dress.price === 'number' ? dress.price.toLocaleString('vi-VN') + '₫' : dress.price}
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-bold text-[#B8737D] group-hover:text-[#7D4D54] shrink-0">
-                        Hỏi
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Emoji Picker Popover (Mini) */}
             {showEmojiPicker && (

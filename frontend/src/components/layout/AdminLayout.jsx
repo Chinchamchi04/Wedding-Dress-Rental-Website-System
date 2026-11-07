@@ -27,7 +27,8 @@ export default function AdminLayout({
   role = 'admin',
   title,
   subtitle,
-  controls
+  controls,
+  headerTitle,
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -255,7 +256,14 @@ export default function AdminLayout({
             >
               <Menu size={22} />
             </button>
-            <Sparkles size={20} className="text-[#8A797A]" />
+            <div className="flex items-center gap-2.5">
+              <Sparkles size={20} className="text-[#8A797A] shrink-0" />
+              {(headerTitle || (activeMenu === 'customer-care' ? 'Chăm Sóc Khách Hàng' : null)) && (
+                <span className="font-playfair text-[20px] sm:text-[22px] font-bold text-[#5F2B36] tracking-tight leading-none m-0 p-0 select-none">
+                  {headerTitle || 'Chăm Sóc Khách Hàng'}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* User Profile Widget */}

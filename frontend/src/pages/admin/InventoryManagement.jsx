@@ -462,7 +462,7 @@ export default function InventoryManagement() {
 
   // Bộ lọc trạng thái
   const statusOptions = [
-    { value: 'all', label: 'Tất Cả Tình Trạng' },
+    { value: 'all', label: 'Tất cả' },
     { value: 'stored', label: 'Còn Hàng' },
     { value: 'ready', label: 'Đã Cho Thuê' },
     { value: 'drying', label: 'Đang Bảo Dưỡng' },
@@ -1040,17 +1040,27 @@ export default function InventoryManagement() {
       )}
 
       {/* Page Title & Main CTA Header */}
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="mb-3 sm:mb-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="font-playfair text-[26px] sm:text-[30px] font-bold text-[#5F2B36] tracking-tight">
+          <h1 className="font-playfair text-[26px] sm:text-[30px] font-bold text-[#5F2B36] tracking-tight m-0 leading-tight">
             Quản Lý Sản Phẩm Kho
           </h1>
-          <p className="text-[13px] text-[#7A6B6C] mt-1">
-            Theo dõi vị trí tủ, định mức giá, tồn kho theo size và trạng thái thực tế phụ thuộc đơn thuê.
-          </p>
         </div>
 
         <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={async () => {
+              await loadInventory();
+            }}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-[#E8DDD8] bg-white text-[#5F2B36] hover:bg-[#FAF0EC] text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-60"
+            title="Làm mới dữ liệu kho hàng từ máy chủ"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            <span>{loading ? 'Đang tải...' : 'Làm mới'}</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setShowMatrixTable(!showMatrixTable)}
@@ -1078,66 +1088,66 @@ export default function InventoryManagement() {
       {/* 4 Top Metric Cards Nâng Cấp: Tổng số váy, Tổng số mẫu, Đang cho thuê, Đang bảo dưỡng */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Card 1: TỔNG MẪU THIẾT KẾ (Ánh hồng thanh lịch) */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FDE8EC_0%,_transparent_70%)] rounded-2xl border border-[#FAD2DA] p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FDE8EC_0%,_transparent_70%)] rounded-2xl border border-[#FAD2DA] py-3.5 px-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#733F49] uppercase">
                 TỔNG MẪU THIẾT KẾ
               </span>
-              <div className="w-10 h-10 rounded-xl bg-[#FAF0EC] flex items-center justify-center text-[#733F49]">
-                <Layers size={18} />
+              <div className="w-9 h-9 rounded-xl bg-[#FAF0EC] flex items-center justify-center text-[#733F49]">
+                <Layers size={17} />
               </div>
             </div>
             <div className="flex items-baseline">
-              <span className="text-[32px] font-bold text-[#2C2523] leading-none">
+              <span className="text-[28px] font-bold text-[#2C2523] leading-none">
                 {totalCount}
               </span>
               <span className="text-[12px] font-medium text-[#8C7D7E] ml-2">mẫu thiết kế</span>
             </div>
           </div>
-          <div className="mt-3 pt-2.5 border-t border-[#F8E2E6] flex items-center justify-between text-[11px]">
+          <div className="mt-2.5 pt-2 border-t border-[#F8E2E6] flex items-center justify-between text-[11px]">
             <span className="text-[#8A797A]">Giá trị cọc bảo lãnh:</span>
             <span className="font-bold text-[#733F49]">{fmtVnd(totalAssetValue)}</span>
           </div>
         </div>
 
         {/* Card 2: TỔNG SỐ VÁY (Ánh xanh lá dịu mát) */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EAF8EE_0%,_transparent_70%)] rounded-2xl border border-[#C6EED1] p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EAF8EE_0%,_transparent_70%)] rounded-2xl border border-[#C6EED1] py-3.5 px-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#1E8347] uppercase">
                 TỔNG SỐ LỄ PHỤC
               </span>
-              <div className="w-10 h-10 rounded-xl bg-[#EAF8EE] flex items-center justify-center text-[#1E8347]">
-                <HangerIcon size={18} />
+              <div className="w-9 h-9 rounded-xl bg-[#EAF8EE] flex items-center justify-center text-[#1E8347]">
+                <HangerIcon size={17} />
               </div>
             </div>
             <div className="flex items-baseline">
-              <span className="text-[32px] font-bold text-[#1E8347] leading-none">
+              <span className="text-[28px] font-bold text-[#1E8347] leading-none">
                 {totalUnitsAll}
               </span>
               <span className="text-[12px] font-medium text-[#736364] ml-2">chiếc váy</span>
             </div>
           </div>
-          <div className="mt-3 pt-2.5 border-t border-[#D5F3DD] flex items-center justify-between text-[11px]">
+          <div className="mt-2.5 pt-2 border-t border-[#D5F3DD] flex items-center justify-between text-[11px]">
             <span className="text-[#5E7A67]">Khả dụng tại tủ:</span>
             <span className="font-bold text-[#1E8347]">{totalAvailableUnits} chiếc sẵn sàng</span>
           </div>
         </div>
 
         {/* Card 3: MẪU ĐANG CHO THUÊ */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EFF6FF_0%,_transparent_70%)] rounded-2xl border border-[#BFDBFE] p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EFF6FF_0%,_transparent_70%)] rounded-2xl border border-[#BFDBFE] py-3.5 px-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#1D4ED8] uppercase">
                 LỄ PHỤC ĐI THUÊ
               </span>
-              <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] flex items-center justify-center text-[#1D4ED8]">
-                <Sparkles size={18} />
+              <div className="w-9 h-9 rounded-xl bg-[#EFF6FF] flex items-center justify-center text-[#1D4ED8]">
+                <Sparkles size={17} />
               </div>
             </div>
             <div className="flex items-baseline">
-              <span className="text-[32px] font-bold text-[#1E3A8A] leading-none">
+              <span className="text-[28px] font-bold text-[#1E3A8A] leading-none">
                 {rentedModelsCount}
               </span>
               <span className="text-[12px] font-medium text-[#60A5FA] ml-2">
@@ -1145,31 +1155,31 @@ export default function InventoryManagement() {
               </span>
             </div>
           </div>
-          <div className="mt-3 pt-2.5 border-t border-[#DBEAFE] flex items-center justify-between text-[11px]">
+          <div className="mt-2.5 pt-2 border-t border-[#DBEAFE] flex items-center justify-between text-[11px]">
             <span className="text-[#4B6B94]">Tỷ lệ lấp đầy:</span>
             <span className="font-bold text-[#1D4ED8]">{utilizationRate}% ({totalRentedUnits} chiếc)</span>
           </div>
         </div>
 
         {/* Card 4: MẪU ĐANG BẢO DƯỠNG */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FEF3C7_0%,_transparent_70%)] rounded-2xl border border-[#FDE68A] p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FEF3C7_0%,_transparent_70%)] rounded-2xl border border-[#FDE68A] py-3.5 px-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#92400E] uppercase">
                 MẪU ĐANG BẢO DƯỠNG
               </span>
-              <div className="w-10 h-10 rounded-xl bg-[#FEF2E6] flex items-center justify-center text-[#D97706]">
-                <Clock size={18} />
+              <div className="w-9 h-9 rounded-xl bg-[#FEF2E6] flex items-center justify-center text-[#D97706]">
+                <Clock size={17} />
               </div>
             </div>
             <div className="flex items-baseline">
-              <span className="text-[32px] font-bold text-[#78350F] leading-none">
+              <span className="text-[28px] font-bold text-[#78350F] leading-none">
                 {maintenanceCount}
               </span>
               <span className="text-[12px] font-medium text-[#D97706] ml-2">mẫu đang xử lý</span>
             </div>
           </div>
-          <div className="mt-3 pt-2.5 border-t border-[#FDE68A] flex items-center justify-between text-[11px]">
+          <div className="mt-2.5 pt-2 border-t border-[#FDE68A] flex items-center justify-between text-[11px]">
             <span className="text-[#855B1B]">Tiêu chuẩn:</span>
             <span className="font-bold text-[#92400E]">Giặt khô & vi khí hậu</span>
           </div>
@@ -1324,63 +1334,42 @@ export default function InventoryManagement() {
       )}
 
       {/* Search & Filter Bar */}
-      <div className="bg-white rounded-2xl border border-[#EFE5E1] p-4 shadow-xs mb-4">
-        <div className="relative">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9A8B8C]" />
+      <div className="bg-white p-1.5 rounded-2xl border border-[#EFE5E1] shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4">
+        <div className="relative flex-1 max-w-md">
+          <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A39192]" />
           <input
             type="text"
+            placeholder="Tìm theo mã váy, tên thiết kế, vị trí tủ..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Tìm theo mã váy, tên thiết kế, vị trí tủ..."
-            className="w-full pl-11 pr-4 py-3 rounded-xl bg-[#FFF6F3] border border-[#F4E8E3] focus:border-[#B8737D] focus:bg-white text-[13px] text-[#2C2523] placeholder-[#A39293] outline-none transition-all"
+            className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-[#EFE5E1] bg-[#FCF7F4] text-sm text-[#302626] placeholder-[#A39293] focus:outline-none focus:ring-2 focus:ring-[#B8737D]/30 focus:border-[#B8737D] transition-all"
           />
           {searchTerm && (
             <button
               type="button"
               onClick={() => setSearchTerm('')}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#A39293] hover:text-[#5F333B] cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A39192] hover:text-[#5F333B] cursor-pointer bg-transparent border-0 p-0"
             >
-              <X size={16} />
+              <X size={15} />
             </button>
           )}
         </div>
 
-        <div className="flex justify-end items-center mt-3">
-          <div className="relative">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
+          {statusOptions.map((tab) => (
             <button
+              key={tab.value}
               type="button"
-              onClick={() => setFilterDropdownOpen(!filterDropdownOpen)}
-              className="flex items-center justify-between gap-3 px-4 py-2 rounded-xl bg-[#FAF2EE] border border-[#EFE2DC] text-[12.5px] text-[#554748] font-medium hover:bg-[#F3E7E2] transition-colors cursor-pointer"
+              onClick={() => setStatusFilter(tab.value)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer border-0 ${
+                statusFilter === tab.value
+                  ? 'bg-[#733F49] text-white shadow-xs'
+                  : 'bg-[#FCF7F4] text-[#7A6B6C] hover:bg-[#FAF0EC] hover:text-[#733F49]'
+              }`}
             >
-              <span>{selectedFilterLabel}</span>
-              <ChevronDown
-                size={14}
-                className={`text-[#8C7D7E] transition-transform ${filterDropdownOpen ? 'rotate-180' : ''}`}
-              />
+              {tab.label}
             </button>
-
-            {filterDropdownOpen && (
-              <div className="absolute right-0 top-full mt-1.5 w-56 bg-white rounded-xl shadow-lg border border-[#EFE5E1] py-1.5 z-20 animate-fadeIn">
-                {statusOptions.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => {
-                      setStatusFilter(opt.value);
-                      setFilterDropdownOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-4 py-2 text-left text-[13px] transition-colors cursor-pointer ${statusFilter === opt.value
-                      ? 'bg-[#F9EDE9] text-[#733F49] font-bold'
-                      : 'bg-transparent text-[#5F4E50] hover:bg-[#FAF5F2]'
-                      }`}
-                  >
-                    <span>{opt.label}</span>
-                    {statusFilter === opt.value && <Check size={14} />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          ))}
         </div>
       </div>
 

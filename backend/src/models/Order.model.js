@@ -5,6 +5,10 @@ const orderItemSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Mixed,
     required: true,
   },
+  code: {
+    type: String,
+    default: '',
+  },
   name: {
     type: String,
     required: true,

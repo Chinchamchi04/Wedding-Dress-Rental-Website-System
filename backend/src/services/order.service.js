@@ -1,4 +1,6 @@
+import mongoose from 'mongoose';
 import Order from '../models/Order.model.js';
+import Dress from '../models/Dress.model.js';
 import ReturnInspection from '../models/ReturnInspection.model.js';
 import Contract from '../models/Contract.model.js';
 import ContractTemplate from '../models/ContractTemplate.model.js';
@@ -71,6 +73,7 @@ export const createOrder = async (orderData, currentUser = null) => {
   if (Array.isArray(items) && items.length > 0) {
     resolvedItems = items.map((item) => ({
       dressId: item.dressId || item.id || 'dress_custom',
+      code: item.code || item.dressCode || '',
       name: item.name || 'Váy cưới Haute Couture',
       size: item.size || 'S',
       rentPrice: Number(item.rentPrice || item.price || 0),
@@ -81,6 +84,7 @@ export const createOrder = async (orderData, currentUser = null) => {
     resolvedItems = [
       {
         dressId: dress.id || dress._id || 'dress_custom',
+        code: dress.code || '',
         name: dress.name || 'Váy cưới Haute Couture',
         size: orderData.selectedSize || dress.size || 'S',
         rentPrice: Number(dress.price || 0),
@@ -243,6 +247,7 @@ export const getAllOrders = async (filters = {}) => {
       { customerName: { $regex: rawSearch, $options: 'i' } },
       { customerPhone: { $regex: cleanSearch, $options: 'i' } },
       { 'items.name': { $regex: rawSearch, $options: 'i' } },
+      { 'items.code': { $regex: cleanSearch, $options: 'i' } },
     ];
   }
 
@@ -268,6 +273,38 @@ export const getAllOrders = async (filters = {}) => {
   const inspections = await ReturnInspection.find({ orderId: { $in: orderIds } }).lean();
   const inspectionMap = new Map(inspections.map((i) => [String(i.orderId), i]));
 
+  // Lấy thông tin mã sản phẩm (SKU) cho các items trong đơn nếu chưa có sẵn
+  const dressNames = [];
+  const dressIds = [];
+  orders.forEach((o) => {
+    (o.items || []).forEach((it) => {
+      if (!it.code) {
+        if (it.name) dressNames.push(it.name);
+        if (it.dressId) dressIds.push(it.dressId);
+      }
+    });
+  });
+
+  const dressCodeMap = new Map();
+  if (dressNames.length > 0 || dressIds.length > 0) {
+    try {
+      const validObjectIds = dressIds.filter((id) => mongoose.Types.ObjectId.isValid(id));
+      const orClauses = [];
+      if (dressNames.length > 0) orClauses.push({ name: { $in: dressNames } });
+      if (validObjectIds.length > 0) orClauses.push({ _id: { $in: validObjectIds } });
+
+      if (orClauses.length > 0) {
+        const foundDresses = await Dress.find({ $or: orClauses }).select('name code _id').lean();
+        foundDresses.forEach((d) => {
+          if (d.name) dressCodeMap.set(d.name.trim().toLowerCase(), d.code);
+          if (d._id) dressCodeMap.set(String(d._id), d.code);
+        });
+      }
+    } catch {
+      // Bỏ qua lỗi truy vấn phụ nếu có
+    }
+  }
+
   const enrichedOrders = orders.map((o) => {
     const hasAccount = Boolean(o.customerId && String(o.customerId).trim() !== '');
     const insp = inspectionMap.get(String(o._id)) || null;
@@ -277,8 +314,22 @@ export const getAllOrders = async (filters = {}) => {
       status = 'completed';
       Order.updateOne({ _id: o._id }, { $set: { status: 'completed' } }).catch(() => {});
     }
+
+    const items = (o.items || []).map((it) => {
+      const code =
+        it.code ||
+        dressCodeMap.get(it.name?.trim().toLowerCase()) ||
+        dressCodeMap.get(String(it.dressId)) ||
+        '';
+      return {
+        ...it,
+        code,
+      };
+    });
+
     return {
       ...o,
+      items,
       status,
       hasAccount,
       isGuest: !hasAccount,
