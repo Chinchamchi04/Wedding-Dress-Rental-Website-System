@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Sparkles,
   CalendarCheck,
+  CalendarDays,
   Package,
   Headphones,
   BarChart3,
@@ -11,43 +12,56 @@ import {
   LogOut,
   Menu,
   X,
-  Users,
   Layers,
-  FileSignature
+  FileSignature,
+  Users,
+  Tag
 } from 'lucide-react';
 import logoImg from '../../assets/logo.png';
 import heroBride from '../../assets/hero_bride.jpg';
-import HangerIcon from '../common/HangerIcon';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function AdminLayout({
   children,
   activeMenu,
   role = 'admin',
-  mode,
   title,
   subtitle,
   controls
 }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Tự động nhận diện menu đang active nếu không truyền chủ động
   const currentPath = location.pathname;
-  const isStaff = role === 'staff' || currentPath.startsWith('/staff');
+  const isStaff = role === 'staff' || user?.role === 'staff' || currentPath.startsWith('/staff');
 
   const getActiveKey = () => {
-    if (activeMenu) return activeMenu;
+    if (activeMenu) {
+      const lower = activeMenu.toLowerCase();
+      if (lower.includes('lịch tổng quan') || lower === 'lich-tong-quan' || lower === 'schedule' || lower.includes('lịch hẹn') || lower === 'appointments' || lower === 'lich-hen') return 'lich-tong-quan';
+      if (lower.includes('tổng quan') || lower === 'dashboard') return 'dashboard';
+      if (lower.includes('đơn thuê') || lower === 'don-thue') return 'don-thue';
+      if (lower.includes('mẫu hợp đồng') || lower === 'contract-templates') return 'contract-templates';
+      if (lower.includes('hợp đồng') || lower === 'contracts') return 'contracts';
+      if (lower.includes('danh mục') || lower === 'categories' || lower === 'danh-muc') return 'categories';
+      if (lower.includes('tài khoản') || lower.includes('account') || lower.includes('user')) return 'accounts';
+      if (lower.includes('kho hàng') || lower === 'inventory') return 'inventory';
+      if (lower.includes('chăm sóc') || lower === 'customer-care') return 'customer-care';
+      if (lower.includes('doanh thu') || lower === 'revenue') return 'revenue';
+    }
+    if (currentPath.includes('/lich-tong-quan') || currentPath.includes('/schedule') || currentPath.includes('/lich-hen') || currentPath.includes('/appointments')) return 'lich-tong-quan';
     if (currentPath.includes('/dashboard')) return 'dashboard';
-    if (currentPath.includes('/tai-khoan') || currentPath.includes('/accounts')) return 'accounts';
-    if (currentPath.includes('/san-pham') || currentPath.includes('/products')) return 'products';
-    if (currentPath.includes('/danh-muc') || currentPath.includes('/categories')) return 'categories';
+    if (currentPath.includes('/reports') || currentPath.includes('/revenue')) return 'revenue';
+    if (currentPath.includes('/accounts') || currentPath.includes('/users') || currentPath.includes('/tai-khoan')) return 'accounts';
     if (currentPath.includes('/don-thue') || currentPath.includes('/orders')) return 'don-thue';
-    if (currentPath.includes('/hop-dong') || currentPath.includes('/contracts')) return 'contracts';
     if (currentPath.includes('/kho-hang') || currentPath.includes('/inventory')) return 'inventory';
     if (currentPath.includes('/cham-soc-khach-hang') || currentPath.includes('/customer-care')) return 'customer-care';
+    if (currentPath.includes('/hop-dong') || currentPath.includes('/contracts')) return 'contracts';
     if (currentPath.includes('/mau-hop-dong') || currentPath.includes('/contract-templates')) return 'contract-templates';
-    if (currentPath.includes('/reports') || currentPath.includes('/revenue')) return 'revenue';
+    if (currentPath.includes('/danh-muc') || currentPath.includes('/categories')) return 'categories';
     return 'dashboard';
   };
 
@@ -60,25 +74,11 @@ export default function AdminLayout({
       icon: LayoutDashboard,
       to: isStaff ? '/staff/dashboard' : '/admin/dashboard'
     },
-    ...(!isStaff ? [
-      {
-        key: 'accounts',
-        label: 'Quản Lý Tài Khoản',
-        icon: Users,
-        to: '/admin/tai-khoan'
-      }
-    ] : []),
     {
-      key: 'products',
-      label: 'Quản Lý Sản Phẩm',
-      icon: HangerIcon,
-      to: isStaff ? '/staff/san-pham' : '/admin/san-pham'
-    },
-    {
-      key: 'categories',
-      label: 'Quản Lý Danh Mục',
-      icon: Layers,
-      to: isStaff ? '/staff/danh-muc' : '/admin/danh-muc'
+      key: 'lich-tong-quan',
+      label: 'Lịch Tổng Quan',
+      icon: CalendarDays,
+      to: isStaff ? '/staff/lich-tong-quan' : '/admin/lich-tong-quan'
     },
     {
       key: 'don-thue',
@@ -106,6 +106,18 @@ export default function AdminLayout({
     },
     ...(!isStaff ? [
       {
+        key: 'categories',
+        label: 'Quản Lý Danh Mục',
+        icon: Tag,
+        to: '/admin/danh-muc'
+      },
+      {
+        key: 'accounts',
+        label: 'Quản Lý Tài Khoản',
+        icon: Users,
+        to: '/admin/accounts'
+      },
+      {
         key: 'contract-templates',
         label: 'Mẫu Hợp Đồng',
         icon: Layers,
@@ -120,7 +132,14 @@ export default function AdminLayout({
     ] : [])
   ];
 
-  const displayBadge = mode || (isStaff ? 'STAFF MODE' : 'ADMIN MODE');
+  const userName = user?.fullName || user?.name || (isStaff ? 'Chuyên Viên Atelier' : 'Quản Trị Viên');
+  const userAvatar = user?.avatar || heroBride;
+  const userRoleText = isStaff ? 'STAFF MODE' : 'ADMIN MODE';
+
+  const handleLogout = () => {
+    navigate('/login', { replace: true });
+    logout();
+  };
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] font-jakarta text-[#2C2523] flex">
@@ -150,7 +169,7 @@ export default function AdminLayout({
                 />
               </div>
               <div className="flex flex-col">
-                <span className="font-serif text-[19px] font-bold tracking-normal text-[#733F49] select-none leading-none">
+                <span className="font-serif text-[19px] font-bold tracking-normal text-[#BE807C] select-none leading-none">
                   UniBridal
                 </span>
                 <span className="text-[10px] uppercase tracking-wider text-[#A39192] mt-1 font-semibold">
@@ -214,8 +233,8 @@ export default function AdminLayout({
           <div className="h-px bg-[#EADBCE] my-0.5" />
           <button
             type="button"
-            onClick={() => navigate('/login')}
-            className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-bold text-[#C93B3B] bg-transparent hover:bg-[#FADBD8] transition-colors w-full text-left"
+            onClick={handleLogout}
+            className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-bold text-[#C93B3B] bg-transparent hover:bg-[#FADBD8] transition-colors w-full text-left cursor-pointer"
           >
             <LogOut size={16} />
             <span>ĐĂNG XUẤT</span>
@@ -245,18 +264,18 @@ export default function AdminLayout({
             <div className="flex items-center gap-3">
               <div className="text-right">
                 <div className="text-[13.5px] font-bold text-[#2C2523] leading-tight">
-                  Trần Bích Ngọc
+                  {userName}
                 </div>
                 <div className={`inline-block mt-0.5 px-2 py-0.5 rounded-sm text-[9.5px] font-bold tracking-wider uppercase ${
                   isStaff ? 'bg-[#FDECEE] text-[#B8737D]' : 'bg-[#EBF5EE] text-[#2F6F4E]'
                 }`}>
-                  {displayBadge}
+                  {userRoleText}
                 </div>
               </div>
               <div className="relative">
                 <img
-                  src={heroBride}
-                  alt="Trần Bích Ngọc"
+                  src={userAvatar}
+                  alt={userName}
                   className="w-10 h-10 rounded-full object-cover border-2 border-[#EFE5E1]"
                 />
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white" />

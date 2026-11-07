@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
-import BookingModal from '../../components/common/BookingModal';
+import { useAuth } from '../../contexts/AuthContext';
 import { getDressById, getRelatedDresses, formatCurrencyVND } from '../../services/dressService';
 import { addToCart } from '../../services/cartService';
 import { isWishlisted as checkWishlisted, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
@@ -28,6 +28,7 @@ import card9Genevieve from '../../assets/card9_genevieve.jpg';
 import card9Mannequin from '../../assets/card9_mannequin_atelier.jpg';
 import heroBride from '../../assets/hero_bride.jpg';
 import laceDetail from '../../assets/lace_detail.jpg';
+import logoEmblemImg from '../../assets/logo_emblem.png';
 
 // 48 distinct high-resolution bridal photos (14 local assets + 34 distinct Unsplash photos)
 const DISTINCT_FEEDBACK_IMAGES = [
@@ -110,6 +111,7 @@ const getPaginationItems = (current, total) => {
 export default function DressDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isLoggedIn } = useAuth();
 
   const [dress, setDress] = useState(null);
   const [relatedDresses, setRelatedDresses] = useState([]);
@@ -296,13 +298,9 @@ export default function DressDetailPage() {
       name: dress.name,
       category: dress.silhouette || dress.category || 'HAUTE COUTURE',
       tag: 'ĐANG TƯ VẤN',
-      price: typeof dress.rentalPrice === 'number'
-        ? `${dress.rentalPrice.toLocaleString('vi-VN')}₫`
-        : (dress.price || '5.200.000₫'),
+      price: formatCurrencyVND(dress.rentalPrice || dress.price || 5200000),
       priceUnit: '/ 1 ngày',
-      depositInfo: dress.depositPrice
-        ? `Tiền cọc bảo lãnh: ${typeof dress.depositPrice === 'number' ? dress.depositPrice.toLocaleString('vi-VN') : dress.depositPrice}₫`
-        : 'Tiền cọc bảo lãnh: 15.000.000₫',
+      depositInfo: `Tiền cọc bảo lãnh: ${formatCurrencyVND(dress.depositPrice || 15000000)}`,
       image: (dress.images && dress.images[selectedImageIndex || 0]) || dress.image || (dress.images && dress.images[0]) || '',
       description: dress.description || 'Thiết kế thủ công tinh xảo chuẩn Haute Couture UniBridal',
     };
@@ -326,11 +324,33 @@ export default function DressDetailPage() {
     }, 3800);
   };
 
-  if (loading || !dress) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#FDFBF7] flex flex-col justify-center items-center font-jakarta">
         <div className="w-12 h-12 border-3 border-[#B8737D] border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-[#5A4B4B] text-[15px] tracking-wide">Đang tải tuyệt tác váy cưới...</p>
+        <p className="text-[#5A4B4B] text-[15px] tracking-wide">Đang tải tuyệt tác váy cưới từ cơ sở dữ liệu...</p>
+      </div>
+    );
+  }
+
+  if (!dress) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF7] flex flex-col justify-between font-jakarta">
+        <Header />
+        <div className="max-w-md w-full mx-auto my-16 bg-white p-8 rounded-2xl border border-red-100 shadow-xl text-center">
+          <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 text-xl">⚠️</div>
+          <h2 className="text-xl font-bold text-[#2C2424] mb-2 font-playfair">Lỗi kết nối Cơ sở dữ liệu</h2>
+          <p className="text-sm text-stone-600 mb-6">
+            Không thể tải thông tin mẫu váy cưới từ máy chủ MongoDB. Vui lòng kiểm tra kết nối mạng và dịch vụ cơ sở dữ liệu.
+          </p>
+          <button
+            onClick={() => navigate('/collection')}
+            className="px-6 py-2.5 rounded-xl bg-[#733F49] text-white text-xs font-bold tracking-wider uppercase hover:bg-[#5C3038] transition-colors"
+          >
+            Quay lại Bộ Sưu Tập
+          </button>
+        </div>
+        <Footer />
       </div>
     );
   }
@@ -383,16 +403,32 @@ export default function DressDetailPage() {
           {/* ================= LEFT COLUMN: IMAGES & HIGHLIGHTS (Col 7) ================= */}
           <div className="lg:col-span-7 flex flex-col gap-5">
             {/* Main Stage Image */}
-            <div className="relative w-full aspect-[4/5] sm:aspect-[3/4] max-h-[740px] rounded-[24px] overflow-hidden bg-[#F6ECE8] shadow-[0_8px_30px_rgba(44,37,35,0.06)] border border-[#EAE0DC] group">
+            <div className="relative w-full aspect-[3/4] rounded-[24px] overflow-hidden bg-[#F6ECE8] shadow-[0_8px_30px_rgba(44,37,35,0.06)] border border-[#EAE0DC] group">
               <img
                 src={dress.images[selectedImageIndex] || dress.images[0]}
                 alt={dress.imageAlts?.[selectedImageIndex] || dress.name}
-                className="w-full h-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-105"
+                className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
               />
+              {/* Logo UniBridal Watermark ở góc ảnh chính */}
+              <div
+                className="absolute bottom-4 right-4 z-10 pointer-events-none select-none transition-transform duration-300 group-hover:scale-110"
+                title="UniBridal Haute Couture"
+              >
+                <img
+                  src={logoEmblemImg}
+                  alt="UniBridal Emblem"
+                  className="w-[52px] h-[52px] object-contain drop-shadow-[0px_2px_8px_rgba(0,0,0,0.38)]"
+                />
+              </div>
             </div>
 
-            {/* Thumbnail Gallery (4 thumbnails) */}
-            <div className="grid grid-cols-4 gap-3 sm:gap-4">
+            {/* Thumbnail Gallery */}
+            <div
+              className="grid gap-3 sm:gap-4"
+              style={{
+                gridTemplateColumns: `repeat(${dress.images?.length || 4}, minmax(0, 1fr))`
+              }}
+            >
               {dress.images.map((imgSrc, idx) => {
                 const isActive = selectedImageIndex === idx;
                 return (
@@ -410,6 +446,14 @@ export default function DressDetailPage() {
                       alt={`Thumbnail ${idx + 1}`}
                       className="w-full h-full object-cover object-top group-hover/thumb:scale-110 transition-transform duration-300"
                     />
+                    {/* Logo UniBridal Watermark trên từng thumbnail */}
+                    <div className="absolute bottom-1 right-1 z-10 pointer-events-none select-none">
+                      <img
+                        src={logoEmblemImg}
+                        alt="UniBridal Emblem"
+                        className="w-[18px] h-[18px] object-contain drop-shadow-[0px_1px_3px_rgba(0,0,0,0.4)]"
+                      />
+                    </div>
                     {isActive && (
                       <div className="absolute inset-0 bg-[#B26B74]/10 pointer-events-none" />
                     )}
@@ -419,22 +463,36 @@ export default function DressDetailPage() {
             </div>
 
             {/* 3 Key Highlight Badges (Below Thumbnails) */}
-            <div className="mt-2 bg-white border border-[#EAE0DC] rounded-[20px] p-5 shadow-xs grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#EAE0DC] gap-4 sm:gap-2">
+            <div className="mt-2 bg-white border border-[#EAE0DC] rounded-[20px] p-3.5 sm:p-4 xl:p-4.5 shadow-xs grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#EAE0DC] gap-2.5 sm:gap-2">
               {dress.highlights?.map((hl, idx) => (
-                <div key={idx} className="flex items-start gap-3 px-2 pt-2 sm:pt-0">
-                  <div className="w-9 h-9 rounded-full bg-[#FFF5F3] border border-[#F4DDD8] flex items-center justify-center text-[#B26B74] shrink-0">
+                <div key={idx} className="flex items-start gap-2 xl:gap-2.5 px-1 sm:px-1.5 pt-2 sm:pt-0 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-[#FFF5F3] border border-[#F4DDD8] flex items-center justify-center text-[#B26B74] shrink-0">
                     {hl.icon === 'diamond' && <Sparkles className="w-4 h-4" />}
                     {hl.icon === 'ruler' && <Ruler className="w-4 h-4" />}
                     {hl.icon === 'sparkles' && <Sparkle className="w-4 h-4" />}
+                    {hl.icon === 'shield' && <ShieldCheck className="w-4 h-4" />}
+                    {!['diamond', 'ruler', 'sparkles', 'shield'].includes(hl.icon) && <Sparkles className="w-4 h-4" />}
                   </div>
-                  <div>
-                    <span className="block font-jakarta text-[11px] font-medium uppercase tracking-wider text-[#8A7978]">
+                  <div className="min-w-0 flex-1 overflow-hidden">
+                    <span
+                      title={hl.label}
+                      style={{ whiteSpace: 'nowrap' }}
+                      className="block font-jakarta text-[10px] xl:text-[10.5px] font-medium uppercase tracking-wider text-[#8A7978] whitespace-nowrap truncate"
+                    >
                       {hl.label}
                     </span>
-                    <strong className="block font-jakarta text-[13.5px] font-semibold text-[#231A19] leading-snug mt-0.5">
+                    <strong
+                      title={hl.value}
+                      style={{ whiteSpace: 'nowrap' }}
+                      className="block font-jakarta text-[11.5px] sm:text-[12px] xl:text-[12.5px] font-semibold text-[#231A19] leading-snug mt-0.5 whitespace-nowrap"
+                    >
                       {hl.value}
                     </strong>
-                    <span className="block font-jakarta text-[11.5px] text-[#A08E8D] mt-0.5">
+                    <span
+                      title={hl.sub}
+                      style={{ whiteSpace: 'nowrap' }}
+                      className="block font-jakarta text-[10.5px] xl:text-[11px] text-[#A08E8D] mt-0.5 whitespace-nowrap truncate"
+                    >
                       {hl.sub}
                     </span>
                   </div>
@@ -463,7 +521,9 @@ export default function DressDetailPage() {
                       <Star key={i} className="w-4 h-4 fill-current" />
                     ))}
                   </div>
-                  <span className="font-bold ml-1 text-[#231A19]">{dress.rating}</span>
+                  <span className="font-bold ml-1 text-[#231A19]">
+                    {Number(dress.rating || 5).toFixed(1)}
+                  </span>
                   <span className="text-[#8A7978]">({dress.rentCount})</span>
                 </div>
                 <div className="text-[#8A7978] tracking-wider text-[12px] font-medium">
@@ -639,48 +699,43 @@ export default function DressDetailPage() {
                   ĐẶT THUÊ NGAY (KÝ HỢP ĐỒNG & CỌC)
                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleToggleWishlist}
-                  className={`w-[48px] h-[48px] rounded-[4px] border flex items-center justify-center transition-colors cursor-pointer ${isWishlisted
-                    ? 'bg-[#FFF2F0] border-[#70484E] text-[#70484E]'
-                    : 'bg-white border-[#D6C7C3] text-[#70484E] hover:border-[#70484E]'
-                    }`}
-                  title={isWishlisted ? 'Đã yêu thích' : 'Lưu vào danh sách yêu thích'}
-                >
-                  <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} strokeWidth={1.75} />
-                </button>
+                {isLoggedIn && (
+                  <button
+                    type="button"
+                    onClick={handleToggleWishlist}
+                    className={`w-[48px] h-[48px] rounded-[4px] border flex items-center justify-center transition-all duration-200 cursor-pointer ${isWishlisted
+                      ? 'bg-red-50 border-red-300 text-red-500 shadow-xs'
+                      : 'bg-white border-[#D6C7C3] text-[#70484E] hover:border-red-300 hover:text-red-500'
+                      }`}
+                    title={isWishlisted ? 'Đã yêu thích' : 'Lưu vào danh sách yêu thích'}
+                  >
+                    <Heart className={`w-5 h-5 transition-all duration-200 ${isWishlisted ? 'fill-red-500 text-red-500 scale-110' : ''}`} strokeWidth={1.75} />
+                  </button>
+                )}
               </div>
 
-              {/* Row 2: ĐIỀN PHIẾU THUÊ & THỬ VÁY (GUEST) */}
-              <button
-                type="button"
-                onClick={() => navigate(`/thue-nhanh?dressId=${dress.id}`)}
-                className="w-full h-[48px] px-5 rounded-[4px] bg-[#FAF4EE] hover:bg-[#F2E8DF] border border-[#E0D0C4] text-[#70484E] font-jakarta text-[13px] font-semibold tracking-[0.8px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
-              >
-                <Calendar className="w-4 h-4 text-[#70484E]" />
-                ĐIỀN PHIẾU THUÊ & THỬ VÁY (DÀNH CHO GUEST)
-              </button>
-
-              {/* Row 3: ĐẶT LỊCH THỬ VÁY TẠI SHOWROOM */}
+              {/* Row 2: ĐẶT LỊCH THỬ VÁY PRIVATE SUITE (MIỄN PHÍ) */}
               <button
                 type="button"
                 onClick={() => navigate(`/dat-lich?dressId=${dress.id}`)}
-                className="w-full h-[46px] px-5 rounded-[4px] bg-white hover:bg-[#FAF4F3] border border-[#D6C7C3] text-[#5A4848] font-jakarta text-[12.5px] font-medium tracking-[0.5px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+                className="w-full h-[48px] px-5 rounded-[4px] bg-[#FAF4EE] hover:bg-[#F2E8DF] border border-[#E0D0C4] text-[#70484E] font-jakarta text-[13px] font-semibold tracking-[0.8px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
               >
-                <Clock className="w-4 h-4 text-[#70484E]" />
-                CHỈ ĐẶT LỊCH THỬ VÁY PRIVATE SUITE (MIỄN PHÍ)
+                <Calendar className="w-4 h-4 text-[#70484E]" />
+                ĐẶT LỊCH THỬ VÁY PRIVATE SUITE (MIỄN PHÍ)
               </button>
 
               {/* Row 3: THÊM VÀO GIỎ HÀNG */}
-              <button
-                type="button"
-                onClick={handleOnlineRent}
-                className="w-full h-[48px] px-5 rounded-[4px] bg-white hover:bg-[#FAF4F3] border border-[#70484E] text-[#70484E] font-jakarta text-[13px] font-semibold tracking-[0.8px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
-              >
-                <ShoppingBag className="w-4 h-4" strokeWidth={1.8} />
-                THÊM VÀO GIỎ HÀNG
-              </button>
+              {isLoggedIn && (
+                <button
+                  type="button"
+                  onClick={handleOnlineRent}
+                  className="w-full h-[48px] px-5 rounded-[4px] bg-white hover:bg-[#FAF4F3] border border-[#70484E] text-[#70484E] font-jakarta text-[13px] font-semibold tracking-[0.8px] uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+                >
+                  <ShoppingBag className="w-4 h-4" strokeWidth={1.8} />
+                  THÊM VÀO GIỎ HÀNG
+                </button>
+
+              )}
 
               {/* Row 4: TƯ VẤN TRỰC TIẾP VỚI CHUYÊN VIÊN ATELIER */}
               <button
@@ -810,6 +865,17 @@ export default function DressDetailPage() {
                     <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-[11px] font-semibold text-[#B26B74] flex items-center gap-1">
                       <Star className="w-3 h-3 fill-current" /> 5.0
                     </div>
+                    {/* Logo UniBridal Watermark */}
+                    <div
+                      className="absolute bottom-3 right-3.5 z-10 pointer-events-none select-none transition-transform duration-300 hover:scale-110"
+                      title="UniBridal Haute Couture"
+                    >
+                      <img
+                        src={logoEmblemImg}
+                        alt="UniBridal Emblem"
+                        className="w-[36px] h-[36px] object-contain drop-shadow-[0px_2px_6px_rgba(0,0,0,0.35)]"
+                      />
+                    </div>
                   </div>
                   <div className="p-5 flex-1 flex flex-col justify-between">
                     <p className="font-jakarta text-[13px] leading-[22px] text-[#5A4848] italic mb-4">
@@ -835,8 +901,8 @@ export default function DressDetailPage() {
                     document.getElementById('feedback-section')?.scrollIntoView({ behavior: 'smooth' });
                   }}
                   className={`w-9 h-9 rounded-[8px] flex items-center justify-center border transition-colors ${feedbackPage === 1
-                      ? 'border-[#EAE0DC] text-[#C4B4B0] cursor-not-allowed bg-transparent'
-                      : 'border-[#EAE0DC] bg-white text-[#70484E] hover:border-[#70484E] cursor-pointer'
+                    ? 'border-[#EAE0DC] text-[#C4B4B0] cursor-not-allowed bg-transparent'
+                    : 'border-[#EAE0DC] bg-white text-[#70484E] hover:border-[#70484E] cursor-pointer'
                     }`}
                   aria-label="Trang trước"
                 >
@@ -865,8 +931,8 @@ export default function DressDetailPage() {
                         document.getElementById('feedback-section')?.scrollIntoView({ behavior: 'smooth' });
                       }}
                       className={`w-9 h-9 rounded-[8px] flex items-center justify-center font-jakarta text-[13px] font-medium transition-colors cursor-pointer ${isActive
-                          ? 'bg-[#70484E] text-white shadow-xs'
-                          : 'bg-white border border-[#EAE0DC] text-[#5A4848] hover:border-[#70484E] hover:text-[#70484E]'
+                        ? 'bg-[#70484E] text-white shadow-xs'
+                        : 'bg-white border border-[#EAE0DC] text-[#5A4848] hover:border-[#70484E] hover:text-[#70484E]'
                         }`}
                     >
                       {pNum}
@@ -882,8 +948,8 @@ export default function DressDetailPage() {
                     document.getElementById('feedback-section')?.scrollIntoView({ behavior: 'smooth' });
                   }}
                   className={`w-9 h-9 rounded-[8px] flex items-center justify-center border transition-colors ${feedbackPage === totalFeedbackPages
-                      ? 'border-[#EAE0DC] text-[#C4B4B0] cursor-not-allowed bg-transparent'
-                      : 'border-[#EAE0DC] bg-white text-[#70484E] hover:border-[#70484E] cursor-pointer'
+                    ? 'border-[#EAE0DC] text-[#C4B4B0] cursor-not-allowed bg-transparent'
+                    : 'border-[#EAE0DC] bg-white text-[#70484E] hover:border-[#70484E] cursor-pointer'
                     }`}
                   aria-label="Trang kế tiếp"
                 >
@@ -899,7 +965,7 @@ export default function DressDetailPage() {
           <section className="mt-20 pt-16 border-t border-[#EAE0DC]">
             <div className="text-center max-w-[680px] mx-auto mb-12">
               <span className="font-jakarta font-bold text-[11px] tracking-[2.5px] uppercase text-[#B8737D] block mb-1">
-                HAUTE COUTURE SELECTIONS
+                TUYỂN TẬP CAO CẤP
               </span>
               <h2 className="font-playfair text-[32px] sm:text-[38px] leading-tight font-semibold text-[#231A19] mb-3">
                 Có Thể Nàng Cũng Yêu Thích
@@ -914,7 +980,7 @@ export default function DressDetailPage() {
                 <div
                   key={item.id}
                   onClick={() => navigate(`/dresses/${item.id}`)}
-                  className="bg-white border border-[#EAE0DC] rounded-[22px] overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col group cursor-pointer"
+                  className="bg-white border border-[#EAE0DC] hover:border-[#D498A0] rounded-[22px] overflow-hidden shadow-xs hover:shadow-[0_16px_36px_rgba(218,142,150,0.32)] hover:-translate-y-1 transition-all duration-300 flex flex-col group cursor-pointer"
                 >
                   <div className="relative aspect-[3/4] bg-[#FCEEE9] overflow-hidden">
                     <img
@@ -924,6 +990,17 @@ export default function DressDetailPage() {
                     />
                     <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[#B26B74] text-[10.5px] font-bold tracking-wider uppercase">
                       {item.collectionTag?.split(' ')?.[0] || 'COUTURE'}
+                    </div>
+                    {/* Logo UniBridal Watermark */}
+                    <div
+                      className="absolute bottom-3 right-3.5 z-10 pointer-events-none select-none transition-transform duration-300 group-hover:scale-110"
+                      title="UniBridal Haute Couture"
+                    >
+                      <img
+                        src={logoEmblemImg}
+                        alt="UniBridal Emblem"
+                        className="w-[40px] h-[40px] object-contain drop-shadow-[0px_2px_6px_rgba(0,0,0,0.35)]"
+                      />
                     </div>
                   </div>
 
@@ -1032,12 +1109,7 @@ export default function DressDetailPage() {
         </div>
       )}
 
-      {/* 5. Booking Modal */}
-      <BookingModal
-        isOpen={isBookingOpen}
-        onClose={() => setIsBookingOpen(false)}
-        preselectedProduct={dress}
-      />
+
 
       {/* 6. Footer */}
       <Footer />

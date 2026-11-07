@@ -1,0 +1,131 @@
+import axiosClient from '../api/axiosClient';
+
+/**
+ * Service Quản Lý Người Dùng / Tài Khoản Hệ Thống (Admin User Management)
+ */
+
+/**
+ * Lấy danh sách tài khoản theo bộ lọc và phân trang
+ * @param {Object} params - { role, status, search, page, limit }
+ */
+export async function getAllUsers(params = {}) {
+  try {
+    const res = await axiosClient.get('/users', { params });
+    const list = Array.isArray(res.data) ? res.data : (Array.isArray(res) ? res : res.data?.data || []);
+    const total = res.pagination?.total ?? res.total ?? list.length;
+    const page = res.pagination?.page ?? res.page ?? 1;
+    const totalPages = res.pagination?.totalPages ?? res.totalPages ?? 1;
+    const stats = res.stats || null;
+
+    return {
+      users: list,
+      total,
+      page,
+      totalPages,
+      stats,
+    };
+  } catch (error) {
+    console.error('Error in getAllUsers:', error);
+    return {
+      users: [],
+      total: 0,
+      page: 1,
+      totalPages: 1,
+      stats: null,
+      error: error.message || 'Không thể tải danh sách tài khoản',
+    };
+  }
+}
+
+/**
+ * Lấy danh sách các vai trò (ADMIN, STAFF, CUSTOMER)
+ */
+export async function getUserRoles() {
+  try {
+    const res = await axiosClient.get('/users/roles');
+    return Array.isArray(res.data) ? res.data : (res?.data?.data || []);
+  } catch (error) {
+    return [
+      { code: 'ADMIN', name: 'Quản trị viên', description: 'Toàn quyền quản trị hệ thống' },
+      { code: 'STAFF', name: 'Nhân viên Showroom', description: 'Tiếp nhận đơn, thử váy và kiểm định' },
+      { code: 'CUSTOMER', name: 'Khách hàng', description: 'Khách hàng thuê váy & đặt lịch' },
+    ];
+  }
+}
+
+/**
+ * Lấy thông tin chi tiết một tài khoản
+ * @param {string} id
+ */
+export async function getUserById(id) {
+  const res = await axiosClient.get(`/users/${id}`);
+  return res.data?.data || res.data || res;
+}
+
+/**
+ * Tạo tài khoản mới (Admin tạo cho Staff / Customer / Admin)
+ * @param {Object} userData - { fullName, email, phone, password, roleCode, idCard }
+ */
+export async function createUser(userData) {
+  try {
+    const res = await axiosClient.post('/users', userData);
+    return res.data?.data || res.data || res;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.message || 'Không thể tạo tài khoản.');
+  }
+}
+
+/**
+ * Cập nhật thông tin tài khoản
+ * @param {string} id
+ * @param {Object} updateData - { fullName, phone, roleCode, idCard, isActive }
+ */
+export async function updateUser(id, updateData) {
+  try {
+    const res = await axiosClient.put(`/users/${id}`, updateData);
+    return res.data?.data || res.data || res;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.message || 'Không thể cập nhật tài khoản.');
+  }
+}
+
+/**
+ * Khóa hoặc Mở khóa tài khoản
+ * @param {string} id
+ */
+export async function toggleUserStatus(id) {
+  try {
+    const res = await axiosClient.patch(`/users/${id}/status`);
+    return res.data?.data || res.data || res;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.message || 'Không thể đổi trạng thái tài khoản.');
+  }
+}
+
+/**
+ * Đặt lại mật khẩu mới cho tài khoản
+ * @param {string} id
+ * @param {string} newPassword
+ */
+export async function resetUserPassword(id, newPassword) {
+  try {
+    const res = await axiosClient.patch(`/users/${id}/reset-password`, { password: newPassword });
+    return res.data || res;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.message || 'Không thể đặt lại mật khẩu.');
+  }
+}
+
+/**
+ * Xóa tài khoản khỏi hệ thống
+ * @param {string} id
+ */
+export async function deleteUser(id) {
+  try {
+    const res = await axiosClient.delete(`/users/${id}`);
+    return res.data || res;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.message || 'Không thể xóa tài khoản.');
+  }
+}
+

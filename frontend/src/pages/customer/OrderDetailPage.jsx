@@ -1,44 +1,352 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Check, Heart, Landmark, LockKeyhole, Scissors, Shirt, Truck } from 'lucide-react';
+import {
+  ArrowLeft,
+  CalendarDays,
+  Landmark,
+  Shirt,
+  CheckCircle2,
+  Circle,
+  Clock,
+  Truck,
+  RefreshCcw,
+  Star,
+  XCircle,
+  FileSignature,
+} from 'lucide-react';
 import AccountLayout from '../../components/layout/AccountLayout';
-import { formatVnd, getDemoOrder } from '../../services/orderService';
+import { formatVnd } from '../../services/orderService';
+import { getOrder } from '../../services/customerOrderService';
+import CustomerInspectionModal from '../../components/common/CustomerInspectionModal';
+import SignedContractModal from '../../components/common/SignedContractModal';
 
-const steps = [
-  { title: 'Đặt Cọc & Xác Nhận', Icon: Check, description: 'Khách hàng đặt cọc và xác nhận đơn theo kịch bản minh họa.' },
-  { title: 'Fitting & Chỉnh Số Đo', Icon: Scissors, description: 'Phòng Fitting VIP Nam Kỳ Khởi Nghĩa' },
-  { title: 'Bàn Giao & Hợp Đồng', Icon: Truck, description: 'Đội ngũ chuyên môn chuẩn bị và bàn giao lễ phục theo lịch hẹn.' },
-  { title: 'Hoàn Trả & Giải Tỏa Cọc', Icon: Shirt, description: 'Kiểm tra lễ phục và xử lý hoàn cọc theo điều khoản hợp đồng.' },
+/* ─────────────────────────────────────────────
+   STATUS TIMELINE CONFIG
+───────────────────────────────────────────── */
+const TIMELINE_STEPS = [
+  {
+    key: 'deposit_paid',
+    label: 'Đặt Cọc',
+    subLabel: 'Đã xác nhận cọc',
+    Icon: CheckCircle2,
+  },
+  {
+    key: 'delivered',
+    label: 'Đã Giao Váy',
+    subLabel: 'Váy đã được bàn giao',
+    Icon: Truck,
+  },
+  {
+    key: 'renting',
+    label: 'Đang Thuê',
+    subLabel: 'Đang trong thời gian thuê',
+    Icon: Clock,
+  },
+  {
+    key: 'returned',
+    label: 'Đang Kiểm Định',
+    subLabel: 'Kiểm định & hoàn cọc',
+    Icon: RefreshCcw,
+  },
+  {
+    key: 'completed',
+    label: 'Hoàn Tất',
+    subLabel: 'Đơn hàng hoàn tất',
+    Icon: Star,
+  },
 ];
 
-export default function OrderDetailPage() {
-  const { orderId } = useParams();
-  const order = getDemoOrder(orderId);
-  if (!order) return <AccountLayout breadcrumb={[{ label: 'Lịch Sử Đơn Hàng', to: '/profile/orders' }, { label: 'Không tìm thấy đơn hàng' }]}>
-    <section className="profile-card rounded-lg bg-white p-8"><h1 className="font-playfair text-2xl">Không tìm thấy đơn hàng</h1><p className="mt-3 text-sm text-[#766966]">Mã đơn này không có trong dữ liệu minh họa.</p><Link className="account-button-primary mt-6" to="/profile/orders">VỀ LỊCH SỬ ĐƠN HÀNG</Link></section>
-  </AccountLayout>;
+// Map từ rawStatus → index bước đang active (0-based)
+const STATUS_STEP_MAP = {
+  pending_payment: -1, // chưa cọc
+  deposit_paid: 0,
+  preparing: 0, // Fallback đơn cũ: hiển thị ở bước Đặt Cọc
+  delivered: 1,
+  renting: 2,
+  returned: 3,
+  completed: 4,
+  complete: 4,
+};
 
-  const active = order.status === 'active';
-  return <AccountLayout hideSidebar breadcrumb={[{ label: 'Lịch sử đơn hàng', to: '/profile/orders' }, { label: `Chi tiết hành trình #${order.id}` }]}>
-    <div className="account-detail-content">
-      <div className="mb-4 flex justify-end"><Link to="/profile/orders" className="inline-flex items-center gap-1 text-xs font-semibold tracking-wider text-[#874e57] hover:underline"><ArrowLeft size={14} /> QUAY LẠI LỊCH SỬ ĐƠN HÀNG</Link></div>
-      <div className="rounded-md bg-[#f8e9e4] px-6 py-6 sm:px-8">
-        <div className="flex flex-wrap items-center gap-2 text-xs"><span className="account-status account-status-active">{order.statusLabel} (BƯỚC {active ? '2' : '4'}/4)</span><span>• Mã đơn mẫu: {order.id}</span></div>
-        <h1 className="mt-2 font-playfair text-3xl sm:text-4xl">Hành Trình Chi Tiết Lễ Phục</h1>
-        <p className="mt-2 font-playfair text-[27px] italic text-[#874e57]">#{order.id}</p>
-        <p className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[#874e57]"><span><Heart size={14} className="mr-1 inline" />Ngày cưới trong mẫu: {order.date}</span><span>•</span><span>Dữ liệu minh họa năm 2025</span></p>
+/* ─────────────────────────────────────────────
+   ORDER STATUS TIMELINE COMPONENT
+───────────────────────────────────────────── */
+function OrderStatusTimeline({ rawStatus }) {
+  // Trạng thái huỷ: hiển thị banner thay timeline
+  if (rawStatus === 'cancelled') {
+    return (
+      <div className="mt-6 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-red-700">
+        <XCircle className="h-5 w-5 shrink-0 text-red-500" />
+        <div>
+          <p className="font-semibold text-sm">Đơn hàng đã bị huỷ</p>
+          <p className="text-xs text-red-500 mt-0.5">
+            Đơn thuê này đã được huỷ. Vui lòng liên hệ UniBridal nếu có thắc mắc.
+          </p>
+        </div>
       </div>
-      <section className="mt-6 rounded-md bg-white px-6 py-7 sm:px-8" aria-labelledby="journey-title">
-        <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="account-overline text-[#874e57]">Atelier bespoke protocol</p><h2 id="journey-title" className="mt-1 font-playfair text-xl">Tiến Độ Chế Tác & Bàn Giao Lễ Phục</h2></div><span className="rounded-sm bg-[#fbf0ec] px-3 py-2 text-xs text-[#874e57]"><LockKeyhole size={13} className="mr-1 inline" />Bản mô phỏng tiến độ</span></div>
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{steps.map(({ title, Icon, description }, index) => <div key={title} className="relative"><div className={`flex h-11 w-11 items-center justify-center rounded-xl ${index <= (active ? 1 : 3) ? 'bg-[#874e57] text-white' : 'bg-[#f3e8e5] text-[#874e57]'}`}><Icon size={20} /></div><div className="mt-3 h-0.5 bg-[#e7d9d5]"><span className={`block h-full ${index <= (active ? 1 : 3) ? 'bg-[#874e57]' : ''}`} /></div><p className="account-overline mt-4">Giai đoạn 0{index + 1}{index === 1 && active ? ' • Hiện tại' : ''}</p><h3 className="mt-1 text-sm font-semibold">{title}</h3><p className="mt-2 text-xs leading-5 text-[#766966]">{description}</p></div>)}</div>
-      </section>
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <section className="rounded-md bg-white px-5 py-6 sm:px-7" aria-labelledby="dress-detail-title"><div className="flex flex-wrap justify-between gap-2"><p className="account-overline text-[#874e57]">Chi tiết mẫu lễ phục</p><span className="account-overline bg-[#f5e6db] px-2 py-1">Mã mẫu: {order.id}</span></div><div className="mt-5 grid gap-5 sm:grid-cols-[160px_1fr]"><img src={order.image} alt={order.imageAlt} className="h-56 w-full object-cover" /><div><h2 id="dress-detail-title" className="font-playfair text-xl">{order.dress}</h2><p className="mt-2 text-xs text-[#874e57]">{order.category} • {order.style}</p><div className="mt-4 space-y-2 text-xs"><p><span className="bg-[#f7eae6] px-2 py-1">Kích cỡ: {order.size}</span></p><p><span className="bg-[#f7eae6] px-2 py-1">Lịch thuê: {order.rentalDates}</span></p><p><span className="bg-[#f7eae6] px-2 py-1">Địa điểm thử: {order.fitting}</span></p></div></div></div><div className="mt-5 rounded-sm bg-[#fcf0ed] p-3 text-xs leading-5"><strong>THÔNG TIN PHỤ KIỆN MẪU:</strong><p>Phụ kiện đi kèm chỉ mang tính minh họa cho bản thiết kế.</p></div></section>
-        <section className="rounded-md bg-white px-5 py-6 sm:px-7" aria-labelledby="invoice-title"><p className="account-overline text-[#874e57]">Tài chính & ký quỹ <Landmark size={15} className="float-right" /></p><h2 id="invoice-title" className="mt-2 font-playfair text-xl">Hóa Đơn Thuê & Tiền Cọc</h2><div className="mt-5 space-y-3 text-xs"><div className="flex justify-between gap-3"><span>Phí thuê váy chính (3 ngày 2 đêm):</span><strong>{formatVnd(order.amount)}</strong></div><div className="flex justify-between gap-3"><span>Phụ kiện đính kèm (Voan, Tùng, Val):</span><strong>Tặng kèm (0 đ)</strong></div><div className="flex justify-between border-t border-[#eee2df] pt-3 text-sm"><strong>Tổng chi phí thuê:</strong><strong className="text-[#874e57]">{formatVnd(order.amount)}</strong></div></div><p className="mt-3 text-right text-[10px] text-[#766966]">Đã thanh toán đủ theo kịch bản minh họa.</p><div className="mt-5 rounded-sm bg-[#fcf0ed] p-4 text-xs leading-5"><p className="flex items-center justify-between gap-3 font-semibold"><span><LockKeyhole size={13} className="mr-1 inline" /> TIỀN CỌC BẢO LÃNH THEO MẪU:</span><span className="shrink-0 whitespace-nowrap text-sm text-[#874e57] sm:text-base">{formatVnd(order.deposit)}</span></p><p className="mt-3 text-[#66504d]">Khoản cọc và quy trình hoàn trả hiển thị theo bản thiết kế minh họa. Chưa có giao dịch hoặc hợp đồng thực tế trên trang này.</p></div></section>
-      </div>
-    </div>
-  </AccountLayout>;
+    );
+  }
+
+  const activeIndex = STATUS_STEP_MAP[rawStatus] ?? -1;
+
+  return (
+    <section className="mt-6 rounded-2xl border border-[#EEDECF] bg-[#FFF9F6] px-5 py-6 sm:px-7" aria-label="Trạng thái đơn hàng">
+      <p className="mb-5 text-[11px] font-bold uppercase tracking-[1.6px] text-[#BA7A83]">✦ Hành Trình Lễ Phục Của Nàng</p>
+      <ol className="flex flex-col sm:flex-row sm:items-start">
+        {TIMELINE_STEPS.map(({ key, label, subLabel, Icon }, index) => {
+          const done = index < activeIndex;
+          const active = index === activeIndex;
+          const StepIcon = done ? CheckCircle2 : active ? Icon : Circle;
+          const circleClass = done ? 'bg-[#BA7A83] text-white' : active
+            ? 'border-2 border-[#BA7A83] bg-white text-[#BA7A83]'
+            : 'border border-[#EEDECF] bg-[#EEDECF]/60 text-[#EEDECF]';
+
+          return (
+            <li key={key} className="relative flex gap-3 pb-4 last:pb-0 sm:min-w-0 sm:flex-1 sm:flex-col sm:items-center sm:gap-2 sm:pb-0">
+              {index < TIMELINE_STEPS.length - 1 && (
+                <span aria-hidden="true" className={`absolute bottom-0 left-[17px] top-10 w-0.5 sm:bottom-auto sm:left-[calc(50%+20px)] sm:right-[calc(-50%+20px)] sm:top-5 sm:h-0.5 sm:w-auto ${done ? 'bg-[#BA7A83]' : 'bg-[#EEDECF]'}`} />
+              )}
+              <span className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10 ${circleClass}`}>
+                <StepIcon className="h-4 w-4" />
+                {active && <span className="absolute inset-0 animate-ping rounded-full bg-[#BA7A83]/20" />}
+              </span>
+              <div className="sm:px-1 sm:text-center">
+                <p className={`text-sm font-semibold leading-tight sm:text-[11.5px] ${done || active ? 'text-[#804E55]' : 'text-[#BCAAA4]'}`}>{label}</p>
+                {(active || done) && <p className={`mt-0.5 text-[11px] leading-tight text-[#BA7A83] sm:text-[10px] ${done ? 'sm:hidden' : ''}`}>{subLabel}</p>}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
 }
 
+/* ─────────────────────────────────────────────
+   MAIN PAGE
+───────────────────────────────────────────── */
+export default function OrderDetailPage() {
+  const { orderId } = useParams();
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [reload, setReload] = useState(0);
+  const [isInspectionOpen, setIsInspectionOpen] = useState(false);
+  const [isContractOpen, setIsContractOpen] = useState(false);
 
+  const fetchOrderDetail = () => {
+    setIsInspectionOpen(false);
+    setReload((value) => value + 1);
+  };
 
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError('');
+    setOrder(null);
+    setIsInspectionOpen(false);
+    setIsContractOpen(false);
+    getOrder(orderId)
+      .then((data) => {
+        if (active) {
+          setOrder(data);
+          const isApproved = data?.inspection?.customerStatus === 'approved' || data?.inspection?.customerConfirmed;
+          // Tự động mở màn hình bắt buộc khách hàng xem biên bản và xác nhận hoàn cọc
+          if (!isApproved && (data?.rawStatus === 'returned' || data?.inspection)) {
+            setIsInspectionOpen(true);
+          }
+        }
+      })
+      .catch((issue) => {
+        if (active) setError(issue.message || 'Không tìm thấy thông tin đơn hàng.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [orderId, reload]);
+
+  const approved = order?.inspection?.customerStatus === 'approved';
+
+  return (
+    <AccountLayout
+      hideSidebar
+      hideBreadcrumb={true}
+      breadcrumb={[]}
+    >
+      <div className="account-detail-content">
+        <div className="mb-4 flex justify-end">
+          <Link
+            to="/profile/orders"
+            className="inline-flex items-center gap-1 text-xs font-semibold tracking-wider text-[#874e57]"
+          >
+            <ArrowLeft size={14} /> QUAY LẠI LỊCH SỬ ĐƠN HÀNG
+          </Link>
+        </div>
+
+        {loading ? (
+          <section className="rounded-md bg-white p-8 text-center text-[#766966]">
+            Đang tải dữ liệu đơn hàng...
+          </section>
+        ) : error ? (
+          <section className="rounded-md bg-white p-8 text-center text-red-700" role="alert">
+            {error} <button type="button" onClick={fetchOrderDetail} className="ml-3 underline">Thử lại</button>
+          </section>
+        ) : (
+          <>
+            {/* ── HEADER ── */}
+            <div className="rounded-2xl bg-gradient-to-br from-[#f8e9e4] to-[#FFF9F6] px-6 py-6 sm:px-8 border border-[#EEDECF]">
+              <span className="account-status account-status-active">{order.statusLabel}</span>
+              <h1 className="mt-2 font-playfair text-3xl sm:text-4xl">Chi Tiết Đơn Thuê Lễ Phục</h1>
+              <p className="mt-2 font-playfair text-[27px] italic text-[#874e57]">#{order.id}</p>
+              <p className="mt-2 text-xs text-[#874e57]">
+                <CalendarDays size={14} className="mr-1 inline" />
+                Lịch thuê: {order.rentalDates}
+              </p>
+            </div>
+
+            {/* ── BANNER BIÊN BẢN KIỂM ĐỊNH & HOÀN CỌC NỔI BẬT ── */}
+            {(order.rawStatus === 'returned' || order.inspection) && (
+              <div className="mt-5 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#FFF4F0] via-[#FFF8F5] to-[#FFF1EC] border-2 border-[#E7BFB5] shadow-sm space-y-3 font-jakarta transition-all">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-3 w-3 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#B8737D] opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-[#8C4654]"></span>
+                    </span>
+                    <span className="font-playfair font-bold text-[#5F2B36] text-[15px] sm:text-[16px] tracking-wide">
+                      {approved
+                        ? '✦ Biên Bản Kiểm Định Đã Được Nàng Duyệt'
+                        : '✦ Yêu Cầu Bắt Buộc: Xem Biên Bản Kiểm Định & Xác Nhận Hoàn Cọc'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsInspectionOpen(true)}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#733F49] to-[#8C4654] hover:from-[#5A2D35] hover:to-[#733F49] text-white text-xs font-bold transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg border-0 shrink-0"
+                  >
+                    <span>
+                      {approved
+                        ? 'Xem Lại Biên Bản Đã Duyệt'
+                        : 'Xem Biên Bản & Xác Nhận Hoàn Cọc'}
+                    </span>
+                  </button>
+                </div>
+
+                <p className="text-[12.5px] sm:text-[13px] leading-relaxed text-[#5E4D4F] m-0">
+                  {approved
+                    ? 'Nàng đã duyệt biên bản kiểm định. Đơn thuê đã hoàn tất; trạng thái hoàn cọc được theo dõi riêng trong biên bản.'
+                    : 'Nàng vui lòng kiểm tra hiện trạng váy và số tiền đề nghị hoàn. Showroom sẽ đối soát và xử lý hoàn cọc sau khi nàng xác nhận; nếu chưa đồng ý, nàng có thể gửi khiếu nại.'}
+                </p>
+
+                <div className="pt-1 flex items-center gap-1.5 text-[11px] text-[#8C7A7B]">
+                  <span>📧</span>
+                  <span>Nàng có thể xem biên bản kiểm định và trạng thái xử lý hoàn cọc tại đây.</span>
+                </div>
+              </div>
+            )}
+
+            {/* ── STATUS TIMELINE ── */}
+            <OrderStatusTimeline rawStatus={order.rawStatus} />
+
+            {/* ── 2-COLUMN DETAIL ── */}
+            <div className="mt-6 grid gap-6 lg:grid-cols-2">
+              {/* Dress detail */}
+              <section
+                className="rounded-2xl bg-white px-5 py-6 sm:px-7 border border-[#EEDECF]"
+                aria-labelledby="dress-detail-title"
+              >
+                <p className="account-overline text-[#874e57]">
+                  <Shirt size={14} className="mr-1 inline" />
+                  Chi tiết lễ phục
+                </p>
+                <div className="mt-5 space-y-5">
+                  {order.items.map((item, index) => (
+                    <article key={item._id || `${item.dressId}-${index}`} className="grid gap-5 border-b border-[#EEDECF] pb-4 last:border-b-0 sm:grid-cols-[120px_1fr]">
+                      {(item.image || order.image) && <img src={item.image || order.image} alt={item.name} className="h-40 w-28 rounded-xl object-cover" />}
+                      <div>
+                        <h3 className="font-playfair text-xl">{item.name || 'Lễ phục'}</h3>
+                        <p className="mt-2 text-sm">Kích cỡ: {item.size || 'Theo đơn hàng'}</p>
+                        <p className="mt-2 text-sm">Tiền thuê: {formatVnd(item.rentPrice)}</p>
+                        <p className="mt-2 text-sm">Tiền cọc: {formatVnd(item.depositAmount)}</p>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+
+              {/* Finance */}
+              <section
+                className="rounded-2xl bg-white px-5 py-6 sm:px-7 border border-[#EEDECF] flex flex-col justify-between"
+                aria-labelledby="invoice-title"
+              >
+                <div>
+                  <div className="flex items-center justify-between">
+                    <p className="account-overline text-[#874e57]">
+                      Tài chính &amp; ký quỹ
+                    </p>
+                    <Landmark size={15} className="text-[#874e57]" />
+                  </div>
+                  <h2 id="invoice-title" className="mt-2 font-playfair text-xl">
+                    Tiền Cọc Theo Đơn
+                  </h2>
+                  <dl className="mt-4 space-y-3 text-sm">
+                    <div className="flex justify-between gap-3">
+                      <dt>Tổng phí thuê trọn gói</dt>
+                      <dd className="font-semibold">{formatVnd(order.amount)}</dd>
+                    </div>
+                    <div className="flex justify-between gap-3 border-t border-[#eee2df] pt-3">
+                      <dt>Tiền cọc bảo lãnh</dt>
+                      <dd className="font-semibold text-[#874e57]">{formatVnd(order.deposit)}</dd>
+                    </div>
+                  </dl>
+                  <p className="mt-4 rounded-xl bg-[#fcf0ed] p-3 text-xs leading-5 text-[#66504d]">
+                    Số tiền trên ghi nhận theo hợp đồng thuê. Tiền cọc sẽ được hoàn tất chuyển
+                    trả vào tài khoản của nàng sau khi chuyên viên UniBridal thu hồi và kiểm định
+                    lễ phục.
+                  </p>
+                </div>
+
+                {/* Hợp đồng tích hợp ngay trong ô tài chính & bảng giá */}
+                <div className="mt-5 pt-4 border-t border-[#eee2df] flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#874e57] block">HỢP ĐỒNG ĐÃ KÝ</span>
+                    <span className="text-xs text-stone-500 font-mono">
+                      {order.contract?.contractCode || order.contractCode
+                        ? `Mã: ${order.contract?.contractCode || order.contractCode}`
+                        : 'Hợp đồng điện tử đã lưu'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsContractOpen(true)}
+                    className="account-button-secondary inline-flex items-center gap-1.5 text-xs py-2 px-3 rounded-lg"
+                  >
+                    <FileSignature size={15} /> Xem hợp đồng đã ký
+                  </button>
+                </div>
+              </section>
+            </div>
+
+            {/* Modal Biên Bản Kiểm Định & Quyết Toán Hoàn Cọc */}
+            {isInspectionOpen && (
+              <CustomerInspectionModal
+                order={order}
+                onClose={() => setIsInspectionOpen(false)}
+                onUpdated={fetchOrderDetail}
+              />
+            )}
+            {isContractOpen && (
+              <SignedContractModal
+                orderId={order._id || order.id}
+                onClose={() => setIsContractOpen(false)}
+              />
+            )}
+          </>
+        )}
+      </div>
+    </AccountLayout>
+  );
+}
