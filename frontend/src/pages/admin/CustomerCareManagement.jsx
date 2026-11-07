@@ -65,7 +65,20 @@ export default function CustomerCareManagement() {
       });
 
       if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-        const mapped = res.data.map((c, index) => ({
+        // Chỉ hiển thị tin nhắn của KHÁCH HÀNG thực tế (loại bỏ tài khoản Quản trị viên và Chuyên viên tư vấn)
+        const customerOnly = res.data.filter((c) => {
+          const roleCode = c.customerId?.roleId?.code;
+          if (roleCode === 'ADMIN' || roleCode === 'STAFF') return false;
+          const name = (c.customerId?.fullName || c.customerName || '').toLowerCase();
+          return !(
+            name.includes('quản trị') ||
+            name.includes('administrator') ||
+            name.includes('chuyên viên') ||
+            name.includes('staff')
+          );
+        });
+
+        const mapped = customerOnly.map((c, index) => ({
           id: c._id,
           name: c.customerId?.fullName || c.customerName || 'Khách hàng',
           phone: c.customerId?.phone || c.customerPhone || '',
@@ -175,6 +188,16 @@ export default function CustomerCareManagement() {
   const activeConv = conversations.find((c) => c.id === selectedId) || conversations[0] || null;
 
   const filteredConversations = conversations.filter((c) => {
+    // Đảm bảo chỉ khách hàng mới xuất hiện trong danh sách trò chuyện
+    const lowerName = (c.name || '').toLowerCase();
+    if (
+      lowerName.includes('quản trị') ||
+      lowerName.includes('administrator') ||
+      lowerName.includes('chuyên viên') ||
+      lowerName.includes('staff')
+    ) {
+      return false;
+    }
     if (filterTab === 'unread' && !c.unread) return false;
     if (searchTerm.trim()) {
       return (

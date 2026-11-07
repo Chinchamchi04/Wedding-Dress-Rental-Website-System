@@ -362,13 +362,13 @@ export default function DressDetailPage() {
 
       {/* Toast Notification */}
       {rentNotification && (
-        <div className="fixed top-20 right-6 z-50 bg-[#2C2523] text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-3 border border-[#B8737D]/30 animate-fade-in max-w-[420px]">
-          <ShoppingBag className="w-5 h-5 text-[#E8B6BC] shrink-0" />
-          <p className="text-[13px] leading-snug m-0 font-medium">{rentNotification}</p>
+        <div className="fixed bottom-24 right-6 z-50 bg-[#2C2523] text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-[#E6DAC8]/40 animate-bounce text-[13px] font-medium max-w-[420px]">
+          <Sparkles className="w-4 h-4 text-[#B8737D] shrink-0" />
+          <span className="flex-1 leading-snug">{rentNotification}</span>
           <button
             type="button"
             onClick={() => setRentNotification('')}
-            className="text-white/60 hover:text-white p-1 ml-auto cursor-pointer"
+            className="text-white/60 hover:text-white ml-2 bg-transparent border-0 cursor-pointer p-0 flex items-center justify-center"
           >
             <X className="w-4 h-4" />
           </button>
@@ -657,13 +657,6 @@ export default function DressDetailPage() {
                   <span>Tiền cọc bảo lãnh hoàn lại:</span>
                   <strong className="text-[#231A19] font-semibold">{formatCurrencyVND(pricing.deposit)}</strong>
                 </div>
-
-                <div className="flex items-center justify-between text-[#5A4848]">
-                  <span>Phụ kiện tặng kèm (Voan, găng tay, tùng):</span>
-                  <span className="text-[#B26B74] font-semibold bg-[#FDF2F0] px-2 py-0.5 rounded text-[11px]">
-                    ĐÃ BAO GỒM
-                  </span>
-                </div>
               </div>
 
               {/* Total Calculation */}
@@ -704,12 +697,12 @@ export default function DressDetailPage() {
                     type="button"
                     onClick={handleToggleWishlist}
                     className={`w-[48px] h-[48px] rounded-[4px] border flex items-center justify-center transition-all duration-200 cursor-pointer ${isWishlisted
-                      ? 'bg-red-50 border-red-300 text-red-500 shadow-xs'
-                      : 'bg-white border-[#D6C7C3] text-[#70484E] hover:border-red-300 hover:text-red-500'
+                      ? 'bg-[#FFF5F6] border-[#B8737D]/50 text-[#B8737D] shadow-xs'
+                      : 'bg-white border-[#D6C7C3] text-[#70484E] hover:border-[#B8737D]/50 hover:text-[#B8737D]'
                       }`}
                     title={isWishlisted ? 'Đã yêu thích' : 'Lưu vào danh sách yêu thích'}
                   >
-                    <Heart className={`w-5 h-5 transition-all duration-200 ${isWishlisted ? 'fill-red-500 text-red-500 scale-110' : ''}`} strokeWidth={1.75} />
+                    <Heart className={`w-5 h-5 transition-all duration-200 ${isWishlisted ? 'fill-[#B8737D] text-[#B8737D] scale-110' : ''}`} strokeWidth={1.75} />
                   </button>
                 )}
               </div>

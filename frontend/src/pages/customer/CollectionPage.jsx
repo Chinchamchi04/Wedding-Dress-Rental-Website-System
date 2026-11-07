@@ -10,20 +10,19 @@ import Footer from '../../components/layout/Footer';
 import { useAuth } from '../../contexts/AuthContext';
 import { addToCart } from '../../services/cartService';
 import { getWishlistIds, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
-import { getAllDresses, formatCurrencyVND } from '../../services/dressService';
+import { getAllDresses, getCategories, formatCurrencyVND } from '../../services/dressService';
 
 import logoEmblemImg from '../../assets/logo_emblem.png';
 import { DRESS_CATALOG } from '../../data/dressCatalog';
 
-// Danh mục Phom Dáng chuẩn Haute Couture 5 dòng thiết kế chủ đạo
-const SILHOUETTE_OPTIONS = [
+// Danh mục Phom Dáng chuẩn Haute Couture đồng bộ từ MongoDB Atlas
+const DEFAULT_SILHOUETTE_OPTIONS = [
   { id: 'all', label: 'Tất cả (All)' },
   { id: 'ballgown', label: 'Công Chúa Bồng Xòe (Ballgown)' },
   { id: 'mermaid', label: 'Đuôi Cá Điêu Khắc (Mermaid)' },
-  { id: 'a-line', label: 'Chữ A Thanh Lịch (A-line)' },
-  { id: 'silk-gown', label: 'Lụa Satin Tối Giản (Silk Gown)' },
+  { id: 'a-line', label: 'Chữ A Thanh Lịch (A-Line)' },
+  { id: 'silk-gown', label: 'Váy Cưới Lụa Tối Giản (Silk Gown)' },
   { id: 'princess', label: 'Váy Cưới Hoàng Gia (Princess)' },
-  { id: 'traditional', label: 'Áo Dài Cưới Truyền Thống (Traditional)' },
 ];
 
 // Danh mục Chất Liệu Thượng Hạng (Khớp với chất liệu thực tế của toàn bộ mẫu váy)
@@ -36,13 +35,20 @@ const MATERIAL_OPTIONS = [
   'Gấm & Dạ Cao Cấp',
 ];
 
-// Danh mục Mức Giá Thuê chuẩn theo giá thực tế trong cơ sở dữ liệu (3.2tr - 8.9tr+)
-const PRICE_RANGE_OPTIONS = [
-  { id: 'under-5', label: 'Dưới 5 triệu' },
-  { id: '5-7', label: '5 – 7 triệu' },
-  { id: '7-9', label: '7 – 9 triệu' },
-  { id: 'above-9', label: 'Trên 9 triệu (Haute Couture VIP)' },
-];
+// Cấu hình thanh kéo mức giá thuê (3.8tr - 25tr trong DB Atelier)
+const MIN_PRICE = 4000000; // 4.000.000 ₫
+const MAX_PRICE = 25000000; // 25.000.000 ₫ (mức tối đa)
+const PRICE_STEP = 500000; // bước nhảy 500.000 ₫
+
+const parseInitialPrice = (param) => {
+  if (!param) return MAX_PRICE;
+  if (param === 'under-5') return 5000000;
+  if (param === '5-7') return 7000000;
+  if (param === '7-9') return 9000000;
+  if (param === 'above-9') return MAX_PRICE;
+  const num = Number(param);
+  return isNaN(num) || num <= 0 ? MAX_PRICE : Math.min(Math.max(num, MIN_PRICE), MAX_PRICE);
+};
 
 // Helper: Kiểm tra phom dáng khớp linh hoạt với dữ liệu váy
 const matchSilhouette = (dress, targetId) => {
@@ -79,33 +85,6 @@ const matchMaterial = (dressMaterial = '', selectedMaterials = []) => {
   });
 };
 
-// Helper: Kiểm tra mức giá khớp theo số tiền thực tế (Realtime)
-const matchPrice = (dress, selectedRanges = []) => {
-  if (!selectedRanges || selectedRanges.length === 0) return true;
-  const price = Number(dress.priceNumber || dress.price || dress.rentPrice) || 0;
-  return selectedRanges.some((rangeId) => {
-    switch (rangeId) {
-      case 'under-5':
-        return price < 5000000;
-      case '5-7':
-        return price >= 5000000 && price <= 7000000;
-      case '7-9':
-        return price > 7000000 && price <= 9000000;
-      case 'above-9':
-        return price > 9000000;
-      // Khớp tương thích ngược với params cũ
-      case '5-10':
-        return price >= 5000000 && price <= 10000000;
-      case '10-20':
-        return price >= 7000000;
-      case 'vip':
-        return price >= 7500000;
-      default:
-        return true;
-    }
-  });
-};
-
 const ITEMS_PER_PAGE = 9;
 
 export default function CollectionPage() {
@@ -121,11 +100,12 @@ export default function CollectionPage() {
 
   const [selectedSilhouette, setSelectedSilhouette] = useState(urlCategory);
   const [selectedMaterials, setSelectedMaterials] = useState([]);
-  const [selectedPriceRanges, setSelectedPriceRanges] = useState(urlPrice ? [urlPrice] : []);
+  const [maxPrice, setMaxPrice] = useState(() => parseInitialPrice(urlPrice));
+  const isPriceFiltered = maxPrice < MAX_PRICE;
   const [isFilterApplied, setIsFilterApplied] = useState(Boolean(urlPrice || (urlCategory && urlCategory !== 'all')));
   const [searchQuery, setSearchQuery] = useState(urlQuery);
   const [appliedSearch, setAppliedSearch] = useState(urlQuery);
-  const [sortBy, setSortBy] = useState('popular');
+  const [sortBy, setSortBy] = useState('price-asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [gridCols, setGridCols] = useState(3); // 2 or 3 columns
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
@@ -138,6 +118,7 @@ export default function CollectionPage() {
 
   // Danh mục sản phẩm (kết hợp dữ liệu chuẩn Figma 72 mẫu + backend API nếu có)
   const [catalogItems, setCatalogItems] = useState([]);
+  const [silhouetteOptions, setSilhouetteOptions] = useState(DEFAULT_SILHOUETTE_OPTIONS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -145,6 +126,26 @@ export default function CollectionPage() {
     let active = true;
     setLoading(true);
     setError('');
+
+    // 1. Tải danh sách phom dáng trực tiếp từ MongoDB Atlas
+    getCategories()
+      .then((res) => {
+        if (!active) return;
+        const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+        if (list.length > 0) {
+          const loaded = [
+            { id: 'all', label: 'Tất cả (All)' },
+            ...list.map((c) => ({
+              id: c.slug,
+              label: c.name,
+            })),
+          ];
+          setSilhouetteOptions(loaded);
+        }
+      })
+      .catch(() => {});
+
+    // 2. Tải toàn bộ mẫu váy cưới từ MongoDB Atlas
     getAllDresses()
       .then((res) => {
         if (!active) return;
@@ -231,7 +232,8 @@ export default function CollectionPage() {
   const handleClearFilters = () => {
     setSelectedSilhouette('all');
     setSelectedMaterials([]);
-    setSelectedPriceRanges([]);
+    setMaxPrice(MAX_PRICE);
+    setSortBy('price-asc');
     setIsFilterApplied(false);
     setSearchQuery('');
     setAppliedSearch('');
@@ -251,8 +253,8 @@ export default function CollectionPage() {
     setCurrentPage(1);
   };
 
-  const handleRemovePrice = (priceId) => {
-    setSelectedPriceRanges((prev) => prev.filter((p) => p !== priceId));
+  const handleResetPrice = () => {
+    setMaxPrice(MAX_PRICE);
     setCurrentPage(1);
   };
 
@@ -279,14 +281,6 @@ export default function CollectionPage() {
     );
   };
 
-  // Toggle Price Range (Lọc Realtime)
-  const handleTogglePriceRange = (rangeId) => {
-    setCurrentPage(1);
-    setSelectedPriceRanges((prev) =>
-      prev.includes(rangeId) ? prev.filter((r) => r !== rangeId) : [...prev, rangeId]
-    );
-  };
-
   // Xử lý Tìm kiếm
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -307,9 +301,12 @@ export default function CollectionPage() {
         return false;
       }
 
-      // 3. Lọc mức giá thuê (theo số tiền thực tế trong DB)
-      if (!matchPrice(dress, selectedPriceRanges)) {
-        return false;
+      // 3. Lọc mức giá thuê theo thanh kéo ngân sách tối đa
+      if (isPriceFiltered) {
+        const price = Number(dress.priceNumber || dress.price || dress.rentPrice) || 0;
+        if (price > maxPrice) {
+          return false;
+        }
       }
 
       // 4. Lọc từ khóa tìm kiếm
@@ -329,12 +326,10 @@ export default function CollectionPage() {
     }).sort((a, b) => {
       const priceA = Number(a.priceNumber || a.price || a.rentPrice) || 0;
       const priceB = Number(b.priceNumber || b.price || b.rentPrice) || 0;
-      if (sortBy === 'price-asc') return priceA - priceB;
       if (sortBy === 'price-desc') return priceB - priceA;
-      if (sortBy === 'rating') return parseFloat(b.rating || 5.0) - parseFloat(a.rating || 5.0);
-      return 0; // popular / default
+      return priceA - priceB; // price-asc
     });
-  }, [catalogItems, selectedSilhouette, selectedMaterials, selectedPriceRanges, appliedSearch, sortBy]);
+  }, [catalogItems, selectedSilhouette, selectedMaterials, maxPrice, isPriceFiltered, appliedSearch, sortBy]);
 
   // Tổng số trang
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
@@ -346,7 +341,7 @@ export default function CollectionPage() {
   }, [filteredProducts, currentPage]);
 
   // Số lượng bộ lọc đang hoạt động
-  const activeFiltersCount = (selectedSilhouette !== 'all' ? 1 : 0) + selectedMaterials.length + selectedPriceRanges.length + (appliedSearch ? 1 : 0);
+  const activeFiltersCount = (selectedSilhouette !== 'all' ? 1 : 0) + selectedMaterials.length + (isPriceFiltered ? 1 : 0) + (appliedSearch ? 1 : 0);
 
   return (
     <div className="relative min-h-screen bg-[#FDFBF7] text-[#2C2523] flex flex-col font-jakarta selection:bg-[#FCEEE9] selection:text-[#B8737D]">
@@ -362,7 +357,7 @@ export default function CollectionPage() {
           <button
             type="button"
             onClick={() => setToastMessage(null)}
-            className="text-white/60 hover:text-white ml-2 bg-transparent border-0 cursor-pointer p-0"
+            className="text-white/60 hover:text-white ml-2 bg-transparent border-0 cursor-pointer p-0 flex items-center justify-center"
           >
             <X className="w-4 h-4" />
           </button>
@@ -377,7 +372,7 @@ export default function CollectionPage() {
           <div className="max-w-[960px] mx-auto text-center">
 
             {/* Pill Tag */}
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white border border-[#F3D8D8] shadow-xs mb-4">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white border border-[#F3D8D8] shadow-xs mb-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#B8737D]"></span>
               <span className="font-jakarta font-bold text-[10.5px] uppercase tracking-[1.4px] text-[#B8737D]">
                 THUÊ VÁY CƯỚI CAO CẤP
@@ -385,7 +380,7 @@ export default function CollectionPage() {
             </div>
 
             {/* Title */}
-            <h1 className="font-playfair text-[36px] sm:text-[46px] md:text-[52px] font-normal leading-[1.2] text-[#2C2523] mb-4">
+            <h1 className="font-playfair text-[36px] sm:text-[46px] md:text-[52px] font-normal leading-[1.2] text-[#2C2523] mb-3.5">
               Tuyển Tập Tuyệt Tác <span className="text-[#B8737D] italic font-serif">Váy Cưới 2026</span>
             </h1>
 
@@ -469,7 +464,7 @@ export default function CollectionPage() {
 
               {selectedSilhouette !== 'all' && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E6DAC8] text-[11.5px] font-medium text-[#2C2523] shadow-xs">
-                  Phom dáng: {SILHOUETTE_OPTIONS.find((s) => s.id === selectedSilhouette)?.label.split('(')[0]}
+                  Phom dáng: {silhouetteOptions.find((s) => s.id === selectedSilhouette)?.label.split('(')[0]}
                   <button
                     type="button"
                     onClick={handleRemoveSilhouette}
@@ -496,24 +491,18 @@ export default function CollectionPage() {
                 </span>
               ))}
 
-              {selectedPriceRanges.map((priceId) => {
-                const opt = PRICE_RANGE_OPTIONS.find((p) => p.id === priceId);
-                return (
-                  <span
-                    key={priceId}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E6DAC8] text-[11.5px] font-medium text-[#2C2523] shadow-xs"
+              {isPriceFiltered && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E6DAC8] text-[11.5px] font-medium text-[#2C2523] shadow-xs">
+                  Giá: Đến {formatCurrencyVND(maxPrice)}
+                  <button
+                    type="button"
+                    onClick={handleResetPrice}
+                    className="text-[#847374] hover:text-[#B8737D] cursor-pointer bg-transparent border-0 p-0"
                   >
-                    Giá: {opt?.label || priceId}
-                    <button
-                      type="button"
-                      onClick={() => handleRemovePrice(priceId)}
-                      className="text-[#847374] hover:text-[#B8737D] cursor-pointer bg-transparent border-0 p-0"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                );
-              })}
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
 
               {appliedSearch && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E6DAC8] text-[11.5px] font-medium text-[#2C2523] shadow-xs">
@@ -586,7 +575,7 @@ export default function CollectionPage() {
                   PHOM DÁNG
                 </h3>
                 <div className="flex flex-col gap-2">
-                  {SILHOUETTE_OPTIONS.map((opt) => {
+                  {silhouetteOptions.map((opt) => {
                     const isSelected = selectedSilhouette === opt.id;
                     return (
                       <button
@@ -645,70 +634,58 @@ export default function CollectionPage() {
                 </div>
               </div>
 
-              {/* Nhóm 3: MỨC GIÁ THUÊ */}
+              {/* Nhóm 3: MỨC GIÁ THUÊ (Thanh kéo trượt ngân sách) */}
               <div className="mb-6">
-                <h3 className="font-jakarta text-[11px] font-bold tracking-[1.5px] uppercase text-[#695C4E] mb-3">
-                  MỨC GIÁ THUÊ
-                </h3>
-                <div className="flex flex-col gap-2">
-                  {PRICE_RANGE_OPTIONS.map((range) => {
-                    const isChecked = selectedPriceRanges.includes(range.id);
-                    return (
-                      <button
-                        key={range.id}
-                        type="button"
-                        onClick={() => handleTogglePriceRange(range.id)}
-                        className={`w-full py-2.5 px-4 rounded-[14px] border flex items-center justify-between cursor-pointer transition-all select-none text-left ${
-                          isChecked
-                            ? 'bg-[#FFF9F6] border-[#BA7A83] shadow-xs'
-                            : 'bg-white border-[#EEDECF] hover:border-[#BA7A83] hover:bg-[#FFFDFC]'
-                        }`}
-                      >
-                        <span
-                          className={`font-jakarta text-[12.5px] transition-colors ${
-                            isChecked ? 'text-[#804E55] font-semibold' : 'text-[#2C2523] font-normal'
-                          }`}
-                        >
-                          {range.label}
-                        </span>
-                        {isChecked && (
-                          <Check className="w-4 h-4 text-[#BA7A83] stroke-[2.5] shrink-0" />
-                        )}
-                      </button>
-                    );
-                  })}
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-jakarta text-[11px] font-bold tracking-[1.5px] uppercase text-[#695C4E]">
+                    MỨC GIÁ THUÊ
+                  </h3>
+                  {isPriceFiltered && (
+                    <button
+                      type="button"
+                      onClick={handleResetPrice}
+                      className="text-[11px] text-[#BA7A83] hover:underline font-semibold cursor-pointer bg-transparent border-0 p-0"
+                    >
+                      Đặt lại
+                    </button>
+                  )}
                 </div>
-              </div>
 
-              {/* BUTTONS: XEM KẾT QUẢ REALTIME & ĐẶT LẠI */}
-              <div className="space-y-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileFilterOpen(false);
-                    if (gridTopRef.current) {
-                      gridTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                    showToast(`Tìm thấy ${filteredProducts.length} thiết kế phù hợp`);
-                  }}
-                  className="w-full py-3 rounded-[14px] bg-[#BA7A83] hover:bg-[#a86a73] text-white font-jakarta text-[12.5px] font-semibold tracking-[0.8px] uppercase flex items-center justify-center gap-2 transition-all shadow-[0px_4px_16px_rgba(186,122,131,0.25)] border-0 cursor-pointer active:scale-[0.98]"
-                >
-                  <div className="w-4 h-4 rounded-full border border-white flex items-center justify-center">
-                    <Check className="w-2.5 h-2.5 stroke-[3] text-white" />
+                {/* Khung hiển thị mức giá tối đa hiện tại */}
+                <div className="bg-[#FFF9F6] border border-[#BA7A83]/30 rounded-2xl px-2.5 py-3 mb-3.5 text-center shadow-xs">
+                  <div className="text-[10px] uppercase tracking-wider text-[#847374] font-semibold">
+                    Ngân sách tối đa
                   </div>
-                  <span>Xem {filteredProducts.length} Thiết Kế</span>
-                </button>
+                  <div className="text-[13px] sm:text-[14px] font-bold text-[#804E55] font-jakarta mt-0.5 whitespace-nowrap tracking-tight leading-tight">
+                    {maxPrice >= MAX_PRICE ? 'Tất cả mức giá (Đến 25+ triệu)' : `Đến ${formatCurrencyVND(maxPrice)}`}
+                  </div>
+                </div>
 
-                {activeFiltersCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleClearFilters}
-                    className="w-full py-2.5 rounded-[14px] bg-[#FFF5F2] hover:bg-[#FDECE6] text-[#B8737D] font-jakarta text-[12px] font-semibold transition-all border border-[#EEDECF] cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                    <span>Đặt lại tất cả ({activeFiltersCount})</span>
-                  </button>
-                )}
+                {/* Thanh kéo tăng giảm giá tiền */}
+                <div className="px-1">
+                  <input
+                    type="range"
+                    min={MIN_PRICE}
+                    max={MAX_PRICE}
+                    step={PRICE_STEP}
+                    value={maxPrice}
+                    onChange={(e) => {
+                      setMaxPrice(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-[#BA7A83] transition-all"
+                    style={{
+                      background: `linear-gradient(to right, #BA7A83 0%, #BA7A83 ${((maxPrice - MIN_PRICE) / (MAX_PRICE - MIN_PRICE)) * 100}%, #EEDECF ${((maxPrice - MIN_PRICE) / (MAX_PRICE - MIN_PRICE)) * 100}%, #EEDECF 100%)`
+                    }}
+                    aria-label="Thanh kéo mức giá thuê tối đa"
+                  />
+                  <div className="flex justify-between items-center text-[10.5px] text-[#847374] font-medium mt-2 px-0.5 select-none">
+                    <span>4 tr</span>
+                    <span>10 tr</span>
+                    <span>18 tr</span>
+                    <span>25 tr+</span>
+                  </div>
+                </div>
               </div>
             </aside>
 
@@ -759,11 +736,8 @@ export default function CollectionPage() {
                       }}
                       className="px-3 py-1.5 rounded-lg border border-[#E6DAC8] bg-white text-[#2C2523] font-jakarta text-[12.5px] focus:outline-none focus:border-[#B8737D] cursor-pointer shadow-xs"
                     >
-                      <option value="popular">Phổ biến nhất</option>
-                      <option value="newest">Mới nhất 2026</option>
                       <option value="price-asc">Giá: Thấp đến cao</option>
                       <option value="price-desc">Giá: Cao đến thấp</option>
-                      <option value="rating">Đánh giá cao nhất</option>
                     </select>
                   </div>
                 </div>
@@ -836,36 +810,21 @@ export default function CollectionPage() {
                               }}
                               className={`absolute top-3.5 right-3.5 w-[34px] h-[34px] rounded-[8px] bg-white flex items-center justify-center border shadow-[0px_2px_8px_rgba(0,0,0,0.06)] cursor-pointer z-10 transition-all duration-200 active:scale-90 p-0 ${
                                 isWishlisted
-                                  ? 'border-red-200 bg-red-50/70 text-red-500'
-                                  : 'border-[#EEDECF] text-[#4A3E3F] hover:text-red-500 hover:border-red-200'
+                                  ? 'border-[#B8737D]/40 bg-[#FFF5F6] text-[#B8737D]'
+                                  : 'border-[#EEDECF] text-[#4A3E3F] hover:text-[#B8737D] hover:border-[#B8737D]/40'
                               }`}
                               style={{ borderRadius: '8px' }}
                               title={isWishlisted ? 'Bỏ yêu thích' : 'Yêu thích'}
                             >
                               <Heart
                                 className={`w-4 h-4 transition-all duration-200 ${
-                                  isWishlisted ? 'fill-red-500 text-red-500 scale-110' : 'text-[#4A3E3F]'
+                                  isWishlisted ? 'fill-[#B8737D] text-[#B8737D] scale-110' : 'text-[#4A3E3F]'
                                 }`}
                               />
                             </button>
                           )}
 
-                          {/* Quick Fitting Button on Hover */}
-                          <div className="absolute inset-x-4 bottom-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenFitting(dress);
-                              }}
-                              className="px-4 py-2 rounded-xl bg-white/95 hover:bg-white text-[#733F49] font-jakarta text-[12px] font-bold tracking-wide shadow-lg border border-[#EEDECF] flex items-center gap-1.5 cursor-pointer backdrop-blur-sm transition-all"
-                            >
-                              <Calendar className="w-3.5 h-3.5 text-[#B8737D]" />
-                              <span>Đặt lịch thử tại Showroom</span>
-                            </button>
-                          </div>
-
-                          {/* Logo UniBridal cộp phóng watermark ở góc ảnh */}
+                          {/* Logo UniBridal cộp phóng watermark ở góc ảnh (nằm ở lớp sau z-10) */}
                           <div
                             className="absolute bottom-3 right-3.5 z-10 pointer-events-none select-none transition-transform duration-300 group-hover:scale-110"
                             title="UniBridal Haute Couture"
@@ -876,25 +835,31 @@ export default function CollectionPage() {
                               className="w-[42px] h-[42px] object-contain drop-shadow-[0px_2px_6px_rgba(0,0,0,0.35)]"
                             />
                           </div>
+
+                          {/* Quick Fitting Button on Hover (nằm ở lớp trước z-20 đè lên trên logo) */}
+                          <div className="absolute inset-x-4 bottom-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center pointer-events-none group-hover:pointer-events-auto">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenFitting(dress);
+                              }}
+                              className="px-4 py-2 rounded-xl bg-white hover:bg-[#FAF7F5] text-[#733F49] font-jakarta text-[12px] font-bold tracking-wide shadow-[0px_4px_16px_rgba(0,0,0,0.18)] border border-[#EEDECF] flex items-center gap-1.5 cursor-pointer transition-all"
+                            >
+                              <Calendar className="w-3.5 h-3.5 text-[#B8737D]" />
+                              <span>Đặt lịch thử tại Showroom</span>
+                            </button>
+                          </div>
                         </div>
 
                         {/* Thông Tin Chi Tiết Thẻ */}
                         <div className="p-5 flex flex-col flex-1">
-                          {/* Rating & Size Row */}
-                          <div className="flex items-center justify-between text-[11.5px] font-jakarta mb-1">
-                            <div className="flex items-center gap-1.5 text-[#2C2523]">
-                              <span className="text-[#C68A4C] text-[13px] leading-none">★</span>
-                              <span className="font-bold text-[12px]">{Number(dress.rating || 4.9).toFixed(1)}</span>
-                              <span className="text-[#695C4E] font-medium text-[11.5px] ml-0.5">
-                                ({dress.rentCount})
-                              </span>
-                            </div>
-
+                          {/* Size Row */}
+                          <div className="flex items-center text-[11.5px] font-jakarta mb-1">
                             {dress.id === 6 ? (
-                              <div className="text-right leading-tight text-[#514344] font-semibold text-[11px] tracking-wider uppercase">
-                                <div>Size: Custom</div>
-                                <div className="mt-0.5">Fit</div>
-                              </div>
+                              <span className="text-[#514344] font-semibold uppercase tracking-wider text-[11px]">
+                                Size: Custom Fit
+                              </span>
                             ) : (
                               <span className="text-[#514344] font-semibold uppercase tracking-wider text-[11px]">
                                 {dress.size}

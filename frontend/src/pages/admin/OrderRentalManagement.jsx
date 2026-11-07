@@ -997,7 +997,6 @@ export default function OrderRentalManagement() {
     <AdminLayout activeMenu="don-thue">
       {/* Header */}
       <div className="mb-8">
-        <div className="w-2.5 h-2.5 rounded-full bg-[#B8737D] mb-3" />
         <h1 className="font-playfair text-[36px] md:text-[42px] font-normal text-[#5F2B36] tracking-tight mb-2">
           Quản Lý Đơn Thuê
         </h1>

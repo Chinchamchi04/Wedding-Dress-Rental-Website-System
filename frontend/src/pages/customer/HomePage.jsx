@@ -104,7 +104,7 @@ export default function HomePage() {
           <button
             type="button"
             onClick={() => setToastMessage(null)}
-            className="text-white/60 hover:text-white ml-2 bg-transparent border-0 cursor-pointer p-0"
+            className="text-white/60 hover:text-white ml-2 bg-transparent border-0 cursor-pointer p-0 flex items-center justify-center"
           >
             <X className="w-4 h-4" />
           </button>

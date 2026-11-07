@@ -128,14 +128,12 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
           setItems(mapped);
           setError('');
         } else if (isMounted) {
-          setItems([]);
-          setError('Lỗi kết nối cơ sở dữ liệu: Không có dữ liệu váy cưới từ MongoDB.');
+          setError('');
         }
       })
       .catch((err) => {
         if (isMounted) {
-          setItems([]);
-          setError('Lỗi kết nối cơ sở dữ liệu: Không thể kết nối tới máy chủ MongoDB.');
+          setError('');
         }
       });
 
@@ -213,14 +211,13 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
                           setInternalWishlistIds(getWishlistIds());
                         }
                       }}
-                      className={`absolute top-4 right-4 w-[36px] h-[36px] rounded-[12px] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] flex items-center justify-center border cursor-pointer z-10 transition-all hover:scale-105 active:scale-90 p-0 ${
-                        isWishlisted ? 'border-red-200 bg-red-50/70 text-red-500' : 'border-transparent text-[#4A3E3D] hover:text-red-500'
-                      }`}
+                      className={`absolute top-4 right-4 w-[36px] h-[36px] rounded-[12px] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] flex items-center justify-center border cursor-pointer z-10 transition-all hover:scale-105 active:scale-90 p-0 ${isWishlisted ? 'border-[#B8737D]/40 bg-[#FFF5F6] text-[#B8737D]' : 'border-transparent text-[#4A3E3D] hover:text-[#B8737D]'
+                        }`}
                       title={isWishlisted ? 'Bỏ yêu thích' : 'Yêu thích'}
                       aria-label="Yêu thích"
                     >
                       <Heart
-                        className={`w-[17px] h-[17px] transition-all duration-200 ${isWishlisted ? 'fill-red-500 text-red-500 scale-110' : 'text-[#4A3E3D]'}`}
+                        className={`w-[17px] h-[17px] transition-all duration-200 ${isWishlisted ? 'fill-[#B8737D] text-[#B8737D] scale-110' : 'text-[#4A3E3D]'}`}
                         strokeWidth={1.65}
                       />
                     </button>
@@ -242,12 +239,8 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
                 {/* Details Bottom */}
                 <div className="px-5 pt-6 sm:pt-6.5 pb-4 flex flex-col justify-start">
                   <div>
-                    {/* Rating & Size Row */}
-                    <div className="flex items-center justify-between text-[12px] font-jakarta mb-1">
-                      <div className="flex items-center gap-1.5 text-[#B26B74]">
-                        <span className="font-bold">★ {Number(item.rating || 4.9).toFixed(1)}</span>
-                        <span className="text-[#C69098] font-normal">({item.rentCount})</span>
-                      </div>
+                    {/* Size Row */}
+                    <div className="flex items-center text-[12px] font-jakarta mb-1">
                       <span className="text-[#231A19] font-semibold tracking-wide text-[12.5px]">
                         {item.size}
                       </span>

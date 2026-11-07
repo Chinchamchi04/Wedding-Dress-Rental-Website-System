@@ -296,7 +296,7 @@ export default function AdminLayout({
         )}
 
         {/* Page Body */}
-        <main className="flex-1 p-6 lg:p-8 max-w-[1400px] w-full mx-auto">
+        <main className="flex-1 px-6 lg:px-8 pt-3.5 pb-8 max-w-[1400px] w-full mx-auto">
           {children}
         </main>
       </div>
