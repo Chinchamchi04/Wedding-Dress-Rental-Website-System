@@ -1,4 +1,4 @@
-import * as userService from '../services/user.service.js';
+import * as userService from '../services/userService.js';
 
 /**
  * Controller Quản Lý Tài Khoản (Admin User Management)

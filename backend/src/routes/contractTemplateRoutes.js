@@ -1,6 +1,6 @@
 import express from 'express';
-import * as templateController from '../controllers/contractTemplate.controller.js';
-import { optionalAuthenticate } from '../middlewares/auth.middleware.js';
+import * as templateController from '../controllers/contractTemplateController.js';
+import { optionalAuthenticate } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 

@@ -1,9 +1,9 @@
-import Order from '../models/Order.model.js';
-import Payment from '../models/Payment.model.js';
-import Dress from '../models/Dress.model.js';
-import User from '../models/User.model.js';
-import Role from '../models/Role.model.js';
-import Appointment from '../models/Appointment.model.js';
+import Order from '../models/orderModel.js';
+import Payment from '../models/paymentModel.js';
+import Dress from '../models/dressModel.js';
+import User from '../models/userModel.js';
+import Role from '../models/roleModel.js';
+import Appointment from '../models/appointmentModel.js';
 import { reportBounds, reportBuckets } from '../utils/adminReportMetrics.js';
 
 const REVENUE_TYPES = ['rental_payment', 'damage_compensation'];

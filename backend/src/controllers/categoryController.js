@@ -1,4 +1,4 @@
-import * as categoryService from '../services/category.service.js';
+import * as categoryService from '../services/categoryService.js';
 
 /**
  * Lấy danh sách danh mục

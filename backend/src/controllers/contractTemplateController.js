@@ -1,4 +1,4 @@
-import * as templateService from '../services/contractTemplate.service.js';
+import * as templateService from '../services/contractTemplateService.js';
 
 export const getTemplates = async (req, res, next) => {
   try {

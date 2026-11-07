@@ -1,4 +1,4 @@
-import * as paymentService from '../services/payment.service.js';
+import * as paymentService from '../services/paymentService.js';
 
 /**
  * Controller xử lý thanh toán VietQR

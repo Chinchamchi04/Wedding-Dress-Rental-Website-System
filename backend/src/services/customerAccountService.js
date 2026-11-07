@@ -1,9 +1,9 @@
 import mongoose from 'mongoose';
-import Order from '../models/Order.model.js';
-import User from '../models/User.model.js';
-import Contract from '../models/Contract.model.js';
-import ReturnInspection from '../models/ReturnInspection.model.js';
-import Payment from '../models/Payment.model.js';
+import Order from '../models/orderModel.js';
+import User from '../models/userModel.js';
+import Contract from '../models/contractModel.js';
+import ReturnInspection from '../models/returnInspectionModel.js';
+import Payment from '../models/paymentModel.js';
 const fail = (status, message) => { throw Object.assign(new Error(message), { statusCode: status }); };
 // Profile contacts are editable and cannot prove ownership of a guest order.
 // Personal endpoints only expose orders explicitly assigned to this account.

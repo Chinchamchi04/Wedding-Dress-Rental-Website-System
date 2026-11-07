@@ -7,11 +7,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-import Order from '../models/Order.model.js';
-import Payment from '../models/Payment.model.js';
-import Appointment from '../models/Appointment.model.js';
-import Dress from '../models/Dress.model.js';
-import User from '../models/User.model.js';
+import Order from '../models/orderModel.js';
+import Payment from '../models/paymentModel.js';
+import Appointment from '../models/appointmentModel.js';
+import Dress from '../models/dressModel.js';
+import User from '../models/userModel.js';
 
 async function seedData() {
   try {

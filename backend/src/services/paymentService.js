@@ -1,6 +1,6 @@
-import Payment from '../models/Payment.model.js';
-import Order from '../models/Order.model.js';
-import User from '../models/User.model.js';
+import Payment from '../models/paymentModel.js';
+import Order from '../models/orderModel.js';
+import User from '../models/userModel.js';
 import { sendDepositSuccessEmail } from '../utils/sendEmail.js';
 
 // Cấu hình tài khoản thụ hưởng mặc định của UniBridal

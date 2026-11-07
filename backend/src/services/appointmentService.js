@@ -1,4 +1,4 @@
-import Appointment from '../models/Appointment.model.js';
+import Appointment from '../models/appointmentModel.js';
 import { sendAppointmentSuccessEmail } from '../utils/sendEmail.js';
 
 const BRANCH_DETAILS = {

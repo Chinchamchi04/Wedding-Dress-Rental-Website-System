@@ -1,6 +1,6 @@
-import Conversation from '../models/Conversation.model.js';
-import Message from '../models/Message.model.js';
-import User from '../models/User.model.js';
+import Conversation from '../models/conversationModel.js';
+import Message from '../models/messageModel.js';
+import User from '../models/userModel.js';
 
 // Danh sách mẫu hội thoại khởi tạo cho hệ thống (đảm bảo admin có sẵn dữ liệu quản lý)
 const DEFAULT_INITIAL_CONVERSATIONS = [

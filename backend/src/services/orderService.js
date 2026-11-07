@@ -1,8 +1,8 @@
-import Order from '../models/Order.model.js';
-import ReturnInspection from '../models/ReturnInspection.model.js';
-import Contract from '../models/Contract.model.js';
-import ContractTemplate from '../models/ContractTemplate.model.js';
-import User from '../models/User.model.js';
+import Order from '../models/orderModel.js';
+import ReturnInspection from '../models/returnInspectionModel.js';
+import Contract from '../models/contractModel.js';
+import ContractTemplate from '../models/contractTemplateModel.js';
+import User from '../models/userModel.js';
 import {
   sendInspectionNotificationEmail,
   sendRefundConfirmationEmail,

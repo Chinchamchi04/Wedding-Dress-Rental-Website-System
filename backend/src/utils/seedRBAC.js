@@ -1,6 +1,6 @@
-import Permission from '../models/Permission.model.js';
-import Role from '../models/Role.model.js';
-import User from '../models/User.model.js';
+import Permission from '../models/permissionModel.js';
+import Role from '../models/roleModel.js';
+import User from '../models/userModel.js';
 
 // Danh sách các quyền hệ thống theo 8 Epics trong Product Backlog
 const SYSTEM_PERMISSIONS = [

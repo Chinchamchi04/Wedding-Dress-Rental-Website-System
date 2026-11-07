@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
-import User from '../models/User.model.js';
-import Role from '../models/Role.model.js';
-import Permission from '../models/Permission.model.js';
+import User from '../models/userModel.js';
+import Role from '../models/roleModel.js';
+import Permission from '../models/permissionModel.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'unibridal_jwt_secret_key_2026_wdp301';
 

@@ -1,17 +1,17 @@
-import Permission from './Permission.model.js';
-import Role from './Role.model.js';
-import User from './User.model.js';
-import Category from './Category.model.js';
-import Dress from './Dress.model.js';
-import Appointment from './Appointment.model.js';
-import Order from './Order.model.js';
-import Payment from './Payment.model.js';
-import ReturnInspection from './ReturnInspection.model.js';
-import Review from './Review.model.js';
-import ContractTemplate from './ContractTemplate.model.js';
-import Contract from './Contract.model.js';
-import Conversation from './Conversation.model.js';
-import Message from './Message.model.js';
+import Permission from './permissionModel.js';
+import Role from './roleModel.js';
+import User from './userModel.js';
+import Category from './categoryModel.js';
+import Dress from './dressModel.js';
+import Appointment from './appointmentModel.js';
+import Order from './orderModel.js';
+import Payment from './paymentModel.js';
+import ReturnInspection from './returnInspectionModel.js';
+import Review from './reviewModel.js';
+import ContractTemplate from './contractTemplateModel.js';
+import Contract from './contractModel.js';
+import Conversation from './conversationModel.js';
+import Message from './messageModel.js';
 
 export {
   Permission,

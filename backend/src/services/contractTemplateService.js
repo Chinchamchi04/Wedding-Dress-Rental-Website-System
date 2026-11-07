@@ -1,4 +1,4 @@
-import ContractTemplate from '../models/ContractTemplate.model.js';
+import ContractTemplate from '../models/contractTemplateModel.js';
 
 /**
  * Service quản lý Mẫu Hợp Đồng Thuê (Contract Templates)

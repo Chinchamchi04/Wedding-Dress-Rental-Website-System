@@ -1,9 +1,9 @@
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
-import User from '../models/User.model.js';
-import Role from '../models/Role.model.js';
-import Order from '../models/Order.model.js';
-import Dress from '../models/Dress.model.js';
+import User from '../models/userModel.js';
+import Role from '../models/roleModel.js';
+import Order from '../models/orderModel.js';
+import Dress from '../models/dressModel.js';
 
 const fail = (status, message) => {
   throw Object.assign(new Error(message), { status, statusCode: status });

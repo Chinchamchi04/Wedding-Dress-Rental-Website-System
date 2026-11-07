@@ -8,8 +8,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-import Dress from '../models/Dress.model.js';
-import Category from '../models/Category.model.js';
+import Dress from '../models/dressModel.js';
+import Category from '../models/categoryModel.js';
 
 async function syncCatalog() {
   console.log('Connecting to MongoDB...');

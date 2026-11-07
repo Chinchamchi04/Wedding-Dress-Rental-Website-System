@@ -1,5 +1,5 @@
-import Category from '../models/Category.model.js';
-import Dress from '../models/Dress.model.js';
+import Category from '../models/categoryModel.js';
+import Dress from '../models/dressModel.js';
 
 // Helper tạo slug tự động từ tên tiếng Việt
 function createSlug(str) {

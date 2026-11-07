@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, authorize, optionalAuthenticate } from '../middlewares/auth.middleware.js';
+import { authenticate, authorize, optionalAuthenticate } from '../middlewares/authMiddleware.js';
 import * as account from '../controllers/accountController.js';
 import * as report from '../controllers/reportController.js';
 

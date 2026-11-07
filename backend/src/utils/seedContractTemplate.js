@@ -1,4 +1,4 @@
-import ContractTemplate from '../models/ContractTemplate.model.js';
+import ContractTemplate from '../models/contractTemplateModel.js';
 
 // Danh sách các điều khoản pháp lý chuẩn mực của mẫu Hợp đồng Thuê Lễ Phục Cưới Cao Cấp (8 Điều)
 const HAUTE_COUTURE_CLAUSES = [

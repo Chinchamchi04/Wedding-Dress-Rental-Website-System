@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import * as appointmentController from '../controllers/appointment.controller.js';
-import { authenticate, authorize, optionalAuthenticate } from '../middlewares/auth.middleware.js';
+import * as appointmentController from '../controllers/appointmentController.js';
+import { authenticate, authorize, optionalAuthenticate } from '../middlewares/authMiddleware.js';
 
 const router = Router();
 
