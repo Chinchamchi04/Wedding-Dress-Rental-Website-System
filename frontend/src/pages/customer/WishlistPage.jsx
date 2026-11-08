@@ -38,6 +38,7 @@ export default function WishlistPage() {
         if (!active) return;
         if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
           setCollectionDresses(res.data);
+          setWishlistItems(getWishlistDresses(res.data));
         }
       })
       .catch(() => {});
@@ -45,6 +46,13 @@ export default function WishlistPage() {
       active = false;
     };
   }, []);
+
+  // Cập nhật lại danh sách chi tiết các mẫu trong Wishlist khi danh mục sản phẩm thay đổi
+  useEffect(() => {
+    if (collectionDresses && collectionDresses.length > 0) {
+      setWishlistItems(getWishlistDresses(collectionDresses));
+    }
+  }, [collectionDresses]);
 
   // Lấy 4 mẫu từ Bộ Sưu Tập làm sản phẩm gợi ý (ưu tiên các mẫu nàng chưa thêm vào Wishlist)
   useEffect(() => {
@@ -68,7 +76,7 @@ export default function WishlistPage() {
   // Lắng nghe sự kiện thay đổi Wishlist từ các trang khác hoặc cùng trang
   useEffect(() => {
     const handleWishlistChange = () => {
-      setWishlistItems(getWishlistDresses());
+      setWishlistItems(getWishlistDresses(collectionDresses));
       setWishlistIds(getWishlistIds());
     };
 
@@ -78,7 +86,7 @@ export default function WishlistPage() {
       window.removeEventListener(WISHLIST_EVENT, handleWishlistChange);
       window.removeEventListener('storage', handleWishlistChange);
     };
-  }, []);
+  }, [collectionDresses]);
 
   const showToast = (message) => {
     setToastMessage(message);
