@@ -11,7 +11,8 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 import Dress from '../models/dressModel.js';
 
 async function sync() {
-  await mongoose.connect(process.env.MONGO_URI);
+  const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/wedding_dress_rental';
+  await mongoose.connect(uri);
   const dresses = await Dress.find().sort({ code: 1 }).lean();
   console.log(`Found ${dresses.length} dresses from MongoDB.`);
 

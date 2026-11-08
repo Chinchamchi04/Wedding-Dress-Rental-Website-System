@@ -13,7 +13,8 @@ import Category from '../models/categoryModel.js';
 
 async function syncCatalog() {
   console.log('Connecting to MongoDB...');
-  await mongoose.connect(process.env.MONGO_URI);
+  const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/wedding_dress_rental';
+  await mongoose.connect(uri);
   console.log('Connected!');
 
   const dresses = await Dress.find().sort({ code: 1 }).populate('categoryId').lean();
