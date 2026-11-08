@@ -55,7 +55,7 @@ export default function AboutUsPage() {
 
             {/* Main Headline */}
             <h1 className="font-playfair text-[38px] sm:text-[48px] md:text-[54px] font-normal leading-[1.18] text-[#2C2523] m-0 mb-4 tracking-tight">
-              Triết Lý Nghệ Thuật &{' '}
+              Triết Lý Nghệ Thuật và{' '}
               <span className="italic text-[#B8737D] font-serif block sm:inline">
                 Di Sản UniBridal
               </span>
@@ -95,7 +95,7 @@ export default function AboutUsPage() {
             {/* 4 Statistics Cards Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-6 mt-6 sm:mt-8">
               {[
-                { number: '100%', label: 'Lụa Tơ Tằm & Ren Pháp' },
+                { number: '100%', label: 'Lụa Tơ Tằm và Ren Pháp' },
                 { number: '300+', label: 'Giờ May Đo Thủ Công' },
                 { number: '12+', label: 'Năm Di Sản Thương Hiệu' },
                 { number: '5.000+', label: 'Nàng Dâu Đã Tỏa Sáng' },
@@ -181,7 +181,7 @@ export default function AboutUsPage() {
                     "Một chiếc váy cưới đẹp không chỉ nằm ở sự lộng lẫy, mà ở cảm xúc tự hào được thắp sáng trên gương mặt nàng dâu khi bước vào lễ đường."
                   </p>
                   <div className="font-jakarta text-[11.5px] font-bold text-[#804E55] tracking-wider uppercase">
-                    Elena Nguyen — Nhà Sáng Lập & Giám Đốc Sáng Tạo UniBridal
+                    Elena Nguyen — Nhà Sáng Lập và Giám Đốc Sáng Tạo UniBridal
                   </div>
                 </div>
 
@@ -192,7 +192,7 @@ export default function AboutUsPage() {
                   </div>
                   <span className="text-[#A49394] text-[13px]">•</span>
                   <span className="font-jakarta text-[12.5px] text-[#695C4E]">
-                    Paris & Hà Nội Atelier
+                    Paris và Hà Nội Atelier
                   </span>
                 </div>
               </div>
@@ -227,7 +227,7 @@ export default function AboutUsPage() {
               {[
                 {
                   icon: Gem,
-                  title: 'Lụa & Ren Pháp Ý',
+                  title: 'Lụa và Ren Pháp Ý',
                   desc: '100% chất liệu cao cấp nhập khẩu từ các xưởng dệt truyền thống tại Lyon và Como, mang lại cảm giác mềm mại và sang trọng tuyệt đối.',
                 },
                 {
@@ -428,7 +428,7 @@ export default function AboutUsPage() {
             <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white border border-[#F3D8D8] shadow-xs mb-3.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#B8737D]"></span>
               <span className="font-jakarta font-bold text-[10.5px] uppercase tracking-[1.4px] text-[#B8737D]">
-                LIÊN HỆ & HỆ THỐNG SHOWROOM
+                LIÊN HỆ VÀ HỆ THỐNG SHOWROOM
               </span>
             </div>
 
