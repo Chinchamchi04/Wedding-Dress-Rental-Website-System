@@ -86,7 +86,7 @@ export const createAppointment = async (appointmentData, currentUser = null) => 
     interestedDresses: interestedDresses || selectedDresses || [],
     vipServices: vipServices || [],
     notes: (notes || '').trim(),
-    status: 'pending',
+    status: 'confirmed',
   });
 
   await newAppointment.save();

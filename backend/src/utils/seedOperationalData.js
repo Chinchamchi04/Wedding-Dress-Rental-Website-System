@@ -175,7 +175,7 @@ async function seedData() {
       '18:30 — 20:00',
     ];
     const branches = ['hcm-q1', 'hn-hoankiem', 'dn-haichau'];
-    const aptStatuses = ['pending', 'confirmed', 'confirmed', 'completed', 'pending', 'confirmed', 'completed', 'confirmed', 'pending', 'completed'];
+    const aptStatuses = ['confirmed', 'confirmed', 'confirmed', 'completed', 'confirmed', 'confirmed', 'completed', 'confirmed', 'confirmed', 'completed'];
 
     const appointmentsData = [];
     for (let i = 0; i < 10; i++) {

@@ -24,7 +24,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Eye,
-  RefreshCw,
   ShoppingBag,
   ArrowRight,
   Filter,
@@ -72,6 +71,15 @@ const extractDisplayName = (fullName) => {
   if (parts.length <= 2) return fullName;
   return parts.slice(-2).join(' ');
 };
+
+// Chuẩn hóa trạng thái lịch hẹn: chỉ có 'confirmed' và 'completed'
+const normalizeAptStatus = (st) => {
+  const s = (st || '').toLowerCase();
+  if (s === 'completed') return 'completed';
+  if (s === 'cancelled') return 'cancelled';
+  return 'confirmed';
+};
+
 
 export default function ScheduleOverviewPage({ defaultTab }) {
   const navigate = useNavigate();
@@ -205,7 +213,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
         timeSlot: apt.timeSlot || '09:00 — 11:00',
         guestsCount: apt.guestsCount || 2,
         branch: apt.branch || apt.branchId || 'hcm-q1',
-        status: (apt.status || 'pending').toLowerCase(),
+        status: normalizeAptStatus(apt.status),
         notes: apt.notes,
         interestedDresses: apt.interestedDresses || apt.selectedDresses || [],
         weddingDate: apt.weddingDate,
@@ -585,27 +593,11 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                 }`}
               >
                 <TableIcon className="w-4 h-4" />
-                <span>Danh Sách & Duyệt Lịch Hẹn</span>
-                {stats.pendingAppointments > 0 && (
-                  <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold animate-pulse">
-                    {stats.pendingAppointments} mới
-                  </span>
-                )}
+                <span>Danh Sách Lịch Hẹn</span>
+                
               </button>
 
-              {/* Tab 3: Lịch Hạn Trả Đồ */}
-              <button
-                type="button"
-                onClick={() => handleTabChange('returns')}
-                className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                  activeMainTab === 'returns'
-                    ? 'bg-[#733F49] text-white shadow-md shadow-[#733F49]/20'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
-              >
-                <RotateCcw className="w-4 h-4" />
-                <span>Hạn Trả Váy ({stats.totalReturns})</span>
-              </button>
+              
             </div>
 
             {/* Quick Stats Pill */}
@@ -614,10 +606,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                 <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse"></span>
                 <span>Hôm nay: <strong>{stats.todayFittings} ca thử</strong></span>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-rose-50 text-rose-900 rounded-lg border border-rose-200 font-semibold">
-                <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-                <span>Hôm nay: <strong>{stats.todayReturns} đơn trả</strong></span>
-              </div>
+              
             </div>
           </div>
 
@@ -698,7 +687,30 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                   ) : (
                     <Calendar
                       className="unibridal-luxury-calendar"
-                      cellRender={dateCellRender}
+                      fullCellRender={(date, info) => {
+                        if (info?.type === 'month') return info.originNode;
+
+                        const d = date?.toDate ? date.toDate() : new Date(date);
+                        const day = String(d.getDate()).padStart(2, '0');
+                        const month = String(d.getMonth() + 1).padStart(2, '0');
+                        const dateLabel = `${day}/${month}`;
+                        const isToday = toDateKey(d) === todayKey;
+
+                        return (
+                          <div
+                            className={`ant-picker-cell-inner ant-picker-calendar-date ${
+                              isToday ? 'ant-picker-calendar-date-today' : ''
+                            }`}
+                          >
+                            <div className="ant-picker-calendar-date-value font-mono">
+                              {dateLabel}
+                            </div>
+                            <div className="ant-picker-calendar-date-content">
+                              {dateCellRender(date)}
+                            </div>
+                          </div>
+                        );
+                      }}
                       headerRender={({ value, onChange }) => {
                         const current = value || dayjs();
                         const monthLabel = current.format('MMMM, YYYY');
@@ -822,22 +834,18 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                               </span>
                               <span
                                 className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                                  isPending
-                                    ? 'bg-amber-100 text-amber-800 border border-amber-300 animate-pulse'
-                                    : isConfirmed
-                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                                    : isCompleted
+                                  item.status === 'completed'
                                     ? 'bg-purple-100 text-purple-800 border border-purple-300'
-                                    : 'bg-gray-100 text-gray-600'
+                                    : item.status === 'cancelled'
+                                    ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                    : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                                 }`}
                               >
-                                {item.status === 'pending'
-                                  ? 'CHỜ DUYỆT'
-                                  : item.status === 'confirmed'
-                                  ? 'ĐÃ XÁC NHẬN'
-                                  : item.status === 'completed'
-                                  ? 'HOÀN TẤT'
-                                  : item.status.toUpperCase()}
+                                {item.status === 'completed'
+                                  ? 'ĐÃ HOÀN TẤT'
+                                  : item.status === 'cancelled'
+                                  ? 'ĐÃ HỦY'
+                                  : 'ĐÃ XÁC NHẬN'}
                               </span>
                             </div>
 
@@ -856,15 +864,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                   <Phone className="w-3.5 h-3.5 text-[#733F49]" />
                                   <span>{item.phone}</span>
                                 </a>
-                                <a
-                                  href={`https://zalo.me/${item.phone.replace(/[^0-9]/g, '')}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold hover:bg-blue-100 transition"
-                                >
-                                  <MessageSquare size={12} />
-                                  <span>Zalo</span>
-                                </a>
+                                
                               </div>
                             )}
 
@@ -903,49 +903,33 @@ export default function ScheduleOverviewPage({ defaultTab }) {
 
                             {/* CÁC NÚT THAO TÁC TRỰC TIẾP DÀNH CHO STAFF */}
                             <div className="flex items-center gap-2 pt-3 border-t border-gray-200/70 mt-3">
-                              {isFitting && isPending && (
-                                <button
-                                  type="button"
-                                  disabled={updatingId === item.id}
-                                  onClick={() =>
-                                    handleUpdateAppointmentStatus(item.id, 'confirmed')
-                                  }
-                                  className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
-                                >
-                                  <Check className="w-3.5 h-3.5" />
-                                  <span>Xác Nhận Lịch</span>
-                                </button>
-                              )}
-
-                              {isFitting && isConfirmed && (
-                                <button
-                                  type="button"
-                                  disabled={updatingId === item.id}
-                                  onClick={() =>
-                                    handleUpdateAppointmentStatus(item.id, 'completed')
-                                  }
-                                  className="flex-1 py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
-                                >
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                  <span>Đã Thử Váy Xong</span>
-                                </button>
-                              )}
-
-                              {isFitting &&
-                                item.status !== 'cancelled' &&
-                                item.status !== 'completed' && (
+                              {isFitting && item.status === 'confirmed' && (
+                                <>
+                                  <button
+                                    type="button"
+                                    disabled={updatingId === item.id}
+                                    onClick={() =>
+                                      handleUpdateAppointmentStatus(item.id, 'completed')
+                                    }
+                                    className="flex-1 py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
+                                  >
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    <span>Hoàn Tất</span>
+                                  </button>
                                   <button
                                     type="button"
                                     disabled={updatingId === item.id}
                                     onClick={() =>
                                       handleUpdateAppointmentStatus(item.id, 'cancelled')
                                     }
-                                    className="p-2 rounded-xl bg-white hover:bg-red-50 text-gray-500 hover:text-red-600 border border-gray-200 text-xs font-medium transition cursor-pointer"
-                                    title="Hủy lịch hẹn này"
+                                    className="py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer disabled:opacity-50"
+                                    title="Khách bận hoặc không đến: Đánh dấu đã hủy"
                                   >
-                                    <XCircle className="w-4 h-4" />
+                                    <XCircle className="w-3.5 h-3.5" />
+                                    <span>Đã Hủy</span>
                                   </button>
-                                )}
+                                </>
+                              )}
 
                               <button
                                 type="button"
@@ -974,55 +958,9 @@ export default function ScheduleOverviewPage({ defaultTab }) {
           {/* ========================================================= */}
           {activeMainTab === 'appointments' && (
             <div className="space-y-6">
-              {/* 4 Thẻ KPI Thông Số */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white rounded-2xl border border-[#EFE5E1] p-5 shadow-xs">
-                  <span className="text-[11px] font-bold tracking-wider text-gray-500 uppercase">
-                    TỔNG LỊCH HẸN
-                  </span>
-                  <div className="text-3xl font-bold text-gray-900 mt-1">{appointments.length}</div>
-                  <div className="text-xs text-gray-500 mt-1">Toàn bộ hệ thống 2 Showroom</div>
-                </div>
+              
 
-                <div className="bg-white rounded-2xl border border-amber-200 p-5 shadow-xs bg-radial from-amber-50/60 to-transparent">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold tracking-wider text-amber-800 uppercase">
-                      CHỜ DUYỆT (PENDING)
-                    </span>
-                    {stats.pendingAppointments > 0 && (
-                      <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold animate-pulse">
-                        Cần gọi xác nhận
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-3xl font-bold text-amber-700 mt-1">
-                    {stats.pendingAppointments}
-                  </div>
-                  <div className="text-xs text-amber-800 mt-1">Ưu tiên liên hệ cô dâu trước</div>
-                </div>
-
-                <div className="bg-white rounded-2xl border border-emerald-200 p-5 shadow-xs bg-radial from-emerald-50/60 to-transparent">
-                  <span className="text-[11px] font-bold tracking-wider text-emerald-800 uppercase">
-                    ĐÃ XÁC NHẬN (CONFIRMED)
-                  </span>
-                  <div className="text-3xl font-bold text-emerald-700 mt-1">
-                    {stats.confirmedAppointments}
-                  </div>
-                  <div className="text-xs text-emerald-800 mt-1">Phòng Suite 1:1 đã khóa giờ</div>
-                </div>
-
-                <div className="bg-white rounded-2xl border border-purple-200 p-5 shadow-xs bg-radial from-purple-50/60 to-transparent">
-                  <span className="text-[11px] font-bold tracking-wider text-purple-800 uppercase">
-                    HOÀN TẤT THỬ VÁY
-                  </span>
-                  <div className="text-3xl font-bold text-purple-700 mt-1">
-                    {stats.completedAppointments}
-                  </div>
-                  <div className="text-xs text-purple-800 mt-1">Đã trải nghiệm dịch vụ may đo</div>
-                </div>
-              </div>
-
-              {/* Thanh Tìm Kiếm & Bộ Lọc Nâng Cao */}
+                {/* Thanh Tìm Kiếm & Bộ Lọc Nâng Cao */}
               <div className="bg-white rounded-2xl border border-[#EFE5E1] p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
                 <div className="relative flex-1 min-w-[260px] max-w-md">
                   <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -1054,7 +992,6 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     className="px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-700 font-medium outline-none cursor-pointer"
                   >
                     <option value="all">Tất cả trạng thái</option>
-                    <option value="pending">Chờ duyệt (Pending)</option>
                     <option value="confirmed">Đã xác nhận (Confirmed)</option>
                     <option value="completed">Đã hoàn tất (Completed)</option>
                     <option value="cancelled">Đã hủy (Cancelled)</option>
@@ -1071,14 +1008,13 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                         <th className="py-4 px-5">MÃ & KHÁCH HÀNG</th>
                         <th className="py-4 px-4">SHOWROOM & KHUNG GIỜ</th>
                         <th className="py-4 px-4">LỄ PHỤC QUAN TÂM</th>
-                        <th className="py-4 px-4 text-center">TRẠNG THÁI</th>
-                        <th className="py-4 px-5 text-right">THAO TÁC NHANH</th>
+                        <th className="py-4 px-5 text-right">THAO TÁC / TRẠNG THÁI</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 text-xs">
                       {filteredAppointments.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="py-14 text-center text-gray-400 text-xs">
+                          <td colSpan={4} className="py-14 text-center text-gray-400 text-xs">
                             Không tìm thấy lịch hẹn thử váy nào phù hợp với bộ lọc hiện tại.
                           </td>
                         </tr>
@@ -1093,7 +1029,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                             : apt.date || '—';
                           const time = apt.timeSlot || '—';
                           const dresses = apt.interestedDresses || apt.selectedDresses || [];
-                          const status = (apt.status || 'pending').toLowerCase();
+                          const status = normalizeAptStatus(apt.status);
                           const branchLabel =
                             apt.branch === 'hn-hoankiem' ? 'Hoàn Kiếm, HN' : 'Q.1, TP. HCM';
 
@@ -1162,96 +1098,45 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                 )}
                               </td>
 
-                              {/* Cột 4: Trạng thái */}
-                              <td className="py-4 px-4 text-center">
-                                <span
-                                  className={`inline-block px-2.5 py-1 rounded-full text-[10.5px] font-bold uppercase ${
-                                    status === 'confirmed'
-                                      ? 'bg-emerald-100 text-emerald-800'
-                                      : status === 'completed'
-                                      ? 'bg-purple-100 text-purple-800'
-                                      : status === 'cancelled'
-                                      ? 'bg-gray-100 text-gray-600'
-                                      : 'bg-amber-100 text-amber-800'
-                                  }`}
-                                >
-                                  {status === 'confirmed'
-                                    ? 'Đã xác nhận'
-                                    : status === 'completed'
-                                    ? 'Đã hoàn tất'
-                                    : status === 'cancelled'
-                                    ? 'Đã hủy'
-                                    : 'Chờ duyệt'}
-                                </span>
-                              </td>
-
-                              {/* Cột 5: Thao tác nhanh */}
+                              {/* Cột Thao tác & Trạng thái */}
                               <td className="py-4 px-5 text-right">
-                                <div className="flex items-center justify-end gap-1.5">
-                                  {status === 'pending' && (
-                                    <button
-                                      type="button"
-                                      disabled={updatingId === aptId}
-                                      onClick={() => handleUpdateAppointmentStatus(aptId, 'confirmed')}
-                                      className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 transition cursor-pointer disabled:opacity-50"
-                                      title="Xác nhận lịch hẹn"
+                                <div className="flex items-center justify-end">
+                                  {status === 'confirmed' ? (
+                                    <div className="flex flex-col items-end gap-1.5">
+                                       <button
+                                         type="button"
+                                         disabled={updatingId === aptId}
+                                         onClick={() => handleUpdateAppointmentStatus(aptId, 'completed')}
+                                         className="w-24 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
+                                         title="Khách đến thử đồ: Đánh dấu đã hoàn tất"
+                                       >
+                                         <CheckCircle2 size={13} />
+                                         <span>Hoàn tất</span>
+                                       </button>
+                                       <button
+                                         type="button"
+                                         disabled={updatingId === aptId}
+                                         onClick={() => handleUpdateAppointmentStatus(aptId, 'cancelled')}
+                                         className="w-24 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-800 border border-rose-200 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
+                                         title="Khách không đến hoặc có việc bận: Đánh dấu đã hủy"
+                                       >
+                                         <XCircle size={13} />
+                                         <span>Đã hủy</span>
+                                       </button>
+                                     </div>
+                                  ) : (
+                                    <span
+                                      className={`inline-block px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase ${
+                                        status === 'completed'
+                                          ? 'bg-purple-100 text-purple-800'
+                                          : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                      }`}
                                     >
-                                      <Check size={13} />
-                                      <span>Xác nhận</span>
-                                    </button>
+                                      {status === 'completed' ? 'Đã hoàn tất' : 'Đã hủy'}
+                                    </span>
                                   )}
 
-                                  {status === 'confirmed' && (
-                                    <button
-                                      type="button"
-                                      disabled={updatingId === aptId}
-                                      onClick={() => handleUpdateAppointmentStatus(aptId, 'completed')}
-                                      className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1 transition cursor-pointer disabled:opacity-50"
-                                      title="Đánh dấu hoàn tất buổi thử"
-                                    >
-                                      <CheckCircle2 size={13} />
-                                      <span>Hoàn tất</span>
-                                    </button>
-                                  )}
-
-                                  {status !== 'cancelled' && status !== 'completed' && (
-                                    <button
-                                      type="button"
-                                      disabled={updatingId === aptId}
-                                      onClick={() => handleUpdateAppointmentStatus(aptId, 'cancelled')}
-                                      className="px-2.5 py-1.5 rounded-lg bg-gray-100 hover:bg-red-50 text-gray-600 hover:text-red-600 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
-                                      title="Hủy lịch hẹn"
-                                    >
-                                      <XCircle size={13} />
-                                    </button>
-                                  )}
-
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setSelectedEvent({
-                                        type: 'fitting',
-                                        id: aptId,
-                                        code: apt.appointmentCode || aptId,
-                                        customerName: name,
-                                        phone,
-                                        email,
-                                        timeSlot: time,
-                                        guestsCount: apt.guestsCount,
-                                        branch: apt.branch,
-                                        status,
-                                        notes: apt.notes,
-                                        interestedDresses: dresses,
-                                        weddingDate: apt.weddingDate,
-                                        date: dateStr,
-                                      });
-                                      setDetailModalOpen(true);
-                                    }}
-                                    className="px-2.5 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold transition cursor-pointer"
-                                    title="Xem chi tiết"
-                                  >
-                                    <Eye size={13} />
-                                  </button>
+                                  
                                 </div>
                               </td>
                             </tr>
@@ -1265,128 +1150,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
             </div>
           )}
 
-          {/* ========================================================= */}
-          {/* NỘI DUNG TAB 3: LỊCH HẠN TRẢ & THU HỒI ĐỒ */}
-          {/* ========================================================= */}
-          {activeMainTab === 'returns' && (
-            <div className="bg-white rounded-2xl border border-[#EFE5E1] shadow-xs overflow-hidden">
-              <div className="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 m-0">
-                    Theo Dõi Hạn Trả Lễ Phục & Hoàn Tiền Cọc
-                  </h3>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Danh sách các đơn thuê đến hạn hoàn trả, bàn giao kiểm định và quyết toán cọc bảo lãnh.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => navigate('/staff/don-thue')}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#733F49] hover:bg-[#5a3239] text-white text-xs font-bold transition shadow-xs cursor-pointer self-start sm:self-auto"
-                >
-                  <span>Mở Trang Quản Lý Đơn Thuê</span>
-                  <ArrowRight size={14} />
-                </button>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[850px]">
-                  <thead>
-                    <tr className="border-b border-gray-200 bg-[#FFF8F6] text-[11px] font-bold text-gray-600 uppercase tracking-wider">
-                      <th className="py-4 px-5">MÃ ĐƠN & KHÁCH HÀNG</th>
-                      <th className="py-4 px-4">LỄ PHỤC THUÊ</th>
-                      <th className="py-4 px-4">HẠN HOÀN TRẢ VÁY</th>
-                      <th className="py-4 px-4">CỌC BẢO LÃNH</th>
-                      <th className="py-4 px-4 text-center">TRẠNG THÁI</th>
-                      <th className="py-4 px-5 text-right">KIỂM ĐỊNH</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 text-xs">
-                    {orders.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="py-14 text-center text-gray-400 text-xs">
-                          Chưa có đơn thuê nào cần theo dõi lịch hoàn trả.
-                        </td>
-                      </tr>
-                    ) : (
-                      orders.map((ord) => {
-                        const ordId = ord._id || ord.id;
-                        const code = ord.orderCode || ord.contractCode || 'UB-ORD';
-                        const name = ord.customerName || ord.brideName || 'Cô dâu';
-                        const phone = ord.customerPhone || ord.phone || '—';
-                        const endDate = ord.rentalEndDate
-                          ? new Date(ord.rentalEndDate).toLocaleDateString('vi-VN')
-                          : '—';
-                        const isReturned = ord.status === 'returned' || ord.status === 'completed';
-
-                        return (
-                          <tr key={ordId} className="hover:bg-gray-50/70 transition-colors">
-                            <td className="py-4 px-5">
-                              <div className="inline-block px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-mono text-[10.5px] font-bold mb-1">
-                                {code}
-                              </div>
-                              <div className="font-bold text-gray-900 text-sm">{name}</div>
-                              <div className="text-gray-500">{phone}</div>
-                            </td>
-
-                            <td className="py-4 px-4">
-                              {ord.items && ord.items.length > 0 ? (
-                                <div className="space-y-0.5">
-                                  {ord.items.map((item, idx) => (
-                                    <div key={idx} className="font-medium text-gray-800">
-                                      • {item.name}
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <span className="text-gray-400">Váy cưới Atelier</span>
-                              )}
-                            </td>
-
-                            <td className="py-4 px-4">
-                              <div className="font-bold text-[#733F49] flex items-center gap-1.5">
-                                <CalendarIcon size={13} />
-                                <span>{endDate}</span>
-                              </div>
-                              <div className="text-[11px] text-gray-500 mt-0.5">
-                                Trả trước 20:00 tại Showroom
-                              </div>
-                            </td>
-
-                            <td className="py-4 px-4 font-bold text-gray-900">
-                              {formatCurrencyVND(ord.totalDeposit || 0)}
-                            </td>
-
-                            <td className="py-4 px-4 text-center">
-                              <span
-                                className={`inline-block px-2.5 py-1 rounded-full text-[10.5px] font-bold uppercase ${
-                                  isReturned
-                                    ? 'bg-emerald-100 text-emerald-800'
-                                    : 'bg-rose-100 text-rose-800'
-                                }`}
-                              >
-                                {ord.status}
-                              </span>
-                            </td>
-
-                            <td className="py-4 px-5 text-right">
-                              <button
-                                type="button"
-                                onClick={() => navigate('/staff/don-thue')}
-                                className="px-3 py-1.5 rounded-lg bg-[#FAF0EC] hover:bg-[#F2D8D4] text-[#733F49] font-bold text-xs transition cursor-pointer"
-                              >
-                                Kiểm định cọc
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+          
 
           {/* ========================================================= */}
           {/* MODAL XEM CHI TIẾT SỰ KIỆN + DUYỆT TRẠNG THÁI TRỰC TIẾP */}
@@ -1454,17 +1218,19 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     <span className="text-gray-500 font-medium">Trạng thái hiện tại:</span>
                     <Tag
                       color={
-                        selectedEvent.status === 'confirmed'
-                          ? 'green'
-                          : selectedEvent.status === 'completed'
+                        selectedEvent.status === 'completed'
                           ? 'purple'
                           : selectedEvent.status === 'cancelled'
-                          ? 'default'
-                          : 'gold'
+                          ? 'error'
+                          : 'green'
                       }
                       className="uppercase font-bold m-0"
                     >
-                      {selectedEvent.status}
+                      {selectedEvent.status === 'completed'
+                        ? 'ĐÃ HOÀN TẤT'
+                        : selectedEvent.status === 'cancelled'
+                        ? 'ĐÃ HỦY'
+                        : 'ĐÃ XÁC NHẬN'}
                     </Tag>
                   </div>
                 </div>
@@ -1501,40 +1267,27 @@ export default function ScheduleOverviewPage({ defaultTab }) {
 
                     {/* Nút hành động phê duyệt trực tiếp trong Modal */}
                     <div className="pt-2 border-t border-gray-100 flex flex-wrap gap-2">
-                      {selectedEvent.status === 'pending' && (
-                        <button
-                          type="button"
-                          disabled={updatingId === selectedEvent.id}
-                          onClick={() => handleUpdateAppointmentStatus(selectedEvent.id, 'confirmed')}
-                          className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
-                        >
-                          <Check className="w-4 h-4" />
-                          <span>Xác Nhận Lịch Hẹn Này</span>
-                        </button>
-                      )}
-
                       {selectedEvent.status === 'confirmed' && (
-                        <button
-                          type="button"
-                          disabled={updatingId === selectedEvent.id}
-                          onClick={() => handleUpdateAppointmentStatus(selectedEvent.id, 'completed')}
-                          className="flex-1 py-2.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
-                        >
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span>Đánh Dấu Đã Thử Váy Xong</span>
-                        </button>
-                      )}
-
-                      {selectedEvent.status !== 'cancelled' && selectedEvent.status !== 'completed' && (
-                        <button
-                          type="button"
-                          disabled={updatingId === selectedEvent.id}
-                          onClick={() => handleUpdateAppointmentStatus(selectedEvent.id, 'cancelled')}
-                          className="py-2.5 px-3 rounded-xl bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-700 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
-                        >
-                          <XCircle className="w-4 h-4" />
-                          <span>Hủy Lịch</span>
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            disabled={updatingId === selectedEvent.id}
+                            onClick={() => handleUpdateAppointmentStatus(selectedEvent.id, 'completed')}
+                            className="flex-1 py-2.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>Đánh Dấu Đã Thử Xong</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={updatingId === selectedEvent.id}
+                            onClick={() => handleUpdateAppointmentStatus(selectedEvent.id, 'cancelled')}
+                            className="py-2.5 px-4 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                          >
+                            <XCircle className="w-4 h-4" />
+                            <span>Đánh Dấu Đã Hủy</span>
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>

@@ -15,7 +15,7 @@ import {
   Layers,
   FileSignature,
   Users,
-  FolderTree
+  Tag
 } from 'lucide-react';
 import logoImg from '../../assets/logo.png';
 import heroBride from '../../assets/hero_bride.jpg';
@@ -109,7 +109,7 @@ export default function AdminLayout({
       {
         key: 'categories',
         label: 'Quản Lý Danh Mục',
-        icon: FolderTree,
+        icon: Tag,
         to: '/admin/danh-muc'
       },
       {
