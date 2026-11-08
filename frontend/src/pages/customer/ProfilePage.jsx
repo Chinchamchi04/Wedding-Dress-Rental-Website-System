@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Alert, ConfigProvider, Form, Input, InputNumber } from 'antd';
-import { Ruler, IdCard, Sparkles, Lock } from 'lucide-react';
+import { Ruler, IdCard, Sparkles, Lock, CheckCircle2 } from 'lucide-react';
 import AccountLayout from '../../components/layout/AccountLayout';
 import { getProfile, saveProfile } from '../../services/profileService';
 import { useAuth } from '../../contexts/AuthContext';
