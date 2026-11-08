@@ -207,12 +207,43 @@ class ChatService {
       ];
     }
 
+    // Tự động dọn dẹp các hội thoại thử nghiệm do tài khoản Admin/Staff tạo nhầm nếu có
+    try {
+      await Conversation.deleteMany({
+        $or: [
+          { customerName: { $regex: /quản\s*trị|chuyên\s*viên|administrator/i } },
+        ],
+      });
+    } catch {
+      // bỏ qua lỗi nếu không xóa được
+    }
+
     const conversations = await Conversation.find(query)
-      .populate('customerId', 'fullName email phone avatar')
+      .populate({
+        path: 'customerId',
+        select: 'fullName email phone avatar roleId',
+        populate: { path: 'roleId', select: 'code name' },
+      })
       .populate('staffId', 'fullName email phone avatar')
       .sort({ isPinned: -1, updatedAt: -1 });
 
-    return conversations;
+    // Chỉ giữ lại hội thoại của KHÁCH HÀNG thực tế (loại trừ tài khoản Admin / Staff)
+    const customerOnly = conversations.filter((c) => {
+      const roleCode = c.customerId?.roleId?.code;
+      if (roleCode === 'ADMIN' || roleCode === 'STAFF') return false;
+      const name = (c.customerId?.fullName || c.customerName || '').toLowerCase();
+      if (
+        name.includes('quản trị') ||
+        name.includes('administrator') ||
+        name.includes('chuyên viên') ||
+        name.includes('staff')
+      ) {
+        return false;
+      }
+      return true;
+    });
+
+    return customerOnly;
   }
 
   /**

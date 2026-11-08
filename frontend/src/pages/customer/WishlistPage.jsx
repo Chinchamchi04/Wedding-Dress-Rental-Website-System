@@ -157,7 +157,7 @@ export default function WishlistPage() {
           <button
             type="button"
             onClick={() => setToastMessage(null)}
-            className="text-white/60 hover:text-white ml-2 bg-transparent border-0 cursor-pointer p-0"
+            className="text-white/60 hover:text-white ml-2 bg-transparent border-0 cursor-pointer p-0 flex items-center justify-center"
           >
             <X className="w-4 h-4" />
           </button>
@@ -445,14 +445,14 @@ export default function WishlistPage() {
                           handleToggleRecommended(recDress);
                         }}
                         className={`absolute top-2.5 right-2.5 w-[32px] h-[32px] rounded-[8px] bg-white flex items-center justify-center border shadow-[0px_2px_8px_rgba(0,0,0,0.08)] cursor-pointer z-10 transition-all active:scale-90 p-0 ${
-                          isSaved ? 'border-red-200 bg-red-50/70 text-red-500' : 'border-[#EEDECF] text-[#4A3E3F] hover:text-red-500 hover:border-red-200'
+                          isSaved ? 'border-[#B8737D]/40 bg-[#FFF5F6] text-[#B8737D]' : 'border-[#EEDECF] text-[#4A3E3F] hover:text-[#B8737D] hover:border-[#B8737D]/40'
                         }`}
                         title={isSaved ? 'Xóa khỏi yêu thích' : 'Thêm vào yêu thích'}
                       >
                         <Heart
                           className={`w-3.5 h-3.5 transition-all duration-200 ${
                             isSaved
-                              ? 'fill-red-500 text-red-500 scale-110'
+                              ? 'fill-[#B8737D] text-[#B8737D] scale-110'
                               : 'text-[#4A3E3F]'
                           }`}
                         />

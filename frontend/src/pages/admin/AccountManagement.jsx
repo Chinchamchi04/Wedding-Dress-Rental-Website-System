@@ -270,7 +270,6 @@ export default function AccountManagement() {
         {/* Header & Page Title */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="w-2.5 h-2.5 rounded-full bg-[#B8737D] mb-3" />
             <h1 className="font-playfair text-[32px] sm:text-[38px] font-normal text-[#5F2B36] tracking-tight leading-tight mb-2">
               Quản Lý Tài Khoản
             </h1>

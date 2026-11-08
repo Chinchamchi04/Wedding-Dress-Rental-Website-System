@@ -37,6 +37,25 @@ import {
   getReturnInspection,
 } from '../../services/orderService';
 import { formatCurrencyVND } from '../../utils/formatCurrency';
+import { DRESS_CATALOG } from '../../data/dressCatalog';
+
+// Helper lấy mã sản phẩm (SKU) của váy cưới từ item hoặc fallback vào catalog
+export const getDressCode = (item) => {
+  if (!item) return '';
+  if (item.code) return item.code;
+  if (item.dressCode) return item.dressCode;
+  const match = DRESS_CATALOG.find(
+    (d) =>
+      (item.dressId && (String(d.id) === String(item.dressId) || String(d._id) === String(item.dressId))) ||
+      (d.code && (d.code === item.dressId || d.code === item.id)) ||
+      (d.name && item.name && d.name.trim().toLowerCase() === item.name.trim().toLowerCase())
+  );
+  if (match?.code) return match.code;
+  if (item.dressId && typeof item.dressId === 'string' && item.dressId.startsWith('UB-')) {
+    return item.dressId;
+  }
+  return '';
+};
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -480,12 +499,25 @@ function InspectionModal({ order, onClose, onSuccess }) {
           {/* Items inspection - Kiểm định váy */}
           {itemsCondition.map((ic, idx) => {
             const maxLimit = ic.maxPrice || order.totalDeposit || order.totalRentPrice || 0;
+            const itemCode = getDressCode(ic) || getDressCode(order.items?.[idx]);
             return (
               <div key={idx} className="p-2.5 px-3 rounded-xl border border-[#EFE5E1] bg-white space-y-1.5">
                 <div className="flex items-center justify-between flex-wrap gap-1">
-                  <span className="font-bold text-[12.5px] text-[#5F2B36]">
-                    {ic.name}
-                  </span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-bold text-[12.5px] text-[#5F2B36]">
+                      {ic.name}
+                    </span>
+                    {itemCode && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#FAF0EC] text-[#733F49] font-mono text-[10px] font-bold border border-[#F2D8D4] leading-none">
+                        {itemCode}
+                      </span>
+                    )}
+                    {(ic.size || order.items?.[idx]?.size) && (
+                      <span className="inline-block px-1.5 py-0.5 rounded bg-[#FCECE8] text-[#B8737D] text-[10px] font-bold leading-none">
+                        Size: {ic.size || order.items?.[idx]?.size}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-[10.5px] text-[#8C7D7E]">
                     (Giá trị/Cọc: <strong className="text-[#5F2B36]">{fmtVnd(maxLimit)}</strong>)
                   </span>
@@ -1013,7 +1045,10 @@ export default function OrderRentalManagement() {
         `#${(o.orderCode || '').toLowerCase()}`.includes(qRaw) ||
         (o.customerName || '').toLowerCase().includes(qRaw) ||
         (o.customerPhone || '').includes(cleanQ) ||
-        (o.items || []).some((it) => (it.name || '').toLowerCase().includes(qRaw));
+        (o.items || []).some((it) => {
+          const c = getDressCode(it);
+          return (it.name || '').toLowerCase().includes(qRaw) || (c && c.toLowerCase().includes(cleanQ));
+        });
 
       const isDisputed =
         o.inspection?.customerStatus === 'disputed' ||
@@ -1072,14 +1107,22 @@ export default function OrderRentalManagement() {
   return (
     <AdminLayout activeMenu="don-thue">
       {/* Header */}
-      <div className="mb-8">
-        <div className="w-2.5 h-2.5 rounded-full bg-[#B8737D] mb-3" />
-        <h1 className="font-playfair text-[36px] md:text-[42px] font-normal text-[#5F2B36] tracking-tight mb-2">
+      <div className="mb-3 sm:mb-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <h1 className="font-playfair text-[26px] sm:text-[30px] font-bold text-[#5F2B36] tracking-tight m-0 leading-tight">
           Quản Lý Đơn Thuê
         </h1>
-        <p className="text-[14px] text-[#7A6B6C] font-normal leading-relaxed max-w-4xl">
-          Theo dõi và quản lý toàn bộ đơn thuê váy cưới — cập nhật trạng thái vòng đời, kiểm định trả váy và hoàn cọc.
-        </p>
+        <button
+          type="button"
+          onClick={() => {
+            loadOrders();
+          }}
+          disabled={loading}
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-[#E8DDD8] bg-white text-[#5F2B36] hover:bg-[#FAF0EC] text-xs font-bold transition-all shadow-xs cursor-pointer self-start sm:self-auto disabled:opacity-60"
+          title="Làm mới danh sách đơn thuê từ máy chủ"
+        >
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          <span>{loading ? 'Đang tải...' : 'Làm mới'}</span>
+        </button>
       </div>
 
       {/* Banner thông báo nổi bật khi có đơn khiếu nại */}
@@ -1147,30 +1190,30 @@ export default function OrderRentalManagement() {
       )}
 
       {/* 4 Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         {/* Card 1: Tổng đơn */}
         <div
           onClick={() => { setViewMode('active'); setStatusFilter('all'); setActivePage(1); }}
-          className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FCDCE1_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] p-5 shadow-xs flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md hover:border-[#B8737D]/50 transition-all"
+          className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FCDCE1_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] py-3.5 px-5 shadow-xs flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md hover:border-[#B8737D]/50 transition-all"
         >
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#736364] uppercase">
                 TỔNG ĐƠN THUÊ
               </span>
-              <div className="w-11 h-11 rounded-2xl bg-[#F4EDE6] flex items-center justify-center text-[#8C6D62]">
-                <HangerIcon size={20} strokeWidth={1.8} />
+              <div className="w-9 h-9 rounded-xl bg-[#F4EDE6] flex items-center justify-center text-[#8C6D62]">
+                <HangerIcon size={17} strokeWidth={1.8} />
               </div>
             </div>
             <div className="flex items-baseline">
-              <span className="text-[34px] font-bold text-[#2C2523] leading-none">
+              <span className="text-[28px] font-bold text-[#2C2523] leading-none">
                 {loading && !stats.total ? '—' : stats.total}
               </span>
-              <span className="text-[13px] font-medium text-[#8C7D7E] ml-2">đơn</span>
+              <span className="text-[12px] font-medium text-[#8C7D7E] ml-1.5">đơn</span>
             </div>
           </div>
-          <div className="mt-5 flex items-center gap-1.5 text-[12px] text-[#7A6B6C]">
-            <RefreshCw size={14} className="text-[#8C6D62]" />
+          <div className="mt-2.5 flex items-center gap-1.5 text-[11.5px] text-[#7A6B6C]">
+            <RefreshCw size={13} className="text-[#8C6D62]" />
             <span>Hiển thị danh sách đang xử lý</span>
           </div>
         </div>
@@ -1178,26 +1221,26 @@ export default function OrderRentalManagement() {
         {/* Card 2: Đang thuê */}
         <div
           onClick={() => { setViewMode('active'); setStatusFilter('renting'); setActivePage(1); }}
-          className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EDE9FE_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] p-5 shadow-xs flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md hover:border-[#6D28D9]/50 transition-all"
+          className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EDE9FE_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] py-3.5 px-5 shadow-xs flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md hover:border-[#6D28D9]/50 transition-all"
         >
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#736364] uppercase">
                 ĐANG THUÊ
               </span>
-              <div className="w-11 h-11 rounded-2xl bg-[#EDE9FE] flex items-center justify-center text-[#6D28D9]">
-                <CalendarDays size={20} />
+              <div className="w-9 h-9 rounded-xl bg-[#EDE9FE] flex items-center justify-center text-[#6D28D9]">
+                <CalendarDays size={17} />
               </div>
             </div>
             <div className="flex items-baseline">
-              <span className="text-[34px] font-bold text-[#6D28D9] leading-none">
+              <span className="text-[28px] font-bold text-[#6D28D9] leading-none">
                 {loading && !stats.total ? '—' : stats.renting}
               </span>
-              <span className="text-[13px] font-medium text-[#8C7D7E] ml-2">đơn</span>
+              <span className="text-[12px] font-medium text-[#8C7D7E] ml-1.5">đơn</span>
             </div>
           </div>
-          <div className="mt-5 flex items-center gap-1.5 text-[12px] text-[#7A6B6C]">
-            <Calendar size={14} className="text-[#6D28D9]" />
+          <div className="mt-2.5 flex items-center gap-1.5 text-[11.5px] text-[#7A6B6C]">
+            <Calendar size={13} className="text-[#6D28D9]" />
             <span>Cần kiểm định khi khách trả</span>
           </div>
         </div>
@@ -1205,26 +1248,26 @@ export default function OrderRentalManagement() {
         {/* Card 3: Hoàn tất (Kho Lưu Trữ) */}
         <div
           onClick={() => { setViewMode('archived'); setStatusFilter('all'); setActivePage(1); }}
-          className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#DEF5E7_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] p-5 shadow-xs flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md hover:border-[#229A53]/50 transition-all"
+          className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#DEF5E7_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] py-3.5 px-5 shadow-xs flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md hover:border-[#229A53]/50 transition-all"
         >
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#736364] uppercase">
                 ĐÃ HOÀN TẤT (LƯU KHO)
               </span>
-              <div className="w-11 h-11 rounded-2xl bg-[#EAF7EE] flex items-center justify-center text-[#229A53]">
-                <Archive size={20} />
+              <div className="w-9 h-9 rounded-xl bg-[#EAF7EE] flex items-center justify-center text-[#229A53]">
+                <Archive size={17} />
               </div>
             </div>
             <div className="flex items-baseline">
-              <span className="text-[34px] font-bold text-[#1E8347] leading-none">
+              <span className="text-[28px] font-bold text-[#1E8347] leading-none">
                 {loading && !stats.total ? '—' : stats.completed}
               </span>
-              <span className="text-[13px] font-medium text-[#8C7D7E] ml-2">đơn</span>
+              <span className="text-[12px] font-medium text-[#8C7D7E] ml-1.5">đơn</span>
             </div>
           </div>
-          <div className="mt-5 flex items-center gap-1.5 text-[12px] text-[#1E8347] font-medium">
-            <CheckCircle2 size={14} className="text-[#229A53]" />
+          <div className="mt-2.5 flex items-center gap-1.5 text-[11.5px] text-[#1E8347] font-medium">
+            <CheckCircle2 size={13} className="text-[#229A53]" />
             <span>Đã đưa vào Kho Lưu Trữ (Click xem)</span>
           </div>
         </div>
@@ -1232,70 +1275,69 @@ export default function OrderRentalManagement() {
         {/* Card 4: Đã hủy */}
         <div
           onClick={() => { setViewMode('archived'); setStatusFilter('cancelled'); setActivePage(1); }}
-          className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FCDFD9_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] p-5 shadow-xs flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md hover:border-[#B8737D]/50 transition-all"
+          className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FCDFD9_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] py-3.5 px-5 shadow-xs flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md hover:border-[#B8737D]/50 transition-all"
         >
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#736364] uppercase">
                 ĐÃ HỦY
               </span>
-              <div className="w-11 h-11 rounded-2xl bg-[#FDECEE] flex items-center justify-center text-[#B8737D]">
-                <Clock size={20} />
+              <div className="w-9 h-9 rounded-xl bg-[#FDECEE] flex items-center justify-center text-[#B8737D]">
+                <Clock size={17} />
               </div>
             </div>
             <div className="flex items-baseline">
-              <span className="text-[34px] font-bold text-[#A84A58] leading-none">
+              <span className="text-[28px] font-bold text-[#A84A58] leading-none">
                 {loading && !stats.total ? '—' : stats.cancelled}
               </span>
-              <span className="text-[13px] font-medium text-[#8C7D7E] ml-2">đơn</span>
+              <span className="text-[12px] font-medium text-[#8C7D7E] ml-1.5">đơn</span>
             </div>
           </div>
-          <div className="mt-5 flex items-center gap-1.5 text-[12px] text-[#7A6B6C]">
-            <Clock size={14} className="text-[#B8737D]" />
+          <div className="mt-2.5 flex items-center gap-1.5 text-[11.5px] text-[#7A6B6C]">
+            <Clock size={13} className="text-[#B8737D]" />
             <span>Lưu trữ đơn hủy trong kỳ</span>
           </div>
         </div>
       </div>
 
-      {/* Search + Filter */}
-      <div className="bg-white rounded-2xl border border-[#EFE5E1] p-4 shadow-xs mb-6">
-        <div className="relative">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9A8B8C]" />
+      {/* Search & Filter Bar (Tích hợp tìm kiếm và tab Đơn Đang Xử Lý / Kho Lưu Trữ) */}
+      <div className="bg-white p-1.5 rounded-2xl border border-[#EFE5E1] shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-6">
+        <div className="relative flex-1 max-w-md">
+          <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A39192]" />
           <input
             type="text"
+            placeholder="Tìm theo mã đơn, tên khách, số điện thoại, váy thuê..."
             value={searchTerm}
             onChange={(e) => { setSearchTerm(e.target.value); setActivePage(1); }}
-            placeholder="Tìm theo mã đơn, tên khách, số điện thoại, váy thuê..."
-            className="w-full pl-11 pr-4 py-3 rounded-xl bg-[#FFF6F3] border border-[#EFE2DC] focus:border-[#B8737D] focus:bg-white text-[13.5px] text-[#2C2523] placeholder-[#A39293] outline-none transition-all"
+            className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-[#EFE5E1] bg-[#FCF7F4] text-sm text-[#302626] placeholder-[#A39293] focus:outline-none focus:ring-2 focus:ring-[#B8737D]/30 focus:border-[#B8737D] transition-all"
           />
           {searchTerm && (
             <button
               type="button"
               onClick={() => { setSearchTerm(''); setActivePage(1); }}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#A39293] hover:text-[#5F333B]"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A39192] hover:text-[#5F333B] cursor-pointer bg-transparent border-0 p-0"
             >
-              <X size={16} />
+              <X size={15} />
             </button>
           )}
         </div>
-      </div>
 
-      {/* View Mode Tabs: Đơn Đang Xử Lý vs Kho Lưu Trữ */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
           <button
             type="button"
             onClick={() => { setViewMode('active'); setStatusFilter('all'); setActivePage(1); }}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all cursor-pointer ${viewMode === 'active'
-              ? 'bg-[#733F49] text-white shadow-md'
-              : 'bg-white border border-[#EFE5E1] text-[#7A6B6C] hover:bg-[#FAF4F0]'
-              }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer border-0 ${
+              viewMode === 'active'
+                ? 'bg-[#733F49] text-white shadow-xs'
+                : 'bg-[#FCF7F4] text-[#7A6B6C] hover:bg-[#FAF0EC] hover:text-[#733F49]'
+            }`}
           >
             <SlidersHorizontal size={14} />
             <span>Đơn Đang Xử Lý</span>
             <span
-              className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${viewMode === 'active' ? 'bg-white/20 text-white' : 'bg-[#FAF0EC] text-[#733F49]'
-                }`}
+              className={`px-2 py-0.5 rounded-full text-[10.5px] font-bold ${
+                viewMode === 'active' ? 'bg-white/20 text-white' : 'bg-[#FAF0EC] text-[#733F49]'
+              }`}
             >
               {activeOrdersCount}
             </span>
@@ -1304,32 +1346,23 @@ export default function OrderRentalManagement() {
           <button
             type="button"
             onClick={() => { setViewMode('archived'); setStatusFilter('all'); setActivePage(1); }}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all cursor-pointer ${viewMode === 'archived'
-              ? 'bg-[#1E8347] text-white shadow-md'
-              : 'bg-white border border-[#EFE5E1] text-[#7A6B6C] hover:bg-[#FAF4F0]'
-              }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer border-0 ${
+              viewMode === 'archived'
+                ? 'bg-[#1E8347] text-white shadow-xs'
+                : 'bg-[#FCF7F4] text-[#7A6B6C] hover:bg-[#FAF0EC] hover:text-[#733F49]'
+            }`}
           >
             <Archive size={14} />
             <span>Kho Lưu Trữ Đơn Hoàn Tất</span>
             <span
-              className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${viewMode === 'archived' ? 'bg-white/20 text-white' : 'bg-[#EAF7EE] text-[#1E8347]'
-                }`}
+              className={`px-2 py-0.5 rounded-full text-[10.5px] font-bold ${
+                viewMode === 'archived' ? 'bg-white/20 text-white' : 'bg-[#EAF7EE] text-[#1E8347]'
+              }`}
             >
               {archivedOrdersCount}
             </span>
           </button>
         </div>
-
-        {viewMode === 'archived' ? (
-          <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#1E8347] bg-[#EAF7EE] px-4 py-2 rounded-xl border border-[#C6F0D4]">
-            <FolderArchive size={15} />
-            <span>Kho lưu trữ an toàn: Các đơn đã hoàn thành và quyết toán cọc bảo lãnh</span>
-          </div>
-        ) : (
-          <div className="text-[12px] text-[#8C7D7E] hidden md:block">
-            Hiển thị các đơn thuê đang tiếp nhận, giao trang phục và chuẩn bị kiểm định
-          </div>
-        )}
       </div>
 
       {/* Main Table */}
@@ -1341,22 +1374,22 @@ export default function OrderRentalManagement() {
                 <th className="py-4 px-5 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase">
                   MÃ ĐƠN
                 </th>
-                <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase">
+                <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center">
                   KHÁCH HÀNG
                 </th>
-                <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase">
+                <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center">
                   VÁY THUÊ
                 </th>
                 <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center">
                   NGÀY THUÊ
                 </th>
-                <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-right">
+                <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center">
                   TIỀN CỌC
                 </th>
                 <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center">
                   TRẠNG THÁI
                 </th>
-                <th className="py-4 px-5 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-right">
+                <th className="py-4 px-5 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center">
                   THAO TÁC
                 </th>
               </tr>
@@ -1456,15 +1489,30 @@ export default function OrderRentalManagement() {
                       </td>
 
                       {/* Váy thuê */}
-                      <td className="py-4 px-4">
-                        <div className="text-[13px] font-semibold text-[#2C2523] leading-tight">
+                      <td className="py-4 px-4 text-center">
+                        <div className="text-[13px] font-semibold text-[#2C2523] leading-tight mb-1 text-center">
                           {firstItem.name || '—'}
                         </div>
-                        {firstItem.size && (
-                          <div className="inline-block mt-1 px-1.5 py-0.5 rounded bg-[#FCECE8] text-[#B8737D] text-[10.5px] font-bold">
-                            {firstItem.size}
-                          </div>
-                        )}
+                        <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                          {getDressCode(firstItem) && (
+                            <span
+                              className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#FAF0EC] text-[#733F49] font-mono text-[10.5px] font-bold border border-[#F2D8D4] leading-none"
+                              title="Mã sản phẩm váy cưới"
+                            >
+                              {getDressCode(firstItem)}
+                            </span>
+                          )}
+                          {firstItem.size && (
+                            <span className="inline-block px-1.5 py-0.5 rounded bg-[#FCECE8] text-[#B8737D] text-[10.5px] font-bold leading-none">
+                              {firstItem.size.toLowerCase().startsWith('size') ? firstItem.size : `Size: ${firstItem.size}`}
+                            </span>
+                          )}
+                          {order.items?.length > 1 && (
+                            <span className="text-[10px] text-[#8C7D7E] font-medium">
+                              (+{order.items.length - 1} váy khác)
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Ngày thuê */}
@@ -1479,7 +1527,7 @@ export default function OrderRentalManagement() {
                       </td>
 
                       {/* Tiền cọc */}
-                      <td className="py-4 px-4 text-right whitespace-nowrap">
+                      <td className="py-4 px-4 text-center whitespace-nowrap">
                         <div className="text-[13.5px] font-bold text-[#863E4B]">
                           {fmtVnd(order.totalDeposit)}
                         </div>
@@ -1496,8 +1544,8 @@ export default function OrderRentalManagement() {
                       </td>
 
                       {/* Thao tác */}
-                      <td className="py-4 px-5 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center gap-2">
+                      <td className="py-4 px-5 text-center whitespace-nowrap">
+                        <div className="inline-flex items-center justify-center gap-2">
                           {/* ĐỐI VỚI CÁC ĐƠN ĐÃ HOÀN TẤT TRONG KHO LƯU TRỮ */}
                           {isArchived(order) ? (
                             <button

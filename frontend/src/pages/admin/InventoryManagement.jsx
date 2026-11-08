@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
 import {
   Search,
@@ -22,17 +22,52 @@ import {
   Percent,
   TableProperties,
   ChevronUp,
+  Upload,
+  Image as ImageIcon,
 } from 'lucide-react';
 import HangerIcon from '../../components/common/HangerIcon';
-import { getAllDresses, deleteDress } from '../../services/dressService';
+import { getAllDresses, createDress, updateDress, deleteDress, getCategories } from '../../services/dressService';
 import { getAllOrdersAdmin } from '../../services/orderService';
 import { formatCurrencyVND } from '../../utils/formatCurrency';
+import { DRESS_CATALOG } from '../../data/dressCatalog';
 
 const fmtVnd = (v) => formatCurrencyVND(v ?? 0);
 
 import card1Elysian from '../../assets/card1_elysian.jpg';
 
 const PAGE_SIZE = 6;
+
+// Danh mục Phom Dáng chuẩn từ MongoDB Atlas
+const DEFAULT_CATEGORIES = [
+  { _id: '6ae179534b9795d371875c20', id: '6ae179534b9795d371875c20', slug: 'ballgown', name: 'Công Chúa Bồng Xòe (Ballgown)', silhouette: 'Ballgown' },
+  { _id: '6ae179544b9795d371875c21', id: '6ae179544b9795d371875c21', slug: 'mermaid', name: 'Đuôi Cá Điêu Khắc (Mermaid)', silhouette: 'Mermaid' },
+  { _id: '6ae179554b9795d371875c22', id: '6ae179554b9795d371875c22', slug: 'a-line', name: 'Chữ A Thanh Lịch (A-Line)', silhouette: 'A-Line' },
+  { _id: '6ae76f99243e90678b3dbc67', id: '6ae76f99243e90678b3dbc67', slug: 'silk-gown', name: 'Váy Cưới Lụa Tối Giản (Silk Gown)', silhouette: 'Silk Gown' },
+  { _id: '6ae76f99243e90678b3dbc68', id: '6ae76f99243e90678b3dbc68', slug: 'princess', name: 'Váy Cưới Hoàng Gia (Princess)', silhouette: 'Princess' },
+];
+
+// Danh mục Chất Liệu chuẩn từ MongoDB Atlas
+const DEFAULT_MATERIALS = [
+  'Lụa Mikado Ý',
+  'Lụa Mikado Ý & Satin Tơ Tằm Tự Nhiên',
+  'Ren 3D Floral',
+  'Ren 3D Floral & Đính Kết Pha Lê Swarovski',
+  'Satin Tơ Tằm Tự Nhiên',
+  'Đính Kết Pha Lê Swarovski',
+  'Voan Tulle Thụy Sĩ',
+  'Gấm & Dạ Cao Cấp',
+];
+
+// Danh mục Màu Sắc cưới cao cấp phổ biến
+const POPULAR_COLORS = [
+  { name: 'Trắng Tinh Khôi', hex: '#FFFFFF', border: '#D1D5DB' },
+  { name: 'Trắng Kem (Ivory)', hex: '#FFFDD0', border: '#D6CE9A' },
+  { name: 'Champagne', hex: '#F7E7CE', border: '#D8C3A5' },
+  { name: 'Hồng Pastel', hex: '#FFD1DC', border: '#EAA6B6' },
+  { name: 'Hồng Nude', hex: '#E8C5B8', border: '#CFA496' },
+  { name: 'Đỏ Ruby', hex: '#C41E3A', border: '#9E152D' },
+  { name: 'Xanh Khói (Dusty Blue)', hex: '#A2B2C8', border: '#8A9DB5' },
+];
 
 export default function InventoryManagement() {
   const [rawDresses, setRawDresses] = useState([]);
@@ -50,25 +85,39 @@ export default function InventoryManagement() {
   const [toastMsg, setToastMsg] = useState('');
   const [showMatrixTable, setShowMatrixTable] = useState(false);
 
+  // Danh mục phom dáng và chất liệu đồng bộ từ MongoDB Atlas
+  const [categoriesList, setCategoriesList] = useState(DEFAULT_CATEGORIES);
+  const [materialsList, setMaterialsList] = useState(DEFAULT_MATERIALS);
+
   // State cho Modal Sửa Sản Phẩm (Edit Modal)
   const [editingItem, setEditingItem] = useState(null);
   const [editName, setEditName] = useState('');
+  const [editSilhouette, setEditSilhouette] = useState(DEFAULT_CATEGORIES[0].name);
+  const [editMaterial, setEditMaterial] = useState(DEFAULT_MATERIALS[0]);
   const [editLocation, setEditLocation] = useState('Tủ A1');
   const [editRentPrice, setEditRentPrice] = useState(5000000);
   const [editDepositAmount, setEditDepositAmount] = useState(15000000);
-  const [editStatusType, setEditStatusType] = useState('auto');
+  const [editStatusType, setEditStatusType] = useState('stored');
   const [editDescription, setEditDescription] = useState('');
-  const [editSizes, setEditSizes] = useState({ XS: 0, S: 2, M: 2, L: 0, XL: 0 });
+  const [editSizes, setEditSizes] = useState({ XS: 0, S: 2, M: 2, L: 0 });
+  const [editColor, setEditColor] = useState('Trắng Tinh Khôi');
+  const [editImages, setEditImages] = useState([]);
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
 
-  // Form thêm sản phẩm kho mới
+  // Form thêm sản phẩm kho mới (Lưu trực tiếp vào MongoDB Atlas)
   const [newName, setNewName] = useState('');
-  const [newCollection, setNewCollection] = useState('ATELIER COUTURE 2026');
-  const [newLocation, setNewLocation] = useState('Tủ A1');
+  const [newSilhouette, setNewSilhouette] = useState(DEFAULT_CATEGORIES[0].name);
+  const [newMaterial, setNewMaterial] = useState(DEFAULT_MATERIALS[0]);
   const [newRentPrice, setNewRentPrice] = useState(5000000);
   const [newDepositAmount, setNewDepositAmount] = useState(15000000);
   const [newDescription, setNewDescription] = useState('');
+  const [newSizeXS, setNewSizeXS] = useState(1);
   const [newSizeS, setNewSizeS] = useState(2);
   const [newSizeM, setNewSizeM] = useState(2);
+  const [newSizeL, setNewSizeL] = useState(1);
+  const [newColor, setNewColor] = useState('Trắng Tinh Khôi');
+  const [newImages, setNewImages] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Lưu trữ can thiệp chỉnh sửa của Staff/Admin
   const [manualOverrides, setManualOverrides] = useState(() => {
@@ -79,9 +128,58 @@ export default function InventoryManagement() {
     }
   });
 
+  // Refs cho thanh cuộn ngang hình ảnh trong modal
+  const editImagesScrollRef = useRef(null);
+  const addImagesScrollRef = useRef(null);
+
+  // Xử lý kéo chuột & lăn chuột để cuộn danh sách ảnh ngang
+  const handleScrollMouseDown = (e) => {
+    const slider = e.currentTarget;
+    slider.isDown = true;
+    slider.startX = e.pageX - slider.offsetLeft;
+    slider.scrollLeftStart = slider.scrollLeft;
+  };
+  const handleScrollMouseLeave = (e) => {
+    e.currentTarget.isDown = false;
+  };
+  const handleScrollMouseUp = (e) => {
+    e.currentTarget.isDown = false;
+  };
+  const handleScrollMouseMove = (e) => {
+    const slider = e.currentTarget;
+    if (!slider.isDown) return;
+    const x = e.pageX - slider.offsetLeft;
+    const walk = x - slider.startX;
+    if (Math.abs(walk) > 3) {
+      e.preventDefault();
+      slider.scrollLeft = slider.scrollLeftStart - walk * 1.5;
+    }
+  };
+  const handleScrollWheel = (e) => {
+    if (e.deltaY !== 0) {
+      e.currentTarget.scrollLeft += e.deltaY;
+    }
+  };
+
   const showToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3500);
+  };
+
+  const handleToggleColorSelection = (colorName, currentVal, setter) => {
+    const list = (currentVal || '')
+      .split(',')
+      .map((c) => c.trim())
+      .filter(Boolean);
+    const existingIndex = list.findIndex(
+      (c) => c.toLowerCase() === colorName.toLowerCase()
+    );
+    if (existingIndex > -1) {
+      list.splice(existingIndex, 1);
+    } else {
+      list.push(colorName);
+    }
+    setter(list.join(', '));
   };
 
   // Hàm tiện ích chuẩn hóa chuỗi để so khớp chính xác
@@ -90,10 +188,18 @@ export default function InventoryManagement() {
   // Tính toán tình trạng kho và liên kết đơn thuê tự động
   const computeItemData = useCallback((d, index, orderList, overrides) => {
     const dressId = d._id || d.id || `inv_${index + 1}`;
-    const override = overrides[dressId] || {};
+    const code = d.code || `UB-${(index + 1).toString().padStart(3, '0')}`;
+    const dressCleanName = cleanStr(d.name);
+    const dressCleanCode = cleanStr(code);
+
+    const override =
+      overrides[dressId] ||
+      overrides[String(d._id)] ||
+      (code && overrides[code]) ||
+      (dressCleanName && overrides[dressCleanName]) ||
+      {};
 
     const num = (index + 1).toString().padStart(2, '0');
-    const code = d.code || `UB-${(index + 1).toString().padStart(3, '0')}`;
     const cabinets = ['Tủ A1', 'Tủ B2', 'Tủ C1', 'Tủ VIP', 'Tủ D3'];
     const location = override.location || cabinets[index % cabinets.length];
 
@@ -114,35 +220,19 @@ export default function InventoryManagement() {
 
     const totalStock = sizeList.reduce((sum, s) => sum + (Number(s.quantity) || 0), 0);
 
-    // Tính toán liên kết với đơn thuê thực tế (Orders)
-    const dressName = (d.name || '').trim().toLowerCase();
-    const dressCleanName = cleanStr(d.name);
-    const dressCleanCode = cleanStr(code);
-
+    // Tính toán liên kết với đơn thuê thực tế (Orders) - SO KHỚP CHÍNH XÁC THEO ID, MÃ HOẶC TÊN HOÀN TOÀN
     const matchedOrders = (orderList || []).filter((o) => {
       const hasItem = (o.items || []).some((it) => {
         const itId = it.dressId?._id || it.dressId || it.id || it._id;
-        const itName = (it.name || '').trim().toLowerCase();
         const itCleanName = cleanStr(it.name);
-        const itCode = cleanStr(it.code);
-        const idMatch = itId && String(itId) === String(dressId);
-        const nameMatch =
-          itName &&
-          (itName === dressName ||
-            itName.includes(dressName) ||
-            dressName.includes(itName) ||
-            (itCleanName && dressCleanName && (itCleanName === dressCleanName || dressCleanName.includes(itCleanName) || itCleanName.includes(dressCleanName))));
-        const codeMatch = itCode && dressCleanCode && itCode === dressCleanCode;
-        return idMatch || nameMatch || codeMatch;
+        const itCleanCode = cleanStr(it.code);
+        const idMatch = itId && (String(itId) === String(dressId) || (d._id && String(itId) === String(d._id)));
+        const codeMatch = itCleanCode && dressCleanCode && itCleanCode === dressCleanCode;
+        const exactNameMatch = itCleanName && dressCleanName && itCleanName === dressCleanName && dressCleanName.length >= 2;
+        return idMatch || codeMatch || exactNameMatch;
       });
-      const mainDress = String(o.dress || '').trim().toLowerCase();
-      const mainClean = cleanStr(mainDress);
-      const mainMatch =
-        mainDress &&
-        (mainDress === dressName ||
-          mainDress.includes(dressName) ||
-          dressName.includes(mainDress) ||
-          (mainClean && dressCleanName && (mainClean === dressCleanName || dressCleanName.includes(mainClean))));
+      const mainClean = cleanStr(o.dress);
+      const mainMatch = mainClean && dressCleanName && mainClean === dressCleanName && dressCleanName.length >= 2;
       return hasItem || mainMatch;
     });
 
@@ -150,17 +240,15 @@ export default function InventoryManagement() {
       String(o.orderCode || o.id || o._id || '').toLowerCase()
     );
 
-    // 1. Số lượng đơn đang trong chu trình kiểm định & bảo dưỡng sau thuê
+    // 1. Các đơn đang trong chu trình kiểm định & bảo dưỡng sau thuê
     const maintenanceOrders = matchedOrders.filter((o) =>
       ['returned', 'inspecting', 'maintenance'].includes(o.rawStatus || o.status)
     );
-    const maintenanceCount = maintenanceOrders.length;
 
-    // 2. Số lượng đang được khách thuê / chuẩn bị giao
+    // 2. Các đơn đang được khách thuê / chuẩn bị giao
     const rentingOrders = matchedOrders.filter((o) =>
       ['renting', 'delivered', 'preparing', 'deposit_paid'].includes(o.rawStatus || o.status)
     );
-    const rentedCount = rentingOrders.length;
 
     // 3. Phân bổ chi tiết theo từng Size: Khả dụng / Đang kiểm định / Đang thuê
     const detailedSizes = sizeList.map((sz) => {
@@ -168,34 +256,50 @@ export default function InventoryManagement() {
       const sQty = Number(sz.quantity) || 0;
 
       const sMaint = maintenanceOrders.filter((o) => {
-        const itemSize = (o.items || []).find((it) => {
+        const matchedItem = (o.items || []).find((it) => {
           const itId = it.dressId?._id || it.dressId || it.id || it._id;
-          const itName = (it.name || '').trim().toLowerCase();
-          return (itId && String(itId) === String(dressId)) || (itName && itName.includes(dressName));
-        })?.size || o.size || '';
-        return String(itemSize).toUpperCase() === sName.toUpperCase();
+          const itCleanName = cleanStr(it.name);
+          const itCleanCode = cleanStr(it.code);
+          return (
+            (itId && (String(itId) === String(dressId) || (d._id && String(itId) === String(d._id)))) ||
+            (itCleanCode && dressCleanCode && itCleanCode === dressCleanCode) ||
+            (itCleanName && dressCleanName && itCleanName === dressCleanName && dressCleanName.length >= 2)
+          );
+        });
+        const itemSize = matchedItem?.size || o.size || '';
+        return String(itemSize).trim().toUpperCase() === sName.toUpperCase();
       }).length;
 
       const sRented = rentingOrders.filter((o) => {
-        const itemSize = (o.items || []).find((it) => {
+        const matchedItem = (o.items || []).find((it) => {
           const itId = it.dressId?._id || it.dressId || it.id || it._id;
-          const itName = (it.name || '').trim().toLowerCase();
-          return (itId && String(itId) === String(dressId)) || (itName && itName.includes(dressName));
-        })?.size || o.size || '';
-        return String(itemSize).toUpperCase() === sName.toUpperCase();
+          const itCleanName = cleanStr(it.name);
+          const itCleanCode = cleanStr(it.code);
+          return (
+            (itId && (String(itId) === String(dressId) || (d._id && String(itId) === String(d._id)))) ||
+            (itCleanCode && dressCleanCode && itCleanCode === dressCleanCode) ||
+            (itCleanName && dressCleanName && itCleanName === dressCleanName && dressCleanName.length >= 2)
+          );
+        });
+        const itemSize = matchedItem?.size || o.size || '';
+        return String(itemSize).trim().toUpperCase() === sName.toUpperCase();
       }).length;
 
       const sAvail = Math.max(0, sQty - sMaint - sRented);
       return {
         ...sz,
+        size: sName,
+        quantity: sQty,
         available: sAvail,
         maintenance: sMaint,
         rented: sRented,
       };
     });
 
-    // 4. Số lượng khả dụng sẵn sàng phục vụ trong kho
-    const availableStock = Math.max(0, totalStock - rentedCount - maintenanceCount);
+    // 4. Số lượng khả dụng tính chính xác từ tổng số lượng khả dụng của từng Size
+    const availableStock = detailedSizes.reduce((sum, sz) => sum + (Number(sz.available) || 0), 0);
+    const maintenanceCount = detailedSizes.reduce((sum, sz) => sum + (Number(sz.maintenance) || 0), 0);
+    const rentedCount = detailedSizes.reduce((sum, sz) => sum + (Number(sz.rented) || 0), 0);
 
     // Xử lý trạng thái: Tự động vs Thủ công
     const manualStatus = override.statusType || null;
@@ -204,22 +308,22 @@ export default function InventoryManagement() {
     let statusSubNote = '';
 
     if (statusType === 'auto') {
-      if (maintenanceCount > 0) {
+      if (maintenanceCount > 0 && availableStock === 0) {
         statusType = 'drying';
         statusText = 'ĐANG BẢO DƯỠNG';
-        statusSubNote = `Kiểm định sau thuê (${maintenanceCount} bộ)`;
+        statusSubNote = `Đang kiểm định & bảo dưỡng (${maintenanceCount} bộ)`;
       } else if (availableStock <= 0 && totalStock > 0) {
         statusType = 'out_of_stock';
         statusText = 'HẾT HÀNG';
         statusSubNote = `Đã xuất thuê toàn bộ (${totalStock} bộ)`;
-      } else if (rentedCount > 0) {
+      } else if (rentedCount > 0 || maintenanceCount > 0) {
         statusType = 'stored';
         statusText = 'CÒN HÀNG';
-        statusSubNote = `Đang thuê: ${rentedCount} bộ`;
+        statusSubNote = `Sẵn sàng: ${availableStock}/${totalStock} bộ${maintenanceCount > 0 ? ` • Bảo dưỡng: ${maintenanceCount}` : ''}${rentedCount > 0 ? ` • Đang thuê: ${rentedCount}` : ''}`;
       } else {
         statusType = 'stored';
         statusText = 'CÒN HÀNG';
-        statusSubNote = '';
+        statusSubNote = `Sẵn sàng phục vụ (${availableStock}/${totalStock} bộ)`;
       }
     } else if (statusType === 'drying') {
       statusText = 'ĐANG BẢO DƯỠNG';
@@ -260,7 +364,16 @@ export default function InventoryManagement() {
       description: override.description || d.description || 'Lễ phục cưới cao cấp UniBridal Haute Couture',
       rentPrice: override.rentPrice ?? d.rentPrice ?? d.price ?? 5000000,
       depositAmount: override.depositAmount ?? d.depositAmount ?? d.deposit ?? 15000000,
+      material: override.material || d.material || 'Lụa Mikado Ý',
+      color: override.color || d.color || 'Trắng Tinh Khôi',
+      silhouette: override.silhouette || d.silhouette || d.category?.name || 'Ballgown',
+      images: (Array.isArray(d.images) && d.images.length > 0)
+        ? d.images
+        : (Array.isArray(override.images) && override.images.length > 0)
+        ? override.images
+        : (d.image ? [d.image] : [`/assets/dresses/dress_${num}.jpg`]),
       image: (d.images && d.images[0]) || d.image || `/assets/dresses/dress_${num}.jpg`,
+      rawDress: d,
     };
   }, []);
 
@@ -324,9 +437,32 @@ export default function InventoryManagement() {
     loadInventory();
   }, [loadInventory]);
 
+  // Đồng bộ danh mục phom dáng và chất liệu từ MongoDB Atlas
+  useEffect(() => {
+    getCategories()
+      .then((res) => {
+        if (Array.isArray(res?.data) && res.data.length > 0) {
+          setCategoriesList(res.data);
+          if (!newSilhouette && res.data[0]) {
+            setNewSilhouette(res.data[0].name || res.data[0].slug);
+          }
+        }
+      })
+      .catch((err) => console.warn('Could not fetch categories from server, using defaults:', err));
+  }, []);
+
+  useEffect(() => {
+    if (rawDresses.length > 0) {
+      const mats = Array.from(new Set(rawDresses.map((d) => d.material).filter(Boolean)));
+      if (mats.length > 0) {
+        setMaterialsList(Array.from(new Set([...DEFAULT_MATERIALS, ...mats])));
+      }
+    }
+  }, [rawDresses]);
+
   // Bộ lọc trạng thái
   const statusOptions = [
-    { value: 'all', label: 'Tất Cả Tình Trạng' },
+    { value: 'all', label: 'Tất cả' },
     { value: 'stored', label: 'Còn Hàng' },
     { value: 'ready', label: 'Đã Cho Thuê' },
     { value: 'drying', label: 'Đang Bảo Dưỡng' },
@@ -341,6 +477,9 @@ export default function InventoryManagement() {
         (item.name || '').toLowerCase().includes(q) ||
         (item.code || '').toLowerCase().includes(q) ||
         (item.location || '').toLowerCase().includes(q) ||
+        (item.material || '').toLowerCase().includes(q) ||
+        (item.color || '').toLowerCase().includes(q) ||
+        (item.silhouette || '').toLowerCase().includes(q) ||
         (item.description || '').toLowerCase().includes(q);
 
       const matchStatus =
@@ -423,13 +562,84 @@ export default function InventoryManagement() {
   const handleOpenEditModal = (item) => {
     setEditingItem(item);
     setEditName(item.name || '');
-    setEditLocation(item.location || 'Tủ A1');
-    setEditRentPrice(item.rentPrice || 5000000);
-    setEditDepositAmount(item.depositAmount || 15000000);
-    setEditStatusType(item.manualStatus || 'auto');
-    setEditDescription(item.description || '');
 
-    const sizeMap = { XS: 0, S: 0, M: 0, L: 0, XL: 0 };
+    // Tìm phom dáng phù hợp từ categoriesList
+    const itemSil = item.silhouette || item.category || '';
+    const matchedCat = categoriesList.find(
+      (c) =>
+        c.name === itemSil ||
+        c.slug === itemSil ||
+        c.silhouette === itemSil ||
+        c.name === item.category ||
+        (c._id && (c._id === item.categoryId || c._id === item.categoryId?._id))
+    );
+    setEditSilhouette(matchedCat ? matchedCat.name : categoriesList[0]?.name || DEFAULT_CATEGORIES[0].name);
+
+    // Tìm chất liệu phù hợp từ materialsList
+    const itemMat = item.material || item.fabric || '';
+    const matchedMat = materialsList.find((m) => m.toLowerCase() === itemMat.toLowerCase()) || itemMat;
+    setEditMaterial(matchedMat || DEFAULT_MATERIALS[0]);
+
+    // LẤY ĐẦY ĐỦ TẤT CẢ DỮ LIỆU CÓ SẴN TRONG MONGODB ATLAS:
+    const rawDress = rawDresses.find(
+      (d) =>
+        (d._id && String(d._id) === String(item.id || item._id)) ||
+        (d.id && String(d.id) === String(item.id || item._id)) ||
+        (d.code && item.code && d.code === item.code) ||
+        (cleanStr(d.name) && cleanStr(item.name) && cleanStr(d.name) === cleanStr(item.name))
+    ) || item.rawDress || {};
+
+    setEditLocation(item.location || 'Tủ A1');
+    setEditRentPrice(item.rentPrice || rawDress.rentPrice || rawDress.price || 5000000);
+    setEditDepositAmount(
+      (item.depositAmount !== undefined && item.depositAmount !== '' && Number(item.depositAmount) > 0)
+        ? Number(item.depositAmount)
+        : (rawDress.depositAmount ? Number(rawDress.depositAmount) : 15000000)
+    );
+    setEditStatusType(
+      item.manualStatus ||
+        (item.status === 'renting'
+          ? 'ready'
+          : item.status === 'maintenance'
+          ? 'drying'
+          : item.status === 'retired'
+          ? 'out_of_stock'
+          : 'stored')
+    );
+    setEditDescription(item.description || rawDress.description || '');
+
+    // Tự động nạp chính xác 100% Màu Sắc hiện tại đang lưu trong MongoDB Atlas của sản phẩm:
+    const currentAtlasColor = rawDress.color || item.color || item.rawDress?.color || 'Trắng Tinh Khôi';
+    setEditColor(currentAtlasColor);
+
+    let imgs = [];
+    if (Array.isArray(rawDress.images) && rawDress.images.length > 1) {
+      imgs = [...rawDress.images];
+    } else if (Array.isArray(item.images) && item.images.length > 1) {
+      imgs = [...item.images];
+    } else {
+      // Fallback lấy toàn bộ ảnh từ DRESS_CATALOG chuẩn
+      const catalogItem = DRESS_CATALOG.find(
+        (dc) =>
+          (dc.code && (item.code || rawDress.code) && dc.code === (item.code || rawDress.code)) ||
+          (cleanStr(dc.name) && cleanStr(item.name || rawDress.name) && cleanStr(dc.name) === cleanStr(item.name || rawDress.name))
+      );
+      if (catalogItem && Array.isArray(catalogItem.images) && catalogItem.images.length > 0) {
+        imgs = [...catalogItem.images];
+      } else if (Array.isArray(rawDress.images) && rawDress.images.length > 0) {
+        imgs = [...rawDress.images];
+      } else if (Array.isArray(item.images) && item.images.length > 0) {
+        imgs = [...item.images];
+      } else if (item.image) {
+        imgs = [item.image];
+      } else if (rawDress.image) {
+        imgs = [rawDress.image];
+      }
+    }
+    imgs = Array.from(new Set(imgs.filter(Boolean)));
+    setEditImages(imgs);
+
+    const sizeMap = { XS: 0, S: 0, M: 0, L: 0 };
     (item.sizes || []).forEach((sz) => {
       const sName = typeof sz === 'object' ? sz.size : sz;
       const qty = typeof sz === 'object' ? (sz.quantity ?? 2) : 2;
@@ -442,96 +652,268 @@ export default function InventoryManagement() {
     setEditSizes(sizeMap);
   };
 
-  // Lưu chỉnh sửa sản phẩm kho
-  const handleSaveEdit = (e) => {
+  // Upload ảnh cho modal chỉnh sửa
+  const handleEditImageUpload = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    files.forEach((file) => {
+      if (file.size > 5 * 1024 * 1024) {
+        showToast(`Ảnh "${file.name}" vượt quá 5MB. Vui lòng chọn ảnh nhỏ hơn.`);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setEditImages((prev) => [...prev, event.target.result]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  };
+
+  const handleRemoveEditImage = (indexToRemove) => {
+    setEditImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  // Lưu chỉnh sửa sản phẩm kho (Đồng bộ trực tiếp lên MongoDB Atlas)
+  const handleSaveEdit = async (e) => {
     e.preventDefault();
     if (!editingItem) return;
 
-    const newSizesArray = Object.entries(editSizes)
-      .filter(([_, qty]) => Number(qty) > 0)
-      .map(([sz, qty]) => ({
-        size: sz,
-        quantity: Number(qty),
-        label: `Size ${sz} (${qty} bộ)`,
-      }));
+    if (!editName.trim()) {
+      showToast('Vui lòng nhập tên tác phẩm!');
+      return;
+    }
 
-    const updatedOverrides = {
-      ...manualOverrides,
-      [editingItem.id]: {
+    setIsSubmittingEdit(true);
+
+    try {
+      const selectedCatObj =
+        categoriesList.find(
+          (c) => c.name === editSilhouette || c.slug === editSilhouette
+        ) || DEFAULT_CATEGORIES[0];
+
+      const qtyXS = Math.max(0, Number(editSizes.XS || 0));
+      const qtyS = Math.max(0, Number(editSizes.S || 0));
+      const qtyM = Math.max(0, Number(editSizes.M || 0));
+      const qtyL = Math.max(0, Number(editSizes.L || 0));
+
+      const activeSizes = [];
+      if (qtyXS > 0) activeSizes.push('XS');
+      if (qtyS > 0) activeSizes.push('S');
+      if (qtyM > 0) activeSizes.push('M');
+      if (qtyL > 0) activeSizes.push('L');
+      if (activeSizes.length === 0) activeSizes.push('S', 'M');
+
+      const sizeList = [
+        { size: 'XS', quantity: qtyXS, label: `Size XS (${String(qtyXS).padStart(2, '0')} bộ)` },
+        { size: 'S', quantity: qtyS, label: `Size S (${String(qtyS).padStart(2, '0')} bộ)` },
+        { size: 'M', quantity: qtyM, label: `Size M (${String(qtyM).padStart(2, '0')} bộ)` },
+        { size: 'L', quantity: qtyL, label: `Size L (${String(qtyL).padStart(2, '0')} bộ)` },
+      ];
+
+      // Ánh xạ trạng thái UI sang status MongoDB
+      let mongoStatus = 'available';
+      if (editStatusType === 'ready') mongoStatus = 'renting';
+      else if (editStatusType === 'drying') mongoStatus = 'maintenance';
+      else if (editStatusType === 'out_of_stock') mongoStatus = 'retired';
+
+      const updatePayload = {
+        name: editName.trim(),
+        categoryId: selectedCatObj?._id || selectedCatObj?.id,
+        category: selectedCatObj?.name || editSilhouette,
+        silhouette: selectedCatObj?.silhouette || selectedCatObj?.slug || 'Ballgown',
+        material: editMaterial.trim() || 'Lụa Mikado Ý',
+        color: editColor.trim() || 'Trắng Tinh Khôi',
+        rentPrice: Number(editRentPrice || 5000000),
+        depositAmount: Number(editDepositAmount || 15000000),
+        description: editDescription.trim(),
+        sizes: activeSizes,
+        status: mongoStatus,
+        ...(editImages.length > 0 ? { images: editImages } : {}),
+      };
+
+      const targetId = editingItem._id || editingItem.id;
+      if (targetId && !String(targetId).startsWith('fake') && !String(targetId).startsWith('new_')) {
+        try {
+          await updateDress(targetId, updatePayload);
+        } catch (apiErr) {
+          console.warn('Cập nhật dress qua API gặp cảnh báo:', apiErr);
+        }
+      }
+
+      // Cập nhật overrides cho kho
+      const overrideObj = {
         ...(manualOverrides[editingItem.id] || {}),
         name: editName.trim(),
-        location: editLocation.trim(),
+        silhouette: selectedCatObj?.name || editSilhouette,
+        category: selectedCatObj?.name || editSilhouette,
+        material: editMaterial.trim(),
+        color: editColor.trim(),
         rentPrice: Number(editRentPrice || 0),
         depositAmount: Number(editDepositAmount || 0),
         statusType: editStatusType,
         description: editDescription.trim(),
-        sizes: newSizesArray,
-      },
-    };
+        sizes: sizeList,
+        images: editImages.length > 0 ? editImages : (editingItem.images || [editingItem.image]),
+        location: editLocation || 'Tủ A1',
+      };
 
-    setManualOverrides(updatedOverrides);
-    try {
-      localStorage.setItem('unibridal_inventory_overrides', JSON.stringify(updatedOverrides));
-    } catch { }
+      const updatedOverrides = {
+        ...manualOverrides,
+        [editingItem.id]: overrideObj,
+        ...(editingItem.code ? { [editingItem.code]: overrideObj } : {}),
+        ...(cleanStr(editName) ? { [cleanStr(editName)]: overrideObj } : {}),
+      };
 
-    setItems((prev) =>
-      prev.map((it) => {
-        if (it.id === editingItem.id) {
-          return computeItemData(
-            rawDresses.find((d) => (d._id || d.id) === editingItem.id) || it,
-            0,
-            orders,
-            updatedOverrides
-          );
-        }
-        return it;
-      })
-    );
+      setManualOverrides(updatedOverrides);
+      try {
+        localStorage.setItem('unibridal_inventory_overrides', JSON.stringify(updatedOverrides));
+      } catch { }
 
-    setEditingItem(null);
-    showToast(`Đã lưu thay đổi cho mẫu váy "${editName}" thành công!`);
+      // Tải lại dữ liệu kho từ MongoDB
+      await loadInventory();
+
+      setEditingItem(null);
+      showToast(`Đã lưu thay đổi cho mẫu lễ phục "${editName}" thành công!`);
+    } catch (err) {
+      console.error('Lỗi khi lưu chỉnh sửa:', err);
+      showToast('Có lỗi xảy ra khi lưu thay đổi.');
+    } finally {
+      setIsSubmittingEdit(false);
+    }
   };
 
-  // Xử lý nộp phiếu nhập kho mới
-  const handleAddNewItem = (e) => {
+  // Xử lý upload ảnh cho sản phẩm từ máy tính (hỗ trợ chọn nhiều ảnh)
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    files.forEach((file) => {
+      if (file.size > 5 * 1024 * 1024) {
+        showToast(`Ảnh "${file.name}" vượt quá 5MB. Vui lòng chọn ảnh nhỏ hơn.`);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setNewImages((prev) => [...prev, event.target.result]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  };
+
+  const handleRemoveImage = (indexToRemove) => {
+    setNewImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  // Xử lý nộp phiếu nhập kho mới - Lưu trực tiếp vào MongoDB Atlas bảng dresses
+  const handleAddNewItem = async (e) => {
     e.preventDefault();
     if (!newName.trim()) {
-      showToast('Vui lòng nhập tên mẫu váy cưới.');
+      showToast('Vui lòng nhập Tên Tác Phẩm.');
       return;
     }
 
-    const newCode = `KHO-${newCollection.slice(0, 4).toUpperCase()}-${String(items.length + 1).padStart(2, '0')}`;
-    const totalCount = Number(newSizeS || 0) + Number(newSizeM || 0);
+    setIsSubmitting(true);
+    try {
+      // 1. Tìm danh mục phom dáng tương ứng từ categoriesList
+      const selectedCatObj = categoriesList.find(
+        (c) => c.name === newSilhouette || c.slug === newSilhouette || c._id === newSilhouette || c.id === newSilhouette
+      );
 
-    const newItem = {
-      id: `new_${Date.now()}`,
-      name: newName.trim(),
-      code: newCode,
-      collection: newCollection.trim(),
-      image: card1Elysian,
-      location: newLocation.trim(),
-      rfid: `#RF-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-      description: newDescription.trim() || 'Lễ phục cưới cao cấp bảo quản tiêu chuẩn vi khí hậu.',
-      rentPrice: Number(newRentPrice || 5000000),
-      depositAmount: Number(newDepositAmount || 15000000),
-      totalStock: totalCount,
-      availableStock: totalCount,
-      rentedCount: 0,
-      inspectingCount: 0,
-      statusType: 'stored',
-      statusText: 'CÒN HÀNG',
-      statusSubNote: '',
-      sizes: [
-        { size: 'S', quantity: Number(newSizeS || 2), label: `Size S (${String(newSizeS).padStart(2, '0')} bộ)` },
-        { size: 'M', quantity: Number(newSizeM || 2), label: `Size M (${String(newSizeM).padStart(2, '0')} bộ)` },
-      ],
-      totalUnits: `Tổng: ${String(totalCount).padStart(2, '0')} bộ`,
-    };
+      // 2. Tính toán tồn kho 4 size XS, S, M, L
+      const qtyXS = Math.max(0, Number(newSizeXS || 0));
+      const qtyS = Math.max(0, Number(newSizeS || 0));
+      const qtyM = Math.max(0, Number(newSizeM || 0));
+      const qtyL = Math.max(0, Number(newSizeL || 0));
+      const totalCount = qtyXS + qtyS + qtyM + qtyL;
 
-    setItems([newItem, ...items]);
-    setIsAddModalOpen(false);
-    setNewName('');
-    showToast(`Đã nhập kho thành công mẫu váy: ${newItem.name}`);
+      const activeSizes = [];
+      if (qtyXS > 0) activeSizes.push('XS');
+      if (qtyS > 0) activeSizes.push('S');
+      if (qtyM > 0) activeSizes.push('M');
+      if (qtyL > 0) activeSizes.push('L');
+      if (activeSizes.length === 0) activeSizes.push('S', 'M');
+
+      const payload = {
+        name: newName.trim(),
+        categoryId: selectedCatObj?._id || selectedCatObj?.id,
+        category: selectedCatObj?.name || newSilhouette,
+        silhouette: selectedCatObj?.slug || selectedCatObj?.silhouette || newSilhouette,
+        material: newMaterial.trim() || 'Lụa Mikado Ý',
+        color: newColor.trim() || 'Trắng Tinh Khôi',
+        rentPrice: Number(newRentPrice || 5000000),
+        depositAmount: Number(newDepositAmount || 15000000),
+        description: newDescription.trim() || 'Lễ phục cưới cao cấp bảo quản tiêu chuẩn vi khí hậu.',
+        sizes: activeSizes,
+        images: newImages.length > 0 ? newImages : [card1Elysian],
+        status: 'available',
+        collectionTag: 'ATELIER COUTURE 2026',
+      };
+
+      // 3. Gửi Request tạo váy cưới trực tiếp trên MongoDB Atlas
+      const res = await createDress(payload);
+      const createdDress = res?.data || res;
+      const createdId = createdDress?._id || createdDress?.id || `new_${Date.now()}`;
+
+      // 4. Lưu cấu hình phân bổ số lượng tồn kho từng size vào manualOverrides
+      const sizeList = [
+        { size: 'XS', quantity: qtyXS, label: `Size XS (${String(qtyXS).padStart(2, '0')} bộ)` },
+        { size: 'S', quantity: qtyS, label: `Size S (${String(qtyS).padStart(2, '0')} bộ)` },
+        { size: 'M', quantity: qtyM, label: `Size M (${String(qtyM).padStart(2, '0')} bộ)` },
+        { size: 'L', quantity: qtyL, label: `Size L (${String(qtyL).padStart(2, '0')} bộ)` },
+      ];
+
+      const overrideObj = {
+        name: newName.trim(),
+        material: newMaterial.trim(),
+        color: newColor.trim(),
+        silhouette: selectedCatObj?.name || newSilhouette,
+        sizes: sizeList,
+        rentPrice: Number(newRentPrice),
+        depositAmount: Number(newDepositAmount),
+        description: newDescription.trim(),
+        location: 'Tủ A1',
+      };
+
+      const newOverrides = {
+        ...manualOverrides,
+        [createdId]: overrideObj,
+        ...(createdDress?.code ? { [createdDress.code]: overrideObj } : {}),
+        ...(cleanStr(newName) ? { [cleanStr(newName)]: overrideObj } : {}),
+      };
+
+      setManualOverrides(newOverrides);
+      try {
+        localStorage.setItem('unibridal_inventory_overrides', JSON.stringify(newOverrides));
+      } catch { }
+
+      // 5. Tải lại toàn bộ dữ liệu kho hàng từ MongoDB Atlas
+      await loadInventory();
+
+      // Đóng modal và reset form
+      setIsAddModalOpen(false);
+      setNewName('');
+      setNewImages([]);
+      setNewColor('Trắng Tinh Khôi');
+      setNewDescription('');
+      setNewSizeXS(1);
+      setNewSizeS(2);
+      setNewSizeM(2);
+      setNewSizeL(1);
+
+      showToast(`Đã lưu & nhập kho thành công tác phẩm "${payload.name}" vào MongoDB Atlas!`);
+    } catch (err) {
+      console.error('Lỗi khi lưu tác phẩm vào MongoDB Atlas:', err);
+      showToast(`Lỗi khi lưu tác phẩm: ${err.message || 'Không thể kết nối máy chủ'}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Quản lý xóa mẫu váy khỏi kho
@@ -658,17 +1040,27 @@ export default function InventoryManagement() {
       )}
 
       {/* Page Title & Main CTA Header */}
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="mb-3 sm:mb-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="font-playfair text-[26px] sm:text-[30px] font-bold text-[#5F2B36] tracking-tight">
+          <h1 className="font-playfair text-[26px] sm:text-[30px] font-bold text-[#5F2B36] tracking-tight m-0 leading-tight">
             Quản Lý Sản Phẩm Kho
           </h1>
-          <p className="text-[13px] text-[#7A6B6C] mt-1">
-            Theo dõi vị trí tủ, định mức giá, tồn kho theo size và trạng thái thực tế phụ thuộc đơn thuê.
-          </p>
         </div>
 
         <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={async () => {
+              await loadInventory();
+            }}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-[#E8DDD8] bg-white text-[#5F2B36] hover:bg-[#FAF0EC] text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-60"
+            title="Làm mới dữ liệu kho hàng từ máy chủ"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            <span>{loading ? 'Đang tải...' : 'Làm mới'}</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setShowMatrixTable(!showMatrixTable)}
@@ -696,66 +1088,66 @@ export default function InventoryManagement() {
       {/* 4 Top Metric Cards Nâng Cấp: Tổng số váy, Tổng số mẫu, Đang cho thuê, Đang bảo dưỡng */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Card 1: TỔNG MẪU THIẾT KẾ (Ánh hồng thanh lịch) */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FDE8EC_0%,_transparent_70%)] rounded-2xl border border-[#FAD2DA] p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FDE8EC_0%,_transparent_70%)] rounded-2xl border border-[#FAD2DA] py-3.5 px-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#733F49] uppercase">
                 TỔNG MẪU THIẾT KẾ
               </span>
-              <div className="w-10 h-10 rounded-xl bg-[#FAF0EC] flex items-center justify-center text-[#733F49]">
-                <Layers size={18} />
+              <div className="w-9 h-9 rounded-xl bg-[#FAF0EC] flex items-center justify-center text-[#733F49]">
+                <Layers size={17} />
               </div>
             </div>
             <div className="flex items-baseline">
-              <span className="text-[32px] font-bold text-[#2C2523] leading-none">
+              <span className="text-[28px] font-bold text-[#2C2523] leading-none">
                 {totalCount}
               </span>
               <span className="text-[12px] font-medium text-[#8C7D7E] ml-2">mẫu thiết kế</span>
             </div>
           </div>
-          <div className="mt-3 pt-2.5 border-t border-[#F8E2E6] flex items-center justify-between text-[11px]">
+          <div className="mt-2.5 pt-2 border-t border-[#F8E2E6] flex items-center justify-between text-[11px]">
             <span className="text-[#8A797A]">Giá trị cọc bảo lãnh:</span>
             <span className="font-bold text-[#733F49]">{fmtVnd(totalAssetValue)}</span>
           </div>
         </div>
 
         {/* Card 2: TỔNG SỐ VÁY (Ánh xanh lá dịu mát) */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EAF8EE_0%,_transparent_70%)] rounded-2xl border border-[#C6EED1] p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EAF8EE_0%,_transparent_70%)] rounded-2xl border border-[#C6EED1] py-3.5 px-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#1E8347] uppercase">
                 TỔNG SỐ LỄ PHỤC
               </span>
-              <div className="w-10 h-10 rounded-xl bg-[#EAF8EE] flex items-center justify-center text-[#1E8347]">
-                <HangerIcon size={18} />
+              <div className="w-9 h-9 rounded-xl bg-[#EAF8EE] flex items-center justify-center text-[#1E8347]">
+                <HangerIcon size={17} />
               </div>
             </div>
             <div className="flex items-baseline">
-              <span className="text-[32px] font-bold text-[#1E8347] leading-none">
+              <span className="text-[28px] font-bold text-[#1E8347] leading-none">
                 {totalUnitsAll}
               </span>
               <span className="text-[12px] font-medium text-[#736364] ml-2">chiếc váy</span>
             </div>
           </div>
-          <div className="mt-3 pt-2.5 border-t border-[#D5F3DD] flex items-center justify-between text-[11px]">
+          <div className="mt-2.5 pt-2 border-t border-[#D5F3DD] flex items-center justify-between text-[11px]">
             <span className="text-[#5E7A67]">Khả dụng tại tủ:</span>
             <span className="font-bold text-[#1E8347]">{totalAvailableUnits} chiếc sẵn sàng</span>
           </div>
         </div>
 
         {/* Card 3: MẪU ĐANG CHO THUÊ */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EFF6FF_0%,_transparent_70%)] rounded-2xl border border-[#BFDBFE] p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EFF6FF_0%,_transparent_70%)] rounded-2xl border border-[#BFDBFE] py-3.5 px-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#1D4ED8] uppercase">
                 LỄ PHỤC ĐI THUÊ
               </span>
-              <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] flex items-center justify-center text-[#1D4ED8]">
-                <Sparkles size={18} />
+              <div className="w-9 h-9 rounded-xl bg-[#EFF6FF] flex items-center justify-center text-[#1D4ED8]">
+                <Sparkles size={17} />
               </div>
             </div>
             <div className="flex items-baseline">
-              <span className="text-[32px] font-bold text-[#1E3A8A] leading-none">
+              <span className="text-[28px] font-bold text-[#1E3A8A] leading-none">
                 {rentedModelsCount}
               </span>
               <span className="text-[12px] font-medium text-[#60A5FA] ml-2">
@@ -763,31 +1155,31 @@ export default function InventoryManagement() {
               </span>
             </div>
           </div>
-          <div className="mt-3 pt-2.5 border-t border-[#DBEAFE] flex items-center justify-between text-[11px]">
+          <div className="mt-2.5 pt-2 border-t border-[#DBEAFE] flex items-center justify-between text-[11px]">
             <span className="text-[#4B6B94]">Tỷ lệ lấp đầy:</span>
             <span className="font-bold text-[#1D4ED8]">{utilizationRate}% ({totalRentedUnits} chiếc)</span>
           </div>
         </div>
 
         {/* Card 4: MẪU ĐANG BẢO DƯỠNG */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FEF3C7_0%,_transparent_70%)] rounded-2xl border border-[#FDE68A] p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FEF3C7_0%,_transparent_70%)] rounded-2xl border border-[#FDE68A] py-3.5 px-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#92400E] uppercase">
                 MẪU ĐANG BẢO DƯỠNG
               </span>
-              <div className="w-10 h-10 rounded-xl bg-[#FEF2E6] flex items-center justify-center text-[#D97706]">
-                <Clock size={18} />
+              <div className="w-9 h-9 rounded-xl bg-[#FEF2E6] flex items-center justify-center text-[#D97706]">
+                <Clock size={17} />
               </div>
             </div>
             <div className="flex items-baseline">
-              <span className="text-[32px] font-bold text-[#78350F] leading-none">
+              <span className="text-[28px] font-bold text-[#78350F] leading-none">
                 {maintenanceCount}
               </span>
               <span className="text-[12px] font-medium text-[#D97706] ml-2">mẫu đang xử lý</span>
             </div>
           </div>
-          <div className="mt-3 pt-2.5 border-t border-[#FDE68A] flex items-center justify-between text-[11px]">
+          <div className="mt-2.5 pt-2 border-t border-[#FDE68A] flex items-center justify-between text-[11px]">
             <span className="text-[#855B1B]">Tiêu chuẩn:</span>
             <span className="font-bold text-[#92400E]">Giặt khô & vi khí hậu</span>
           </div>
@@ -942,63 +1334,42 @@ export default function InventoryManagement() {
       )}
 
       {/* Search & Filter Bar */}
-      <div className="bg-white rounded-2xl border border-[#EFE5E1] p-4 shadow-xs mb-4">
-        <div className="relative">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9A8B8C]" />
+      <div className="bg-white p-1.5 rounded-2xl border border-[#EFE5E1] shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4">
+        <div className="relative flex-1 max-w-md">
+          <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A39192]" />
           <input
             type="text"
+            placeholder="Tìm theo mã váy, tên thiết kế, vị trí tủ..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Tìm theo mã váy, tên thiết kế, vị trí tủ..."
-            className="w-full pl-11 pr-4 py-3 rounded-xl bg-[#FFF6F3] border border-[#F4E8E3] focus:border-[#B8737D] focus:bg-white text-[13px] text-[#2C2523] placeholder-[#A39293] outline-none transition-all"
+            className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-[#EFE5E1] bg-[#FCF7F4] text-sm text-[#302626] placeholder-[#A39293] focus:outline-none focus:ring-2 focus:ring-[#B8737D]/30 focus:border-[#B8737D] transition-all"
           />
           {searchTerm && (
             <button
               type="button"
               onClick={() => setSearchTerm('')}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#A39293] hover:text-[#5F333B] cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A39192] hover:text-[#5F333B] cursor-pointer bg-transparent border-0 p-0"
             >
-              <X size={16} />
+              <X size={15} />
             </button>
           )}
         </div>
 
-        <div className="flex justify-end items-center mt-3">
-          <div className="relative">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
+          {statusOptions.map((tab) => (
             <button
+              key={tab.value}
               type="button"
-              onClick={() => setFilterDropdownOpen(!filterDropdownOpen)}
-              className="flex items-center justify-between gap-3 px-4 py-2 rounded-xl bg-[#FAF2EE] border border-[#EFE2DC] text-[12.5px] text-[#554748] font-medium hover:bg-[#F3E7E2] transition-colors cursor-pointer"
+              onClick={() => setStatusFilter(tab.value)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer border-0 ${
+                statusFilter === tab.value
+                  ? 'bg-[#733F49] text-white shadow-xs'
+                  : 'bg-[#FCF7F4] text-[#7A6B6C] hover:bg-[#FAF0EC] hover:text-[#733F49]'
+              }`}
             >
-              <span>{selectedFilterLabel}</span>
-              <ChevronDown
-                size={14}
-                className={`text-[#8C7D7E] transition-transform ${filterDropdownOpen ? 'rotate-180' : ''}`}
-              />
+              {tab.label}
             </button>
-
-            {filterDropdownOpen && (
-              <div className="absolute right-0 top-full mt-1.5 w-56 bg-white rounded-xl shadow-lg border border-[#EFE5E1] py-1.5 z-20 animate-fadeIn">
-                {statusOptions.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => {
-                      setStatusFilter(opt.value);
-                      setFilterDropdownOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-4 py-2 text-left text-[13px] transition-colors cursor-pointer ${statusFilter === opt.value
-                      ? 'bg-[#F9EDE9] text-[#733F49] font-bold'
-                      : 'bg-transparent text-[#5F4E50] hover:bg-[#FAF5F2]'
-                      }`}
-                  >
-                    <span>{opt.label}</span>
-                    {statusFilter === opt.value && <Check size={14} />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          ))}
         </div>
       </div>
 
@@ -1335,7 +1706,10 @@ export default function InventoryManagement() {
       {/* ========================================================= */}
       {editingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fadeIn font-jakarta">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-[#EFE5E1] max-h-[92vh] overflow-y-auto">
+          <div
+            className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-[#EFE5E1] max-h-[92vh] overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
             {/* Header */}
             <div className="flex items-center justify-between pb-4 border-b border-[#F0E6E2]">
               <div className="flex items-center gap-2.5">
@@ -1361,125 +1735,335 @@ export default function InventoryManagement() {
             </div>
 
             <form onSubmit={handleSaveEdit} className="space-y-4 pt-4 text-xs">
-              {/* Tên mẫu váy */}
+              {/* 1. Tên Tác Phẩm */}
               <div>
                 <label className="block font-bold text-[#5F4E50] mb-1">
-                  Tên Tác Phẩm / Mẫu Váy Cưới *
+                  Tên Tác Phẩm *
                 </label>
                 <input
                   type="text"
                   required
+                  placeholder="VD: Juliette Royal Velvet"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] font-medium outline-none focus:border-[#B8737D]"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D]"
                 />
               </div>
 
-              {/* Vị trí tủ & Trạng thái */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {/* 2. Phom Dáng & Chất Liệu (Chọn trực tiếp từ MongoDB Atlas) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-[#5F4E50] mb-1">
-                    Vị Trí Tủ Lưu Trữ *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="VD: Tủ A1, Tủ B2, Tủ VIP..."
-                    value={editLocation}
-                    onChange={(e) => setEditLocation(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] font-medium outline-none focus:border-[#B8737D]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-[#5F4E50] mb-1">
-                    Cơ Chế Trạng Thái Kho
+                    Phom Dáng *
                   </label>
                   <select
-                    value={editStatusType}
-                    onChange={(e) => setEditStatusType(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] font-medium outline-none focus:border-[#B8737D] cursor-pointer"
+                    value={editSilhouette}
+                    onChange={(e) => setEditSilhouette(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D] cursor-pointer"
                   >
-                    <option value="stored">Còn Hàng</option>
-                    <option value="ready">Đã Cho Thuê</option>
-                    <option value="drying">Đang Bảo Dưỡng</option>
-                    <option value="out_of_stock">Hết Hàng</option>
+                    {categoriesList.map((cat) => (
+                      <option key={cat._id || cat.id || cat.slug} value={cat.name}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-[#5F4E50] mb-1">
+                    Chất Liệu *
+                  </label>
+                  <select
+                    value={editMaterial}
+                    onChange={(e) => setEditMaterial(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D] cursor-pointer"
+                  >
+                    {materialsList.map((mat) => (
+                      <option key={mat} value={mat}>
+                        {mat}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
 
-              {/* Giá thuê & Tiền cọc */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {/* 3. Cơ Chế Trạng Thái Kho (Chỉ có ở modal Chỉnh Sửa) */}
+              <div>
+                <label className="block font-bold text-[#5F4E50] mb-1">
+                  Cơ Chế Trạng Thái Kho *
+                </label>
+                <select
+                  value={editStatusType}
+                  onChange={(e) => setEditStatusType(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] font-medium outline-none focus:border-[#B8737D] cursor-pointer"
+                >
+                  <option value="stored">Còn Hàng</option>
+                  <option value="ready">Đã Cho Thuê</option>
+                  <option value="drying">Đang Bảo Dưỡng</option>
+                  <option value="out_of_stock">Hết Hàng</option>
+                </select>
+              </div>
+
+              {/* 4. Đơn Giá Thuê & Tiền Đặt Cọc */}
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-[#5F4E50] mb-1">
-                    Đơn Giá Thuê 1 Lễ Cưới (VNĐ) *
+                    Đơn Giá Thuê (VNĐ) *
                   </label>
                   <input
                     type="number"
                     min="0"
-                    step="100000"
+                    step="500000"
                     required
                     value={editRentPrice}
                     onChange={(e) => setEditRentPrice(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#733F49] font-bold outline-none focus:border-[#B8737D]"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D]"
                   />
                 </div>
-
                 <div>
                   <label className="block font-bold text-[#5F4E50] mb-1">
-                    Mức Đặt Cọc Bảo Chứng (VNĐ) *
+                    Tiền Đặt Cọc (VNĐ) *
                   </label>
                   <input
                     type="number"
                     min="0"
-                    step="100000"
+                    step="500000"
                     required
                     value={editDepositAmount}
                     onChange={(e) => setEditDepositAmount(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] font-bold outline-none focus:border-[#B8737D]"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D]"
                   />
                 </div>
               </div>
 
-              {/* Phân bổ tồn kho theo từng Size */}
-              <div className="p-4 rounded-2xl bg-[#FFF9F6] border border-[#F3DDD7] space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-[#5F2B36] uppercase tracking-wider text-[11px]">
+              {/* 5. Tồn Kho Ban Đầu (4 Size: XS, S, M, L) */}
+              <div className="p-3.5 rounded-2xl bg-[#FFF9F6] border border-[#F3DDD7]">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-bold text-[#5F2B36] uppercase tracking-wider text-[11px]">
                     Số Lượng Tồn Kho Theo Từng Kích Cỡ Size
-                  </span>
-                  <span className="text-[11px] text-[#8C7D7E]">
-                    Tổng: <strong>{Object.values(editSizes).reduce((a, b) => a + Number(b || 0), 0)} bộ</strong>
-                  </span>
+                  </div>
+                  <div className="text-[11px] text-[#8C6C72] font-semibold">
+                    Tổng: {Number(editSizes.XS || 0) + Number(editSizes.S || 0) + Number(editSizes.M || 0) + Number(editSizes.L || 0)} bộ
+                  </div>
                 </div>
-
-                <div className="grid grid-cols-5 gap-2 pt-1">
-                  {['XS', 'S', 'M', 'L', 'XL'].map((sz) => (
-                    <div key={sz} className="text-center">
-                      <span className="block text-[11px] font-bold text-[#733F49] mb-1">
-                        Size {sz}
-                      </span>
-                      <input
-                        type="number"
-                        min="0"
-                        max="20"
-                        value={editSizes[sz] ?? 0}
-                        onChange={(e) =>
-                          setEditSizes((prev) => ({
-                            ...prev,
-                            [sz]: Math.max(0, parseInt(e.target.value) || 0),
-                          }))
-                        }
-                        className="w-full py-1.5 text-center font-bold text-xs rounded-lg border border-[#EFE2DC] bg-white text-[#2C2523] outline-none focus:border-[#BA7A83]"
-                      />
-                    </div>
-                  ))}
+                <div className="grid grid-cols-4 gap-2">
+                  <div>
+                    <label className="block text-[#733F49] font-medium text-center mb-1 text-[11px]">Size XS</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editSizes.XS ?? 0}
+                      onChange={(e) =>
+                        setEditSizes((prev) => ({
+                          ...prev,
+                          XS: Math.max(0, parseInt(e.target.value) || 0),
+                        }))
+                      }
+                      className="w-full px-2 py-1.5 rounded-lg bg-white border border-[#EFE5E1] font-bold text-center text-xs outline-none focus:border-[#B8737D]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#733F49] font-medium text-center mb-1 text-[11px]">Size S</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editSizes.S ?? 0}
+                      onChange={(e) =>
+                        setEditSizes((prev) => ({
+                          ...prev,
+                          S: Math.max(0, parseInt(e.target.value) || 0),
+                        }))
+                      }
+                      className="w-full px-2 py-1.5 rounded-lg bg-white border border-[#EFE5E1] font-bold text-center text-xs outline-none focus:border-[#B8737D]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#733F49] font-medium text-center mb-1 text-[11px]">Size M</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editSizes.M ?? 0}
+                      onChange={(e) =>
+                        setEditSizes((prev) => ({
+                          ...prev,
+                          M: Math.max(0, parseInt(e.target.value) || 0),
+                        }))
+                      }
+                      className="w-full px-2 py-1.5 rounded-lg bg-white border border-[#EFE5E1] font-bold text-center text-xs outline-none focus:border-[#B8737D]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#733F49] font-medium text-center mb-1 text-[11px]">Size L</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editSizes.L ?? 0}
+                      onChange={(e) =>
+                        setEditSizes((prev) => ({
+                          ...prev,
+                          L: Math.max(0, parseInt(e.target.value) || 0),
+                        }))
+                      }
+                      className="w-full px-2 py-1.5 rounded-lg bg-white border border-[#EFE5E1] font-bold text-center text-xs outline-none focus:border-[#B8737D]"
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Mô tả chất liệu & bảo quản */}
+              {/* 6. Màu Sắc */}
               <div>
                 <label className="block font-bold text-[#5F4E50] mb-1">
-                  Mô Tả Kiểu Dáng &amp; Tiêu Chuẩn Bảo Quản
+                  Màu Sắc *
+                  <span className="text-[11px] font-normal text-[#8C7A7C] ml-2">
+                    (Gõ trực tiếp hoặc bấm chọn nhanh bên dưới, hỗ trợ nhiều màu)
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="VD: Trắng Tinh Khôi, Trắng Kem, Champagne, Hồng Pastel..."
+                  value={editColor}
+                  onChange={(e) => setEditColor(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D]"
+                />
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {POPULAR_COLORS.map((c) => {
+                    const isSelected = (editColor || '')
+                      .split(',')
+                      .map((s) => s.trim().toLowerCase())
+                      .includes(c.name.toLowerCase());
+                    return (
+                      <button
+                        key={c.name}
+                        type="button"
+                        onClick={() => handleToggleColorSelection(c.name, editColor, setEditColor)}
+                        className={`px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer border ${
+                          isSelected
+                            ? 'bg-[#B8737D] text-white border-[#B8737D] shadow-xs'
+                            : 'bg-white text-[#5F4E50] border-[#E5D7D0] hover:border-[#B8737D] hover:bg-[#FAF5F2]'
+                        }`}
+                      >
+                        <span
+                          className="w-2.5 h-2.5 rounded-full inline-block shrink-0"
+                          style={{ backgroundColor: c.hex, border: `1px solid ${c.border}` }}
+                        />
+                        <span>{c.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 7. Ảnh Sản Phẩm (Tải lên từ máy, chọn được nhiều ảnh) */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block font-bold text-[#5F4E50]">
+                    Ảnh Sản Phẩm * (Tải lên từ máy, chọn được nhiều ảnh)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    {editImages.length > 0 && (
+                      <span className="text-[11px] text-[#8C6C72]">
+                        Đã có {editImages.length} ảnh
+                      </span>
+                    )}
+                    {editImages.length > 3 && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => editImagesScrollRef.current?.scrollBy({ left: -240, behavior: 'smooth' })}
+                          className="w-6 h-6 rounded-lg bg-[#FAF5F2] hover:bg-[#733F49] hover:text-white text-[#733F49] border border-[#E6DAC8] flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+                          title="Cuộn sang trái"
+                        >
+                          <ChevronLeft size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => editImagesScrollRef.current?.scrollBy({ left: 240, behavior: 'smooth' })}
+                          className="w-6 h-6 rounded-lg bg-[#FAF5F2] hover:bg-[#733F49] hover:text-white text-[#733F49] border border-[#E6DAC8] flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+                          title="Cuộn sang phải xem nút thêm ảnh"
+                        >
+                          <ChevronRight size={14} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <input
+                  type="file"
+                  id="edit-dress-image-upload"
+                  multiple
+                  accept="image/*"
+                  onChange={handleEditImageUpload}
+                  className="hidden"
+                />
+
+                {editImages.length > 0 ? (
+                  <div
+                    ref={editImagesScrollRef}
+                    onMouseDown={handleScrollMouseDown}
+                    onMouseLeave={handleScrollMouseLeave}
+                    onMouseUp={handleScrollMouseUp}
+                    onMouseMove={handleScrollMouseMove}
+                    onWheel={handleScrollWheel}
+                    className="flex items-center gap-2.5 p-2.5 bg-[#FAF5F2] rounded-2xl border border-[#EFE5E1] overflow-x-auto cursor-grab active:cursor-grabbing select-none transition-all scroll-smooth pb-2.5 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-[#F0E6E2] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#D4A59A] [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#733F49]"
+                  >
+                    {editImages.map((imgSrc, idx) => (
+                      <div
+                        key={idx}
+                        className="relative group rounded-xl overflow-hidden w-[100px] h-[135px] sm:w-[110px] sm:h-[148px] shrink-0 border border-[#E6DAC8] bg-white shadow-xs"
+                      >
+                        <img
+                          src={imgSrc}
+                          alt={`Ảnh ${idx + 1}`}
+                          className="w-full h-full object-cover pointer-events-none"
+                        />
+                        {idx === 0 && (
+                          <span className="absolute top-1 left-1 bg-[#733F49] text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
+                            Ảnh chính
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveEditImage(idx)}
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-red-600 transition-all cursor-pointer border-0"
+                          title="Xóa ảnh này"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+
+                    <label
+                      htmlFor="edit-dress-image-upload"
+                      className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#D4B2A7] hover:border-[#733F49] bg-white hover:bg-[#FFF9F6] w-[100px] h-[135px] sm:w-[110px] sm:h-[148px] shrink-0 cursor-pointer transition-all text-[#733F49]"
+                      title="Chọn thêm ảnh"
+                    >
+                      <Plus size={20} />
+                      <span className="text-[10px] font-semibold mt-1">Thêm ảnh</span>
+                    </label>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor="edit-dress-image-upload"
+                    className="w-full flex flex-col items-center justify-center p-5 rounded-2xl border-2 border-dashed border-[#D4B2A7] hover:border-[#733F49] bg-[#FAF5F2] hover:bg-[#FFF9F6] cursor-pointer transition-all text-center"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-[#FFF0EB] text-[#733F49] flex items-center justify-center mb-2 shadow-xs">
+                      <Upload size={18} />
+                    </div>
+                    <div className="font-bold text-[#5F2B36] text-xs">
+                      Click để chọn ảnh từ máy tính (hỗ trợ nhiều ảnh)
+                    </div>
+                    <div className="text-[10.5px] text-[#9A8B8C] mt-0.5">
+                      Định dạng JPG, PNG, WEBP (Ảnh đầu tiên sẽ là ảnh bìa chính)
+                    </div>
+                  </label>
+                )}
+              </div>
+
+              {/* 8. Mô Tả / Đặc Điểm Lễ Phục */}
+              <div>
+                <label className="block font-bold text-[#5F4E50] mb-1">
+                  Mô Tả / Đặc Điểm Lễ Phục
                 </label>
                 <textarea
                   rows={2}
@@ -1490,16 +2074,17 @@ export default function InventoryManagement() {
                 />
               </div>
 
-              {/* Action Buttons */}
+              {/* 9. Nút Thao Tác: Xóa Khỏi Kho, Hủy, Lưu Thay Đổi */}
               <div className="flex items-center justify-between pt-3 border-t border-[#F0E6E2]">
                 <button
                   type="button"
+                  disabled={isSubmittingEdit}
                   onClick={() => {
                     const itemToDelete = editingItem;
                     setEditingItem(null);
                     handleConfirmDeleteItem(itemToDelete);
                   }}
-                  className="px-4 py-2.5 rounded-xl border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 cursor-pointer transition-colors flex items-center gap-1.5 text-xs"
+                  className="px-4 py-2.5 rounded-xl border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 cursor-pointer transition-colors flex items-center gap-1.5 text-xs disabled:opacity-50"
                 >
                   <Trash2 size={14} />
                   <span>Xóa Khỏi Kho</span>
@@ -1508,6 +2093,7 @@ export default function InventoryManagement() {
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
+                    disabled={isSubmittingEdit}
                     onClick={() => setEditingItem(null)}
                     className="px-5 py-2.5 rounded-xl border border-[#EFE2DC] bg-white text-[#7A6B6C] font-bold hover:bg-[#FAF2EE] cursor-pointer transition-colors"
                   >
@@ -1515,9 +2101,10 @@ export default function InventoryManagement() {
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#733F49] to-[#8C4654] hover:from-[#5A2D35] hover:to-[#733F49] text-white font-bold cursor-pointer transition-all shadow-md border-0"
+                    disabled={isSubmittingEdit}
+                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#733F49] to-[#8C4654] hover:from-[#5A2D35] hover:to-[#733F49] text-white font-bold cursor-pointer transition-all shadow-md border-0 flex items-center gap-2 disabled:opacity-60"
                   >
-                    Lưu Thay Đổi
+                    {isSubmittingEdit ? 'Đang Lưu...' : 'Lưu Thay Đổi'}
                   </button>
                 </div>
               </div>
@@ -1529,7 +2116,10 @@ export default function InventoryManagement() {
       {/* Modal Nhập Kho Mới */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fadeIn font-jakarta">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-[#EFE5E1] max-h-[90vh] overflow-y-auto">
+          <div
+            className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-[#EFE5E1] max-h-[90vh] overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#F0E6E2]">
               <div className="flex items-center gap-2">
                 <Plus size={18} className="text-[#733F49]" />
@@ -1547,9 +2137,10 @@ export default function InventoryManagement() {
             </div>
 
             <form onSubmit={handleAddNewItem} className="space-y-4 text-xs">
+              {/* 1. Tên Tác Phẩm */}
               <div>
                 <label className="block font-bold text-[#5F4E50] mb-1">
-                  Tên Tác Phẩm / Mẫu Váy Cưới *
+                  Tên Tác Phẩm *
                 </label>
                 <input
                   type="text"
@@ -1561,33 +2152,43 @@ export default function InventoryManagement() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* 2. Phom Dáng & Chất Liệu (Chọn trực tiếp từ MongoDB Atlas) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-[#5F4E50] mb-1">
-                    Bộ Sưu Tập
+                    Phom Dáng *
                   </label>
-                  <input
-                    type="text"
-                    value={newCollection}
-                    onChange={(e) => setNewCollection(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D]"
-                  />
+                  <select
+                    value={newSilhouette}
+                    onChange={(e) => setNewSilhouette(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D] cursor-pointer"
+                  >
+                    {categoriesList.map((cat) => (
+                      <option key={cat._id || cat.id || cat.slug} value={cat.name}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block font-bold text-[#5F4E50] mb-1">
-                    Vị Trí Tủ *
+                    Chất Liệu *
                   </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="VD: Tủ A1, Tủ B2, Tủ VIP..."
-                    value={newLocation}
-                    onChange={(e) => setNewLocation(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D]"
-                  />
+                  <select
+                    value={newMaterial}
+                    onChange={(e) => setNewMaterial(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D] cursor-pointer"
+                  >
+                    {materialsList.map((mat) => (
+                      <option key={mat} value={mat}>
+                        {mat}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
+              {/* 3. Đơn Giá Thuê & Tiền Đặt Cọc */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-[#5F4E50] mb-1">
@@ -1617,37 +2218,215 @@ export default function InventoryManagement() {
                 </div>
               </div>
 
-              <div className="p-3 rounded-2xl bg-[#FFF9F6] border border-[#F3DDD7]">
-                <div className="font-bold text-[#5F2B36] uppercase tracking-wider text-[11px] mb-2">
-                  Tồn Kho Ban Đầu
+              {/* 4. Tồn Kho Ban Đầu (4 Size: XS, S, M, L) */}
+              <div className="p-3.5 rounded-2xl bg-[#FFF9F6] border border-[#F3DDD7]">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-bold text-[#5F2B36] uppercase tracking-wider text-[11px]">
+                    Tồn Kho Ban Đầu
+                  </div>
+                  <div className="text-[11px] text-[#8C6C72] font-semibold">
+                    Tổng: {Number(newSizeXS || 0) + Number(newSizeS || 0) + Number(newSizeM || 0) + Number(newSizeL || 0)} bộ
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-4 gap-2">
                   <div>
-                    <label className="block text-[#733F49] font-medium mb-1">Size S (bộ)</label>
+                    <label className="block text-[#733F49] font-medium text-center mb-1 text-[11px]">Size XS</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={newSizeXS}
+                      onChange={(e) => setNewSizeXS(e.target.value)}
+                      className="w-full px-2 py-1.5 rounded-lg bg-white border border-[#EFE5E1] font-bold text-center text-xs outline-none focus:border-[#B8737D]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#733F49] font-medium text-center mb-1 text-[11px]">Size S</label>
                     <input
                       type="number"
                       min="0"
                       value={newSizeS}
                       onChange={(e) => setNewSizeS(e.target.value)}
-                      className="w-full px-3 py-1.5 rounded-lg bg-white border border-[#EFE5E1] font-bold text-center"
+                      className="w-full px-2 py-1.5 rounded-lg bg-white border border-[#EFE5E1] font-bold text-center text-xs outline-none focus:border-[#B8737D]"
                     />
                   </div>
                   <div>
-                    <label className="block text-[#733F49] font-medium mb-1">Size M (bộ)</label>
+                    <label className="block text-[#733F49] font-medium text-center mb-1 text-[11px]">Size M</label>
                     <input
                       type="number"
                       min="0"
                       value={newSizeM}
                       onChange={(e) => setNewSizeM(e.target.value)}
-                      className="w-full px-3 py-1.5 rounded-lg bg-white border border-[#EFE5E1] font-bold text-center"
+                      className="w-full px-2 py-1.5 rounded-lg bg-white border border-[#EFE5E1] font-bold text-center text-xs outline-none focus:border-[#B8737D]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#733F49] font-medium text-center mb-1 text-[11px]">Size L</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={newSizeL}
+                      onChange={(e) => setNewSizeL(e.target.value)}
+                      className="w-full px-2 py-1.5 rounded-lg bg-white border border-[#EFE5E1] font-bold text-center text-xs outline-none focus:border-[#B8737D]"
                     />
                   </div>
                 </div>
               </div>
 
+              {/* 5. Màu Sắc (Người dùng tự điền hoặc chọn nhanh) */}
               <div>
                 <label className="block font-bold text-[#5F4E50] mb-1">
-                  Mô Tả / Đặc Điểm Chất Liệu
+                  Màu Sắc *
+                  <span className="text-[11px] font-normal text-[#8C7A7C] ml-2">
+                    (Gõ trực tiếp hoặc bấm chọn nhanh bên dưới, hỗ trợ nhiều màu)
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="VD: Trắng Tinh Khôi, Trắng Kem, Champagne, Hồng Pastel..."
+                  value={newColor}
+                  onChange={(e) => setNewColor(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D]"
+                />
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {POPULAR_COLORS.map((c) => {
+                    const isSelected = (newColor || '')
+                      .split(',')
+                      .map((s) => s.trim().toLowerCase())
+                      .includes(c.name.toLowerCase());
+                    return (
+                      <button
+                        key={c.name}
+                        type="button"
+                        onClick={() => handleToggleColorSelection(c.name, newColor, setNewColor)}
+                        className={`px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer border ${
+                          isSelected
+                            ? 'bg-[#B8737D] text-white border-[#B8737D] shadow-xs'
+                            : 'bg-white text-[#5F4E50] border-[#E5D7D0] hover:border-[#B8737D] hover:bg-[#FAF5F2]'
+                        }`}
+                      >
+                        <span
+                          className="w-2.5 h-2.5 rounded-full inline-block shrink-0"
+                          style={{ backgroundColor: c.hex, border: `1px solid ${c.border}` }}
+                        />
+                        <span>{c.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 6. Chọn Ảnh Cho Sản Phẩm (Tải lên nhiều ảnh từ máy tính) */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block font-bold text-[#5F4E50]">
+                    Ảnh Sản Phẩm * (Tải lên từ máy, chọn được nhiều ảnh)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    {newImages.length > 0 && (
+                      <span className="text-[11px] text-[#8C6C72]">
+                        Đã chọn {newImages.length} ảnh
+                      </span>
+                    )}
+                    {newImages.length > 3 && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => addImagesScrollRef.current?.scrollBy({ left: -240, behavior: 'smooth' })}
+                          className="w-6 h-6 rounded-lg bg-[#FAF5F2] hover:bg-[#733F49] hover:text-white text-[#733F49] border border-[#E6DAC8] flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+                          title="Cuộn sang trái"
+                        >
+                          <ChevronLeft size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => addImagesScrollRef.current?.scrollBy({ left: 240, behavior: 'smooth' })}
+                          className="w-6 h-6 rounded-lg bg-[#FAF5F2] hover:bg-[#733F49] hover:text-white text-[#733F49] border border-[#E6DAC8] flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+                          title="Cuộn sang phải xem nút thêm ảnh"
+                        >
+                          <ChevronRight size={14} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <input
+                  type="file"
+                  id="dress-image-upload"
+                  multiple
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+
+                {newImages.length > 0 ? (
+                  <div
+                    ref={addImagesScrollRef}
+                    onMouseDown={handleScrollMouseDown}
+                    onMouseLeave={handleScrollMouseLeave}
+                    onMouseUp={handleScrollMouseUp}
+                    onMouseMove={handleScrollMouseMove}
+                    onWheel={handleScrollWheel}
+                    className="flex items-center gap-2.5 p-2.5 bg-[#FAF5F2] rounded-2xl border border-[#EFE5E1] overflow-x-auto cursor-grab active:cursor-grabbing select-none transition-all scroll-smooth pb-2.5 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-[#F0E6E2] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#D4A59A] [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#733F49]"
+                  >
+                    {newImages.map((imgSrc, idx) => (
+                      <div
+                        key={idx}
+                        className="relative group rounded-xl overflow-hidden w-[100px] h-[135px] sm:w-[110px] sm:h-[148px] shrink-0 border border-[#E6DAC8] bg-white shadow-xs"
+                      >
+                        <img
+                          src={imgSrc}
+                          alt={`Ảnh ${idx + 1}`}
+                          className="w-full h-full object-cover pointer-events-none"
+                        />
+                        {idx === 0 && (
+                          <span className="absolute top-1 left-1 bg-[#733F49] text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
+                            Ảnh chính
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-red-600 transition-all cursor-pointer border-0"
+                          title="Xóa ảnh này"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+
+                    <label
+                      htmlFor="dress-image-upload"
+                      className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#D4B2A7] hover:border-[#733F49] bg-white hover:bg-[#FFF9F6] w-[100px] h-[135px] sm:w-[110px] sm:h-[148px] shrink-0 cursor-pointer transition-all text-[#733F49]"
+                      title="Chọn thêm ảnh"
+                    >
+                      <Plus size={20} />
+                      <span className="text-[10px] font-semibold mt-1">Thêm ảnh</span>
+                    </label>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor="dress-image-upload"
+                    className="w-full flex flex-col items-center justify-center p-5 rounded-2xl border-2 border-dashed border-[#D4B2A7] hover:border-[#733F49] bg-[#FAF5F2] hover:bg-[#FFF9F6] cursor-pointer transition-all text-center"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-[#FFF0EB] text-[#733F49] flex items-center justify-center mb-2 shadow-xs">
+                      <Upload size={18} />
+                    </div>
+                    <div className="font-bold text-[#5F2B36] text-xs">
+                      Click để chọn ảnh từ máy tính (hỗ trợ nhiều ảnh)
+                    </div>
+                    <div className="text-[10.5px] text-[#9A8B8C] mt-0.5">
+                      Định dạng JPG, PNG, WEBP (Ảnh đầu tiên sẽ là ảnh bìa chính)
+                    </div>
+                  </label>
+                )}
+              </div>
+
+              {/* 7. Mô Tả / Đặc Điểm Chất Liệu */}
+              <div>
+                <label className="block font-bold text-[#5F4E50] mb-1">
+                  Mô Tả / Đặc Điểm Lễ Phục
                 </label>
                 <textarea
                   rows={2}
@@ -1658,19 +2437,29 @@ export default function InventoryManagement() {
                 />
               </div>
 
+              {/* 8. Nút Bấm Thao Tác */}
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#F0E6E2]">
                 <button
                   type="button"
+                  disabled={isSubmitting}
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-5 py-2 rounded-xl border border-[#EFE2DC] bg-white text-[#7A6B6C] font-bold hover:bg-[#FAF2EE] cursor-pointer"
+                  className="px-5 py-2 rounded-xl border border-[#EFE2DC] bg-white text-[#7A6B6C] font-bold hover:bg-[#FAF2EE] cursor-pointer transition-colors"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 rounded-xl bg-[#733F49] hover:bg-[#5C3038] text-white font-bold cursor-pointer transition-colors shadow-xs border-0"
+                  disabled={isSubmitting}
+                  className="px-6 py-2 rounded-xl bg-[#733F49] hover:bg-[#5C3038] text-white font-bold cursor-pointer transition-colors shadow-xs border-0 flex items-center gap-2 disabled:opacity-60"
                 >
-                  Lưu &amp; Nhập Kho
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCw size={14} className="animate-spin" />
+                      <span>Đang lưu vào Atlas...</span>
+                    </>
+                  ) : (
+                    <span>Lưu &amp; Nhập Kho</span>
+                  )}
                 </button>
               </div>
             </form>

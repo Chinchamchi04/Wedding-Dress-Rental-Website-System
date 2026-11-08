@@ -21,6 +21,7 @@ import {
   Image as ImageIcon,
   CheckCircle2,
   XCircle,
+  X,
   Eye,
   Layers,
   Sparkles,
@@ -371,9 +372,9 @@ export default function CategoryManagement() {
 
   return (
     <AdminLayout activeMenu="categories">
-      <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+      <div className="space-y-5">
         {/* Header & Tiêu đề trang */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#EFE5E1] pb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#EFE5E1] pb-4">
           <div>
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full bg-[#FAF0EC] text-[#733F49] text-[11px] font-bold tracking-wider uppercase border border-[#F2D8D4]">
@@ -391,12 +392,12 @@ export default function CategoryManagement() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+          <div className="flex items-center gap-2.5 self-start sm:self-auto shrink-0">
             <button
               type="button"
               onClick={fetchCategories}
               disabled={loading}
-              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-xs font-bold transition shadow-xs cursor-pointer"
+              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-xs font-bold transition shadow-xs cursor-pointer whitespace-nowrap shrink-0"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
               <span>Làm mới</span>
@@ -405,10 +406,10 @@ export default function CategoryManagement() {
             <button
               type="button"
               onClick={openCreateModal}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#733F49] hover:bg-[#5a3239] text-white text-xs font-bold transition shadow-md shadow-[#733F49]/20 cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#733F49] hover:bg-[#5a3239] text-white text-xs font-bold transition shadow-md shadow-[#733F49]/20 cursor-pointer whitespace-nowrap shrink-0"
             >
-              <Plus className="w-4 h-4" />
-              <span>Thêm Danh Mục Mới</span>
+              <Plus className="w-4 h-4 shrink-0" />
+              <span className="whitespace-nowrap">Thêm Danh Mục Mới</span>
             </button>
           </div>
         </div>
@@ -633,143 +634,172 @@ export default function CategoryManagement() {
         {/* ========================================================= */}
         {/* MODAL THÊM / CHỈNH SỬA DANH MỤC */}
         {/* ========================================================= */}
-        <Modal
-          open={isModalOpen}
-          onCancel={() => setIsModalOpen(false)}
-          footer={null}
-          destroyOnClose
-          title={
-            <div className="flex items-center gap-2 text-base font-bold text-gray-900 font-playfair pb-2 border-b border-gray-100">
-              <FolderTree className="w-5 h-5 text-[#733F49]" />
-              <span>{editingCategory ? 'Chỉnh Sửa Phom Dáng / Danh Mục' : 'Thêm Danh Mục Phom Dáng Mới'}</span>
-            </div>
-          }
-        >
-          <form onSubmit={handleSaveCategory} className="space-y-4 py-2 text-xs sm:text-sm">
-            {/* Tên danh mục */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                Tên danh mục phom dáng <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={formName}
-                onChange={(e) => handleNameChange(e.target.value)}
-                placeholder="Ví dụ: Công Chúa Bồng Xòe (Ballgown)"
-                className={`w-full px-3.5 py-2.5 rounded-xl border bg-gray-50 text-xs text-gray-900 outline-none focus:bg-white focus:border-[#733F49] transition ${
-                  formErrors.name ? 'border-red-400 bg-red-50/30' : 'border-gray-200'
-                }`}
-              />
-              {formErrors.name && (
-                <div className="text-[11px] text-red-500 mt-1">{formErrors.name}</div>
-              )}
-            </div>
-
-            {/* Slug URL */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                Slug nhận diện đường dẫn <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={formSlug}
-                onChange={(e) => {
-                  setFormSlug(e.target.value);
-                  if (formErrors.slug) setFormErrors((p) => ({ ...p, slug: '' }));
-                }}
-                placeholder="Ví dụ: ballgown"
-                className={`w-full px-3.5 py-2.5 rounded-xl border bg-gray-50 text-xs text-gray-900 font-mono outline-none focus:bg-white focus:border-[#733F49] transition ${
-                  formErrors.slug ? 'border-red-400 bg-red-50/30' : 'border-gray-200'
-                }`}
-              />
-              {formErrors.slug && (
-                <div className="text-[11px] text-red-500 mt-1">{formErrors.slug}</div>
-              )}
-              <p className="text-[11px] text-gray-400 mt-1">
-                Dùng trong bộ lọc URL và liên kết danh mục váy cưới (chữ thường, không dấu, nối bằng dấu gạch ngang).
-              </p>
-            </div>
-
-            {/* Hình ảnh đại diện */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                Hình ảnh đại diện phom dáng
-              </label>
-              <input
-                type="text"
-                value={formImage}
-                onChange={(e) => setFormImage(e.target.value)}
-                placeholder="Nhập đường dẫn ảnh hoặc chọn ảnh mẫu bên dưới"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-xs text-gray-900 outline-none focus:bg-white focus:border-[#733F49] transition"
-              />
-
-              {/* Preset ảnh mẫu chọn nhanh */}
-              <div className="mt-2">
-                <span className="text-[11px] text-gray-500 font-medium">Chọn nhanh ảnh mẫu Haute Couture:</span>
-                <div className="grid grid-cols-6 gap-2 mt-1.5">
-                  {PRESET_IMAGES.map((preset, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setFormImage(preset.url)}
-                      className={`h-14 rounded-lg overflow-hidden border-2 transition relative group cursor-pointer ${
-                        formImage === preset.url ? 'border-[#733F49] ring-2 ring-[#733F49]/20' : 'border-transparent hover:border-gray-300'
-                      }`}
-                      title={preset.label}
-                    >
-                      <img src={preset.url} alt={preset.label} className="w-full h-full object-cover" />
-                    </button>
-                  ))}
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fadeIn font-jakarta">
+            <div
+              className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-[#EFE5E1] max-h-[88vh] overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#F0E6E2]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-[#FAF0EC] flex items-center justify-center text-[#733F49]">
+                    <FolderTree size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-playfair text-lg font-bold text-[#5F2B36] m-0">
+                      {editingCategory ? 'Chỉnh Sửa Phom Dáng' : 'Thêm Danh Mục Phom Dáng Mới'}
+                    </h3>
+                    <p className="text-[11px] text-gray-500 m-0">
+                      {editingCategory ? `Cập nhật cấu hình: ${editingCategory.name}` : 'Thiết lập phom dáng váy cưới độc quyền'}
+                    </p>
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-[#FAF2EE] hover:text-[#5F333B] flex items-center justify-center text-[#9A8B8C] cursor-pointer border-0 transition-colors"
+                >
+                  <X size={18} />
+                </button>
               </div>
-            </div>
 
-            {/* Mô tả đặc trưng */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                Mô tả đặc trưng & chất liệu
-              </label>
-              <textarea
-                rows={3}
-                value={formDesc}
-                onChange={(e) => setFormDesc(e.target.value)}
-                placeholder="Mô tả phom dáng, phong cách thiết kế, chất liệu voan Tulle, lụa Mikado, ren 3D..."
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-xs text-gray-900 outline-none focus:bg-white focus:border-[#733F49] transition"
-              />
-            </div>
+              {/* Form Content */}
+              <form onSubmit={handleSaveCategory} className="space-y-4 text-xs">
+                {/* Tên danh mục */}
+                <div>
+                  <label className="block font-bold text-[#5F4E50] mb-1">
+                    Tên Danh Mục Phom Dáng <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formName}
+                    onChange={(e) => handleNameChange(e.target.value)}
+                    placeholder="Ví dụ: Công Chúa Bồng Xòe (Ballgown)"
+                    className={`w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border text-[#2C2523] outline-none focus:border-[#B8737D] transition ${
+                      formErrors.name ? 'border-red-400 bg-red-50/30' : 'border-[#EFE5E1]'
+                    }`}
+                  />
+                  {formErrors.name && (
+                    <div className="text-[11px] text-red-500 mt-1">{formErrors.name}</div>
+                  )}
+                </div>
 
-            {/* Trạng thái hoạt động */}
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-between">
-              <div>
-                <div className="font-bold text-gray-900 text-xs">Kích hoạt hiển thị</div>
-                <div className="text-[11px] text-gray-500">Cho phép cô dâu lọc theo danh mục này trên website</div>
-              </div>
-              <Switch
-                checked={formIsActive}
-                onChange={setFormIsActive}
-                className={formIsActive ? 'bg-[#733F49]' : 'bg-gray-300'}
-              />
-            </div>
+                {/* Slug URL */}
+                <div>
+                  <label className="block font-bold text-[#5F4E50] mb-1">
+                    Slug Nhận Diện Đường Dẫn <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formSlug}
+                    onChange={(e) => {
+                      setFormSlug(e.target.value);
+                      if (formErrors.slug) setFormErrors((p) => ({ ...p, slug: '' }));
+                    }}
+                    placeholder="Ví dụ: ballgown"
+                    className={`w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border font-mono text-[#2C2523] outline-none focus:border-[#B8737D] transition ${
+                      formErrors.slug ? 'border-red-400 bg-red-50/30' : 'border-[#EFE5E1]'
+                    }`}
+                  />
+                  {formErrors.slug && (
+                    <div className="text-[11px] text-red-500 mt-1">{formErrors.slug}</div>
+                  )}
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    Dùng trong bộ lọc URL và liên kết danh mục váy cưới (chữ thường, không dấu, nối bằng dấu gạch ngang).
+                  </p>
+                </div>
 
-            {/* Nút hành động */}
-            <div className="pt-3 border-t border-gray-100 flex items-center justify-end gap-2.5">
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-bold text-gray-700 transition cursor-pointer"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="px-5 py-2.5 rounded-xl bg-[#733F49] hover:bg-[#5a3239] text-white text-xs font-bold transition shadow-md shadow-[#733F49]/20 cursor-pointer disabled:opacity-50"
-              >
-                {submitting ? 'Đang lưu...' : editingCategory ? 'Lưu Thay Đổi' : 'Tạo Danh Mục Mới'}
-              </button>
+                {/* Hình ảnh đại diện */}
+                <div>
+                  <label className="block font-bold text-[#5F4E50] mb-1">
+                    Hình Ảnh Đại Diện Phom Dáng
+                  </label>
+                  <input
+                    type="text"
+                    value={formImage}
+                    onChange={(e) => setFormImage(e.target.value)}
+                    placeholder="Nhập đường dẫn ảnh hoặc chọn ảnh mẫu bên dưới"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D] transition"
+                  />
+
+                  {/* Preset ảnh mẫu chọn nhanh */}
+                  <div className="mt-2.5">
+                    <span className="text-[11px] text-[#7A6B6C] font-semibold">Chọn nhanh ảnh mẫu Haute Couture:</span>
+                    <div className="grid grid-cols-6 gap-2 mt-1.5">
+                      {PRESET_IMAGES.map((preset, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setFormImage(preset.url)}
+                          className={`h-14 rounded-xl overflow-hidden border-2 transition relative group cursor-pointer ${
+                            formImage === preset.url ? 'border-[#733F49] ring-2 ring-[#733F49]/20' : 'border-transparent hover:border-gray-300'
+                          }`}
+                          title={preset.label}
+                        >
+                          <img src={preset.url} alt={preset.label} className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mô tả đặc trưng */}
+                <div>
+                  <label className="block font-bold text-[#5F4E50] mb-1">
+                    Mô Tả Đặc Trưng & Chất Liệu
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formDesc}
+                    onChange={(e) => setFormDesc(e.target.value)}
+                    placeholder="Mô tả phom dáng, phong cách thiết kế, chất liệu voan Tulle, lụa Mikado, ren 3D..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D] transition resize-none"
+                  />
+                </div>
+
+                {/* Trạng thái hoạt động */}
+                <div className="p-3 bg-[#FAF5F2] rounded-xl border border-[#EFE5E1] flex items-center justify-between">
+                  <div>
+                    <div className="font-bold text-[#2C2523] text-xs">Kích hoạt hiển thị</div>
+                    <div className="text-[11px] text-gray-500">Cho phép cô dâu lọc theo danh mục này trên website</div>
+                  </div>
+                  <Switch
+                    checked={formIsActive}
+                    onChange={setFormIsActive}
+                    className={formIsActive ? 'bg-[#733F49]' : 'bg-gray-300'}
+                  />
+                </div>
+
+                {/* Nút hành động */}
+                <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#F0E6E2]">
+                  <button
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-5 py-2.5 rounded-xl border border-[#EFE2DC] bg-white text-[#7A6B6C] font-bold hover:bg-[#FAF2EE] cursor-pointer transition-colors text-xs"
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="px-6 py-2.5 rounded-xl bg-[#733F49] hover:bg-[#5C3038] text-white font-bold cursor-pointer transition-colors shadow-xs border-0 flex items-center gap-2 disabled:opacity-60 text-xs"
+                  >
+                    {submitting ? (
+                      <>
+                        <RefreshCw size={14} className="animate-spin" />
+                        <span>Đang lưu...</span>
+                      </>
+                    ) : (
+                      <span>{editingCategory ? 'Lưu Thay Đổi' : 'Tạo Danh Mục Mới'}</span>
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
-          </form>
-        </Modal>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );

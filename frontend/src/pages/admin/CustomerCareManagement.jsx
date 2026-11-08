@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Check,
   CheckCircle2,
+  ArrowDown,
 } from 'lucide-react';
 import {
   getConversations,
@@ -52,6 +53,10 @@ export default function CustomerCareManagement() {
   const fileInputRef = useRef(null);
   const emojiPickerRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const isAtBottomRef = useRef(true);
+  const prevSelectedIdRef = useRef(null);
+  const [showScrollBottomBtn, setShowScrollBottomBtn] = useState(false);
 
   // Avatar presets cho các hội thoại
   const AVATAR_LIST = [card1Elysian, card2Celeste, card3Lumiere, card4Monet, heroBride];
@@ -65,7 +70,20 @@ export default function CustomerCareManagement() {
       });
 
       if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-        const mapped = res.data.map((c, index) => ({
+        // Chỉ hiển thị tin nhắn của KHÁCH HÀNG thực tế (loại bỏ tài khoản Quản trị viên và Chuyên viên tư vấn)
+        const customerOnly = res.data.filter((c) => {
+          const roleCode = c.customerId?.roleId?.code;
+          if (roleCode === 'ADMIN' || roleCode === 'STAFF') return false;
+          const name = (c.customerId?.fullName || c.customerName || '').toLowerCase();
+          return !(
+            name.includes('quản trị') ||
+            name.includes('administrator') ||
+            name.includes('chuyên viên') ||
+            name.includes('staff')
+          );
+        });
+
+        const mapped = customerOnly.map((c, index) => ({
           id: c._id,
           name: c.customerId?.fullName || c.customerName || 'Khách hàng',
           phone: c.customerId?.phone || c.customerPhone || '',
@@ -115,7 +133,23 @@ export default function CustomerCareManagement() {
           }),
           status: m.status === 'read' ? 'Đã xem' : 'Đã gửi',
         }));
-        setActiveMessages(mapped);
+
+        setActiveMessages((prev) => {
+          // So sánh nếu số lượng và id/text/status không đổi thì giữ nguyên prev để tránh re-render & auto-scroll
+          if (
+            prev.length === mapped.length &&
+            prev.every(
+              (pMsg, idx) =>
+                pMsg.id === mapped[idx]?.id &&
+                pMsg.status === mapped[idx]?.status &&
+                pMsg.text === mapped[idx]?.text &&
+                pMsg.image === mapped[idx]?.image
+            )
+          ) {
+            return prev;
+          }
+          return mapped;
+        });
       }
       // Đánh dấu đã đọc
       markAsRead(convId).catch(() => {});
@@ -123,6 +157,37 @@ export default function CustomerCareManagement() {
       console.warn('Lỗi tải tin nhắn:', err);
     }
   }, []);
+
+  // Tự động cuộn xuống đáy container chat
+  const scrollToBottom = useCallback((behavior = 'smooth') => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior,
+      });
+    } else {
+      messagesEndRef.current?.scrollIntoView({ behavior });
+    }
+  }, []);
+
+  // Lắng nghe người dùng cuộn chuột trong khung chat
+  const handleScroll = () => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    // Nếu cách đáy < 80px coi như đang ở đáy
+    const atBottom = distanceToBottom < 80;
+    isAtBottomRef.current = atBottom;
+    setShowScrollBottomBtn(!atBottom);
+  };
+
+  // Khi đang lăn chuột lên trên, lập tức đánh dấu không ở đáy để không bị giật kéo xuống
+  const handleWheel = (e) => {
+    if (e.deltaY < 0) {
+      isAtBottomRef.current = false;
+      setShowScrollBottomBtn(true);
+    }
+  };
 
   // Lần đầu mount và khi search/filter thay đổi
   useEffect(() => {
@@ -154,8 +219,22 @@ export default function CustomerCareManagement() {
 
   // Cuộn xuống tin nhắn mới nhất
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeMessages]);
+    // Nếu vừa đổi cuộc hội thoại, luôn cuộn xuống đáy
+    if (prevSelectedIdRef.current !== selectedId) {
+      prevSelectedIdRef.current = selectedId;
+      isAtBottomRef.current = true;
+      setShowScrollBottomBtn(false);
+      setTimeout(() => scrollToBottom('instant'), 40);
+      return;
+    }
+
+    // Nếu đang ở cuộc trò chuyện hiện tại và có tin nhắn mới:
+    // CHỈ tự động cuộn xuống nếu nhân viên đang ở sát đáy (isAtBottomRef.current === true)
+    // Nếu nhân viên đang lướt lên xem tin cũ, TUYỆT ĐỐI KHÔNG cuộn giật xuống!
+    if (isAtBottomRef.current) {
+      scrollToBottom('smooth');
+    }
+  }, [activeMessages, selectedId, scrollToBottom]);
 
   // Close emoji picker when clicking outside
   useEffect(() => {
@@ -175,6 +254,16 @@ export default function CustomerCareManagement() {
   const activeConv = conversations.find((c) => c.id === selectedId) || conversations[0] || null;
 
   const filteredConversations = conversations.filter((c) => {
+    // Đảm bảo chỉ khách hàng mới xuất hiện trong danh sách trò chuyện
+    const lowerName = (c.name || '').toLowerCase();
+    if (
+      lowerName.includes('quản trị') ||
+      lowerName.includes('administrator') ||
+      lowerName.includes('chuyên viên') ||
+      lowerName.includes('staff')
+    ) {
+      return false;
+    }
     if (filterTab === 'unread' && !c.unread) return false;
     if (searchTerm.trim()) {
       return (
@@ -221,6 +310,9 @@ export default function CustomerCareManagement() {
     setActiveMessages((prev) => [...prev, newMsg]);
     setInputText('');
     setSelectedImage(null);
+    isAtBottomRef.current = true;
+    setShowScrollBottomBtn(false);
+    setTimeout(() => scrollToBottom('smooth'), 40);
 
     // Gửi tin nhắn lên server
     if (selectedId && !selectedId.startsWith?.('init_')) {
@@ -256,21 +348,9 @@ export default function CustomerCareManagement() {
   };
 
   return (
-    <AdminLayout activeMenu="customer-care">
-      {/* Page Title */}
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-playfair text-[26px] sm:text-[30px] font-bold text-[#5F2B36] tracking-tight">
-            Chăm Sóc Khách Hàng
-          </h1>
-          <p className="text-[13px] text-[#7A6B6C] mt-1">
-            Trung tâm kết nối nàng dâu: Tư vấn 1:1 qua tin nhắn thời gian thực cùng chuyên viên Atelier UniBridal.
-          </p>
-        </div>
-      </div>
-
+    <AdminLayout activeMenu="customer-care" headerTitle="Chăm Sóc Khách Hàng">
       {/* Main Container Chat */}
-      <div className="flex flex-col lg:flex-row gap-5 h-[calc(100vh-210px)] min-h-[600px]">
+      <div className="flex flex-col lg:flex-row gap-5 h-[calc(100vh-140px)] min-h-[620px]">
         {/* Left Card: Conversation List Panel */}
         <div className="w-full lg:w-[350px] shrink-0 bg-white rounded-2xl border border-[#EFE5E1] shadow-xs overflow-hidden flex flex-col">
           {/* Search & Filter Header */}
@@ -376,36 +456,36 @@ export default function CustomerCareManagement() {
         {activeConv ? (
           <div className="flex-1 bg-white rounded-2xl border border-[#EFE5E1] shadow-xs overflow-hidden flex flex-col justify-between min-h-0">
             {/* Chat Header */}
-            <div className="p-3.5 px-5 bg-[#FAF2EE] border-b border-[#F0E4DF] flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 shadow-xs border-2 border-white ring-1 ring-[#E8D8D0]">
-                <img
-                  src={activeConv.avatar}
-                  alt={activeConv.name}
-                  className="w-full h-full object-cover"
-                />
-                {activeConv.online && (
-                  <span className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-[#22C55E] ring-2 ring-white" />
-                )}
+            <div className="py-2 px-4 sm:py-2.5 sm:px-5 bg-[#FAF2EE] border-b border-[#F0E4DF] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden shrink-0 shadow-xs border border-white ring-1 ring-[#E8D8D0]">
+                  <img
+                    src={activeConv.avatar}
+                    alt={activeConv.name}
+                    className="w-full h-full object-cover"
+                  />
+                  {activeConv.online && (
+                    <span className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-[#22C55E] ring-1.5 ring-white" />
+                  )}
+                </div>
+                <h2 className="font-serif text-[17px] sm:text-[19px] font-bold text-[#2C2523] leading-none m-0">
+                  {activeConv.name}
+                </h2>
               </div>
-              <h2 className="font-serif text-[22px] font-bold text-[#2C2523] leading-none">
-                {activeConv.name}
-              </h2>
-            </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleTogglePinConversation}
-                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors border-0 cursor-pointer ${
-                  isPinned
-                    ? 'bg-[#F2E2DC] text-[#733F49] shadow-2xs'
-                    : 'bg-transparent text-[#7A6B6C] hover:bg-[#F5E6E0] hover:text-[#733F49]'
-                }`}
-                title={isPinned ? 'Bỏ ghim tin nhắn' : 'Ghim tin nhắn'}
-              >
-                <Pin size={16} className={isPinned ? 'fill-[#733F49]' : ''} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleTogglePinConversation}
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-colors border-0 cursor-pointer ${
+                    isPinned
+                      ? 'bg-[#F2E2DC] text-[#733F49] shadow-2xs'
+                      : 'bg-transparent text-[#7A6B6C] hover:bg-[#F5E6E0] hover:text-[#733F49]'
+                  }`}
+                  title={isPinned ? 'Bỏ ghim tin nhắn' : 'Ghim tin nhắn'}
+                >
+                  <Pin size={15} className={isPinned ? 'fill-[#733F49]' : ''} />
+                </button>
             </div>
           </div>
 
@@ -430,66 +510,90 @@ export default function CustomerCareManagement() {
             </div>
           )}
 
-          {/* Messages Stream */}
-          <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4 bg-white">
-            {activeMessages.length === 0 ? (
-              <div className="h-full min-h-[220px] flex flex-col items-center justify-center text-center text-[#9A8B8C] py-8">
-                <div className="w-12 h-12 rounded-full bg-[#FAF2EE] flex items-center justify-center text-[#BA7A83] mb-3">
-                  <Sparkles size={20} />
+          {/* Messages Stream Container */}
+          <div className="relative flex-1 min-h-0 flex flex-col">
+            <div
+              ref={messagesContainerRef}
+              onScroll={handleScroll}
+              onWheel={handleWheel}
+              className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4 bg-white"
+            >
+              {activeMessages.length === 0 ? (
+                <div className="h-full min-h-[220px] flex flex-col items-center justify-center text-center text-[#9A8B8C] py-8">
+                  <div className="w-12 h-12 rounded-full bg-[#FAF2EE] flex items-center justify-center text-[#BA7A83] mb-3">
+                    <Sparkles size={20} />
+                  </div>
+                  <p className="text-xs font-semibold text-[#7A6B6C]">Chưa có tin nhắn trong cuộc hội thoại này.</p>
+                  <p className="text-[11px] text-[#A89899] mt-0.5">Nhập phản hồi hoặc bấm câu trả lời nhanh bên dưới để tư vấn nàng dâu.</p>
                 </div>
-                <p className="text-xs font-semibold text-[#7A6B6C]">Chưa có tin nhắn trong cuộc hội thoại này.</p>
-                <p className="text-[11px] text-[#A89899] mt-0.5">Nhập phản hồi hoặc bấm câu trả lời nhanh bên dưới để tư vấn nàng dâu.</p>
-              </div>
-            ) : (
-              activeMessages.map((msg) => {
-                const isStaff = msg.sender === 'staff';
-                if (isStaff) {
-                  return (
-                    <div key={msg.id} className="flex flex-col items-end">
-                      <div className="bg-[#733F49] text-white text-[13.5px] leading-relaxed p-4 rounded-2xl rounded-tr-xs max-w-lg shadow-2xs">
-                        {msg.image && (
-                          <img
-                            src={msg.image}
-                            alt="Ảnh đính kèm"
-                            className="rounded-xl max-w-full max-h-56 object-cover mb-2 border border-white/20"
-                          />
-                        )}
-                        {msg.text && <div>{msg.text}</div>}
+              ) : (
+                activeMessages.map((msg) => {
+                  const isStaff = msg.sender === 'staff';
+                  if (isStaff) {
+                    return (
+                      <div key={msg.id} className="flex flex-col items-end">
+                        <div className="bg-[#733F49] text-white text-[13.5px] leading-relaxed p-4 rounded-2xl rounded-tr-xs max-w-lg shadow-2xs">
+                          {msg.image && (
+                            <img
+                              src={msg.image}
+                              alt="Ảnh đính kèm"
+                              className="rounded-xl max-w-full max-h-56 object-cover mb-2 border border-white/20"
+                            />
+                          )}
+                          {msg.text && <div>{msg.text}</div>}
+                        </div>
+                        <span className="text-[11px] text-[#9A8B8C] mt-1 mr-1">
+                          {msg.time} • {msg.status}
+                        </span>
                       </div>
-                      <span className="text-[11px] text-[#9A8B8C] mt-1 mr-1">
-                        {msg.time} • {msg.status}
-                      </span>
+                    );
+                  }
+
+                  return (
+                    <div key={msg.id} className="flex items-start gap-3">
+                      <img
+                        src={activeConv.avatar}
+                        alt={activeConv.name}
+                        className="w-10 h-10 rounded-xl object-cover shrink-0 ring-1 ring-[#EFE5E1] shadow-2xs"
+                      />
+                      <div className="flex flex-col items-start max-w-xl">
+                        <div className="bg-[#FAF5F2] text-[#2C2523] text-[13.5px] leading-relaxed p-4 rounded-2xl rounded-tl-xs border border-[#F0E6E2]">
+                          {msg.image && (
+                            <img
+                              src={msg.image}
+                              alt="Ảnh đính kèm"
+                              className="rounded-xl max-w-full max-h-56 object-cover mb-2 border border-[#EFE5E1]"
+                            />
+                          )}
+                          {msg.text && <div>{msg.text}</div>}
+                        </div>
+                        <span className="text-[11px] text-[#9A8B8C] mt-1 ml-1">
+                          {msg.time} • {msg.status}
+                        </span>
+                      </div>
                     </div>
                   );
-                }
+                })
+              )}
+              <div ref={messagesEndRef} />
+            </div>
 
-                return (
-                  <div key={msg.id} className="flex items-start gap-3">
-                    <img
-                      src={activeConv.avatar}
-                      alt={activeConv.name}
-                      className="w-10 h-10 rounded-xl object-cover shrink-0 ring-1 ring-[#EFE5E1] shadow-2xs"
-                    />
-                    <div className="flex flex-col items-start max-w-xl">
-                      <div className="bg-[#FAF5F2] text-[#2C2523] text-[13.5px] leading-relaxed p-4 rounded-2xl rounded-tl-xs border border-[#F0E6E2]">
-                        {msg.image && (
-                          <img
-                            src={msg.image}
-                            alt="Ảnh đính kèm"
-                            className="rounded-xl max-w-full max-h-56 object-cover mb-2 border border-[#EFE5E1]"
-                          />
-                        )}
-                        {msg.text && <div>{msg.text}</div>}
-                      </div>
-                      <span className="text-[11px] text-[#9A8B8C] mt-1 ml-1">
-                        {msg.time} • {msg.status}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })
+            {/* Nút nổi cuộn xuống tin nhắn mới nhất khi đang lướt lên xem tin cũ */}
+            {showScrollBottomBtn && (
+              <button
+                type="button"
+                onClick={() => {
+                  isAtBottomRef.current = true;
+                  setShowScrollBottomBtn(false);
+                  scrollToBottom('smooth');
+                }}
+                className="absolute bottom-4 right-6 z-10 bg-white/95 backdrop-blur-sm border border-[#E8DDD8] text-[#733F49] hover:bg-[#FAF0EC] shadow-md hover:shadow-lg rounded-full px-3.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer animate-fade-in"
+                title="Cuộn xuống tin nhắn mới nhất"
+              >
+                <ArrowDown size={13} className="animate-bounce" />
+                <span>Xuống tin nhắn mới nhất</span>
+              </button>
             )}
-            <div ref={messagesEndRef} />
           </div>
 
           {/* Chat Footer & Input */}
