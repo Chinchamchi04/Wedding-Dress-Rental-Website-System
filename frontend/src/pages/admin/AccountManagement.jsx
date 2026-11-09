@@ -124,6 +124,10 @@ export default function AccountManagement() {
       message.error('Vui lòng điền đầy đủ các trường thông tin bắt buộc.');
       return;
     }
+    if (/\d/.test(createForm.fullName.trim())) {
+      message.error('Họ và tên không được chứa chữ số.');
+      return;
+    }
     if (createForm.password.length < 6) {
       message.error('Mật khẩu phải từ 6 ký tự trở lên.');
       return;

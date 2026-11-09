@@ -1,7 +1,5 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/userModel.js';
-import Role from '../models/roleModel.js';
-import Permission from '../models/permissionModel.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'unibridal_jwt_secret_key_2026_wdp301';
 
@@ -27,16 +25,8 @@ export const authenticate = async (req, res, next) => {
     // Giải mã token
     const decoded = jwt.verify(token, JWT_SECRET);
 
-    // Tìm kiếm user và nạp thông tin Role kèm danh sách Permissions
-    const user = await User.findById(decoded.id)
-      .populate({
-        path: 'roleId',
-        populate: {
-          path: 'permissions',
-          model: 'Permission',
-        },
-      })
-      .populate('customPermissions');
+    // Tìm kiếm user trực tiếp từ Database (loại trừ mật khẩu)
+    const user = await User.findById(decoded.id).select('-password');
 
     if (!user) {
       return res.status(401).json({
@@ -74,7 +64,7 @@ export const optionalAuthenticate = async (req, res, next) => {
     }
     if (token) {
       const decoded = jwt.verify(token, JWT_SECRET);
-      const user = await User.findById(decoded.id).populate('roleId');
+      const user = await User.findById(decoded.id).select('-password');
       if (user && user.isActive) {
         req.user = user;
       }
@@ -86,73 +76,52 @@ export const optionalAuthenticate = async (req, res, next) => {
 };
 
 /**
- * Middleware phân quyền theo Role Code (Ví dụ: 'ADMIN', 'STAFF', 'CUSTOMER')
- * @param  {...string} allowedRoles - Danh sách các mã vai trò được phép
+ * Middleware phân quyền theo Vai trò người dùng (Ví dụ: 'admin', 'staff', 'customer')
+ * @param  {...string} allowedRoles - Danh sách các vai trò được phép
  */
 export const authorize = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(403).json({
+      return res.status(401).json({
         success: false,
-        message: 'Không tìm thấy vai trò của người dùng.',
+        message: 'Chưa đăng nhập hoặc không tìm thấy thông tin tài khoản.',
       });
     }
 
-    const userRoleCode = (req.user.role || req.user.roleId?.code || 'customer').toUpperCase();
-    const normalizedAllowed = allowedRoles.map((r) => r.toUpperCase());
+    const userRole = (req.user.role || 'customer').toLowerCase();
+    const normalizedAllowed = allowedRoles.map((r) => r.toLowerCase());
 
     // Quản trị viên ADMIN luôn có toàn quyền
-    if (userRoleCode === 'ADMIN') {
+    if (userRole === 'admin' || normalizedAllowed.includes(userRole)) {
       return next();
     }
 
-    if (!normalizedAllowed.includes(userRoleCode)) {
-      return res.status(403).json({
-        success: false,
-        message: `Bạn không có quyền truy cập chức năng này (Yêu cầu vai trò: ${allowedRoles.join(', ')}).`,
-      });
-    }
-
-    next();
+    return res.status(403).json({
+      success: false,
+      message: `Bạn không có quyền truy cập chức năng này (Yêu cầu vai trò: ${allowedRoles.join(', ')}).`,
+    });
   };
 };
 
 /**
- * Middleware phân quyền chi tiết theo Mã Quyền (Permission Code)
- * @param {string} requiredPermissionCode - Mã quyền (Ví dụ: 'DRESS_MANAGE', 'ORDER_INSPECT_RETURN')
+ * Hàm phân quyền tương thích ngược
  */
 export const checkPermission = (requiredPermissionCode) => {
   return (req, res, next) => {
-    if (!req.user || !req.user.roleId) {
+    if (!req.user) {
       return res.status(403).json({
         success: false,
-        message: 'Không tìm thấy vai trò của người dùng.',
+        message: 'Chưa đăng nhập.',
       });
     }
-
-    const userRole = req.user.roleId;
-
-    // Quản trị viên ADMIN mặc định có toàn bộ quyền
-    if (userRole.code === 'ADMIN') {
+    const userRole = (req.user.role || 'customer').toLowerCase();
+    if (userRole === 'admin' || userRole === 'staff') {
       return next();
     }
-
-    // Lấy danh sách các mã quyền từ Role
-    const rolePermissions = userRole.permissions?.map((p) => p.code) || [];
-
-    // Lấy thêm các quyền đặc cách (nếu có)
-    const customPermissions = req.user.customPermissions?.map((p) => p.code) || [];
-
-    const allUserPermissions = [...new Set([...rolePermissions, ...customPermissions])];
-
-    if (!allUserPermissions.includes(requiredPermissionCode)) {
-      return res.status(403).json({
-        success: false,
-        message: `Bạn không có quyền thực hiện thao tác này (${requiredPermissionCode}).`,
-      });
-    }
-
-    next();
+    return res.status(403).json({
+      success: false,
+      message: `Bạn không có quyền thực hiện thao tác này (${requiredPermissionCode}).`,
+    });
   };
 };
 

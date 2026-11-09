@@ -308,6 +308,8 @@ export default function AppointmentPage() {
     const errs = {};
     if (!fullName.trim()) {
       errs.fullName = 'Vui lòng nhập họ và tên cô dâu';
+    } else if (/\d/.test(fullName.trim())) {
+      errs.fullName = 'Họ và tên không được chứa chữ số';
     }
     if (!phone.trim()) {
       errs.phone = 'Vui lòng nhập số điện thoại liên hệ';

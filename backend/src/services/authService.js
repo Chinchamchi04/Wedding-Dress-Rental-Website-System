@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { User, Role } from '../models/index.js';
+import { User } from '../models/index.js';
 import { sendVerificationEmail, sendResetPasswordEmail } from '../utils/sendEmail.js';
 
 // Sinh mã OTP 6 chữ số
@@ -34,6 +34,20 @@ export const authService = {
       throw err;
     }
 
+    const cleanFullName = fullName.trim();
+    if (/\d/.test(cleanFullName)) {
+      const err = new Error('Họ và tên không được chứa chữ số');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const nameRegex = /^[\p{L}\s'-]+$/u;
+    if (!nameRegex.test(cleanFullName)) {
+      const err = new Error('Họ và tên chỉ được chứa chữ cái và khoảng trắng');
+      err.statusCode = 400;
+      throw err;
+    }
+
     if (!email || typeof email !== 'string') {
       const err = new Error('Vui lòng cung cấp địa chỉ email');
       err.statusCode = 400;
@@ -43,7 +57,7 @@ export const authService = {
     const cleanEmail = email.toLowerCase().trim();
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(cleanEmail)) {
-      const err = new Error('Địa chỉ email không đúng định dạng (Ví dụ: name@gmail.com)');
+      const err = new Error('Địa chỉ email không đúng định dạng ');
       err.statusCode = 400;
       throw err;
     }
@@ -76,15 +90,7 @@ export const authService = {
       throw err;
     }
 
-    // 2. Lấy role CUSTOMER mặc định
-    const customerRole = await Role.findOne({ code: 'CUSTOMER' });
-    if (!customerRole) {
-      const err = new Error('Không tìm thấy vai trò khách hàng trong hệ thống');
-      err.statusCode = 500;
-      throw err;
-    }
-
-    // 3. Sinh OTP 6 số (hết hạn sau 60 giây)
+    // 2. Sinh OTP 6 số (hết hạn sau 60 giây)
     const otp = generateOtp();
     const otpExpires = new Date(Date.now() + OTP_EXPIRES_MS);
 
@@ -93,6 +99,7 @@ export const authService = {
       existingUser.fullName = fullName.trim();
       existingUser.phone = cleanPhone;
       existingUser.password = password;
+      existingUser.role = 'customer';
       existingUser.emailVerificationOtp = otp;
       existingUser.emailVerificationExpires = otpExpires;
       await existingUser.save();
@@ -102,7 +109,7 @@ export const authService = {
         email: cleanEmail,
         password,
         phone: cleanPhone,
-        roleId: customerRole._id,
+        role: 'customer',
         isEmailVerified: false,
         emailVerificationOtp: otp,
         emailVerificationExpires: otpExpires,
@@ -129,7 +136,7 @@ export const authService = {
    */
   async verifyEmailOtp({ email, otp }) {
     const cleanEmail = email.toLowerCase().trim();
-    const user = await User.findOne({ email: cleanEmail }).populate('roleId');
+    const user = await User.findOne({ email: cleanEmail });
 
     if (!user) {
       const err = new Error('Tài khoản không tồn tại');
@@ -138,7 +145,7 @@ export const authService = {
     }
 
     if (user.isEmailVerified) {
-      const roleCode = user.roleId?.code || 'CUSTOMER';
+      const roleCode = (user.role || 'customer').toLowerCase();
       const token = generateToken(user, roleCode);
       return { user, token, message: 'Tài khoản đã được kích hoạt trước đó' };
     }
@@ -161,7 +168,7 @@ export const authService = {
     user.emailVerificationExpires = null;
     await user.save();
 
-    const roleCode = user.roleId?.code || 'CUSTOMER';
+    const roleCode = (user.role || 'customer').toLowerCase();
     const token = generateToken(user, roleCode);
 
     return {
@@ -170,8 +177,7 @@ export const authService = {
         fullName: user.fullName,
         email: user.email,
         phone: user.phone,
-        role: roleCode.toLowerCase(),
-        roleId: user.roleId,
+        role: roleCode,
       },
       token,
       message: 'Kích hoạt tài khoản thành công',
@@ -220,7 +226,7 @@ export const authService = {
    */
   async login({ email, password }) {
     const cleanEmail = email.toLowerCase().trim();
-    const user = await User.findOne({ email: cleanEmail }).select('+password').populate('roleId');
+    const user = await User.findOne({ email: cleanEmail }).select('+password');
 
     if (!user) {
       const err = new Error('Email hoặc mật khẩu không chính xác');
@@ -241,7 +247,7 @@ export const authService = {
       throw err;
     }
 
-    const roleCode = user.roleId?.code || 'CUSTOMER';
+    const roleCode = (user.role || 'customer').toLowerCase();
     const roleUpper = roleCode.toUpperCase();
 
     // Tài khoản do Admin lập HOẶC tài khoản nội bộ (ADMIN, STAFF, MANAGER) không yêu cầu mã OTP kích hoạt
@@ -275,8 +281,7 @@ export const authService = {
         fullName: user.fullName,
         email: user.email,
         phone: user.phone,
-        role: roleCode.toLowerCase(),
-        roleId: user.roleId,
+        role: roleCode,
         avatar: user.avatar,
         measurements: user.measurements,
         address: user.address,
@@ -382,10 +387,7 @@ export const authService = {
    * Lấy thông tin tài khoản hiện tại
    */
   async getMe(userId) {
-    const user = await User.findById(userId).populate({
-      path: 'roleId',
-      populate: { path: 'permissions' },
-    });
+    const user = await User.findById(userId);
 
     if (!user) {
       const err = new Error('Không tìm thấy thông tin người dùng');
@@ -393,13 +395,14 @@ export const authService = {
       throw err;
     }
 
+    const roleCode = (user.role || 'customer').toLowerCase();
+
     return {
       _id: user._id,
       fullName: user.fullName,
       email: user.email,
       phone: user.phone,
-      role: user.roleId?.code?.toLowerCase() || 'customer',
-      roleId: user.roleId,
+      role: roleCode,
       avatar: user.avatar,
       measurements: user.measurements,
       address: user.address,

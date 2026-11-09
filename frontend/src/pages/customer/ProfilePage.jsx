@@ -249,7 +249,22 @@ export default function ProfilePage() {
                 <Form.Item
                   label={<span className="font-semibold uppercase tracking-wider text-[11px]">Họ và tên</span>}
                   name="name"
-                  rules={[{ required: true, whitespace: true, message: 'Vui lòng nhập họ và tên của bạn.' }]}
+                  rules={[
+                    { required: true, whitespace: true, message: 'Vui lòng nhập họ và tên của bạn.' },
+                    { min: 2, message: 'Họ và tên phải có tối thiểu 2 ký tự.' },
+                    {
+                      validator(_, value) {
+                        if (!value) return Promise.resolve();
+                        if (/\d/.test(value)) {
+                          return Promise.reject(new Error('Họ và tên không được chứa chữ số.'));
+                        }
+                        if (!/^[\p{L}\s'-]+$/u.test(value)) {
+                          return Promise.reject(new Error('Họ và tên chỉ được chứa chữ cái và khoảng trắng.'));
+                        }
+                        return Promise.resolve();
+                      },
+                    },
+                  ]}
                 >
                   <Input placeholder="Nhập họ và tên cô dâu..." size="large" />
                 </Form.Item>

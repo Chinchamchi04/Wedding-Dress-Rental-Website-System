@@ -103,7 +103,7 @@ class ChatController {
 
       if (!requestedRole) {
         if (user) {
-          const roleCode = (user.role || user.roleId?.code || '').toUpperCase();
+          const roleCode = (user.role || '').toUpperCase();
           if (roleCode === 'ADMIN' || roleCode === 'STAFF') {
             senderRole = 'staff';
           } else {
@@ -150,7 +150,7 @@ class ChatController {
     try {
       const { id } = req.params;
       const user = req.user || null;
-      const roleCode = (user?.role || user?.roleId?.code || '').toUpperCase();
+      const roleCode = (user?.role || '').toUpperCase();
       const userRole = roleCode === 'ADMIN' || roleCode === 'STAFF' ? 'staff' : 'customer';
 
       const conversation = await chatService.markAsRead(id, userRole);

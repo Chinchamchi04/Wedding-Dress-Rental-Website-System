@@ -70,6 +70,10 @@ export const createAppointment = async (appointmentData, currentUser = null) => 
     throw new Error('Vui lòng cung cấp đầy đủ: Tên khách hàng, Số điện thoại, Ngày hẹn và Khung giờ.');
   }
 
+  if (/\d/.test(resolvedName.trim())) {
+    throw new Error('Họ và tên khách hàng không được chứa chữ số.');
+  }
+
   const parsedAppointmentDate = parseDateSafe(resolvedDate, new Date());
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);

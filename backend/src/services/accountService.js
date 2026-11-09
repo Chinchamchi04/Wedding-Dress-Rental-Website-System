@@ -1,7 +1,6 @@
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import User from '../models/userModel.js';
-import Role from '../models/roleModel.js';
 import Order from '../models/orderModel.js';
 import Dress from '../models/dressModel.js';
 
@@ -17,7 +16,7 @@ const publicUser = (user) => ({
   email: user.email,
   phone: user.phone,
   avatar: user.avatar || '',
-  role: user.roleId?.code?.toLowerCase() || user.role || 'customer',
+  role: user.role || 'customer',
   wishlist: (user.wishlist || []).filter(Boolean).map((d) => String(d._id || d)),
   fullName: user.fullName,
   measurements: user.measurements || {},
@@ -38,8 +37,7 @@ export async function login(email, password) {
   if (!email || !password) fail(400, 'Vui lòng nhập đầy đủ email và mật khẩu.');
   const identity = String(email).trim().toLowerCase();
   const user = await User.findOne({ $or: [{ email: identity }, { phone: identity }] })
-    .select('+password')
-    .populate('roleId');
+    .select('+password');
 
   if (!user || !(await user.comparePassword(password))) {
     fail(401, 'Email hoặc mật khẩu không chính xác.');
@@ -55,8 +53,7 @@ export async function register({ name, email, phone, password }) {
     fail(400, 'Vui lòng nhập đầy đủ họ tên, email hợp lệ, số điện thoại và mật khẩu từ 6 ký tự.');
   }
   const cleanEmail = email.trim().toLowerCase();
-  const role = await Role.findOne({ code: 'CUSTOMER' });
-  if (!role) fail(503, 'Cấu hình vai trò khách hàng (CUSTOMER) chưa sẵn sàng trên hệ thống.');
+
   if (await User.exists({ email: cleanEmail })) {
     fail(400, 'Địa chỉ email này đã được đăng ký trong hệ thống.');
   }
@@ -66,10 +63,9 @@ export async function register({ name, email, phone, password }) {
     email: cleanEmail,
     phone: phone.trim(),
     password,
-    roleId: role._id,
+    role: 'customer',
     isActive: true,
   });
-  user.roleId = role;
   return { user: publicUser(user), token: tokenFor(user) };
 }
 
@@ -89,6 +85,15 @@ export async function updateProfile(user, data) {
 
   if (!name || !phone) {
     fail(400, 'Họ tên và số điện thoại là thông tin bắt buộc.');
+  }
+  if (name.length < 2) {
+    fail(400, 'Họ và tên phải có tối thiểu 2 ký tự.');
+  }
+  if (/\d/.test(name)) {
+    fail(400, 'Họ và tên không được chứa chữ số.');
+  }
+  if (!/^[\p{L}\s'-]+$/u.test(name)) {
+    fail(400, 'Họ và tên chỉ được chứa chữ cái và khoảng trắng.');
   }
   if (data.avatar && (!/^data:image\/(png|jpeg|webp);base64,/.test(data.avatar) || data.avatar.length > 7_000_000)) {
     fail(400, 'Ảnh đại diện không đúng định dạng (PNG/JPEG/WEBP) hoặc dung lượng vượt quá 5MB.');
@@ -133,7 +138,7 @@ export async function changePassword(user, { currentPassword, newPassword }) {
   if (!currentPassword || !newPassword || newPassword.length < 6) {
     fail(400, 'Mật khẩu mới cần tối thiểu 6 ký tự.');
   }
-  const account = await User.findById(user._id).select('+password').populate('roleId');
+  const account = await User.findById(user._id).select('+password');
   if (!(await account.comparePassword(currentPassword))) {
     fail(400, 'Mật khẩu hiện tại không chính xác.');
   }

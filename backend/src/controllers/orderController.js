@@ -83,7 +83,8 @@ export const updateOrderStatus = async (req, res, next) => {
 
 export const getDressBookedDates = async (req, res, next) => {
   try {
-    const bookedDates = await orderService.getDressBookedDates(req.query.dressId);
+    const dressId = req.params.id || req.query.dressId;
+    const bookedDates = await orderService.getDressBookedDates(dressId);
     res.status(200).json({
       success: true,
       message: 'Lấy lịch đặt thuê của váy thành công',
@@ -123,7 +124,7 @@ export const getReturnInspection = async (req, res, next) => {
 
 export const approveReturnInspection = async (req, res, next) => {
   try {
-    const result = await customer.confirmInspection(req.user._id, req.params.id, req.body);
+    const result = await customer.confirmInspection(req.user, req.params.id, req.body);
     res.status(200).json({
       success: true,
       message: 'Đã xác nhận biên bản kiểm định. Đơn hàng đã hoàn tất thành công.',
@@ -138,7 +139,7 @@ export const approveReturnInspection = async (req, res, next) => {
 
 export const disputeReturnInspection = async (req, res, next) => {
   try {
-    const result = await customer.disputeInspection(req.user._id, req.params.id, req.body.reason);
+    const result = await customer.disputeInspection(req.user, req.params.id, req.body.reason);
     res.status(200).json({
       success: true,
       message: 'Gửi khiếu nại biên bản kiểm định thành công! Chuyên viên showroom sẽ liên hệ giải quyết.',

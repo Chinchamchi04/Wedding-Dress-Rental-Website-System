@@ -128,6 +128,36 @@ export const createOrder = async (orderData, currentUser = null) => {
     throw new Error('Ngày hoàn trả không thể trước ngày bắt đầu thuê.');
   }
 
+  // Kiểm tra trùng lịch thuê váy (Overlap conflict check)
+  const bookedStatuses = ['deposit_paid', 'active', 'confirmed', 'preparing', 'delivered', 'renting'];
+  for (const item of resolvedItems) {
+    if (!item.dressId) continue;
+    const dressIdStr = String(item.dressId);
+    const dressConditions = [{ 'items.dressId': dressIdStr }];
+    if (mongoose.Types.ObjectId.isValid(dressIdStr)) {
+      dressConditions.push({ 'items.dressId': new mongoose.Types.ObjectId(dressIdStr) });
+    }
+    const num = Number(dressIdStr);
+    if (!isNaN(num)) {
+      dressConditions.push({ 'items.dressId': num });
+    }
+
+    const overlappingOrder = await Order.findOne({
+      status: { $in: bookedStatuses },
+      $or: dressConditions,
+      rentalStartDate: { $lte: resolvedEndDate },
+      rentalEndDate: { $gte: resolvedStartDate },
+    });
+
+    if (overlappingOrder) {
+      const s = overlappingOrder.rentalStartDate ? new Date(overlappingOrder.rentalStartDate).toLocaleDateString('vi-VN') : '';
+      const e = overlappingOrder.rentalEndDate ? new Date(overlappingOrder.rentalEndDate).toLocaleDateString('vi-VN') : '';
+      throw new Error(
+        `Váy "${item.name}" đã có nàng dâu khác cọc thuê kín lịch trong khoảng từ ${s} đến ${e}. Vui lòng chọn khoảng ngày khác!`
+      );
+    }
+  }
+
   const newOrder = new Order({
     orderCode,
     customerId: currentUser?._id || null,
@@ -174,7 +204,7 @@ export const createOrder = async (orderData, currentUser = null) => {
       phone: newOrder.customerPhone || '0908123888',
       idCard: newOrder.customerCccd || '',
       dressInfo: {
-        dressId: firstItem.dressId || null,
+        dressId: (firstItem.dressId && mongoose.Types.ObjectId.isValid(firstItem.dressId)) ? firstItem.dressId : null,
         name: firstItem.name || 'Váy Cưới Haute Couture',
         code: firstItem.code || 'UB-HC-2026',
         size: firstItem.size || 'S',
@@ -436,17 +466,31 @@ export const updateOrderStatus = async (idOrCode, status) => {
 };
 
 export const getDressBookedDates = async (dressId) => {
+  // Quét toàn bộ các đơn thuê của chiếc váy đang ở các trạng thái đã cọc/đang chuẩn bị/đang thuê
+  const bookedStatuses = ['deposit_paid', 'active', 'confirmed', 'preparing', 'delivered', 'renting'];
   const query = {
-    status: { $nin: ['CANCELLED', 'RETURNED'] },
+    status: { $in: bookedStatuses },
   };
+
   if (dressId) {
-    query['items.dressId'] = dressId;
+    const dressIdStr = String(dressId);
+    const conditions = [{ 'items.dressId': dressIdStr }];
+    if (mongoose.Types.ObjectId.isValid(dressIdStr)) {
+      conditions.push({ 'items.dressId': new mongoose.Types.ObjectId(dressIdStr) });
+    }
+    const num = Number(dressIdStr);
+    if (!isNaN(num)) {
+      conditions.push({ 'items.dressId': num });
+    }
+    query.$or = conditions;
   }
-  const orders = await Order.find(query).select('orderCode rentalStartDate rentalEndDate');
+
+  const orders = await Order.find(query).select('orderCode rentalStartDate rentalEndDate customerName');
   return orders.map((o) => ({
     orderCode: o.orderCode,
     startDate: o.rentalStartDate,
     endDate: o.rentalEndDate,
+    bride: o.customerName || 'Nàng dâu UniBridal',
   }));
 };
 

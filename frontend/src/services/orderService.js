@@ -183,13 +183,19 @@ export async function disputeReturnInspection(orderId, data) {
  * @param {string} dressId
  */
 export async function getDressBookedDates(dressId) {
+  if (!dressId) return [];
   try {
-    const res = await axiosClient.get('/orders/booked-dates', {
-      params: { dressId },
-    });
-    return res.data?.data || res.data || [];
+    const res = await axiosClient.get(`/orders/dress/${dressId}/booked-dates`);
+    return Array.isArray(res.data) ? res.data : (res.data?.data || res || []);
   } catch (error) {
-    return [];
+    try {
+      const res = await axiosClient.get('/orders/booked-dates', {
+        params: { dressId },
+      });
+      return Array.isArray(res.data) ? res.data : (res.data?.data || res || []);
+    } catch {
+      return [];
+    }
   }
 }
 

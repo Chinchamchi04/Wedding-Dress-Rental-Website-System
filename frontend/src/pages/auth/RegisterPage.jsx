@@ -35,6 +35,7 @@ export default function RegisterPage() {
   // OTP & Feedback states
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [devOtp, setDevOtp] = useState('');
+  const [fullNameError, setFullNameError] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -53,13 +54,24 @@ export default function RegisterPage() {
     return `${m < 10 ? '0' + m : m}:${s < 10 ? '0' + s : s}`;
   };
 
+  // Hàm validate Họ và tên (không được chứa chữ số hoặc ký tự đặc biệt)
+  const validateFullName = (val) => {
+    const clean = (val || '').trim();
+    if (!clean) return 'Vui lòng nhập họ và tên của bạn.';
+    if (clean.length < 2) return 'Họ và tên phải có tối thiểu 2 ký tự.';
+    if (/\d/.test(clean)) return 'Họ và tên không được chứa chữ số.';
+    const nameRegex = /^[\p{L}\s'-]+$/u;
+    if (!nameRegex.test(clean)) return 'Họ và tên chỉ được chứa chữ cái và khoảng trắng.';
+    return '';
+  };
+
   // Hàm validate số điện thoại di động Việt Nam
   const validatePhone = (val) => {
     const clean = (val || '').replace(/[\s.-]/g, '');
     if (!clean) return 'Vui lòng nhập số điện thoại liên hệ.';
     const phoneRegex = /^(0|\+84)(3|5|7|8|9)[0-9]{8}$/;
     if (!phoneRegex.test(clean)) {
-      return 'Số điện thoại không hợp lệ (10 số, bắt đầu bằng 03, 05, 07, 08, 09 hoặc +84).';
+      return 'Số điện thoại không hợp lệ';
     }
     return '';
   };
@@ -70,7 +82,7 @@ export default function RegisterPage() {
     if (!clean) return 'Vui lòng nhập địa chỉ Email.';
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(clean)) {
-      return 'Địa chỉ Email không đúng định dạng (Ví dụ: name@gmail.com).';
+      return 'Địa chỉ Email không đúng định dạng ';
     }
     return '';
   };
@@ -103,22 +115,7 @@ export default function RegisterPage() {
     return () => clearInterval(timer);
   }, [step, otpExpiresIn]);
 
-  // Evaluate password strength (0 to 4)
-  const getPasswordStrength = (pass) => {
-    if (!pass) return { level: 0, text: 'Chưa nhập' };
-    let score = 0;
-    if (pass.length >= 8) score += 1;
-    if (/[A-Z]/.test(pass)) score += 1;
-    if (/[0-9]/.test(pass)) score += 1;
-    if (/[^A-Za-z0-9]/.test(pass)) score += 1;
 
-    if (score <= 1) return { level: 1, text: 'Yếu' };
-    if (score === 2) return { level: 2, text: 'Trung bình' };
-    if (score === 3) return { level: 3, text: 'Tốt' };
-    return { level: 4, text: 'Rất mạnh' };
-  };
-
-  const strength = getPasswordStrength(password);
 
   // Xử lý gửi form đăng ký (Step 1)
   const handleSubmit = async (e) => {
@@ -127,10 +124,13 @@ export default function RegisterPage() {
     setSuccessMsg('');
 
     // 1. Validate Họ và tên
-    if (!fullName.trim() || fullName.trim().length < 2) {
-      setError('Vui lòng nhập họ và tên của bạn (tối thiểu 2 ký tự).');
+    const nameErr = validateFullName(fullName);
+    if (nameErr) {
+      setError(nameErr);
+      setFullNameError(nameErr);
       return;
     }
+    setFullNameError('');
 
     // 2. Validate Số điện thoại
     const pErr = validatePhone(phone);
@@ -783,41 +783,6 @@ export default function RegisterPage() {
           transform: translateY(-50%) scale(1.1);
         }
 
-        .ub-strength-row {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-top: -2px;
-          margin-bottom: 2px;
-        }
-
-        .ub-strength-bars {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .ub-strength-bar {
-          display: inline-block;
-          width: 58px;
-          height: 3.5px;
-          border-radius: 2px;
-          background: #EFE4E0;
-          transition: background-color 0.25s ease;
-        }
-
-        .ub-strength-bar.is-active {
-          background: #BD7B82;
-        }
-
-        .ub-strength-text {
-          font-family: 'Plus Jakarta Sans', sans-serif;
-          font-weight: 500;
-          font-size: 11.5px;
-          line-height: 14px;
-          color: #6E5A5D;
-        }
-
         .ub-terms-row {
           display: flex;
           align-items: flex-start;
@@ -1073,9 +1038,7 @@ export default function RegisterPage() {
                 <div className="ub-header-group">
                   <span className="ub-form-overhead">UNIBRIDAL HAUTE COUTURE</span>
                   <h2 className="ub-form-heading">Đăng Ký Tài Khoản</h2>
-                  <p className="ub-form-description">
-                    Tạo tài khoản để lưu giữ danh sách váy cưới mơ ước, đặt lịch thử váy riêng tư và nhận đặc quyền độc bản.
-                  </p>
+
                 </div>
 
                 {error && (
@@ -1090,19 +1053,32 @@ export default function RegisterPage() {
                   <div className="ub-form-row">
                     <div className="ub-field-group">
                       <label className="ub-label" htmlFor="reg-fullname">
-                        Họ và tên
+                        Họ và tên <span className="ub-required-star">*</span>
                       </label>
                       <div className="ub-input-box">
                         <input
                           id="reg-fullname"
                           type="text"
-                          className="ub-input ub-input--no-icon"
+                          className={`ub-input ub-input--no-icon ${fullNameError ? 'border-red-400' : ''}`}
                           placeholder="Họ và tên của bạn"
                           value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
+                          onChange={(e) => {
+                            setFullName(e.target.value);
+                            if (fullNameError) setFullNameError(validateFullName(e.target.value));
+                          }}
+                          onBlur={(e) => {
+                            if (e.target.value.trim()) {
+                              setFullNameError(validateFullName(e.target.value));
+                            }
+                          }}
                           required
                         />
                       </div>
+                      {fullNameError && (
+                        <div style={{ color: '#D32F2F', fontSize: '11.5px', marginTop: '4px', textAlign: 'left' }}>
+                          ✕ {fullNameError}
+                        </div>
+                      )}
                     </div>
 
                     <div className="ub-field-group">
@@ -1218,19 +1194,6 @@ export default function RegisterPage() {
                         </button>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Password Strength Indicator Row */}
-                  <div className="ub-strength-row">
-                    <div className="ub-strength-bars">
-                      <span className={`ub-strength-bar ${strength.level >= 1 ? 'is-active' : ''}`} />
-                      <span className={`ub-strength-bar ${strength.level >= 2 ? 'is-active' : ''}`} />
-                      <span className={`ub-strength-bar ${strength.level >= 3 ? 'is-active' : ''}`} />
-                      <span className={`ub-strength-bar ${strength.level >= 4 ? 'is-active' : ''}`} />
-                    </div>
-                    <span className="ub-strength-text">
-                      Độ bảo mật: {strength.text}
-                    </span>
                   </div>
 
                   {/* Terms and Policies Agreement */}

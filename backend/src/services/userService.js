@@ -1,6 +1,12 @@
 import User from '../models/userModel.js';
-import Role from '../models/roleModel.js';
 import bcrypt from 'bcryptjs';
+
+const getRoleMeta = (roleStr) => {
+  const r = (roleStr || 'customer').toLowerCase();
+  if (r === 'admin') return { code: 'ADMIN', name: 'Quản trị viên' };
+  if (r === 'staff') return { code: 'STAFF', name: 'Nhân viên' };
+  return { code: 'CUSTOMER', name: 'Khách hàng' };
+};
 
 /**
  * Service Quản Lý Tài Khoản & Người Dùng Hệ Thống (Admin User Management)
@@ -11,10 +17,7 @@ export const getAllUsers = async (filters = {}) => {
 
   // 1. Lọc theo vai trò (Role: ADMIN | STAFF | CUSTOMER)
   if (filters.role && filters.role !== 'all') {
-    const roleDoc = await Role.findOne({ code: filters.role.toUpperCase() });
-    if (roleDoc) {
-      query.roleId = roleDoc._id;
-    }
+    query.role = filters.role.toLowerCase();
   }
 
   // 2. Lọc theo trạng thái hoạt động (active | blocked)
@@ -36,23 +39,15 @@ export const getAllUsers = async (filters = {}) => {
   const limit = parseInt(filters.limit, 10) || 20;
   const skip = (page - 1) * limit;
 
-  // Lấy các vai trò để tính thống kê
-  const [adminRole, staffRole, customerRole] = await Promise.all([
-    Role.findOne({ code: 'ADMIN' }).select('_id'),
-    Role.findOne({ code: 'STAFF' }).select('_id'),
-    Role.findOne({ code: 'CUSTOMER' }).select('_id'),
-  ]);
-
   const [totalAll, adminCount, staffCount, customerCount, blockedCount, totalFiltered, users] =
     await Promise.all([
       User.countDocuments({}),
-      adminRole ? User.countDocuments({ roleId: adminRole._id }) : 0,
-      staffRole ? User.countDocuments({ roleId: staffRole._id }) : 0,
-      customerRole ? User.countDocuments({ roleId: customerRole._id }) : 0,
+      User.countDocuments({ role: 'admin' }),
+      User.countDocuments({ role: 'staff' }),
+      User.countDocuments({ role: 'customer' }),
       User.countDocuments({ isActive: false }),
       User.countDocuments(query),
       User.find(query)
-        .populate('roleId', 'code name description')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -60,12 +55,15 @@ export const getAllUsers = async (filters = {}) => {
     ]);
 
   return {
-    users: users.map((u) => ({
-      ...u,
-      role: u.roleId?.code?.toLowerCase() || 'customer',
-      roleCode: u.roleId?.code || 'CUSTOMER',
-      roleName: u.roleId?.name || 'Khách hàng',
-    })),
+    users: users.map((u) => {
+      const meta = getRoleMeta(u.role);
+      return {
+        ...u,
+        role: (u.role || 'customer').toLowerCase(),
+        roleCode: meta.code,
+        roleName: meta.name,
+      };
+    }),
     total: totalFiltered,
     page,
     totalPages: Math.ceil(totalFiltered / limit),
@@ -80,25 +78,31 @@ export const getAllUsers = async (filters = {}) => {
   };
 };
 
-export const getUserRoles = async () => {
-  return Role.find({}).sort({ code: 1 }).lean();
-};
+export const getUserRoles = async () => [
+  { code: 'CUSTOMER', name: 'Khách hàng', description: 'Khách hàng thuê váy và đặt lịch' },
+  { code: 'STAFF', name: 'Nhân viên Showroom', description: 'Nhân viên tư vấn, thử váy, kiểm định' },
+  { code: 'ADMIN', name: 'Quản trị viên', description: 'Toàn quyền quản trị hệ thống' },
+];
 
 export const getUserById = async (id) => {
-  const user = await User.findById(id).populate('roleId', 'code name description').lean();
+  const user = await User.findById(id).lean();
   if (!user) throw new Error('Không tìm thấy tài khoản người dùng.');
+  const meta = getRoleMeta(user.role);
   return {
     ...user,
-    role: user.roleId?.code?.toLowerCase() || 'customer',
-    roleCode: user.roleId?.code || 'CUSTOMER',
-    roleName: user.roleId?.name || 'Khách hàng',
+    role: (user.role || 'customer').toLowerCase(),
+    roleCode: meta.code,
+    roleName: meta.name,
   };
 };
 
 export const createUser = async (userData) => {
-  const { fullName, email, phone, password, roleCode, roleId, idCard, address } = userData;
+  const { fullName, email, phone, password, roleCode, role, idCard, address } = userData;
 
   if (!fullName?.trim()) throw new Error('Họ và tên không được để trống.');
+  if (fullName.trim().length < 2) throw new Error('Họ và tên phải có ít nhất 2 ký tự.');
+  if (/\d/.test(fullName.trim())) throw new Error('Họ và tên không được chứa chữ số.');
+  if (!/^[\p{L}\s'-]+$/u.test(fullName.trim())) throw new Error('Họ và tên chỉ được chứa chữ cái và khoảng trắng.');
   if (!email?.trim()) throw new Error('Email không được để trống.');
   if (!phone?.trim()) throw new Error('Số điện thoại không được để trống.');
   if (!password || password.length < 6) throw new Error('Mật khẩu phải có ít nhất 6 ký tự.');
@@ -107,36 +111,27 @@ export const createUser = async (userData) => {
   const exists = await User.findOne({ email: cleanEmail });
   if (exists) throw new Error('Địa chỉ email này đã được sử dụng trong hệ thống.');
 
-  // Tìm roleId phù hợp
-  let targetRoleId = roleId;
-  if (!targetRoleId && roleCode) {
-    const roleDoc = await Role.findOne({ code: roleCode.toUpperCase() });
-    if (roleDoc) targetRoleId = roleDoc._id;
-  }
-  if (!targetRoleId) {
-    const defaultRole = await Role.findOne({ code: 'CUSTOMER' });
-    targetRoleId = defaultRole?._id;
-  }
-
+  const cleanRole = (role || roleCode || 'customer').toLowerCase();
   const user = await User.create({
     fullName: fullName.trim(),
     email: cleanEmail,
     phone: phone.trim(),
     password,
-    roleId: targetRoleId,
+    role: cleanRole,
     idCard: idCard?.trim() || '',
     address: address || {},
     isActive: true,
-    isEmailVerified: true, // Tài khoản do admin lập trực tiếp không cần mã OTP kích hoạt
+    isEmailVerified: true,
     createdByAdmin: true,
   });
 
-  const populated = await User.findById(user._id).populate('roleId', 'code name description').lean();
+  const created = await User.findById(user._id).lean();
+  const meta = getRoleMeta(created.role);
   return {
-    ...populated,
-    role: populated.roleId?.code?.toLowerCase() || 'customer',
-    roleCode: populated.roleId?.code || 'CUSTOMER',
-    roleName: populated.roleId?.name || 'Khách hàng',
+    ...created,
+    role: created.role,
+    roleCode: meta.code,
+    roleName: meta.name,
   };
 };
 
@@ -144,16 +139,21 @@ export const updateUser = async (id, updateData) => {
   const user = await User.findById(id);
   if (!user) throw new Error('Không tìm thấy tài khoản cần cập nhật.');
 
-  if (updateData.fullName) user.fullName = updateData.fullName.trim();
+  if (updateData.fullName) {
+    const cleanName = updateData.fullName.trim();
+    if (cleanName.length < 2) throw new Error('Họ và tên phải có ít nhất 2 ký tự.');
+    if (/\d/.test(cleanName)) throw new Error('Họ và tên không được chứa chữ số.');
+    if (!/^[\p{L}\s'-]+$/u.test(cleanName)) throw new Error('Họ và tên chỉ được chứa chữ cái và khoảng trắng.');
+    user.fullName = cleanName;
+  }
   if (updateData.phone) user.phone = updateData.phone.trim();
   if (updateData.idCard !== undefined) user.idCard = updateData.idCard.trim();
   if (updateData.address) user.address = updateData.address;
 
-  if (updateData.roleCode) {
-    const roleDoc = await Role.findOne({ code: updateData.roleCode.toUpperCase() });
-    if (roleDoc) user.roleId = roleDoc._id;
-  } else if (updateData.roleId) {
-    user.roleId = updateData.roleId;
+  if (updateData.role) {
+    user.role = updateData.role.toLowerCase();
+  } else if (updateData.roleCode) {
+    user.role = updateData.roleCode.toLowerCase();
   }
 
   if (updateData.isActive !== undefined) {
@@ -162,12 +162,13 @@ export const updateUser = async (id, updateData) => {
 
   await user.save();
 
-  const populated = await User.findById(user._id).populate('roleId', 'code name description').lean();
+  const updated = await User.findById(user._id).lean();
+  const meta = getRoleMeta(updated.role);
   return {
-    ...populated,
-    role: populated.roleId?.code?.toLowerCase() || 'customer',
-    roleCode: populated.roleId?.code || 'CUSTOMER',
-    roleName: populated.roleId?.name || 'Khách hàng',
+    ...updated,
+    role: updated.role,
+    roleCode: meta.code,
+    roleName: meta.name,
   };
 };
 

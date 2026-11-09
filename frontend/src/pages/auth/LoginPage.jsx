@@ -36,7 +36,7 @@ export default function LoginPage() {
       if (res?.data?.user && res?.data?.token) {
         setAuth(res.data.user, res.data.token, rememberMe);
 
-        const userRole = (res.data.user.role || res.data.user.roleId?.code || '').toLowerCase();
+        const userRole = (res.data.user.role || '').toLowerCase();
         if (userRole === 'admin') {
           navigate('/admin/dashboard', { replace: true });
         } else if (userRole === 'staff') {
@@ -78,7 +78,7 @@ export default function LoginPage() {
       if (res?.data?.user && res?.data?.token) {
         setAuth(res.data.user, res.data.token, true);
 
-        const userRole = (res.data.user.role || res.data.user.roleId?.code || '').toLowerCase();
+        const userRole = (res.data.user.role || '').toLowerCase();
         if (userRole === 'admin') {
           navigate('/admin/dashboard', { replace: true });
         } else if (userRole === 'staff') {

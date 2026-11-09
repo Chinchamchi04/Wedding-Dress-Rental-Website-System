@@ -2,7 +2,6 @@ import Order from '../models/orderModel.js';
 import Payment from '../models/paymentModel.js';
 import Dress from '../models/dressModel.js';
 import User from '../models/userModel.js';
-import Role from '../models/roleModel.js';
 import Appointment from '../models/appointmentModel.js';
 import { reportBounds, previousBounds, reportBuckets, isInPeriod, paymentDate, sumPayments, growthRate, revenueChart, rankedDresses } from '../utils/adminReportMetrics.js';
 const REVENUE_TYPES = ['rental_payment', 'damage_compensation'];
@@ -52,14 +51,14 @@ export async function dashboard(period = 'month') {
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const [report, orders, customerRole, maintenance, totalAppointments, todayAppointments, totalUsers] = await Promise.all([
+    const [report, orders, maintenance, totalAppointments, todayAppointments, totalUsers, members] = await Promise.all([
         revenueReport(period), Order.find({ createdAt: { $gte: start, $lt: end } }).select('status totalRentPrice createdAt').lean(),
-        Role.findOne({ code: 'CUSTOMER' }).select('_id').lean(), Dress.countDocuments({ status: 'maintenance' }),
+        Dress.countDocuments({ status: 'maintenance' }),
         Appointment.countDocuments({ appointmentDate: { $gte: start, $lt: end }, status: { $ne: 'cancelled' } }),
         Appointment.countDocuments({ appointmentDate: { $gte: today, $lt: tomorrow }, status: { $ne: 'cancelled' } }),
         User.countDocuments({}),
+        User.countDocuments({ role: 'customer', isActive: true }),
     ]);
-    const members = customerRole ? await User.countDocuments({ roleId: customerRole._id, isActive: true }) : 0;
     const buckets = reportBuckets(period, start, end);
     const ordersPipeline = Object.fromEntries(['deposit_paid', 'preparing', 'delivered', 'renting', 'returned', 'completed'].map((status) => [status, orders.filter((order) => order.status === status || status === 'completed' && order.status === 'complete').length]));
     return { period, revenue: report.revenue, growthRate: report.growthRate, orderValue: report.orderValue, totalOrders: orders.length, completedOrders: ordersPipeline.completed,

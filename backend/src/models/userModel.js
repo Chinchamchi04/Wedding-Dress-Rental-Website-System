@@ -31,18 +31,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
-    roleId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Role',
-      required: [true, 'Người dùng phải được gán vai trò'],
+    role: {
+      type: String,
+      enum: ['customer', 'staff', 'admin'],
+      default: 'customer',
+      lowercase: true,
+      trim: true,
       index: true,
     },
-    customPermissions: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Permission',
-      },
-    ],
     // Số đo khách hàng phục vụ tư vấn & chọn size váy cưới
     measurements: {
       height: { type: Number, default: null }, // cm

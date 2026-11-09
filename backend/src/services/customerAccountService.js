@@ -4,6 +4,7 @@ import User from '../models/userModel.js';
 import Contract from '../models/contractModel.js';
 import ReturnInspection from '../models/returnInspectionModel.js';
 import Payment from '../models/paymentModel.js';
+import { sendRefundConfirmationEmail } from '../utils/sendEmail.js';
 const fail = (status, message) => { throw Object.assign(new Error(message), { statusCode: status }); };
 // Profile contacts are editable and cannot prove ownership of a guest order.
 // Personal endpoints only expose orders explicitly assigned to this account.
@@ -15,7 +16,7 @@ async function ownerFilter(userId) {
 }
 async function ownOrder(userOrId, identifier) {
     const identity = mongoose.isValidObjectId(identifier) ? { _id: identifier } : { orderCode: String(identifier).toUpperCase() };
-    const role = typeof userOrId === 'object' ? String(userOrId?.roleId?.code || userOrId?.role || '').toUpperCase() : '';
+    const role = typeof userOrId === 'object' ? String(userOrId?.role || '').toUpperCase() : '';
     if (['ADMIN', 'STAFF', 'MANAGER'].includes(role)) {
         const order = await Order.findOne(identity);
         if (!order) fail(404, 'Không tìm thấy thông tin đơn thuê.');
@@ -30,7 +31,7 @@ async function ownOrder(userOrId, identifier) {
 export async function assertOrderAccess(user, identifier) {
     if (!user?._id)
         fail(401, 'Vui lòng đăng nhập để xem thông tin đơn thuê.');
-    const role = String(user.roleId?.code || user.role || '').toUpperCase();
+    const role = String(user.role || '').toUpperCase();
     if (!['ADMIN', 'STAFF'].includes(role))
         await ownOrder(user._id, identifier);
 }
@@ -113,7 +114,33 @@ export async function confirmInspection(userId, identifier, bankData = {}) {
     // Khi khách ấn duyệt -> cập nhật đơn hàng thành hoàn tất (completed)
     order.status = 'completed';
     await order.save();
-    // Completing the rental does not create a refund transaction.
+
+    await Contract.findOneAndUpdate(
+        { $or: [{ orderId: order._id }, { contractCode: order.contractCode }] },
+        { status: 'completed' }
+    ).catch(() => {});
+
+    try {
+        let customerEmail = order.customerEmail || order.email;
+        let customerName = order.customerName || order.brideName || 'Quý khách';
+        if (!customerEmail && order.customerId) {
+            const cust = await User.findById(order.customerId).lean();
+            if (cust) {
+                customerEmail = cust.email;
+                customerName = cust.fullName || customerName;
+            }
+        }
+        if (customerEmail) {
+            sendRefundConfirmationEmail({
+                to: customerEmail,
+                fullName: customerName,
+                orderCode: order.orderCode,
+                finalRefundAmount: updated.finalRefundAmount,
+                bankDetails: updated.refundBankDetails,
+            }).catch(() => {});
+        }
+    } catch {}
+
     return { order: order.toObject(), inspection: await getInspection(userId, identifier) };
 }
 export async function disputeInspection(userId, identifier, reason) {

@@ -219,18 +219,14 @@ class ChatService {
     }
 
     const conversations = await Conversation.find(query)
-      .populate({
-        path: 'customerId',
-        select: 'fullName email phone avatar roleId',
-        populate: { path: 'roleId', select: 'code name' },
-      })
+      .populate('customerId', 'fullName email phone avatar role')
       .populate('staffId', 'fullName email phone avatar')
       .sort({ isPinned: -1, updatedAt: -1 });
 
     // Chỉ giữ lại hội thoại của KHÁCH HÀNG thực tế (loại trừ tài khoản Admin / Staff)
     const customerOnly = conversations.filter((c) => {
-      const roleCode = c.customerId?.roleId?.code;
-      if (roleCode === 'ADMIN' || roleCode === 'STAFF') return false;
+      const userRole = (c.customerId?.role || '').toLowerCase();
+      if (userRole === 'admin' || userRole === 'staff') return false;
       const name = (c.customerId?.fullName || c.customerName || '').toLowerCase();
       if (
         name.includes('quản trị') ||
