@@ -70,6 +70,14 @@ export const createAppointment = async (appointmentData, currentUser = null) => 
     throw new Error('Vui lòng cung cấp đầy đủ: Tên khách hàng, Số điện thoại, Ngày hẹn và Khung giờ.');
   }
 
+  const parsedAppointmentDate = parseDateSafe(resolvedDate, new Date());
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  if (parsedAppointmentDate < todayStart) {
+    throw new Error('Ngày hẹn thử váy không thể là ngày trong quá khứ.');
+  }
+
   const randomCode = `APT-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
   const newAppointment = new Appointment({
@@ -79,7 +87,7 @@ export const createAppointment = async (appointmentData, currentUser = null) => 
     customerPhone: resolvedPhone.trim(),
     customerEmail: (customerEmail || email || '').trim(),
     branch: branch || branchId || 'hcm-q1',
-    appointmentDate: parseDateSafe(resolvedDate, new Date()),
+    appointmentDate: parsedAppointmentDate,
     weddingDate: parseDateSafe(weddingDate, null),
     timeSlot: timeSlot.trim(),
     guestsCount: Number(guestsCount) || 2,

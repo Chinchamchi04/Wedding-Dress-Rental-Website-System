@@ -116,6 +116,18 @@ export const createOrder = async (orderData, currentUser = null) => {
   const resolvedStartDate = parseDateSafe(rentalStartDate, new Date());
   const resolvedEndDate = parseDateSafe(rentalEndDate, new Date(Date.now() + 4 * 24 * 60 * 60 * 1000));
 
+  // Kiểm tra không được đặt ngày trong quá khứ
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  if (resolvedStartDate < todayStart) {
+    throw new Error('Ngày bắt đầu thuê không thể là ngày trong quá khứ.');
+  }
+
+  if (resolvedEndDate < resolvedStartDate) {
+    throw new Error('Ngày hoàn trả không thể trước ngày bắt đầu thuê.');
+  }
+
   const newOrder = new Order({
     orderCode,
     customerId: currentUser?._id || null,

@@ -325,6 +325,12 @@ export default function AppointmentPage() {
     if (selectedDressIds.length === 0) {
       errs.dresses = 'Vui lòng chọn ít nhất 1 mẫu váy cưới nàng muốn thử';
     }
+    if (selectedDate && selectedDate < tomorrowStr) {
+      errs.selectedDate = 'Ngày hẹn thử váy không thể là ngày trong quá khứ';
+    }
+    if (weddingDate && weddingDate < tomorrowStr) {
+      errs.weddingDate = 'Ngày cưới không thể là ngày trong quá khứ';
+    }
 
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -1287,10 +1293,16 @@ export default function AppointmentPage() {
                         </label>
                         <input
                           type="date"
+                          min={tomorrowStr}
                           value={weddingDate}
                           onChange={(e) => setWeddingDate(e.target.value)}
                           className="w-full bg-[#FCF9F6] border border-[#EEDECF] rounded-xl px-3.5 py-2 text-[13.5px] text-[#2C2523] font-medium focus:outline-none focus:border-[#733F49] focus:bg-white"
                         />
+                        {errors.weddingDate && (
+                          <span className="text-[11px] text-red-500 font-semibold mt-1 block">
+                            {errors.weddingDate}
+                          </span>
+                        )}
                       </div>
                     </div>
 

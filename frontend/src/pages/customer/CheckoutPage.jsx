@@ -90,6 +90,15 @@ function toDisplayDateString(val) {
   return str;
 }
 
+// Helper: Lấy ngày hiện tại chuẩn YYYY-MM-DD theo giờ địa phương
+function getTodayIsoString() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 // Chữ ký nghệ thuật đại diện Bên A (Ông Kim Xuân Hiếu - Tổng Giám Đốc)
 function DirectorSignatureAndStamp({ className = "h-28", isSmall = false }) {
   return (
@@ -414,6 +423,9 @@ export default function CheckoutPage() {
     };
   };
 
+  // Lấy ngày hôm nay chuẩn ISO
+  const todayIso = useMemo(() => getTodayIsoString(), []);
+
   // Schedule state (Định dạng hiển thị DD/MM/YYYY)
   const [rentalSchedule, setRentalSchedule] = useState(() => {
     const validStart = startDateParam && startDateParam !== 'undefined' && startDateParam !== 'null' ? toDisplayDateString(startDateParam) : null;
@@ -421,6 +433,12 @@ export default function CheckoutPage() {
     const validWedding = searchParams.get('weddingDate') && searchParams.get('weddingDate') !== 'undefined' && searchParams.get('weddingDate') !== 'null'
       ? toDisplayDateString(searchParams.get('weddingDate'))
       : null;
+
+    const curToday = getTodayIsoString();
+    const startIsoCheck = toIsoDateString(validStart);
+    if (startIsoCheck && startIsoCheck < curToday) {
+      return { startDate: '', weddingDate: '', endDate: '' };
+    }
 
     if (validStart && validEnd) {
       return {
@@ -431,6 +449,10 @@ export default function CheckoutPage() {
     }
 
     if (validWedding) {
+      const wedIsoCheck = toIsoDateString(validWedding);
+      if (wedIsoCheck && wedIsoCheck < curToday) {
+        return { startDate: '', weddingDate: '', endDate: '' };
+      }
       const initialDays = !isNaN(daysParam) && daysParam >= 1 && daysParam <= 30 ? daysParam : 4;
       return computeScheduleFromWedding(validWedding, initialDays);
     }
@@ -571,6 +593,10 @@ export default function CheckoutPage() {
   const handleSelectStartDate = (selectedIsoOrDisplay) => {
     const iso = toIsoDateString(selectedIsoOrDisplay);
     if (!iso) return;
+    if (iso < todayIso) {
+      message.warning('Ngày bắt đầu thuê không thể là ngày trong quá khứ!');
+      return;
+    }
     const parts = iso.split('-').map(Number);
     if (parts.length !== 3) return;
 
@@ -602,6 +628,10 @@ export default function CheckoutPage() {
   const handleSelectWeddingDate = (selectedIsoOrDisplay) => {
     const newWedIso = toIsoDateString(selectedIsoOrDisplay);
     if (!newWedIso) return;
+    if (newWedIso < todayIso) {
+      message.warning('Ngày cưới chính thức không thể là ngày trong quá khứ!');
+      return;
+    }
     const parts = newWedIso.split('-').map(Number);
     if (parts.length !== 3) return;
 
@@ -617,6 +647,10 @@ export default function CheckoutPage() {
   const handleSelectEndDate = (selectedIsoOrDisplay) => {
     const newEndIso = toIsoDateString(selectedIsoOrDisplay);
     if (!newEndIso) return;
+    if (newEndIso < todayIso) {
+      message.warning('Ngày hoàn trả không thể là ngày trong quá khứ!');
+      return;
+    }
     const startIso = toIsoDateString(rentalSchedule.startDate);
     const wedIso = toIsoDateString(rentalSchedule.weddingDate);
 
@@ -648,6 +682,10 @@ export default function CheckoutPage() {
   // Xử lý khi người dùng click vào ô ngày trên bảng lịch:
   // CHỈ CHO PHÉP CHỌN NGÀY THUÊ (Ngày nhận váy), ngày trả sẽ tự tính theo số ngày thuê
   const handleCalendarCellClick = (dateStr) => {
+    if (dateStr < todayIso) {
+      message.warning('Không thể chọn ngày trong quá khứ!');
+      return;
+    }
     const booked = getBookedInfoForDate(dateStr);
     if (booked) {
       message.warning(
@@ -811,6 +849,30 @@ export default function CheckoutPage() {
     e?.preventDefault();
     if (!rentalSchedule.startDate || !rentalSchedule.weddingDate || !rentalSchedule.endDate) {
       message.warning('Nàng vui lòng chọn ngày cưới và thời gian thuê trên bảng lịch trước khi tiếp tục!');
+      return;
+    }
+
+    const startIso = toIsoDateString(rentalSchedule.startDate);
+    const wedIso = toIsoDateString(rentalSchedule.weddingDate);
+    const endIso = toIsoDateString(rentalSchedule.endDate);
+
+    if (startIso && startIso < todayIso) {
+      message.error('Ngày bắt đầu thuê không thể là ngày trong quá khứ!');
+      return;
+    }
+
+    if (wedIso && wedIso < todayIso) {
+      message.error('Ngày cưới chính thức không thể là ngày trong quá khứ!');
+      return;
+    }
+
+    if (endIso && endIso < todayIso) {
+      message.error('Ngày hoàn trả không thể là ngày trong quá khứ!');
+      return;
+    }
+
+    if (startIso && endIso && endIso < startIso) {
+      message.error('Ngày hoàn trả không thể trước ngày bắt đầu thuê!');
       return;
     }
 
@@ -1863,6 +1925,7 @@ export default function CheckoutPage() {
                       <div className="relative flex items-center">
                         <input
                           type="date"
+                          min={todayIso}
                           value={toIsoDateString(rentalSchedule.startDate) || ''}
                           onChange={(e) => {
                             if (e.target.value) {
@@ -1890,6 +1953,7 @@ export default function CheckoutPage() {
                       <div className="relative flex items-center">
                         <input
                           type="date"
+                          min={todayIso}
                           value={toIsoDateString(rentalSchedule.weddingDate) || ''}
                           onChange={(e) => {
                             if (e.target.value) {
@@ -1922,7 +1986,7 @@ export default function CheckoutPage() {
                       <div className="relative flex items-center">
                         <input
                           type="date"
-                          min={toIsoDateString(rentalSchedule.startDate) || undefined}
+                          min={toIsoDateString(rentalSchedule.startDate) || todayIso}
                           value={toIsoDateString(rentalSchedule.endDate) || ''}
                           onChange={(e) => {
                             if (e.target.value) {
@@ -2052,12 +2116,29 @@ export default function CheckoutPage() {
 
                       for (let d = 1; d <= daysInMonth; d++) {
                         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                        const isPast = dateStr < todayIso;
                         const bookedInfo = getBookedInfoForDate(dateStr);
                         const isBooked = Boolean(bookedInfo);
                         const isStart = dateStr === startIso;
                         const isWedding = dateStr === weddingIso;
                         const isEnd = dateStr === endIso;
                         const isInRange = startIso && endIso && dateStr >= startIso && dateStr <= endIso;
+
+                        // Chặn và làm mờ các ngày trong quá khứ
+                        if (isPast) {
+                          cells.push(
+                            <button
+                              key={dateStr}
+                              type="button"
+                              onClick={() => message.warning('Không thể chọn ngày trong quá khứ!')}
+                              title="Ngày trong quá khứ (không khả dụng)"
+                              className="relative h-10 sm:h-12 rounded-xl flex flex-col items-center justify-center text-[12px] sm:text-[13px] font-medium transition-all bg-[#F8F5F2] text-[#C2B5B3] cursor-not-allowed opacity-50"
+                            >
+                              <span className="line-through decoration-[#C2B5B3]">{d}</span>
+                            </button>
+                          );
+                          continue;
+                        }
 
                         if (isBooked) {
                           cells.push(
