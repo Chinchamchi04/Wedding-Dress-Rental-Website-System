@@ -1088,7 +1088,7 @@ export default function InventoryManagement() {
       {/* 4 Top Metric Cards Nâng Cấp: Tổng số váy, Tổng số mẫu, Đang cho thuê, Đang bảo dưỡng */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Card 1: TỔNG MẪU THIẾT KẾ (Ánh hồng thanh lịch) */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FDE8EC_0%,_transparent_70%)] rounded-2xl border border-[#FAD2DA] py-3.5 px-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FDE8EC_0%,_transparent_70%)] rounded-2xl border border-[#FAD2DA] py-4 px-5 shadow-xs hover:shadow-md transition-shadow">
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#733F49] uppercase">
@@ -1105,14 +1105,10 @@ export default function InventoryManagement() {
               <span className="text-[12px] font-medium text-[#8C7D7E] ml-2">mẫu thiết kế</span>
             </div>
           </div>
-          <div className="mt-2.5 pt-2 border-t border-[#F8E2E6] flex items-center justify-between text-[11px]">
-            <span className="text-[#8A797A]">Giá trị cọc bảo lãnh:</span>
-            <span className="font-bold text-[#733F49]">{fmtVnd(totalAssetValue)}</span>
-          </div>
         </div>
 
         {/* Card 2: TỔNG SỐ VÁY (Ánh xanh lá dịu mát) */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EAF8EE_0%,_transparent_70%)] rounded-2xl border border-[#C6EED1] py-3.5 px-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EAF8EE_0%,_transparent_70%)] rounded-2xl border border-[#C6EED1] py-4 px-5 shadow-xs hover:shadow-md transition-shadow">
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#1E8347] uppercase">
@@ -1129,14 +1125,10 @@ export default function InventoryManagement() {
               <span className="text-[12px] font-medium text-[#736364] ml-2">chiếc váy</span>
             </div>
           </div>
-          <div className="mt-2.5 pt-2 border-t border-[#D5F3DD] flex items-center justify-between text-[11px]">
-            <span className="text-[#5E7A67]">Khả dụng tại tủ:</span>
-            <span className="font-bold text-[#1E8347]">{totalAvailableUnits} chiếc sẵn sàng</span>
-          </div>
         </div>
 
         {/* Card 3: MẪU ĐANG CHO THUÊ */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EFF6FF_0%,_transparent_70%)] rounded-2xl border border-[#BFDBFE] py-3.5 px-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EFF6FF_0%,_transparent_70%)] rounded-2xl border border-[#BFDBFE] py-4 px-5 shadow-xs hover:shadow-md transition-shadow">
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#1D4ED8] uppercase">
@@ -1155,14 +1147,10 @@ export default function InventoryManagement() {
               </span>
             </div>
           </div>
-          <div className="mt-2.5 pt-2 border-t border-[#DBEAFE] flex items-center justify-between text-[11px]">
-            <span className="text-[#4B6B94]">Tỷ lệ lấp đầy:</span>
-            <span className="font-bold text-[#1D4ED8]">{utilizationRate}% ({totalRentedUnits} chiếc)</span>
-          </div>
         </div>
 
         {/* Card 4: MẪU ĐANG BẢO DƯỠNG */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FEF3C7_0%,_transparent_70%)] rounded-2xl border border-[#FDE68A] py-3.5 px-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FEF3C7_0%,_transparent_70%)] rounded-2xl border border-[#FDE68A] py-4 px-5 shadow-xs hover:shadow-md transition-shadow">
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#92400E] uppercase">
@@ -1178,10 +1166,6 @@ export default function InventoryManagement() {
               </span>
               <span className="text-[12px] font-medium text-[#D97706] ml-2">mẫu đang xử lý</span>
             </div>
-          </div>
-          <div className="mt-2.5 pt-2 border-t border-[#FDE68A] flex items-center justify-between text-[11px]">
-            <span className="text-[#855B1B]">Tiêu chuẩn:</span>
-            <span className="font-bold text-[#92400E]">Giặt khô & vi khí hậu</span>
           </div>
         </div>
       </div>
@@ -1441,8 +1425,8 @@ export default function InventoryManagement() {
                       </td>
 
                       {/* Col 2: Vị trí tủ */}
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-2 mb-1.5 whitespace-nowrap">
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2 whitespace-nowrap">
                           <HangerIcon size={16} strokeWidth={1.8} className="text-[#8A4650] shrink-0" />
                           <span className="font-bold text-[#2C2523] text-[13.5px] whitespace-nowrap">
                             {item.location}
@@ -1450,9 +1434,6 @@ export default function InventoryManagement() {
                           <span className="px-2 py-0.5 rounded-md border border-[#E8DCD7] bg-[#FAF5F2] text-[#7A696B] font-mono text-[10px] font-semibold whitespace-nowrap shrink-0">
                             {item.rfid}
                           </span>
-                        </div>
-                        <div className="text-[11.5px] text-[#8A797A] line-clamp-2 max-w-[260px]">
-                          {item.description}
                         </div>
                       </td>
 

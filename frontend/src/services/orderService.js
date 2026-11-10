@@ -110,8 +110,6 @@ export async function getOrder(idOrCode) {
   throw new Error('Không tìm thấy đơn hàng trong cơ sở dữ liệu.');
 }
 
-export const getOrderById = getOrder;
-
 /**
  * Tạo mới đơn thuê váy từ giỏ hàng
  * @param {Object} orderData - { items, rentalStartDate, rentalEndDate, deliveryMethod, shippingAddress, notes }
@@ -198,12 +196,6 @@ export async function getDressBookedDates(dressId) {
     }
   }
 }
-
-export function getDemoOrders() {
-  return [];
-}
-
-export function getDemoOrder(id) { return null; }
 
 /**
  * Lấy toàn bộ danh sách đơn thuê (Admin)

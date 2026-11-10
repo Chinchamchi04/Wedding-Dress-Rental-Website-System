@@ -54,15 +54,6 @@ export async function getUserRoles() {
 }
 
 /**
- * Lấy thông tin chi tiết một tài khoản
- * @param {string} id
- */
-export async function getUserById(id) {
-  const res = await axiosClient.get(`/users/${id}`);
-  return res.data?.data || res.data || res;
-}
-
-/**
  * Tạo tài khoản mới (Admin tạo cho Staff / Customer / Admin)
  * @param {Object} userData - { fullName, email, phone, password, roleCode, idCard }
  */
@@ -99,20 +90,6 @@ export async function toggleUserStatus(id) {
     return res.data?.data || res.data || res;
   } catch (error) {
     throw new Error(error.response?.data?.message || error.message || 'Không thể đổi trạng thái tài khoản.');
-  }
-}
-
-/**
- * Đặt lại mật khẩu mới cho tài khoản
- * @param {string} id
- * @param {string} newPassword
- */
-export async function resetUserPassword(id, newPassword) {
-  try {
-    const res = await axiosClient.patch(`/users/${id}/reset-password`, { password: newPassword });
-    return res.data || res;
-  } catch (error) {
-    throw new Error(error.response?.data?.message || error.message || 'Không thể đặt lại mật khẩu.');
   }
 }
 

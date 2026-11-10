@@ -16,7 +16,7 @@ import { DRESS_CATALOG } from '../data/dressCatalog';
 /**
  * Chuyển đổi một phần tử trong DRESS_CATALOG (72 mẫu) thành đối tượng Dress hoàn chỉnh
  */
-export function convertCatalogItemToDress(item) {
+function convertCatalogItemToDress(item) {
   if (!item) return null;
 
   const priceNum = item.priceNumber || (typeof item.price === 'number' ? item.price : parseInt(String(item.price || '5200000').replace(/\D/g, ''), 10)) || 5200000;

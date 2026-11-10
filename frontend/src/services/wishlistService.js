@@ -5,7 +5,7 @@ import { getAllDresses, getDressById, formatCurrencyVND } from './dressService';
 // Module-level cache lưu danh sách váy từ backend API
 let _dressesCache = Array.isArray(DRESS_CATALOG) ? [...DRESS_CATALOG] : [];
 
-export function setWishlistCatalogCache(dresses) {
+function setWishlistCatalogCache(dresses) {
   if (Array.isArray(dresses) && dresses.length > 0) {
     const map = new Map();
     dresses.forEach((d) => {
@@ -48,11 +48,11 @@ const LEGACY_REC_MAP = {
   'rec_03': '6aeb0ad4e1e74eee06062c7e', // Juliette Pure Silk
 };
 
-export const WISHLIST_KEY = 'unibridal_wishlist_ids';
+const WISHLIST_KEY = 'unibridal_wishlist_ids';
 export const WISHLIST_EVENT = 'unibridal:wishlist-updated';
 
 // 3 thiết kế mặc định đầu tiên làm fallback
-export const DEFAULT_WISHLIST_IDS = Array.isArray(DRESS_CATALOG) && DRESS_CATALOG.length > 0
+const DEFAULT_WISHLIST_IDS = Array.isArray(DRESS_CATALOG) && DRESS_CATALOG.length > 0
   ? DRESS_CATALOG.slice(0, 3).map((d) => String(d.id))
   : [];
 
@@ -96,7 +96,7 @@ export const RECOMMENDED_DRESSES = [
 /**
  * Xác định định danh người dùng hiện tại (ID, email hoặc guest) để lưu wishlist riêng biệt từng tài khoản
  */
-export function getCurrentUserIdentifier() {
+function getCurrentUserIdentifier() {
   if (typeof window === 'undefined') return 'guest';
   try {
     const raw = localStorage.getItem('user') || localStorage.getItem('unibridal.authUser') || sessionStorage.getItem('unibridal.authUser');
@@ -114,7 +114,7 @@ export function getCurrentUserIdentifier() {
 /**
  * Tạo key lưu trữ localStorage tương ứng với từng tài khoản: unibridal_wishlist_ids_{userId}
  */
-export function getWishlistStorageKey() {
+function getWishlistStorageKey() {
   const userKey = getCurrentUserIdentifier();
   return `unibridal_wishlist_ids_${userKey}`;
 }
@@ -243,7 +243,7 @@ export async function syncUserWishlistFromBackend(preferredUser) {
 /**
  * Thêm một sản phẩm vào danh sách yêu thích của tài khoản
  */
-export function addToWishlist(id) {
+function addToWishlist(id) {
   if (!id) return false;
   const targetId = String(id);
   const current = getWishlistIds();

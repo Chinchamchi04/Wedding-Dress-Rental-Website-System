@@ -102,27 +102,3 @@ export const authorize = (...allowedRoles) => {
     });
   };
 };
-
-/**
- * Hàm phân quyền tương thích ngược
- */
-export const checkPermission = (requiredPermissionCode) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(403).json({
-        success: false,
-        message: 'Chưa đăng nhập.',
-      });
-    }
-    const userRole = (req.user.role || 'customer').toLowerCase();
-    if (userRole === 'admin' || userRole === 'staff') {
-      return next();
-    }
-    return res.status(403).json({
-      success: false,
-      message: `Bạn không có quyền thực hiện thao tác này (${requiredPermissionCode}).`,
-    });
-  };
-};
-
-export const verifyToken = authenticate;

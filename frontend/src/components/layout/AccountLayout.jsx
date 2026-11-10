@@ -48,7 +48,7 @@ const items = [
   { to: '/profile/password', label: 'Đổi mật khẩu', Icon: History },
 ];
 
-export function AccountSidebar({ onLogout }) {
+function AccountSidebar({ onLogout }) {
   return (
     <aside className="profile-sidebar rounded-lg border border-[#f4edeb] bg-white p-4">
       <p className="mb-2 mt-1 text-[11px] font-medium uppercase tracking-[2.5px] text-[#874e57]">Bridal Concierge</p>

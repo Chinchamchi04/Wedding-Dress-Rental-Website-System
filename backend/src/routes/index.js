@@ -6,8 +6,6 @@ import * as report from '../controllers/reportController.js';
 const router = Router();
 const handle = (action) => (req, res, next) => Promise.resolve(action(req, res)).catch(next);
 
-router.post('/auth/login', handle(account.login));
-router.post('/auth/register', handle(account.register));
 router.get('/dresses', handle(account.dresses));
 router.get('/dresses/:id', handle(account.dressDetail));
 router.post('/dresses', optionalAuthenticate, handle(account.createDress));

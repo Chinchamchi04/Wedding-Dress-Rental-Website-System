@@ -1,7 +1,7 @@
 import axiosClient from '../api/axiosClient';
 
 // Danh mục mặc định dự phòng khi Backend Offline / Demo
-export const INITIAL_CATEGORIES = [
+const INITIAL_CATEGORIES = [
   {
     _id: 'cat-ballgown',
     name: 'Công Chúa Bồng Xòe (Ballgown)',
@@ -120,22 +120,6 @@ export async function getCategoriesApi(params = {}) {
     list = list.filter((c) => c.isActive);
   }
   return list;
-}
-
-/**
- * Lấy chi tiết danh mục theo ID
- */
-export async function getCategoryDetailApi(id) {
-  try {
-    const res = await axiosClient.get(`/categories/${id}`);
-    if (res?.data) return res.data;
-  } catch (error) {
-    console.warn('API error, using local:', error.message);
-  }
-  const list = getStoredCategories();
-  const found = list.find((c) => c._id === id || c.id === id);
-  if (!found) throw new Error('Không tìm thấy danh mục');
-  return found;
 }
 
 /**

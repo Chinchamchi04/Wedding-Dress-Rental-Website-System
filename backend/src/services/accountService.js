@@ -33,42 +33,6 @@ const tokenFor = (user) => jwt.sign(
   { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
 );
 
-export async function login(email, password) {
-  if (!email || !password) fail(400, 'Vui lòng nhập đầy đủ email và mật khẩu.');
-  const identity = String(email).trim().toLowerCase();
-  const user = await User.findOne({ $or: [{ email: identity }, { phone: identity }] })
-    .select('+password');
-
-  if (!user || !(await user.comparePassword(password))) {
-    fail(401, 'Email hoặc mật khẩu không chính xác.');
-  }
-  if (!user.isActive) {
-    fail(403, 'Tài khoản của bạn hiện đang bị tạm khóa. Vui lòng liên hệ quản trị viên.');
-  }
-  return { user: publicUser(user), token: tokenFor(user) };
-}
-
-export async function register({ name, email, phone, password }) {
-  if (!name?.trim() || !emailPattern.test(email || '') || !phone?.trim() || !password || password.length < 6) {
-    fail(400, 'Vui lòng nhập đầy đủ họ tên, email hợp lệ, số điện thoại và mật khẩu từ 6 ký tự.');
-  }
-  const cleanEmail = email.trim().toLowerCase();
-
-  if (await User.exists({ email: cleanEmail })) {
-    fail(400, 'Địa chỉ email này đã được đăng ký trong hệ thống.');
-  }
-
-  const user = await User.create({
-    fullName: name.trim(),
-    email: cleanEmail,
-    phone: phone.trim(),
-    password,
-    role: 'customer',
-    isActive: true,
-  });
-  return { user: publicUser(user), token: tokenFor(user) };
-}
-
 export function getProfile(user) {
   return publicUser(user);
 }
@@ -148,26 +112,6 @@ export async function changePassword(user, { currentPassword, newPassword }) {
   account.password = newPassword;
   await account.save();
   return { token: tokenFor(account) };
-}
-
-export async function getOrders(customerId) {
-  return Order.find({ customerId })
-    .sort({ createdAt: -1 })
-    .populate('items.dressId', 'images code silhouette')
-    .lean();
-}
-
-export async function getOrder(customerId, identifier) {
-  const filter = mongoose.isValidObjectId(identifier)
-    ? { _id: identifier, customerId }
-    : { orderCode: String(identifier).toUpperCase(), customerId };
-
-  const order = await Order.findOne(filter)
-    .populate('items.dressId', 'images code silhouette')
-    .lean();
-
-  if (!order) fail(404, 'Không tìm thấy thông tin đơn hàng yêu cầu.');
-  return order;
 }
 
 export async function listDresses() {

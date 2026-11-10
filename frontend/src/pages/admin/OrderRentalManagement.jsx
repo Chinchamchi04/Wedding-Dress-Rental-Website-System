@@ -40,7 +40,7 @@ import { formatCurrencyVND } from '../../utils/formatCurrency';
 import { DRESS_CATALOG } from '../../data/dressCatalog';
 
 // Helper lấy mã sản phẩm (SKU) của váy cưới từ item hoặc fallback vào catalog
-export const getDressCode = (item) => {
+const getDressCode = (item) => {
   if (!item) return '';
   if (item.code) return item.code;
   if (item.dressCode) return item.dressCode;

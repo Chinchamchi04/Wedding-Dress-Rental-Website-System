@@ -34,18 +34,3 @@ export function formatShortDate(dateStr) {
   return `${d}/${m}/${y}`;
 }
 
-/**
- * Tính số ngày thuê giữa hai mốc thời gian
- * @param {string|Date} startDate
- * @param {string|Date} endDate
- * @returns {number}
- */
-export function calculateRentalDays(startDate, endDate) {
-  if (!startDate || !endDate) return 1;
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const diffTime = Math.abs(end - start);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays || 1;
-}
-
