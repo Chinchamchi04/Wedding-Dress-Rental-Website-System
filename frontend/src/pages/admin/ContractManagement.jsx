@@ -32,6 +32,7 @@ import {
   AlertTriangle,
   UserCheck,
   UserX,
+  Crown,
   RefreshCw
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -81,6 +82,14 @@ const DRESS_OPTIONS = [
 ];
 
 const fmtVnd = (num) => formatCurrencyVND(num);
+
+const getRentalDays = (start, end) => {
+  if (!start || !end) return 3;
+  const s = new Date(start);
+  const e = new Date(end);
+  const diff = Math.round((e - s) / (1000 * 60 * 60 * 24));
+  return diff > 0 ? diff : 1;
+};
 
 export default function ContractManagement() {
   const [contracts, setContracts] = useState([]);
@@ -421,42 +430,41 @@ export default function ContractManagement() {
           </div>
         )}
 
-        {/* Top Header & Breadcrumb */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#EFE5E1] pb-5">
+        {/* Top Header */}
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-
-            <h1 className="text-2xl lg:text-3xl font-serif font-bold text-[#302626]">
-              Quản Lý Hợp Đồng Thuê Váy Cưới
+            <h1 className="font-playfair text-[32px] sm:text-[38px] font-normal text-[#5F2B36] tracking-tight leading-tight mb-2">
+              Quản Lý Hợp Đồng
             </h1>
-            <p className="text-xs sm:text-sm text-[#7A6A6B] mt-0.5">
-              Theo dõi tình trạng ký kết điện tử, giá trị đặt cọc và hiệu lực pháp lý của hợp đồng thuê.
+            <p className="text-[14px] text-[#7A6B6C] font-normal max-w-3xl leading-relaxed">
+              Theo dõi tình trạng ký kết điện tử, giá trị đặt cọc và hiệu lực pháp lý của hợp đồng thuê váy cưới UniBridal.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-auto">
             <button
               type="button"
               onClick={loadContractsFromOrders}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-[#D9C4BD] bg-white text-[#733F49] hover:bg-[#FDF9F8] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-[#E8DDD8] bg-white text-[#5F2B36] hover:bg-[#FAF0EC] text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-60"
               title="Làm mới danh sách từ hệ thống đơn hàng"
             >
-              <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
               <span>{loading ? 'Đang tải...' : 'Làm mới'}</span>
             </button>
 
             <Link
               to="/admin/mau-hop-dong"
-              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-[#D9C4BD] bg-white text-[#733F49] hover:bg-[#FDF9F8] text-xs font-semibold shadow-xs transition-colors"
+              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-[#E8DDD8] bg-white text-[#5F2B36] hover:bg-[#FAF0EC] text-xs font-bold transition-all shadow-xs"
             >
-              <Layers size={16} />
+              <Layers size={14} />
               <span>Mẫu Hợp Đồng</span>
             </Link>
 
             <button
               type="button"
               onClick={() => setIsCreateOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#733F49] hover:bg-[#5C323A] text-white text-xs font-bold shadow-sm transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-[#733F49] to-[#8C4654] hover:from-[#5A2D35] hover:to-[#733F49] text-white text-xs font-bold transition-all cursor-pointer shadow-md border-0"
             >
               <Plus size={16} />
               <span>Lập Hợp Đồng Showroom</span>
@@ -575,67 +583,51 @@ export default function ContractManagement() {
               <tbody className="divide-y divide-[#F6EEEB]">
                 {filteredContracts.map((item) => (
                   <tr key={item.id} className="hover:bg-[#FCFAF8] transition-colors group">
-                    <td className="py-4 px-4">
+                    <td className="py-4 px-4 whitespace-nowrap">
                       <button
                         type="button"
                         onClick={() => handleOpenPreview(item)}
                         className="font-mono font-bold text-[#733F49] hover:underline hover:text-[#5F333B] text-xs text-left cursor-pointer p-0 bg-transparent border-0 flex items-center gap-1.5 group/btn"
-                        title="Xem hợp đồng đã ký kèm chữ ký điện tử hai bên"
+                        title="Xem chi tiết hợp đồng"
                       >
                         <FileSignature size={13} className="text-[#C5A880] group-hover/btn:scale-110 transition-transform shrink-0" />
                         <span>{item.id}</span>
                       </button>
-                      {item.orderCode && (
-                        <div className="text-[10.5px] text-[#847374] font-mono mt-0.5">
-                          Đơn: <span className="font-semibold text-[#5F333B]">{item.orderCode}</span>
-                        </div>
-                      )}
                     </td>
 
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-semibold text-[#302626]">{item.customerName}</span>
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-[#302626] text-[13px]">{item.customerName}</span>
                         {item.hasAccount || item.customerId ? (
                           <span
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-[#FAF0EC] text-[#733F49] border border-[#F2D8D4] shrink-0"
-                            title="Khách hàng thành viên có tài khoản UniBridal"
+                            className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#FAF0EC] border border-[#E8C5BE] text-[#8C4654] shrink-0"
+                            title="Khách hàng thành viên UniBridal"
                           >
-                            <UserCheck size={10} className="text-[#B8737D]" />
-                            <span>Thành Viên</span>
+                            <Crown size={11} className="text-[#C5A880] fill-[#C5A880]" />
                           </span>
                         ) : (
                           <span
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-[#F5F2F0] text-[#7A6A6B] border border-[#E8DFDC] shrink-0"
-                            title="Khách vãng lai thuê trực tiếp (Chưa có tài khoản)"
+                            className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#F5F2F0] border border-[#E3DBD7] text-[#A39192] shrink-0"
+                            title="Khách vãng lai"
                           >
-                            <UserX size={10} className="text-[#A39192]" />
-                            <span>Khách Vãng Lai</span>
+                            <User size={11} className="text-[#9E8B89]" />
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-[#7A6A6B] flex items-center gap-1.5 mt-0.5">
-                        <Phone size={11} className="text-[#A39192]" />
-                        <span>{item.phone}</span>
-                      </div>
                     </td>
 
                     <td className="py-4 px-4">
-                      <div className="min-w-0">
-                        <div className="font-semibold text-[#302626]">
-                          {item.dressName}
-                        </div>
-                        <div className="text-xs text-[#A39192] mt-0.5">
-                          {item.dressCode} · <span className="text-[#87565C] font-medium">{item.dressSize}</span>
-                        </div>
+                      <div className="font-semibold text-[#302626] text-[13px]">
+                        {item.dressName}
                       </div>
                     </td>
 
-                    <td className="py-4 px-4">
+                    <td className="py-4 px-4 whitespace-nowrap">
                       <div className="text-xs font-semibold text-[#302626]">
                         {item.startDate} <span className="text-[#A39192]">→</span> {item.endDate}
                       </div>
-                      <span className="inline-block mt-0.5 text-[10px] text-[#A39192]">
-                        {item.packageType}
+                      <span className="inline-block mt-0.5 text-[11px] text-[#8C4654] font-medium">
+                        {getRentalDays(item.startDate, item.endDate)} ngày
                       </span>
                     </td>
 
@@ -669,10 +661,10 @@ export default function ContractManagement() {
                           type="button"
                           onClick={() => handleOpenPreview(item)}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF0EC] text-[#733F49] hover:bg-[#F3E2DB] border border-[#ECD9D3] text-xs font-semibold transition-all cursor-pointer shadow-2xs"
-                          title="Xem hợp đồng đã ký kèm chữ ký điện tử hai bên"
+                          title="Xem chi tiết hợp đồng"
                         >
                           <Eye size={14} />
-                          <span>Xem Hợp Đồng Đã Ký</span>
+                          <span>Xem chi tiết</span>
                         </button>
 
                         {item.status === 'pending_signature' && (

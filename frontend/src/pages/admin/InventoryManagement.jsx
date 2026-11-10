@@ -1040,11 +1040,14 @@ export default function InventoryManagement() {
       )}
 
       {/* Page Title & Main CTA Header */}
-      <div className="mb-3 sm:mb-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-playfair text-[26px] sm:text-[30px] font-bold text-[#5F2B36] tracking-tight m-0 leading-tight">
+          <h1 className="font-playfair text-[32px] sm:text-[38px] font-normal text-[#5F2B36] tracking-tight leading-tight mb-2">
             Quản Lý Sản Phẩm Kho
           </h1>
+          <p className="text-[14px] text-[#7A6B6C] font-normal max-w-3xl leading-relaxed">
+            Theo dõi số lượng váy cưới thực tế, vị trí tủ lưu trữ, kiểm định và bảo dưỡng lễ phục showroom UniBridal.
+          </p>
         </div>
 
         <div className="flex items-center gap-2.5">

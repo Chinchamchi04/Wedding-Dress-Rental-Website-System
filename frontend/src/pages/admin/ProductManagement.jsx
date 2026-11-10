@@ -328,47 +328,42 @@ export default function ProductManagement() {
     <AdminLayout activeMenu="products">
       <div className="font-jakarta pb-12">
         {/* ===================== 1. TOP HEADER & TITLE ===================== */}
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-7">
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            {/* Small decorative dot */}
-            <div className="w-1.5 h-1.5 rounded-full bg-[#B88771] mb-2.5" />
-            
-            <h1 className="font-playfair text-[28px] sm:text-[34px] font-bold text-[#45272F] tracking-tight leading-tight m-0">
+            <h1 className="font-playfair text-[32px] sm:text-[38px] font-normal text-[#5F2B36] tracking-tight leading-tight mb-2">
               Quản Lý Sản Phẩm
             </h1>
-            <p className="text-[13px] sm:text-[13.5px] text-[#7A6A6B] mt-1.5 max-w-2xl leading-relaxed">
+            <p className="text-[14px] text-[#7A6B6C] font-normal max-w-3xl leading-relaxed">
               Danh mục thiết kế váy cưới Haute Couture & Lễ phục cao cấp, quản lý bảng giá niêm yết bán độc bản, số lượng tồn kho theo size và quy trình kiểm duyệt chất liệu.
             </p>
           </div>
 
           {/* Action Button: Thêm Mẫu Váy Mới */}
-          <div className="shrink-0 self-start md:self-auto">
-            <button
-              type="button"
-              onClick={() => {
-                setEditingProduct(null);
-                setFormData({
-                  name: '',
-                  code: `#UB-GOWN-00${products.length + 1}`,
-                  collection: 'Bộ sưu tập Lễ Phục Hoàng Gia',
-                  silhouette: 'Ballgown Xòe Bồng',
-                  material: 'Tulle Ý & Ren Chantilly Pháp',
-                  price: 45000000,
-                  deposit: 15000000,
-                  sizeS: 2,
-                  sizeM: 2,
-                  sizeL: 1,
-                  status: 'Hiển thị',
-                  image: card1Elysian
-                });
-                setIsAddModalOpen(true);
-              }}
-              className="inline-flex items-center gap-2 bg-[#733F49] hover:bg-[#5E323B] text-white px-5 py-2.5 rounded-xl font-jakarta text-[12.5px] font-bold tracking-wider uppercase transition-all shadow-[0_2px_8px_rgba(115,63,73,0.25)] hover:shadow-lg active:scale-95 cursor-pointer border-0 select-none"
-            >
-              <PlusCircle size={16} className="stroke-[2.2]" />
-              <span>THÊM MẪU VÁY MỚI</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setEditingProduct(null);
+              setFormData({
+                name: '',
+                code: `#UB-GOWN-00${products.length + 1}`,
+                collection: 'Bộ sưu tập Lễ Phục Hoàng Gia',
+                silhouette: 'Ballgown Xòe Bồng',
+                material: 'Tulle Ý & Ren Chantilly Pháp',
+                price: 45000000,
+                deposit: 15000000,
+                sizeS: 2,
+                sizeM: 2,
+                sizeL: 1,
+                status: 'Hiển thị',
+                image: card1Elysian
+              });
+              setIsAddModalOpen(true);
+            }}
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-[#733F49] to-[#8C4654] hover:from-[#5A2D35] hover:to-[#733F49] text-white text-xs font-bold transition-all cursor-pointer shadow-md border-0 shrink-0 self-start sm:self-auto"
+          >
+            <PlusCircle size={16} />
+            <span>Thêm Mẫu Váy Mới</span>
+          </button>
         </div>
 
         {/* ===================== 2. FOUR KPI SUMMARY CARDS ===================== */}

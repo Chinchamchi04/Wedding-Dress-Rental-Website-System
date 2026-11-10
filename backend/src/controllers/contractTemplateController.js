@@ -1,4 +1,5 @@
 import * as templateService from '../services/contractTemplateService.js';
+import { HIEU_SIGNATURE_BASE64 } from '../utils/signatureHieuBase64.js';
 
 export const getTemplates = async (req, res, next) => {
   try {
@@ -300,16 +301,16 @@ export const renderTemplatePdf = async (req, res, next) => {
                 <td>
                   <div class="sig-title">ĐẠI DIỆN BÊN CHO THUÊ (BÊN A)</div>
                   <div class="sig-sub">CÔNG TY TNHH UNIBRIDAL HAUTE COUTURE</div>
-                  <div style="font-family: 'Playfair Display', cursive, serif; font-style: italic; font-size: 32px; color: #111; font-weight: 700; transform: rotate(-5deg); margin: 12px 0;">
-                    Hieu
+                  <div style="margin: 8px 0; min-height: 70px;">
+                    <img src="${HIEU_SIGNATURE_BASE64}" alt="Chữ ký Kim Xuân Hiếu" style="max-height: 70px; max-width: 160px; object-fit: contain; display: block; margin: 0 auto;" />
                   </div>
                   <div class="sign-name">Ông Kim Xuân Hiếu</div>
-                  <div style="font-size: 10.5pt; color: #555;">Tổng Giám Đốc</div>
+                  <div style="font-size: 10.5pt; color: #555;">Tổng Giám Đốc Atelier UniBridal</div>
                 </td>
                 <td>
                   <div class="sig-title">BÊN THUÊ LỄ PHỤC (BÊN B)</div>
                   <div class="sig-sub">XÁC NHẬN BẰNG CHỮ KÝ ĐIỆN TỬ</div>
-                  <div style="font-family: serif; font-size: 18pt; font-style: italic; color: #1D2A44; margin: 18px 0;">
+                  <div style="font-family: serif; font-size: 16pt; font-style: italic; color: #733F49; margin: 18px 0; min-height: 48px; display: flex; align-items: center; justify-content: center;">
                     [Chữ ký điện tử / SmartOTP]
                   </div>
                   <div class="sign-name">[Tên Khách Hàng]</div>

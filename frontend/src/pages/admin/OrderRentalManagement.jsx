@@ -1107,10 +1107,15 @@ export default function OrderRentalManagement() {
   return (
     <AdminLayout activeMenu="don-thue">
       {/* Header */}
-      <div className="mb-3 sm:mb-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h1 className="font-playfair text-[26px] sm:text-[30px] font-bold text-[#5F2B36] tracking-tight m-0 leading-tight">
-          Quản Lý Đơn Thuê
-        </h1>
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-playfair text-[32px] sm:text-[38px] font-normal text-[#5F2B36] tracking-tight leading-tight mb-2">
+            Quản Lý Đơn Thuê
+          </h1>
+          <p className="text-[14px] text-[#7A6B6C] font-normal max-w-3xl leading-relaxed">
+            Theo dõi, điều phối tiến độ đơn thuê váy cưới và biên bản kiểm định hoàn cọc hệ thống UniBridal.
+          </p>
+        </div>
         <button
           type="button"
           onClick={() => {

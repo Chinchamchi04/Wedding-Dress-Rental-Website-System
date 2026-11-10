@@ -14,7 +14,18 @@ export const getAllTemplates = async (query = {}) => {
   }
 
   const templates = await ContractTemplate.find(filter).sort({ isDefault: -1, createdAt: -1 });
-  return templates;
+  
+  // Đồng bộ số lượng hợp đồng thực tế từ cơ sở dữ liệu
+  const Contract = (await import('../models/contractModel.js')).default;
+  const result = await Promise.all(
+    templates.map(async (tpl) => {
+      const doc = tpl.toObject ? tpl.toObject() : { ...tpl };
+      const realCount = await Contract.countDocuments({ templateId: doc._id });
+      doc.appliedCount = realCount;
+      return doc;
+    })
+  );
+  return result;
 };
 
 export const getTemplateByIdOrCode = async (idOrCode) => {

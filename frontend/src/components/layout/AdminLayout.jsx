@@ -296,8 +296,16 @@ export default function AdminLayout({
         {(title || controls) && (
           <div className="px-6 lg:px-8 pt-6 pb-2 max-w-[1400px] w-full mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              {title && <h1 className="text-2xl font-serif font-bold text-[#302626]">{title}</h1>}
-              {subtitle && <p className="text-sm text-[#7A6A6B] mt-1">{subtitle}</p>}
+              {title && (
+                <h1 className="font-playfair text-[32px] sm:text-[38px] font-normal text-[#5F2B36] tracking-tight leading-tight mb-2">
+                  {title}
+                </h1>
+              )}
+              {subtitle && (
+                <p className="text-[14px] text-[#7A6B6C] font-normal max-w-3xl leading-relaxed">
+                  {subtitle}
+                </p>
+              )}
             </div>
             {controls && <div>{controls}</div>}
           </div>

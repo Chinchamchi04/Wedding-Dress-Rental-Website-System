@@ -535,21 +535,13 @@ export default function ScheduleOverviewPage({ defaultTab }) {
       <AdminLayout activeMenu="lich-tong-quan">
         <div className="space-y-5">
           {/* Header & Thanh Tiêu Đề */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#EFE5E1] pb-4">
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full bg-[#FAF0EC] text-[#733F49] text-[11px] font-bold tracking-wider uppercase border border-[#F2D8D4]">
-                  Điều Phối Showroom
-                </span>
-                <span className="text-xs text-gray-400">•</span>
-                <span className="text-xs text-gray-500 font-medium">Trung tâm điều hành độc quyền</span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 font-playfair flex items-center gap-2.5 mt-1">
-                <CalendarDays className="w-7 h-7 text-[#733F49]" />
+              <h1 className="font-playfair text-[32px] sm:text-[38px] font-normal text-[#5F2B36] tracking-tight leading-tight mb-2">
                 Lịch Tổng Quan
               </h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Quản lý lịch hẹn thử váy Private Suite 1:1 và điều phối ngày bàn giao / hạn hoàn trả lễ phục cưới.
+              <p className="text-[14px] text-[#7A6B6C] font-normal max-w-3xl leading-relaxed">
+                Quản lý lịch hẹn thử váy Private Suite 1:1 và điều phối ngày bàn giao / hạn hoàn trả lễ phục cưới UniBridal.
               </p>
             </div>
 
@@ -558,7 +550,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                 type="button"
                 onClick={fetchData}
                 disabled={loading}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-xs font-bold transition shadow-xs cursor-pointer whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-[#E8DDD8] bg-white text-[#5F2B36] hover:bg-[#FAF0EC] text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-60"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
                 <span>Làm mới dữ liệu</span>
