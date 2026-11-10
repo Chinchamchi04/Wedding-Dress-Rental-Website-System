@@ -119,12 +119,6 @@ export default function AdminLayout({
         to: '/admin/accounts'
       },
       {
-        key: 'contract-templates',
-        label: 'Mẫu Hợp Đồng',
-        icon: Layers,
-        to: '/admin/mau-hop-dong'
-      },
-      {
         key: 'revenue',
         label: 'Báo Cáo Doanh Thu',
         icon: BarChart3,

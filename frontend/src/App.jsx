@@ -24,7 +24,6 @@ import OrderRentalManagement from './pages/admin/OrderRentalManagement';
 import InventoryManagement from './pages/admin/InventoryManagement';
 import CustomerCareManagement from './pages/admin/CustomerCareManagement';
 import ContractManagement from './pages/admin/ContractManagement';
-import ContractTemplateManagement from './pages/admin/ContractTemplateManagement';
 import AccountManagement from './pages/admin/AccountManagement';
 import CategoryManagement from './pages/admin/CategoryManagement';
 import ScheduleOverviewPage from './pages/admin/ScheduleOverviewPage';
@@ -128,8 +127,8 @@ export default function App() {
               <Route path="/admin/customer-care" element={<ProtectedRoute allowedRoles={['admin']}><CustomerCareManagement /></ProtectedRoute>} />
               <Route path="/admin/hop-dong" element={<ProtectedRoute allowedRoles={['admin']}><ContractManagement /></ProtectedRoute>} />
               <Route path="/admin/contracts" element={<ProtectedRoute allowedRoles={['admin']}><ContractManagement /></ProtectedRoute>} />
-              <Route path="/admin/mau-hop-dong" element={<ProtectedRoute allowedRoles={['admin']}><ContractTemplateManagement /></ProtectedRoute>} />
-              <Route path="/admin/contract-templates" element={<ProtectedRoute allowedRoles={['admin']}><ContractTemplateManagement /></ProtectedRoute>} />
+              <Route path="/admin/mau-hop-dong" element={<Navigate to="/admin/hop-dong" replace />} />
+              <Route path="/admin/contract-templates" element={<Navigate to="/admin/hop-dong" replace />} />
               <Route path="/admin/accounts" element={<ProtectedRoute allowedRoles={['admin']}><AccountManagement /></ProtectedRoute>} />
               <Route path="/admin/users" element={<Navigate to="/admin/accounts" replace />} />
               <Route path="/admin/tai-khoan" element={<Navigate to="/admin/accounts" replace />} />
@@ -146,8 +145,8 @@ export default function App() {
               <Route path="/cham-soc-khach-hang" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><CustomerCareManagement /></ProtectedRoute>} />
               <Route path="/quan-ly-hop-dong" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><ContractManagement /></ProtectedRoute>} />
               <Route path="/hop-dong" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><ContractManagement /></ProtectedRoute>} />
-              <Route path="/quan-ly-mau-hop-dong" element={<ProtectedRoute allowedRoles={['admin']}><ContractTemplateManagement /></ProtectedRoute>} />
-              <Route path="/mau-hop-dong" element={<ProtectedRoute allowedRoles={['admin']}><ContractTemplateManagement /></ProtectedRoute>} />
+              <Route path="/quan-ly-mau-hop-dong" element={<Navigate to="/admin/hop-dong" replace />} />
+              <Route path="/mau-hop-dong" element={<Navigate to="/admin/hop-dong" replace />} />
 
               {/* Error & Access Control Routes */}
               <Route path="/404" element={<NotFoundPage type="404" />} />

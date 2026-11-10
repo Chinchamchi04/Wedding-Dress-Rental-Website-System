@@ -804,40 +804,39 @@ export default function ContractTemplateManagement() {
               onSubmit={async (e) => {
                 e.preventDefault();
                 const form = e.target;
-                const enteredCode = form.customCode?.value?.trim()?.toUpperCase();
-                const newCode = enteredCode || `TPL-CUSTOM-${Date.now().toString().slice(-4)}`;
+                const nextIndex = templates.length + 1;
+                let autoCode = `TPL-UB-${String(nextIndex).padStart(2, '0')}`;
+                if (templates.some((t) => t.code === autoCode || t.id === autoCode)) {
+                  autoCode = `TPL-UB-${Date.now().toString().slice(-4)}`;
+                }
+                const newCode = autoCode;
                 const documentFile = createAttachedFile
                   ? {
                       name: createAttachedFile.name,
                       size: createAttachedFile.size,
-                      url: createAttachedFile.url || '#',
+                      url: createAttachedFile.url || '',
                       uploadedAt: new Date(),
                     }
-                  : {
-                      name: `Mau_Hop_Dong_${form.name.value.trim().replace(/\s+/g, '_')}.docx`,
-                      size: '220 KB',
-                      url: '#',
-                      uploadedAt: new Date(),
-                    };
+                  : null;
 
                 const newTpl = {
                   id: newCode,
                   code: newCode,
                   name: form.name.value.trim(),
-                  category: form.category.value,
-                  badge: 'Mẫu tùy chỉnh mới',
-                  status: form.status?.value || 'active',
+                  category: 'Haute Couture',
+                  badge: 'Mẫu hợp đồng',
+                  status: 'active',
                   version: 'v1.0',
                   updatedAt: new Date().toISOString().split('T')[0],
-                  updatedBy: 'Quản trị viên Showroom',
+                  updatedBy: 'Ban Giám Đốc Atelier',
                   appliedCount: 0,
-                  defaultDuration: form.duration.value || '3 ngày 2 đêm',
-                  depositRate: form.deposit.value || '100% giá thuê',
-                  overdueFee: form.overdue.value || '500.000 VNĐ / ngày',
-                  description: form.desc.value || 'Mẫu hợp đồng được thiết lập cho gói dịch vụ mới.',
+                  defaultDuration: '3 ngày 2 đêm',
+                  depositRate: '100% giá trị hợp đồng',
+                  overdueFee: '500.000 VNĐ / ngày trễ',
+                  description: form.desc?.value?.trim() || '',
                   documentFile,
-                  pdfUrl: documentFile.url && documentFile.url !== '#' ? documentFile.url : '',
-                  contractUrl: documentFile.url && documentFile.url !== '#' ? documentFile.url : '',
+                  pdfUrl: documentFile?.url || '',
+                  contractUrl: documentFile?.url || '',
                   clauses: [],
                 };
 
@@ -868,76 +867,6 @@ export default function ContractTemplateManagement() {
                   className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8DFD8] rounded-xl focus:border-[#C5A880] focus:bg-white text-[#2C2523]"
                   required
                 />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[11px] font-bold text-[#594B43] uppercase mb-1">Mã Mẫu (Code)</label>
-                  <input
-                    name="customCode"
-                    type="text"
-                    placeholder="VD: TPL-HC-05 (để trống tự tạo)"
-                    className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8DFD8] rounded-xl focus:border-[#C5A880] focus:bg-white text-[#2C2523] uppercase font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-[#594B43] uppercase mb-1">Trạng Thái Khởi Tạo</label>
-                  <select
-                    name="status"
-                    className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8DFD8] rounded-xl focus:border-[#C5A880] focus:bg-white text-[#2C2523]"
-                  >
-                    <option value="active">Đang áp dụng (Active)</option>
-                    <option value="draft">Bản nháp (Draft)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[11px] font-bold text-[#594B43] uppercase mb-1">Phân Loại Dịch Vụ</label>
-                  <select
-                    name="category"
-                    className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8DFD8] rounded-xl focus:border-[#C5A880] focus:bg-white text-[#2C2523]"
-                  >
-                    <option value="Haute Couture">Haute Couture</option>
-                    <option value="Bespoke First-Wear">Bespoke First-Wear</option>
-                    <option value="Combo Trọn Gói">Combo Trọn Gói</option>
-                    <option value="Áo Dài Cưới">Áo Dài Cưới</option>
-                    <option value="VIP Diamond">VIP Diamond</option>
-                    <option value="Vest & Tuxedo">Vest &amp; Tuxedo</option>
-                    <option value="Destination Wedding">Destination Wedding</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-[#594B43] uppercase mb-1">Thời Lượng Thuê Chuẩn</label>
-                  <input
-                    name="duration"
-                    type="text"
-                    defaultValue="3 ngày 2 đêm"
-                    className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8DFD8] rounded-xl focus:border-[#C5A880] focus:bg-white text-[#2C2523]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[11px] font-bold text-[#594B43] uppercase mb-1">Quy Định Đặt Cọc</label>
-                  <input
-                    name="deposit"
-                    type="text"
-                    defaultValue="15.000.000 VNĐ hoặc 100% giá trị váy"
-                    className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8DFD8] rounded-xl focus:border-[#C5A880] focus:bg-white text-[#2C2523]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-[#594B43] uppercase mb-1">Phí Trễ Hạn / Ngày</label>
-                  <input
-                    name="overdue"
-                    type="text"
-                    defaultValue="500.000 VNĐ / ngày trễ"
-                    className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8DFD8] rounded-xl focus:border-[#C5A880] focus:bg-white text-[#2C2523]"
-                  />
-                </div>
               </div>
 
               <div>

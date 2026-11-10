@@ -33,10 +33,13 @@ import {
   UserCheck,
   UserX,
   Crown,
-  RefreshCw
+  RefreshCw,
+  ExternalLink
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SignedContractModal from '../../components/common/SignedContractModal';
+import { getContractTemplates } from '../../services/contractService';
+import { HIEU_SIGNATURE_BASE64 } from '../../assets/images/signatureHieuBase64';
 
 const DRESS_OPTIONS = [
   {
@@ -101,8 +104,20 @@ export default function ContractManagement() {
   const [selectedContract, setSelectedContract] = useState(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [activeTemplate, setActiveTemplate] = useState(null);
   const [toastMsg, setToastMsg] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    getContractTemplates()
+      .then((res) => {
+        const list = res?.data && Array.isArray(res.data) ? res.data : (Array.isArray(res) ? res : []);
+        const def = list.find((t) => t.isDefault) || list[0] || null;
+        setActiveTemplate(def);
+      })
+      .catch((err) => console.warn('Lỗi tải mẫu hợp đồng:', err));
+  }, []);
 
   // Form tạo hợp đồng mới tại showroom
   const [newCustomerName, setNewCustomerName] = useState('');
@@ -453,13 +468,15 @@ export default function ContractManagement() {
               <span>{loading ? 'Đang tải...' : 'Làm mới'}</span>
             </button>
 
-            <Link
-              to="/admin/mau-hop-dong"
-              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-[#E8DDD8] bg-white text-[#5F2B36] hover:bg-[#FAF0EC] text-xs font-bold transition-all shadow-xs"
+            <button
+              type="button"
+              onClick={() => setIsTemplateModalOpen(true)}
+              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-[#E8DDD8] bg-white text-[#5F2B36] hover:bg-[#FAF0EC] text-xs font-bold transition-all shadow-xs cursor-pointer"
+              title="Xem mẫu hợp đồng chuẩn đang áp dụng trên hệ thống"
             >
-              <Layers size={14} />
-              <span>Mẫu Hợp Đồng</span>
-            </Link>
+              <FileText size={14} />
+              <span>Mẫu Hợp Đồng Đang Áp Dụng</span>
+            </button>
 
             <button
               type="button"
@@ -783,15 +800,12 @@ export default function ContractManagement() {
                     <label className="block text-xs font-bold text-[#594B49] uppercase mb-1">
                       Mẫu hợp đồng áp dụng
                     </label>
-                    <select
-                      value={newTemplate}
-                      onChange={(e) => setNewTemplate(e.target.value)}
-                      className="w-full px-3.5 py-2 rounded-lg border border-[#EFE5E1] text-sm text-[#302626] focus:outline-none focus:ring-2 focus:ring-[#B8737D]/30 bg-white"
-                    >
-                      <option value="Hợp đồng Thuê Váy Cưới Haute Couture Tiêu Chuẩn">Haute Couture Tiêu Chuẩn (Gói 3N)</option>
-                      <option value="Hợp đồng Đặt May Đo Độc Bản & Thuê Nước Đầu">May Đo Độc Bản Bespoke Nước Đầu</option>
-                      <option value="Hợp đồng Thuê Lễ Phục VIP Tiệc Tối & Chụp Ảnh">VIP Tiệc Tối & Studio Ngoại Cảnh</option>
-                    </select>
+                    <input
+                      type="text"
+                      readOnly
+                      value={activeTemplate?.name || 'Hợp Đồng Thuê Lễ Phục Cưới Cao Cấp (Haute Couture) — Mặc Định'}
+                      className="w-full px-3.5 py-2 rounded-lg border border-[#EFE5E1] text-xs font-semibold text-[#5F2B36] bg-[#FAF2EE] outline-none cursor-not-allowed"
+                    />
                   </div>
                 </div>
 
@@ -913,6 +927,131 @@ export default function ContractManagement() {
               setSelectedContract(null);
             }}
           />
+        )}
+
+        {/* MODAL XEM MẪU HỢP ĐỒNG ĐANG ÁP DỤNG */}
+        {isTemplateModalOpen && activeTemplate && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-[#E8DFD8] overflow-hidden">
+              {/* Modal Header */}
+              <div className="p-5 border-b border-[#EFE5E1] flex items-center justify-between bg-[#FAF7F2]">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-100/70 text-[#C5A880] flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-[#733F49]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-[#2C2523]">{activeTemplate.name}</h3>
+                    <p className="text-xs text-[#8C7A6B]">
+                      Mã mẫu: <span className="font-mono font-bold text-[#733F49]">{activeTemplate.code}</span> • Trạng thái: <span className="text-emerald-700 font-semibold">Đang áp dụng toàn hệ thống</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsTemplateModalOpen(false)}
+                  className="w-8 h-8 rounded-full bg-white border border-[#E0D5CE] text-[#8C7A6B] hover:text-[#2C2523] flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-8 overflow-y-auto space-y-6 text-[#2C2523] font-serif bg-[#FCFAF8]">
+                {/* National Header */}
+                <div className="text-center space-y-1 font-sans border-b border-[#E8DFD8] pb-6">
+                  <p className="text-xs uppercase font-bold tracking-widest text-[#594B43]">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+                  <p className="text-xs italic text-[#7C695D]">Độc lập – Tự do – Hạnh phúc</p>
+                  <div className="w-24 h-0.5 bg-[#C5A880] mx-auto my-3" />
+                  <h2 className="text-lg font-bold font-serif text-[#2C2523] uppercase mt-2">
+                    {activeTemplate.name}
+                  </h2>
+                  <p className="text-xs font-mono text-[#8C7A6B]">Số: HDDT/{activeTemplate.code}/[MÃ_ĐƠN_THUÊ]</p>
+                </div>
+
+                {/* Clauses list */}
+                <div className="space-y-4 font-sans text-xs">
+                  {(activeTemplate.clauses || []).map((clause, idx) => (
+                    <div key={idx} className="bg-white p-4 rounded-xl border border-[#EFE5E1] shadow-2xs">
+                      <h5 className="font-bold text-sm text-[#2C2523] mb-1.5 text-serif">{clause.title}</h5>
+                      <p className="text-[#69584D] leading-relaxed text-xs whitespace-pre-line">{clause.content}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Khối chữ ký điện tử hai bên */}
+                <div className="pt-6 border-t border-[#EFE5E1] grid grid-cols-2 gap-6 text-center text-xs font-sans">
+                  {/* Chữ ký Bên A */}
+                  <div className="p-4 rounded-2xl border border-[#EEDECF] bg-white flex flex-col items-center justify-between min-h-[190px]">
+                    <div>
+                      <p className="font-bold uppercase text-[#733F49] tracking-wider text-[11px]">
+                        ĐẠI DIỆN BÊN CHO THUÊ (BÊN A)
+                      </p>
+                      <p className="text-[#847374] text-[10px] italic mt-0.5">
+                        CÔNG TY TNHH UNIBRIDAL HAUTE COUTURE
+                      </p>
+                    </div>
+
+                    <div className="my-2 flex flex-col items-center">
+                      <img
+                        src={HIEU_SIGNATURE_BASE64}
+                        alt="Chữ ký Kim Xuân Hiếu"
+                        className="h-16 w-auto object-contain select-none"
+                      />
+                      <div className="mt-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-700 text-[9px] font-bold inline-flex items-center gap-1">
+                        <ShieldCheck size={11} /> VERIFIED BY UNIBRIDAL CA
+                      </div>
+                    </div>
+
+                    <div>
+                      <strong className="block text-[#2C2523] text-[12px]">Ông Kim Xuân Hiếu</strong>
+                      <span className="text-[10px] text-[#847374]">Tổng Giám Đốc Atelier UniBridal</span>
+                    </div>
+                  </div>
+
+                  {/* Chữ ký Bên B */}
+                  <div className="p-4 rounded-2xl border border-[#EEDECF] bg-white flex flex-col items-center justify-between min-h-[190px]">
+                    <div>
+                      <p className="font-bold uppercase text-[#733F49] tracking-wider text-[11px]">
+                        BÊN THUÊ LỄ PHỤC (BÊN B)
+                      </p>
+                      <p className="text-[#847374] text-[10px] italic mt-0.5">
+                        XÁC NHẬN BẰNG CHỮ KÝ ĐIỆN TỬ
+                      </p>
+                    </div>
+
+                    <div className="my-4 flex items-center justify-center">
+                      <span className="font-serif italic text-base text-[#733F49]">
+                        [Chữ ký điện tử / SmartOTP]
+                      </span>
+                    </div>
+
+                    <div>
+                      <strong className="block text-[#2C2523] text-[12px]">[Tên Khách Hàng]</strong>
+                      <span className="text-[10px] text-[#847374]">Bên Thuê Lễ Phục</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 bg-white border-t border-[#EFE5E1] flex items-center justify-between">
+                <a
+                  href={`http://localhost:5000/api/contract-templates/${activeTemplate.code}/pdf`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#733F49] hover:bg-[#FAF0EC] bg-white rounded-xl border border-[#E8DFD8] transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Mở Bản In PDF (Chuẩn A4)
+                </a>
+                <button
+                  onClick={() => setIsTemplateModalOpen(false)}
+                  className="px-5 py-2 text-xs font-bold text-white bg-[#733F49] hover:bg-[#5C323A] rounded-xl transition-all cursor-pointer"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </AdminLayout>

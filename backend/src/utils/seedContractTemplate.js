@@ -93,30 +93,6 @@ const DEFAULT_TEMPLATES = [
     clauses: HAUTE_COUTURE_CLAUSES,
     isDefault: true,
   },
-  {
-    code: 'TPL-BP-02',
-    name: 'Mẫu Hợp Đồng May Đo Thiết Kế Mới & Thuê Nước Đầu (Bespoke First-Wear)',
-    category: 'Bespoke First-Wear',
-    badge: 'May đo độc bản',
-    status: 'active',
-    version: 'v2026.1',
-    updatedBy: 'Ban Giám Đốc Atelier',
-    appliedCount: 0,
-    defaultDuration: '5 ngày 4 đêm',
-    depositRate: '50% giá trị may đo & 20.000.000₫ cọc bảo lãnh',
-    overdueFee: '1.000.000 VNĐ / ngày trễ',
-    description: 'Áp dụng cho dòng váy cưới may đo độc quyền nước đầu tiên theo số đo của cô dâu.',
-    pdfUrl: 'http://localhost:5000/api/contract-templates/TPL-BP-02/pdf',
-    contractUrl: 'http://localhost:5000/api/contract-templates/TPL-BP-02/pdf',
-    documentFile: {
-      url: 'http://localhost:5000/api/contract-templates/TPL-BP-02/pdf',
-      name: 'Hop_Dong_May_Do_Bespoke_First_Wear.pdf',
-      size: '312 KB',
-      uploadedAt: new Date('2026-10-29'),
-    },
-    clauses: HAUTE_COUTURE_CLAUSES,
-    isDefault: false,
-  },
 ];
 
 /**
