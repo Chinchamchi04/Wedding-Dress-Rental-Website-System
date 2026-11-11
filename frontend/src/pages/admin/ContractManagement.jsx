@@ -174,6 +174,7 @@ export default function ContractManagement() {
             templateName: ord.contract?.templateName || 'Hợp đồng Thuê Váy Cưới Haute Couture Tiêu Chuẩn',
             startDate: ord.rentalStartDate ? new Date(ord.rentalStartDate).toISOString().split('T')[0] : '2026-11-01',
             endDate: ord.rentalEndDate ? new Date(ord.rentalEndDate).toISOString().split('T')[0] : '2026-11-04',
+            rentalDays: ord.rentalDays || getRentalDays(ord.rentalStartDate, ord.rentalEndDate),
             rentalPrice: ord.totalRentPrice || 5200000,
             depositAmount: ord.totalDeposit || 15000000,
             totalValue: (ord.totalRentPrice || 5200000) + (ord.totalDeposit || 15000000),
@@ -662,11 +663,8 @@ export default function ContractManagement() {
                     </td>
 
                     <td className="py-4 px-4 whitespace-nowrap">
-                      <div className="text-xs font-semibold text-[#302626]">
-                        {item.startDate} <span className="text-[#A39192]">→</span> {item.endDate}
-                      </div>
-                      <span className="inline-block mt-0.5 text-[11px] text-[#8C4654] font-medium">
-                        {getRentalDays(item.startDate, item.endDate)} ngày
+                      <span className="text-xs font-semibold text-[#302626]" title={`${item.startDate} → ${item.endDate}`}>
+                        {item.rentalDays || getRentalDays(item.startDate, item.endDate)} ngày
                       </span>
                     </td>
 
