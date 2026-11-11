@@ -1,4 +1,4 @@
-// Danh mục 25 bộ váy cưới cao cấp UniBridal Haute Couture 2026 (Đồng bộ với MongoDB & Logo)
+// Danh mục 25 bộ váy cưới cao cấp UniBridal Haute Couture 2026 (Đồng bộ với MongoDB VÀ Logo)
 
 export const DRESS_CATALOG = [
   {
@@ -552,7 +552,7 @@ export const DRESS_CATALOG = [
     "depositAmount": "16.000.000₫",
     "category": "mermaid",
     "categoryName": "Mermaid",
-    "material": "Lụa Mikado Ý & Satin Tơ Tằm Tự Nhiên",
+    "material": "Lụa Mikado Ý và Satin Tơ Tằm Tự Nhiên",
     "priceCategory": "5-10",
     "image": "/assets/dresses/dress_19.jpg",
     "images": [
@@ -735,7 +735,7 @@ export const DRESS_CATALOG = [
     "depositAmount": "16.000.000₫",
     "category": "princess",
     "categoryName": "Princess",
-    "material": "Ren 3D Floral & Đính Kết Pha Lê Swarovski",
+    "material": "Ren 3D Floral và Đính Kết Pha Lê Swarovski",
     "priceCategory": "5-10",
     "image": "/assets/dresses/dress_25.jpg",
     "images": [

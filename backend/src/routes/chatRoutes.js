@@ -19,7 +19,7 @@ router.get('/:id/messages', optionalAuthenticate, chatController.getMessages);
 // Đánh dấu hội thoại đã đọc
 router.patch('/:id/read', optionalAuthenticate, chatController.markAsRead);
 
-// Ghim / Bỏ ghim hội thoại (Staff & Admin)
+// Ghim / Bỏ ghim hội thoại (Staff và Admin)
 router.patch('/:id/pin', authenticate, authorize('ADMIN', 'STAFF'), chatController.togglePin);
 
 export default router;

@@ -56,7 +56,7 @@ const INITIAL_CATEGORIES = [
     _id: 'cat-traditional',
     name: 'Áo Dài Cưới Truyền Thống (Traditional)',
     slug: 'traditional',
-    description: 'Nét đẹp di sản văn hóa Việt thêu tay Long Phụng, hoa sen thủ công trên nền gấm tơ tằm thượng hạng cho lễ vu quy & rước dâu.',
+    description: 'Nét đẹp di sản văn hóa Việt thêu tay Long Phụng, hoa sen thủ công trên nền gấm tơ tằm thượng hạng cho lễ vu quy và rước dâu.',
     image: '/assets/dresses/dress_06.jpg',
     isActive: true,
     dressCount: 6,

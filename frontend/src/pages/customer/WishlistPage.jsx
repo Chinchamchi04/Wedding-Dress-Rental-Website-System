@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  Heart, ShoppingBag, ArrowRight, Sparkles, X, ChevronRight, Check, Trash2
-} from 'lucide-react';
+import { Heart, ShoppingBag, ArrowRight, Crown, X, ChevronRight, Check, Trash2 } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import { useAuth } from '../../contexts/AuthContext';
@@ -160,7 +158,7 @@ export default function WishlistPage() {
       {/* Floating Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-24 right-6 z-50 bg-[#2C2523] text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-3 border border-[#B8737D]/40 animate-bounce text-[13px] font-medium max-w-[420px]">
-          <Sparkles className="w-4 h-4 text-[#E8B6BC] shrink-0" />
+          <Crown className="w-4 h-4 text-[#E8B6BC] shrink-0" />
           <span className="flex-1">{toastMessage}</span>
           <button
             type="button"
@@ -185,7 +183,7 @@ export default function WishlistPage() {
               </span>
             </div>
 
-            {/* Title & Stats Pill Row */}
+            {/* Title và Stats Pill Row */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-6">
               <div>
                 <h1 className="font-playfair text-[36px] sm:text-[44px] md:text-[50px] font-normal leading-[1.15] text-[#2C2523] m-0 mb-3">
@@ -285,7 +283,7 @@ export default function WishlistPage() {
                   onClick={() => navigate(`/dresses/${dress.id}`)}
                   className="bg-white border border-[#EEDECF] rounded-[18px] overflow-hidden shadow-[0px_4px_18px_rgba(201,138,144,0.06)] hover:shadow-[0px_10px_26px_rgba(184,115,125,0.13)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group cursor-pointer"
                 >
-                  {/* Ảnh Váy Cưới & Nút Trái Tim Xóa Yêu Thích */}
+                  {/* Ảnh Váy Cưới và Nút Trái Tim Xóa Yêu Thích */}
                   <div className="relative w-full h-[280px] sm:h-[300px] bg-[#FCEEE9] overflow-hidden rounded-t-[17px]">
                     <img
                       src={dress.image}
@@ -319,7 +317,7 @@ export default function WishlistPage() {
                   {/* Thông Tin Chi Tiết Thẻ */}
                   <div className="p-3.5 sm:p-4 flex flex-col flex-1 justify-between">
                     <div>
-                      {/* Dòng Category & Size */}
+                      {/* Dòng Category và Size */}
                       <div className="text-[10px] font-jakarta font-semibold tracking-wider text-[#8A7978] uppercase mb-1 flex items-center justify-between">
                         <span className="truncate max-w-[140px]">
                           {dress.categoryBadge || dress.categoryName || 'VÁY CƯỚI CAO CẤP'}
@@ -344,7 +342,7 @@ export default function WishlistPage() {
                       </div>
                     </div>
 
-                    {/* Nút Bấm: Thêm Vào Giỏ & Thuê Ngay (Chỉ hiện khi đã đăng nhập) */}
+                    {/* Nút Bấm: Thêm Vào Giỏ và Thuê Ngay (Chỉ hiện khi đã đăng nhập) */}
                     {isLoggedIn ? (
                       <div className="grid grid-cols-2 gap-2 pt-1">
                         <button
@@ -428,7 +426,7 @@ export default function WishlistPage() {
                     onClick={() => navigate(`/dresses/${recDress.id}`)}
                     className="bg-white border border-[#EEDECF] rounded-[18px] overflow-hidden shadow-[0px_4px_18px_rgba(201,138,144,0.06)] hover:shadow-[0px_10px_26px_rgba(184,115,125,0.13)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group cursor-pointer"
                   >
-                    {/* Hình ảnh & Nút Trái Tim */}
+                    {/* Hình ảnh và Nút Trái Tim */}
                     <div className="relative w-full h-[280px] sm:h-[300px] bg-[#FCEEE9] overflow-hidden rounded-t-[17px]">
                       <img
                         src={recDress.image}
@@ -470,7 +468,7 @@ export default function WishlistPage() {
                     {/* Chi Tiết */}
                     <div className="p-3.5 sm:p-4 flex flex-col flex-1 justify-between">
                       <div>
-                        {/* Dòng Category & Size */}
+                        {/* Dòng Category và Size */}
                         <div className="text-[10px] font-jakarta font-semibold tracking-wider text-[#8A7978] uppercase mb-1 flex items-center justify-between">
                           <span className="truncate max-w-[140px]">{recDress.categoryBadge}</span>
                           <span>•</span>

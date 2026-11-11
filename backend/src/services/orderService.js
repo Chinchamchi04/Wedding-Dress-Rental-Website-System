@@ -12,7 +12,7 @@ import {
 } from '../utils/sendEmail.js';
 
 /**
- * Service xử lý nghiệp vụ Đơn Thuê Váy & Hợp Đồng (Orders)
+ * Service xử lý nghiệp vụ Đơn Thuê Váy và Hợp Đồng (Orders)
  */
 
 /**
@@ -287,8 +287,14 @@ export const getAllOrders = async (filters = {}) => {
       { _id: { $in: disputedOrderIds } },
       { status: 'disputed' }
     ];
-  } else if (filters.status) {
+  } else if (filters.status && filters.status !== 'all') {
     query.status = filters.status;
+  } else if (!filters.search) {
+    if (filters.viewMode === 'active') {
+      query.status = { $nin: ['completed', 'complete', 'cancelled'] };
+    } else if (filters.viewMode === 'archived') {
+      query.status = { $in: ['completed', 'complete', 'cancelled'] };
+    }
   }
   if (filters.search) {
     const rawSearch = String(filters.search).trim();

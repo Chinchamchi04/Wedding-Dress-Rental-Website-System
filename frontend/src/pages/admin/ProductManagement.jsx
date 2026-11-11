@@ -1,12 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
-import {
-  Search,
+import { Search,
   ChevronDown,
   PlusCircle,
   Gem,
   Store,
-  Sparkles,
+  Crown,
   ClipboardList,
   AlertTriangle,
   Eye,
@@ -22,8 +21,7 @@ import {
   UploadCloud,
   FileEdit,
   Trash2,
-  ExternalLink
-} from 'lucide-react';
+  ExternalLink } from 'lucide-react';
 
 // Images
 import card1Elysian from '../../assets/card1_elysian.jpg';
@@ -43,7 +41,7 @@ const INITIAL_PRODUCTS = [
     code: '#UB-GOWN-001',
     collection: 'Bộ sưu tập Lễ Phục Hoàng Gia',
     silhouette: 'Ballgown Xòe Bồng',
-    material: 'Tulle Ý & Ren Chantilly Pháp',
+    material: 'Tulle Ý VÀ Ren Chantilly Pháp',
     price: 48000000,
     deposit: 15000000,
     stockText: '5 chiếc',
@@ -63,7 +61,7 @@ const INITIAL_PRODUCTS = [
     code: '#UB-GOWN-002',
     collection: 'Bộ sưu tập Tôn Dáng Hoàng Gia',
     silhouette: 'Mermaid Đuôi Cá',
-    material: 'Ren Alençon & Hạt Pha Lê',
+    material: 'Ren Alençon và Hạt Pha Lê',
     price: 62000000,
     deposit: 20000000,
     stockText: '2 chiếc',
@@ -118,9 +116,9 @@ const INITIAL_PRODUCTS = [
     id: 5,
     name: 'Aurora Pearl Sheath',
     code: '#UB-GOWN-005',
-    collection: 'Sang trọng & Quyến rũ hiện đại',
+    collection: 'Sang trọng và Quyến rũ hiện đại',
     silhouette: 'Sheath Ôm Dáng',
-    material: 'Crepe Lụa Dệt Tay & Ngọc Trai',
+    material: 'Crepe Lụa Dệt Tay và Ngọc Trai',
     price: 42000000,
     deposit: 12000000,
     stockText: '3 chiếc',
@@ -139,7 +137,7 @@ const INITIAL_PRODUCTS = [
     code: '#UB-GOWN-006',
     collection: 'Kiệt tác Lễ Phục Thượng Hạng',
     silhouette: 'Ballgown Xòe Bồng',
-    material: 'Pha Lê Swarovski & Tulle Pháp',
+    material: 'Pha Lê Swarovski và Tulle Pháp',
     price: 89000000,
     deposit: 30000000,
     stockText: 'Tạm hết hàng',
@@ -300,7 +298,7 @@ export default function ProductManagement() {
         code: formData.code.startsWith('#') ? formData.code : `#${formData.code}`,
         collection: formData.collection,
         silhouette: formData.silhouette,
-        material: formData.material || 'Tulle & Ren Pháp cao cấp',
+        material: formData.material || 'Tulle và Ren Pháp cao cấp',
         price: Number(formData.price),
         deposit: Number(formData.deposit) || Math.round(Number(formData.price) * 0.3),
         stockText: totalUnits > 0 ? `${totalUnits} chiếc` : 'Tạm hết hàng',
@@ -327,14 +325,14 @@ export default function ProductManagement() {
   return (
     <AdminLayout activeMenu="products">
       <div className="font-jakarta pb-12">
-        {/* ===================== 1. TOP HEADER & TITLE ===================== */}
+        {/* ===================== 1. TOP HEADER VÀ TITLE ===================== */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="font-playfair text-[32px] sm:text-[38px] font-normal text-[#5F2B36] tracking-tight leading-tight mb-2">
               Quản Lý Sản Phẩm
             </h1>
             <p className="text-[14px] text-[#7A6B6C] font-normal max-w-3xl leading-relaxed">
-              Danh mục thiết kế váy cưới Haute Couture & Lễ phục cao cấp, quản lý bảng giá niêm yết bán độc bản, số lượng tồn kho theo size và quy trình kiểm duyệt chất liệu.
+              Danh mục thiết kế váy cưới Haute Couture và Lễ phục cao cấp, quản lý bảng giá niêm yết bán độc bản, số lượng tồn kho theo size và quy trình kiểm duyệt chất liệu.
             </p>
           </div>
 
@@ -348,7 +346,7 @@ export default function ProductManagement() {
                 code: `#UB-GOWN-00${products.length + 1}`,
                 collection: 'Bộ sưu tập Lễ Phục Hoàng Gia',
                 silhouette: 'Ballgown Xòe Bồng',
-                material: 'Tulle Ý & Ren Chantilly Pháp',
+                material: 'Tulle Ý VÀ Ren Chantilly Pháp',
                 price: 45000000,
                 deposit: 15000000,
                 sizeS: 2,
@@ -368,11 +366,11 @@ export default function ProductManagement() {
 
         {/* ===================== 2. FOUR KPI SUMMARY CARDS ===================== */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {/* Card 1: Tổng mẫu bản & độc bản */}
+          {/* Card 1: Tổng mẫu bản và độc bản */}
           <div className="bg-white rounded-2xl border border-[#F0E6E2] p-5 shadow-[0_2px_12px_rgba(115,63,73,0.03)] hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between">
               <span className="text-[10px] sm:text-[10.5px] font-bold tracking-[1.2px] text-[#8C7A7B] uppercase leading-snug">
-                TỔNG MẪU BẢN & ĐỘC BẢN
+                TỔNG MẪU BẢN VÀ ĐỘC BẢN
               </span>
               <div className="w-8 h-8 rounded-lg bg-[#F6ECE8] flex items-center justify-center text-[#733F49] shrink-0">
                 <Gem size={17} />
@@ -388,7 +386,7 @@ export default function ProductManagement() {
             </div>
             <div className="mt-3.5 pt-2.5 border-t border-[#F7EFEA] text-[11.5px] text-[#8C7A7B] flex items-center gap-1.5">
               <span className="text-[#733F49] font-bold">+</span>
-              <span>6 thiết kế mới BST Dạ Tiệc & Cưới 2025</span>
+              <span>6 thiết kế mới BST Dạ Tiệc và Cưới 2025</span>
             </div>
           </div>
 
@@ -428,7 +426,7 @@ export default function ProductManagement() {
                 ĐỘC BẢN MAY ĐO BESPOKE
               </span>
               <div className="w-8 h-8 rounded-lg bg-[#FFF3E0] flex items-center justify-center text-[#E65100] shrink-0">
-                <Sparkles size={17} />
+                <Crown size={17} />
               </div>
             </div>
             <div className="mt-2.5 flex items-baseline">
@@ -472,7 +470,7 @@ export default function ProductManagement() {
 
         {/* ===================== 3. MAIN TABLE CARD ===================== */}
         <div className="bg-white rounded-2xl border border-[#F0E6E2] p-5 sm:p-6 shadow-[0_2px_14px_rgba(115,63,73,0.04)]">
-          {/* Search Bar & Filter Dropdown */}
+          {/* Search Bar và Filter Dropdown */}
           <div className="mb-5">
             <div className="relative w-full">
               <Search
@@ -747,11 +745,11 @@ export default function ProductManagement() {
             </table>
           </div>
 
-          {/* ===================== 4. FOOTER & PAGINATION ===================== */}
+          {/* ===================== 4. FOOTER VÀ PAGINATION ===================== */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-5 border-t border-[#F6ECE8] text-[12.5px] text-[#8C7A7B]">
             <div>
               Hiển thị <strong className="text-[#2C2523] font-bold">1 - 6</strong> trong tổng số{' '}
-              <strong className="text-[#2C2523] font-bold">128</strong> mẫu váy cưới Haute Couture & Lễ Phục Bán Sẵn
+              <strong className="text-[#2C2523] font-bold">128</strong> mẫu váy cưới Haute Couture và Lễ Phục Bán Sẵn
             </div>
 
             {/* Pagination Controls */}
@@ -831,7 +829,7 @@ export default function ProductManagement() {
               </div>
 
               <form onSubmit={handleSaveProduct} className="mt-5 space-y-4">
-                {/* Tên & Mã Váy */}
+                {/* Tên và Mã Váy */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
                     <label className="block text-[12px] font-bold text-[#5F333B] mb-1 uppercase tracking-wider">
@@ -861,7 +859,7 @@ export default function ProductManagement() {
                   </div>
                 </div>
 
-                {/* Bộ sưu tập & Phom dáng */}
+                {/* Bộ sưu tập và Phom dáng */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
                     <label className="block text-[12px] font-bold text-[#5F333B] mb-1 uppercase tracking-wider">
@@ -876,7 +874,7 @@ export default function ProductManagement() {
                       <option value="Bộ sưu tập Tôn Dáng Hoàng Gia">Bộ sưu tập Tôn Dáng Hoàng Gia</option>
                       <option value="Bộ sưu tập Tối Giản Vượt Thời Gian">Bộ sưu tập Tối Giản Vượt Thời Gian</option>
                       <option value="Nghệ thuật thêu đính thủ công">Nghệ thuật thêu đính thủ công</option>
-                      <option value="Sang trọng & Quyến rũ hiện đại">Sang trọng & Quyến rũ hiện đại</option>
+                      <option value="Sang trọng và Quyến rũ hiện đại">Sang trọng và Quyến rũ hiện đại</option>
                       <option value="Kiệt tác Lễ Phục Thượng Hạng">Kiệt tác Lễ Phục Thượng Hạng</option>
                     </select>
                   </div>
@@ -901,18 +899,18 @@ export default function ProductManagement() {
                 {/* Chất liệu */}
                 <div>
                   <label className="block text-[12px] font-bold text-[#5F333B] mb-1 uppercase tracking-wider">
-                    Chất Liệu & Quy Trình Dệt
+                    Chất Liệu và Quy Trình Dệt
                   </label>
                   <input
                     type="text"
                     value={formData.material}
                     onChange={(e) => setFormData({ ...formData, material: e.target.value })}
-                    placeholder="VD: Tulle Ý & Ren Chantilly Pháp kết pha lê Swarovski"
+                    placeholder="VD: Tulle Ý VÀ Ren Chantilly Pháp kết pha lê Swarovski"
                     className="w-full bg-[#FAF5F2] focus:bg-white text-[13px] text-[#2C2523] px-3.5 py-2.5 rounded-xl border border-[#EFE5E0] focus:border-[#733F49] outline-none"
                   />
                 </div>
 
-                {/* Giá bán & Tiền cọc */}
+                {/* Giá bán và Tiền cọc */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
                     <label className="block text-[12px] font-bold text-[#5F333B] mb-1 uppercase tracking-wider">
@@ -1056,7 +1054,7 @@ export default function ProductManagement() {
                     type="submit"
                     className="px-6 py-2.5 rounded-xl bg-[#733F49] hover:bg-[#5E323B] text-white text-[13px] font-bold tracking-wide transition-all shadow-md cursor-pointer border-0"
                   >
-                    {editingProduct ? 'Cập Nhật Thiết Kế' : 'Lưu & Đăng Mẫu Váy'}
+                    {editingProduct ? 'Cập Nhật Thiết Kế' : 'Lưu và Đăng Mẫu Váy'}
                   </button>
                 </div>
               </form>
@@ -1127,7 +1125,7 @@ export default function ProductManagement() {
 
                       <div>
                         <span className="text-[#8C7A7B] block text-[11px] uppercase font-bold tracking-wider">
-                          Bảng Giá Niêm Yết & Cọc Giữ Mẫu
+                          Bảng Giá Niêm Yết và Cọc Giữ Mẫu
                         </span>
                         <div className="font-playfair text-[20px] font-bold text-[#943C4B]">
                           {formatVND(viewingProduct.price)}

@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { CheckCircle2, RefreshCw, Sparkles, Lock, Mail, Phone, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { CheckCircle2, RefreshCw, Crown, Lock, Mail, Phone, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { register as apiRegister, registerAccount, verifyEmailOtp, resendVerificationOtp } from '../../services/authService';
 // lucide-react icons
 import Logo from '../../components/common/Logo';
 
 // Icons using lucide-react
-const SparkleIcon = () => <Sparkles size={12} fill="currentColor" stroke="none" />;
+const CrownIcon = () => <Crown size={12} fill="currentColor" stroke="none" />;
 const FootnoteLockIcon = () => <Lock size={13} strokeWidth={1.3} color="#7A6663" />;
 const MailIcon = () => <Mail size={16} strokeWidth={1.8} color="#7A6663" />;
 const PhoneIcon = () => <Phone size={16} strokeWidth={1.8} color="#7A6663" />;
@@ -32,7 +32,7 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
-  // OTP & Feedback states
+  // OTP VÀ Feedback states
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [devOtp, setDevOtp] = useState('');
   const [fullNameError, setFullNameError] = useState('');
@@ -992,7 +992,7 @@ export default function RegisterPage() {
           <div className="ub-top-chips">
             <div className="ub-chip ub-chip--white">
               <span className="ub-chip__icon">
-                <SparkleIcon />
+                <CrownIcon />
               </span>
               <span className="ub-chip__text">WEDDING DRESS RENTAL</span>
             </div>
@@ -1012,10 +1012,10 @@ export default function RegisterPage() {
               <span className="ub-brand-subtitle">HAUTE COUTURE</span>
               <span className="ub-dash-line" />
             </div>
-            <p className="ub-brand-tagline">Atelier de Robes de Mariée & Sur-Mesure</p>
+            <p className="ub-brand-tagline">Atelier de Robes de Mariée và Sur-Mesure</p>
           </div>
 
-          {/* Bottom Security & Est Footer */}
+          {/* Bottom Security và Est Footer */}
           <div className="ub-footer-row">
             <div className="ub-security-badge">
               <FootnoteLockIcon />
@@ -1049,7 +1049,7 @@ export default function RegisterPage() {
 
                 <form className="ub-form" onSubmit={handleSubmit} id="register-form">
 
-                  {/* Row 1: Full Name & Phone Number */}
+                  {/* Row 1: Full Name và Phone Number */}
                   <div className="ub-form-row">
                     <div className="ub-field-group">
                       <label className="ub-label" htmlFor="reg-fullname">
@@ -1141,7 +1141,7 @@ export default function RegisterPage() {
                     )}
                   </div>
 
-                  {/* Row 3: Password & Confirm Password */}
+                  {/* Row 3: Password và Confirm Password */}
                   <div className="ub-form-row">
                     <div className="ub-field-group">
                       <label className="ub-label" htmlFor="reg-password">
@@ -1241,7 +1241,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="ub-header-group" style={{ marginBottom: '18px' }}>
-                  <span className="ub-form-overhead">BẢO MẬT &amp; KÍCH HOẠT</span>
+                  <span className="ub-form-overhead">BẢO MẬT và KÍCH HOẠT</span>
                   <h2 className="ub-form-heading" style={{ margin: '6px 0 8px' }}>Xác Thực Địa Chỉ Email</h2>
                   <p className="ub-form-description" style={{ maxWidth: '380px', margin: '0 auto', lineHeight: '1.5', fontSize: '13.5px' }}>
                     Mã xác thực gồm 6 chữ số đã được gửi tới:
@@ -1256,7 +1256,7 @@ export default function RegisterPage() {
                     <div style={{ fontWeight: 700, marginBottom: '4px' }}>🔔 [Môi trường thử nghiệm] Mã OTP kích hoạt:</div>
                     Mã OTP của bạn là: <strong style={{ fontSize: '18px', letterSpacing: '3px', color: '#AD4E00', background: '#FFF1B8', padding: '2px 8px', borderRadius: '4px' }}>{devOtp}</strong>
                     <div style={{ fontSize: '11.5px', color: '#874D00', marginTop: '6px' }}>
-                      * Hệ thống chưa cấu hình EMAIL_USER &amp; EMAIL_PASS trong backend/.env nên mã hiển thị tại đây để bạn kiểm thử ngay.
+                      * Hệ thống chưa cấu hình EMAIL_USER và EMAIL_PASS trong backend/.env nên mã hiển thị tại đây để bạn kiểm thử ngay.
                     </div>
                   </div>
                 )}
@@ -1351,7 +1351,7 @@ export default function RegisterPage() {
                     style={{ width: '100%', cursor: (isLoading || otpExpiresIn === 0) ? 'not-allowed' : 'pointer', opacity: otpExpiresIn === 0 ? 0.6 : 1 }}
                   >
                     <span className="ub-submit-btn__text">
-                      {isLoading ? 'ĐANG KÍCH HOẠT...' : otpExpiresIn === 0 ? 'MÃ ĐÃ HẾT HẠN - HÃY GỬI LẠI' : 'XÁC NHẬN & KÍCH HOẠT TÀI KHOẢN'}
+                      {isLoading ? 'ĐANG KÍCH HOẠT...' : otpExpiresIn === 0 ? 'MÃ ĐÃ HẾT HẠN - HÃY GỬI LẠI' : 'XÁC NHẬN VÀ KÍCH HOẠT TÀI KHOẢN'}
                     </span>
                     <span className="ub-submit-btn__arrow">→</span>
                   </button>

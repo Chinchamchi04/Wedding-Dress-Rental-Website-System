@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
-import {
-  Layers,
+import { Layers,
   Upload,
   Download,
   FileCode,
@@ -21,7 +20,7 @@ import {
   X,
   Printer,
   ShieldCheck,
-  Sparkles,
+  Crown,
   BookOpen,
   ArrowRight,
   Save,
@@ -34,8 +33,7 @@ import {
   ExternalLink,
   Link2,
   Paperclip,
-  FileUp,
-} from 'lucide-react';
+  FileUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Modal } from 'antd';
 import {
@@ -178,7 +176,7 @@ export default function ContractTemplateManagement() {
     <AdminLayout
       activeMenu="contract-templates"
       title="Quản Lý Mẫu Hợp Đồng"
-      subtitle="Thiết lập cấu trúc pháp lý, quy chuẩn tiền cọc & chính sách bồi thường áp dụng toàn hệ thống"
+      subtitle="Thiết lập cấu trúc pháp lý, quy chuẩn tiền cọc và chính sách bồi thường áp dụng toàn hệ thống"
       controls={
         <div className="flex items-center gap-3">
           <Link
@@ -331,7 +329,7 @@ export default function ContractTemplateManagement() {
       {activeTab === 'matrix' && (
         <div className="bg-white rounded-2xl border border-[#EFE5E1] shadow-xs overflow-hidden">
           <div className="p-6 border-b border-[#F2E8E2] bg-[#FAF7F2]/60">
-            <h3 className="text-base font-bold text-[#2C2523]">Bảng Định Mức Bồi Thường & Khắc Phục Hư Tổn Váy Cưới</h3>
+            <h3 className="text-base font-bold text-[#2C2523]">Bảng Định Mức Bồi Thường và Khắc Phục Hư Tổn Váy Cưới</h3>
             <p className="text-xs text-[#8C7A6B] mt-1">
               Phụ lục chuẩn đính kèm tự động trong mọi hợp đồng điện tử để minh bạch hóa chi phí với cô dâu chú rể khi hoàn trả trang phục.
             </p>
@@ -483,7 +481,7 @@ export default function ContractTemplateManagement() {
 
               {/* Legal Notice */}
               <div className="font-sans text-xs bg-amber-50/60 p-4 rounded-xl border border-amber-200/60 text-[#735A47] flex items-start gap-3">
-                <Sparkles className="w-4 h-4 text-[#C5A880] shrink-0 mt-0.5" />
+                <Crown className="w-4 h-4 text-[#C5A880] shrink-0 mt-0.5" />
                 <div>
                   <p className="font-bold">Quy chuẩn dịch vụ UniBridal Haute Couture:</p>
                   <p className="mt-0.5 leading-relaxed">
@@ -653,7 +651,7 @@ export default function ContractTemplateManagement() {
                     <option value="Combo Trọn Gói">Combo Trọn Gói</option>
                     <option value="Áo Dài Cưới">Áo Dài Cưới</option>
                     <option value="VIP Diamond">VIP Diamond</option>
-                    <option value="Vest & Tuxedo">Vest &amp; Tuxedo</option>
+                    <option value="Vest và Tuxedo">Vest và Tuxedo</option>
                     <option value="Khác">Khác</option>
                   </select>
                 </div>

@@ -1,15 +1,13 @@
 import { formatCurrencyVND } from '../../utils/formatCurrency';
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  PackageCheck,
+import { PackageCheck,
   CalendarDays,
   TrendingUp,
-  Sparkles,
+  Crown,
   ArrowRight,
   Users,
   Layers,
-  ArrowUpRight,
-} from 'lucide-react';
+  ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import DashboardChart from '../../components/common/DashboardChart';
@@ -85,7 +83,7 @@ export default function AdminDashboardPage() {
       role="admin"
       controls={controls}
       title="Tổng Quan Kinh Doanh"
-      subtitle="Chỉ số hoạt động & phân tích tài chính UniBridal 2026"
+      subtitle="Chỉ số hoạt động và phân tích tài chính UniBridal 2026"
       activeNav="dashboard"
     >
       {error && (
@@ -106,7 +104,7 @@ export default function AdminDashboardPage() {
           {
             title: 'TỔNG ĐƠN THUÊ',
             value: data?.totalOrders ?? '—',
-            note: `${data?.completedOrders ?? 0} đơn đã hoàn tất & quyết toán`,
+            note: `${data?.completedOrders ?? 0} đơn đã hoàn tất và quyết toán`,
             Icon: PackageCheck,
             color: 'rose',
           },
@@ -148,7 +146,7 @@ export default function AdminDashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-3 border-b border-[#F4EBE7]">
           <div>
             <h2 className="text-sm font-bold text-[#2C2523] uppercase tracking-wider flex items-center gap-2">
-              <Sparkles size={16} className="text-[#733F49]" />
+              <Crown size={16} className="text-[#733F49]" />
               Tiến Độ Chu Trình Đơn Thuê Showroom
             </h2>
             <p className="text-xs text-[#8A797A]">Theo dõi trực tiếp số lượng đơn hàng qua từng giai đoạn phục vụ cô dâu</p>
@@ -184,7 +182,7 @@ export default function AdminDashboardPage() {
         </div>
       </section>
 
-      {/* Biểu Đồ Doanh Thu & Giá Trị Đơn */}
+      {/* Biểu Đồ Doanh Thu và Giá Trị Đơn */}
       <section
         className="ub-dashboard-chart-card is-admin mt-7 rounded-2xl border border-[#EFE5E1] bg-white p-6 shadow-xs"
         aria-labelledby="admin-chart-title"
@@ -213,10 +211,10 @@ export default function AdminDashboardPage() {
       {/* Quick Action Navigation Grid */}
       <section className="mt-7 grid grid-cols-2 sm:grid-cols-4 gap-4" aria-label="Phím tắt quản trị">
         {[
-          { label: 'Quản Lý Đơn Thuê', to: '/admin/don-thue', icon: PackageCheck, desc: 'Bàn giao, kiểm định & hoàn cọc' },
-          { label: 'Quản Lý Kho Hàng', to: '/admin/kho-hang', icon: Layers, desc: 'Tồn kho size & vị trí tủ' },
+          { label: 'Quản Lý Đơn Thuê', to: '/admin/don-thue', icon: PackageCheck, desc: 'Bàn giao, kiểm định và hoàn cọc' },
+          { label: 'Quản Lý Kho Hàng', to: '/admin/kho-hang', icon: Layers, desc: 'Tồn kho size và vị trí tủ' },
           { label: 'Quản Lý Tài Khoản', to: '/admin/accounts', icon: Users, desc: 'Phân quyền Admin / Staff / Khách' },
-          { label: 'Báo Cáo Doanh Thu', to: '/admin/reports/revenue', icon: TrendingUp, desc: 'Dòng tiền & quỹ cọc bảo lãnh' },
+          { label: 'Báo Cáo Doanh Thu', to: '/admin/reports/revenue', icon: TrendingUp, desc: 'Dòng tiền và quỹ cọc bảo lãnh' },
         ].map((item) => (
           <Link
             key={item.label}

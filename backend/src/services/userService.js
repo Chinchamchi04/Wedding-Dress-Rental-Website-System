@@ -9,7 +9,7 @@ const getRoleMeta = (roleStr) => {
 };
 
 /**
- * Service Quản Lý Tài Khoản & Người Dùng Hệ Thống (Admin User Management)
+ * Service Quản Lý Tài Khoản và Người Dùng Hệ Thống (Admin User Management)
  */
 
 export const getAllUsers = async (filters = {}) => {

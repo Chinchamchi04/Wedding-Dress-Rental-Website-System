@@ -201,7 +201,7 @@ async function seedData() {
             image: (dress.images && dress.images[0]) || '',
           },
         ],
-        vipServices: ['Tiệc trà chiều Macaron & Trà hoa Paris', 'Tư vấn trực tiếp 1:1 cùng Stylist'],
+        vipServices: ['Tiệc trà chiều Macaron và Trà hoa Paris', 'Tư vấn trực tiếp 1:1 cùng Stylist'],
         status: aptStatuses[i],
         notes: 'Khách hàng mong muốn thử phom dáng siết eo corsetry độc quyền.',
         createdAt: new Date(today.getTime() - (10 - i) * 24 * 60 * 60 * 1000),

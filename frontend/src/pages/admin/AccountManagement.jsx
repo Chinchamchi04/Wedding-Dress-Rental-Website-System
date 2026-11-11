@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { message, Modal } from 'antd';
-import {
-  UserCheck,
+import { UserCheck,
   ShieldCheck,
-  Sparkles,
+  Crown,
   Search,
   Filter,
   Plus,
@@ -21,8 +20,7 @@ import {
   RefreshCw,
   Shield,
   CreditCard,
-  User,
-} from 'lucide-react';
+  User } from 'lucide-react';
 import {
   getAllUsers,
   getUserRoles,
@@ -48,7 +46,7 @@ const ROLE_CONFIG = {
   CUSTOMER: {
     label: 'Khách Hàng',
     bg: 'bg-[#FAF0EC] text-[#733F49] border-[#F2D8D4]',
-    icon: Sparkles,
+    icon: Crown,
   },
 };
 
@@ -63,7 +61,7 @@ export default function AccountManagement() {
   const [total, setTotal] = useState(0);
   const [activePage, setActivePage] = useState(1);
 
-  // Bộ lọc & tìm kiếm
+  // Bộ lọc và tìm kiếm
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -186,7 +184,7 @@ export default function AccountManagement() {
   return (
     <AdminLayout activeMenu="accounts">
       <div className="font-jakarta text-[#2C2523] pb-12">
-        {/* Header & Page Title */}
+        {/* Header và Page Title */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="font-playfair text-[32px] sm:text-[38px] font-normal text-[#5F2B36] tracking-tight leading-tight mb-2">
@@ -207,7 +205,7 @@ export default function AccountManagement() {
           </button>
         </div>
 
-        {/* Thanh Tìm Kiếm & Bộ Lọc */}
+        {/* Thanh Tìm Kiếm và Bộ Lọc */}
         <div className="bg-white rounded-2xl border border-[#EFE5E1] p-4 shadow-xs mb-6">
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
             <div className="relative flex-1">
@@ -304,7 +302,7 @@ export default function AccountManagement() {
 
                     return (
                       <tr key={u._id} className="hover:bg-[#FCF9F7] transition-colors">
-                        {/* Cột 1: Họ tên & Avatar */}
+                        {/* Cột 1: Họ tên và Avatar */}
                         <td className="py-4 px-5">
                           <div className="flex items-center gap-3.5">
                             <div className="w-10 h-10 rounded-full bg-[#FAF0EC] text-[#733F49] font-bold flex items-center justify-center border border-[#EFE2DC] uppercase text-[14px] shrink-0">
@@ -328,7 +326,7 @@ export default function AccountManagement() {
                           </div>
                         </td>
 
-                        {/* Cột 2: Email & SĐT */}
+                        {/* Cột 2: Email và SĐT */}
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-1.5 text-[12.5px] text-[#4A3B3D] font-medium">
                             <Mail size={13} className="text-[#8C7D7E]" />

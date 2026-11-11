@@ -2,11 +2,9 @@ import { formatCurrencyVND } from '../../utils/formatCurrency';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  Calendar,
+import { Calendar,
   Clock,
   MapPin,
-  Sparkles,
   Check,
   CheckCircle2,
   Users,
@@ -29,8 +27,7 @@ import {
   Crown,
   ExternalLink,
   Printer,
-  CalendarPlus,
-} from 'lucide-react';
+  CalendarPlus } from 'lucide-react';
 import { message } from 'antd';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
@@ -105,7 +102,7 @@ export default function AppointmentPage() {
   // Step 1: Branch selection
   const [selectedBranchId, setSelectedBranchId] = useState('hcm-q1');
 
-  // Step 2: Date & Time Slot selection
+  // Step 2: Date và Time Slot selection
   const tomorrowStr = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
@@ -211,7 +208,7 @@ export default function AppointmentPage() {
     );
   }, [availableDresses, selectedDressIds]);
 
-  // Gợi ý 4 thiết kế phù hợp dựa trên phom dáng & phong cách váy chính
+  // Gợi ý 4 thiết kế phù hợp dựa trên phom dáng và phong cách váy chính
   const recommendedDresses = useMemo(() => {
     if (!availableDresses || availableDresses.length === 0 || !primaryDress) return [];
     const primaryId = primaryDress?.id;
@@ -415,7 +412,7 @@ export default function AppointmentPage() {
                 <CheckCircle2 className="w-9 h-9" />
               </div>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF0EC] text-[#B8737D] text-[11.5px] font-bold tracking-[1.5px] uppercase border border-[#F2D8D4] mb-2">
-                <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <Crown className="w-3.5 h-3.5 text-[#D4AF37]" />
                 XÁC NHẬN ĐẶT LỊCH HẸN PRIVATE SUITE THÀNH CÔNG
               </span>
               <h1 className="font-jakarta text-[26px] sm:text-[34px] font-extrabold text-[#2C2523] mt-2 mb-2 leading-tight tracking-tight">
@@ -428,7 +425,7 @@ export default function AppointmentPage() {
               </p>
               <div className="mt-3.5 inline-flex items-center gap-2 bg-[#F0FDF4] text-[#166534] border border-[#BBF7D0] px-4 py-2 rounded-xl text-[13px] font-medium shadow-xs">
                 <Mail className="w-4 h-4 text-[#16a34a] shrink-0" />
-                <span>Toàn bộ thông tin lịch hẹn & mã check-in đã được gửi tới email <strong>{confirmedBooking.email}</strong></span>
+                <span>Toàn bộ thông tin lịch hẹn và mã check-in đã được gửi tới email <strong>{confirmedBooking.email}</strong></span>
               </div>
             </div>
 
@@ -474,7 +471,7 @@ export default function AppointmentPage() {
                   <div className="bg-[#FCF9F6] p-5 rounded-2xl border border-[#EEDECF]/90 flex flex-col justify-between space-y-3">
                     <div>
                       <span className="text-[10.5px] font-bold text-[#847374] tracking-wider uppercase block mb-1">
-                        CÔ DÂU VINH DỰ & ĐOÀN ĐỒNG HÀNH
+                        CÔ DÂU VINH DỰ VÀ ĐOÀN ĐỒNG HÀNH
                       </span>
                       <div className="font-jakarta font-bold text-[18px] text-[#2C2523] leading-snug">
                         {confirmedBooking.fullName}
@@ -499,11 +496,11 @@ export default function AppointmentPage() {
                     )}
                   </div>
 
-                  {/* Time & Slot Box */}
+                  {/* Time và Slot Box */}
                   <div className="bg-[#FCF9F6] p-5 rounded-2xl border border-[#EEDECF]/90 flex flex-col justify-between space-y-3">
                     <div>
                       <span className="text-[10.5px] font-bold text-[#847374] tracking-wider uppercase block mb-1">
-                        THỜI GIAN & KHUNG GIỜ VÀNG
+                        THỜI GIAN VÀ KHUNG GIỜ VÀNG
                       </span>
                       <div className="font-jakarta font-extrabold text-[18px] text-[#733F49]">
                         {confirmedBooking.timeSlot}
@@ -520,7 +517,7 @@ export default function AppointmentPage() {
                         <span>Phòng thử Suite riêng tư 90 phút trọn vẹn</span>
                       </div>
                       <div className="text-[11px] text-[#847374]">
-                        ✦ Váy được hấp sấy tiệt trùng & ủi phẳng trước 2 giờ
+                        ✦ Váy được hấp sấy tiệt trùng và ủi phẳng trước 2 giờ
                       </div>
                     </div>
                   </div>
@@ -617,7 +614,7 @@ export default function AppointmentPage() {
                           key={srv.id || idx}
                           className="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#FAF0EC]/60 border border-[#F2D8D4] text-[12px]"
                         >
-                          <Sparkles className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                          <Crown className="w-4 h-4 text-[#D4AF37] shrink-0" />
                           <div className="min-w-0 flex-1">
                             <span className="font-bold text-[#2C2523] block truncate">{srv.name}</span>
                             <span className="text-[10px] text-[#733F49] font-medium">{srv.tag || 'MIỄN PHÍ'}</span>
@@ -632,7 +629,7 @@ export default function AppointmentPage() {
                 {confirmedBooking.notes && (
                   <div className="p-3.5 rounded-xl bg-[#FCF9F6] border border-[#EEDECF] text-[12px] text-[#6B5C5D]">
                     <span className="font-bold text-[#733F49] uppercase text-[10.5px] block mb-0.5">
-                      YÊU CẦU & GHI CHÚ RIÊNG TỪ CÔ DÂU:
+                      YÊU CẦU VÀ GHI CHÚ RIÊNG TỪ CÔ DÂU:
                     </span>
                     <p className="m-0 italic">"{confirmedBooking.notes}"</p>
                   </div>
@@ -722,7 +719,7 @@ export default function AppointmentPage() {
             {/* Page Header */}
             <div className="mb-2 sm:mb-4">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF0EC] text-[#733F49] text-[11px] font-bold tracking-[1.5px] uppercase border border-[#F2D8D4] mb-2">
-                <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <Crown className="w-3.5 h-3.5 text-[#D4AF37]" />
                 TRẢI NGHIỆM THỬ VÁY RIÊNG TƯ 1:1
               </span>
               <h1 className="font-jakarta text-[24px] sm:text-[30px] font-extrabold text-[#2C2523] m-0 tracking-tight leading-tight">
@@ -819,7 +816,7 @@ export default function AppointmentPage() {
                   </div>
                 </section>
 
-                {/* BƯỚC 2: CHỌN NGÀY & KHUNG GIỜ VÀNG */}
+                {/* BƯỚC 2: CHỌN NGÀY VÀ KHUNG GIỜ VÀNG */}
                 <section className="bg-white rounded-2xl border border-[#F0E5DC] shadow-[0_4px_24px_rgba(44,37,35,0.03)] p-6 sm:p-7">
                   <div className="flex items-center gap-3 pb-4 border-b border-[#F5EDE8] mb-5">
                     <span className="w-7 h-7 rounded-full bg-[#733F49] text-white flex items-center justify-center text-[12px] font-bold shrink-0">
@@ -835,7 +832,7 @@ export default function AppointmentPage() {
                     </div>
                   </div>
 
-                  {/* Date Input & Filters */}
+                  {/* Date Input và Filters */}
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-5 items-end">
                     <div className="md:col-span-5">
                       <label className="block font-jakarta text-[11px] font-bold uppercase tracking-wider text-[#733F49] mb-1.5">
@@ -1134,7 +1131,7 @@ export default function AppointmentPage() {
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3.5 gap-1">
                         <div>
                           <span className="text-[11px] font-bold uppercase tracking-wider text-[#B8737D] flex items-center gap-1.5">
-                            <Sparkles className="w-3.5 h-3.5 text-[#B8737D]" />
+                            <Crown className="w-3.5 h-3.5 text-[#B8737D]" />
                             Gợi Ý Thiết Kế Tương Đồng Dành Riêng Cho Nàng
                           </span>
                         </div>
@@ -1413,7 +1410,7 @@ export default function AppointmentPage() {
                     </div>
                     <p className="m-0 text-[#6B5C5D] leading-relaxed">
                       ✓ Phòng thử riêng tư 100% không ghép khách.<br />
-                      ✓ Hấp tiệt trùng sinh học & chuẩn bị váy trước 2 giờ.<br />
+                      ✓ Hấp tiệt trùng sinh học và chuẩn bị váy trước 2 giờ.<br />
                       ✓ Không ép cọc, hoàn toàn thoải mái trải nghiệm.
                     </p>
                   </div>

@@ -175,7 +175,7 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
                 onClick={() => handleCardClick(item.slug || item.id)}
                 className="bg-white border border-[#EFE5E2] rounded-[24px] overflow-hidden shadow-[0px_4px_20px_rgba(44,37,35,0.03)] hover:shadow-[0px_12px_32px_rgba(44,37,35,0.07)] transition-all duration-300 flex flex-col group cursor-pointer"
               >
-                {/* Image & Badges */}
+                {/* Image và Badges */}
                 <div className="relative w-full h-[370px] sm:h-[390px] bg-[#FCEEE9] overflow-hidden rounded-t-[23px]">
                   <img
                     src={item.image}
@@ -254,7 +254,7 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
                     </div>
                   </div>
 
-                  {/* Price & Deposit */}
+                  {/* Price và Deposit */}
                   <div>
                     <div className="flex items-baseline gap-1.5 mb-2 flex-nowrap">
                       <span className="font-playfair font-medium text-[33px] sm:text-[35px] leading-none text-[#B26B74] tracking-tight whitespace-nowrap">

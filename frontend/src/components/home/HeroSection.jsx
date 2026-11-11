@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { BadgeCheck, CheckCircle } from 'lucide-react';
+import { BadgeCheck, CheckCircle, Crown, ArrowRight, Calendar } from 'lucide-react';
 import heroBrideImg from '../../assets/hero_bride.jpg';
 import laceDetailImg from '../../assets/lace_detail.jpg';
 import logoEmblemImg from '../../assets/logo_emblem.png';
@@ -39,16 +39,19 @@ const HeroSection = ({ onOpenBooking }) => {
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto mb-8 sm:mb-9">
               <Link
                 to="/collection"
-                className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-[#B8737D] text-white font-jakarta text-[14px] font-semibold tracking-wider uppercase transition-all duration-300 shadow-[0px_4px_16px_rgba(184,115,125,0.3)] hover:bg-[#a6626c] hover:shadow-[0px_6px_20px_rgba(184,115,125,0.4)] active:scale-[0.98]"
+                className="group inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl bg-gradient-to-r from-[#733F49] via-[#8C4654] to-[#733F49] text-white font-jakarta text-[14px] font-bold tracking-wider uppercase transition-all duration-300 shadow-[0px_8px_24px_rgba(115,63,73,0.35)] hover:shadow-[0px_12px_32px_rgba(115,63,73,0.48)] hover:from-[#5C323A] hover:via-[#733F49] hover:to-[#5C323A] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] border border-[#A25A67]/40"
               >
-                KHÁM PHÁ BỘ SƯU TẬP
+                <Crown className="w-4 h-4 text-[#FAD59D] shrink-0" />
+                <span>KHÁM PHÁ BỘ SƯU TẬP</span>
+                <ArrowRight className="w-4 h-4 text-white/80 transition-transform duration-300 group-hover:translate-x-1 shrink-0" />
               </Link>
               <button
                 type="button"
                 onClick={onOpenBooking}
-                className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-white border border-[#E6DAC8] text-[#2C2523] font-jakarta text-[14px] font-medium tracking-wide hover:border-[#B8737D] hover:text-[#B8737D] transition-all duration-300 shadow-[0px_2px_8px_rgba(0,0,0,0.03)] cursor-pointer"
+                className="group inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl bg-white border-2 border-[#733F49] text-[#733F49] font-jakarta text-[14px] font-bold tracking-wide transition-all duration-300 shadow-[0px_4px_16px_rgba(115,63,73,0.12)] hover:bg-[#FAF3F0] hover:border-[#5C323A] hover:text-[#5C323A] hover:shadow-[0px_8px_24px_rgba(115,63,73,0.22)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] cursor-pointer"
               >
-                Đặt Lịch Thử Váy
+                <Calendar className="w-4 h-4 text-[#733F49] group-hover:text-[#5C323A] transition-colors shrink-0" />
+                <span>Đặt Lịch Thử Váy</span>
               </button>
             </div>
 
@@ -69,7 +72,7 @@ const HeroSection = ({ onOpenBooking }) => {
               <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B8737D] shrink-0" />
                 <span className="font-jakarta text-[11px] sm:text-[12.5px] text-[#514344] font-normal whitespace-nowrap">
-                  Ký hợp đồng &amp; hoàn cọc tức thì
+                  Ký hợp đồng và hoàn cọc tức thì
                 </span>
               </div>
             </div>
@@ -81,7 +84,7 @@ const HeroSection = ({ onOpenBooking }) => {
                   100<span className="text-[18px] sm:text-[22px] font-normal">%</span>
                 </span>
                 <span className="font-jakarta text-[11px] sm:text-[12px] leading-[15px] sm:leading-[17px] text-[#514344] block">
-                  Lụa tơ tằm &amp; ren nhập khẩu Pháp
+                  Lụa tơ tằm và ren nhập khẩu Pháp
                 </span>
               </div>
 

@@ -192,7 +192,7 @@ export async function sendInspectionNotificationEmail({
     `
     : `
       <div style="background: #FCF9F6; border: 1px dashed #EEDECF; border-radius: 10px; padding: 12px 16px; margin: 18px 0; font-size: 12.5px; line-height: 1.6; color: #514344;">
-        • <strong>Hiện trạng trang phục:</strong> Đã kiểm tra phom dáng, chất liệu vải, độ nguyên vẹn của ren &amp; hạt cườm Swarovski.<br>
+        • <strong>Hiện trạng trang phục:</strong> Đã kiểm tra phom dáng, chất liệu vải, độ nguyên vẹn của ren và hạt cườm Swarovski.<br>
         • <strong>Phụ kiện bàn giao:</strong> Đầy đủ vali chống sốc, túi chống bụi và móc treo lễ phục chuyên dụng.
       </div>
     `;
@@ -204,7 +204,7 @@ export async function sendInspectionNotificationEmail({
           ✦ HAUTE COUTURE INSPECTION REPORT ✦
         </div>
         <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 26px; margin: 0; color: #FFFFFF;">BIÊN BẢN KIỂM ĐỊNH LỄ PHỤC</h1>
-        <p style="font-size: 12px; letter-spacing: 2px; color: #F0D5CD; margin-top: 6px; text-transform: uppercase;">Quyết Toán &amp; Hoàn Trả Quỹ Cọc Bảo Lãnh</p>
+        <p style="font-size: 12px; letter-spacing: 2px; color: #F0D5CD; margin-top: 6px; text-transform: uppercase;">Quyết Toán và Hoàn Trả Quỹ Cọc Bảo Lãnh</p>
       </div>
 
       <div style="padding: 30px 28px; background: #FFFFFF;">
@@ -253,7 +253,7 @@ export async function sendInspectionNotificationEmail({
         <!-- Nút hành động nổi bật -->
         <div style="text-align: center; margin: 32px 0 16px 0;">
           <a href="${returnUrl}" style="display: inline-block; background: linear-gradient(135deg, #733F49 0%, #54222B 100%); color: #FFFFFF; text-decoration: none; padding: 14px 36px; border-radius: 50px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 14px rgba(115, 63, 73, 0.28); letter-spacing: 0.5px;">
-            ✦ Xem Chi Tiết Biên Bản &amp; Xác Nhận Nhận Cọc
+            ✦ Xem Chi Tiết Biên Bản và Xác Nhận Nhận Cọc
           </a>
         </div>
 
@@ -371,7 +371,7 @@ export async function sendRefundConfirmationEmail({
 }
 
 /**
- * Gửi email xác nhận đặt cọc thành công & thông tin hợp đồng thuê váy cưới
+ * Gửi email xác nhận đặt cọc thành công và thông tin hợp đồng thuê váy cưới
  */
 export async function sendDepositSuccessEmail({
   to,
@@ -427,7 +427,7 @@ export async function sendDepositSuccessEmail({
           ✦ HAUTE COUTURE BRIDAL ATELIER ✦
         </div>
         <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 28px; margin: 0; letter-spacing: 2px; color: #FFFFFF;">UNIBRIDAL</h1>
-        <p style="font-size: 12px; letter-spacing: 3px; color: #F0D5CD; margin-top: 6px; text-transform: uppercase;">Xác Nhận Giữ Váy &amp; Đặt Cọc Thành Công</p>
+        <p style="font-size: 12px; letter-spacing: 3px; color: #F0D5CD; margin-top: 6px; text-transform: uppercase;">Xác Nhận Giữ Váy và Đặt Cọc Thành Công</p>
       </div>
 
       <div style="padding: 32px 28px; background: #FFFFFF;">
@@ -446,7 +446,7 @@ export async function sendDepositSuccessEmail({
           UniBridal xin chân thành cảm ơn nàng đã tin tưởng trao gửi niềm tin cho chúng tôi trong ngày trọng đại nhất cuộc đời. Giao dịch đặt cọc bảo lãnh của nàng đã được hệ thống ghi nhận thành công và thiết kế cưới độc bản đã chính thức được khóa kín lịch theo yêu cầu.
         </p>
 
-        <!-- Lịch trình ngày cưới & thời gian bàn giao -->
+        <!-- Lịch trình ngày cưới và thời gian bàn giao -->
         <div style="background: #FAF5F3; border-radius: 12px; border: 1px solid #EEDECF; padding: 18px 20px; margin: 22px 0;">
           <div style="font-size: 11px; font-weight: 700; color: #733F49; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">
             📅 LỊCH TRÌNH THUÊ VÁY CƯỚI CỦA NÀNG
@@ -488,7 +488,7 @@ export async function sendDepositSuccessEmail({
           </table>
         </div>
 
-        <!-- Bảng thanh toán & Cọc bảo lãnh -->
+        <!-- Bảng thanh toán và Cọc bảo lãnh -->
         <div style="background: #FAF5F3; border: 1.5px solid #EEDECF; border-radius: 12px; padding: 20px; margin: 24px 0;">
           <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
             <tr>
@@ -511,20 +511,20 @@ export async function sendDepositSuccessEmail({
           </table>
         </div>
 
-        <!-- Đặc quyền & Lời nhắc nhở -->
+        <!-- Đặc quyền và Lời nhắc nhở -->
         <div style="background: #F0FDF4; border-left: 4px solid #16A34A; padding: 14px 16px; border-radius: 0 10px 10px 0; margin: 22px 0;">
           <div style="font-weight: 700; color: #166534; font-size: 13px; margin-bottom: 4px;">✦ ĐẶC QUYỀN HỖ TRỢ MIỄN PHÍ DÀNH CHO NÀNG:</div>
           <p style="font-size: 12.5px; line-height: 1.6; color: #14532D; margin: 0;">
             1. Váy được giặt hấp sấy chuyên sâu tiệt trùng và ủi phẳng phom dáng trước 24 giờ nhận.<br>
             2. Miễn phí chỉnh sửa bóp/nới eo theo số đo mới nhất của cô dâu trước ngày cưới.<br>
-            3. Đóng gói bảo quản bằng Vali &amp; Túi chống bụi cao cấp chuyên dụng cho cô dâu.
+            3. Đóng gói bảo quản bằng Vali và Túi chống bụi cao cấp chuyên dụng cho cô dâu.
           </p>
         </div>
 
         <!-- Nút CTA xem hợp đồng điện tử -->
         <div style="text-align: center; margin: 34px 0 20px 0;">
           <a href="${orderDetailUrl}" style="display: inline-block; background: linear-gradient(135deg, #733F49 0%, #54222B 100%); color: #FFFFFF; text-decoration: none; padding: 14px 36px; border-radius: 50px; font-weight: 700; font-size: 14px; box-shadow: 0 6px 18px rgba(115, 63, 73, 0.28); letter-spacing: 0.5px;">
-            ✦ Xem Hợp Đồng Số &amp; Chi Tiết Đơn Hàng
+            ✦ Xem Hợp Đồng Số và Chi Tiết Đơn Hàng
           </a>
         </div>
       </div>
@@ -544,7 +544,7 @@ export async function sendDepositSuccessEmail({
       const info = await transporter.sendMail({
         from: `"${senderName}" <${process.env.EMAIL_USER}>`,
         to,
-        subject: `[UniBridal] Xác nhận đặt cọc thành công & Hợp đồng thuê váy #${orderCode}`,
+        subject: `[UniBridal] Xác nhận đặt cọc thành công và Hợp đồng thuê váy #${orderCode}`,
         html,
       });
       console.log(`[EMAIL DEPOSIT SUCCESS] Đã gửi xác nhận cọc đơn #${orderCode} tới ${to}! MessageId: ${info.messageId}`);
@@ -560,7 +560,7 @@ export async function sendDepositSuccessEmail({
 }
 
 /**
- * Gửi email thư mời danh dự thử váy Private Suite 1:1 & mã QR Check-in
+ * Gửi email thư mời danh dự thử váy Private Suite 1:1 và mã QR Check-in
  */
 export async function sendAppointmentSuccessEmail({
   to,

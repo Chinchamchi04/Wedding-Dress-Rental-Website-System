@@ -11,8 +11,7 @@ import {
   Empty,
   Spin,
 } from 'antd';
-import {
-  Plus,
+import { Plus,
   RefreshCw,
   Search,
   Edit3,
@@ -23,13 +22,12 @@ import {
   X,
   Eye,
   Layers,
-  Sparkles,
+  Crown,
   LayoutGrid,
   Table as TableIcon,
   Shirt,
   Info,
-  Upload,
-} from 'lucide-react';
+  Upload } from 'lucide-react';
 import {
   getCategoriesApi,
   createCategoryApi,
@@ -392,7 +390,7 @@ export default function CategoryManagement() {
   return (
     <AdminLayout activeMenu="categories">
       <div className="space-y-5">
-        {/* Header & Tiêu đề trang */}
+        {/* Header và Tiêu đề trang */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="font-playfair text-[32px] sm:text-[38px] font-normal text-[#5F2B36] tracking-tight leading-tight mb-2">
@@ -463,7 +461,7 @@ export default function CategoryManagement() {
           </div>
         </div>
 
-        {/* Thanh Tìm Kiếm & Chuyển Chế Độ Xem */}
+        {/* Thanh Tìm Kiếm và Chuyển Chế Độ Xem */}
         <div className="bg-white rounded-2xl border border-[#EFE5E1] p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
           <div className="relative flex-1 min-w-[260px] max-w-md">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -763,7 +761,7 @@ export default function CategoryManagement() {
                       Ảnh đại diện phom dáng
                     </div>
                     <p className="text-[11px] text-gray-500 line-clamp-2 leading-relaxed mb-2.5">
-                      Ảnh đã được tải lên từ máy tính của bạn và sẽ hiển thị trên trang chủ & bộ sưu tập.
+                      Ảnh đã được tải lên từ máy tính của bạn và sẽ hiển thị trên trang chủ và bộ sưu tập.
                     </p>
                     <div className="flex items-center gap-2">
                       <button

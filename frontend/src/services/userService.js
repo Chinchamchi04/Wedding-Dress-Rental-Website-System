@@ -48,7 +48,7 @@ export async function getUserRoles() {
     return [
       { code: 'ADMIN', name: 'Quản trị viên', description: 'Toàn quyền quản trị hệ thống' },
       { code: 'STAFF', name: 'Nhân viên Showroom', description: 'Tiếp nhận đơn, thử váy và kiểm định' },
-      { code: 'CUSTOMER', name: 'Khách hàng', description: 'Khách hàng thuê váy & đặt lịch' },
+      { code: 'CUSTOMER', name: 'Khách hàng', description: 'Khách hàng thuê váy và đặt lịch' },
     ];
   }
 }

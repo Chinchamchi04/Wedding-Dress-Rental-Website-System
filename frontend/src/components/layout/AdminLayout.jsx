@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import {
-  LayoutDashboard,
-  Sparkles,
+import { LayoutDashboard,
+  Crown,
   CalendarCheck,
   CalendarDays,
   Package,
@@ -15,8 +14,7 @@ import {
   Layers,
   FileSignature,
   Users,
-  Tag
-} from 'lucide-react';
+  Tag } from 'lucide-react';
 import logoImg from '../../assets/logo.png';
 import heroBride from '../../assets/hero_bride.jpg';
 import { useAuth } from '../../contexts/AuthContext';
@@ -251,7 +249,7 @@ export default function AdminLayout({
               <Menu size={22} />
             </button>
             <div className="flex items-center gap-2.5">
-              <Sparkles size={20} className="text-[#8A797A] shrink-0" />
+              <Crown size={20} className="text-[#8A797A] shrink-0" />
               {(headerTitle || (activeMenu === 'customer-care' ? 'Chăm Sóc Khách Hàng' : null)) && (
                 <span className="font-playfair text-[20px] sm:text-[22px] font-bold text-[#5F2B36] tracking-tight leading-none m-0 p-0 select-none">
                   {headerTitle || 'Chăm Sóc Khách Hàng'}

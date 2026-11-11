@@ -24,8 +24,21 @@ export function formatVietnameseDate(dateStr) {
  */
 export function formatShortDate(dateStr) {
   if (!dateStr) return '';
+  const str = String(dateStr).trim();
+  // Nếu đã ở định dạng DD/MM/YYYY
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(str)) {
+    return str;
+  }
+  // Nếu ở định dạng YYYY-MM-DD
+  if (/^\d{4}-\d{1,2}-\d{1,2}/.test(str)) {
+    const parts = str.split('T')[0].split('-');
+    const d = parts[2].padStart(2, '0');
+    const m = parts[1].padStart(2, '0');
+    const y = parts[0];
+    return `${d}/${m}/${y}`;
+  }
   const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return String(dateStr);
+  if (isNaN(date.getTime())) return str;
 
   const d = String(date.getDate()).padStart(2, '0');
   const m = String(date.getMonth() + 1).padStart(2, '0');

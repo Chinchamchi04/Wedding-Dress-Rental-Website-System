@@ -45,7 +45,7 @@ const TIMELINE_STEPS = [
   {
     key: 'returned',
     label: 'Đang Kiểm Định',
-    subLabel: 'Kiểm định & hoàn cọc',
+    subLabel: 'Kiểm định và hoàn cọc',
     Icon: RefreshCcw,
   },
   {
@@ -207,7 +207,7 @@ export default function OrderDetailPage() {
               </p>
             </div>
 
-            {/* ── BANNER BIÊN BẢN KIỂM ĐỊNH & HOÀN CỌC NỔI BẬT ── */}
+            {/* ── BANNER BIÊN BẢN KIỂM ĐỊNH VÀ HOÀN CỌC NỔI BẬT ── */}
             {(order.rawStatus === 'returned' || order.inspection) && (
               <div className="mt-5 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#FFF4F0] via-[#FFF8F5] to-[#FFF1EC] border-2 border-[#E7BFB5] shadow-sm space-y-3 font-jakarta transition-all">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -219,7 +219,7 @@ export default function OrderDetailPage() {
                     <span className="font-playfair font-bold text-[#5F2B36] text-[15px] sm:text-[16px] tracking-wide">
                       {approved
                         ? '✦ Biên Bản Kiểm Định Đã Được Nàng Duyệt'
-                        : '✦ Yêu Cầu Bắt Buộc: Xem Biên Bản Kiểm Định & Xác Nhận Hoàn Cọc'}
+                        : '✦ Yêu Cầu Bắt Buộc: Xem Biên Bản Kiểm Định và Xác Nhận Hoàn Cọc'}
                     </span>
                   </div>
                   <button
@@ -230,7 +230,7 @@ export default function OrderDetailPage() {
                     <span>
                       {approved
                         ? 'Xem Lại Biên Bản Đã Duyệt'
-                        : 'Xem Biên Bản & Xác Nhận Hoàn Cọc'}
+                        : 'Xem Biên Bản và Xác Nhận Hoàn Cọc'}
                     </span>
                   </button>
                 </div>
@@ -285,7 +285,7 @@ export default function OrderDetailPage() {
                 <div>
                   <div className="flex items-center justify-between">
                     <p className="account-overline text-[#874e57]">
-                      Tài chính &amp; ký quỹ
+                      Tài chính và ký quỹ
                     </p>
                     <Landmark size={15} className="text-[#874e57]" />
                   </div>
@@ -309,7 +309,7 @@ export default function OrderDetailPage() {
                   </p>
                 </div>
 
-                {/* Hợp đồng tích hợp ngay trong ô tài chính & bảng giá */}
+                {/* Hợp đồng tích hợp ngay trong ô tài chính và bảng giá */}
                 <div className="mt-5 pt-4 border-t border-[#eee2df] flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <span className="text-[11px] font-bold uppercase tracking-wider text-[#874e57] block">HỢP ĐỒNG ĐÃ KÝ</span>
@@ -330,7 +330,7 @@ export default function OrderDetailPage() {
               </section>
             </div>
 
-            {/* Modal Biên Bản Kiểm Định & Quyết Toán Hoàn Cọc */}
+            {/* Modal Biên Bản Kiểm Định và Quyết Toán Hoàn Cọc */}
             {isInspectionOpen && (
               <CustomerInspectionModal
                 order={order}

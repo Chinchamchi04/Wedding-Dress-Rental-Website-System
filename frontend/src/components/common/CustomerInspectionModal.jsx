@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { message, Modal } from 'antd';
-import { CheckCircle2, AlertTriangle, Camera, ShieldCheck, Clock, X, Send, MessageSquare, Building2, CreditCard, ArrowLeft, Sparkles } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Camera, ShieldCheck, Clock, X, Send, MessageSquare, Building2, CreditCard, ArrowLeft, Crown } from 'lucide-react';
 import { formatVnd } from '../../services/orderService';
 import { getReturnInspection, approveReturnInspection, disputeReturnInspection } from '../../services/customerOrderService';
 
@@ -24,7 +24,7 @@ const POPULAR_BANKS = [
 ];
 
 /**
- * Modal Biên Bản Kiểm Định & Quyết Toán Hoàn Cọc (Khách Hàng)
+ * Modal Biên Bản Kiểm Định và Quyết Toán Hoàn Cọc (Khách Hàng)
  */
 export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
   const [inspection, setInspection] = useState(null);
@@ -183,14 +183,14 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
             <div>
               {customerStatus === 'pending' && (
                 <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-bold uppercase tracking-wider mb-1">
-                  <Sparkles size={11} />
+                  <Crown size={11} />
                   <span>Bắt Buộc Xác Nhận</span>
                 </div>
               )}
               <h3 className="font-playfair text-xl font-bold text-[#5F2B36] m-0">
                 {step === 'bank_form'
                   ? needsBankDetails ? 'Điền Tài Khoản Nhận Hoàn Cọc' : 'Xác Nhận Biên Bản Kiểm Định'
-                  : 'Biên Bản Kiểm Định Trả Váy & Quyết Toán Cọc'}
+                  : 'Biên Bản Kiểm Định Trả Váy và Quyết Toán Cọc'}
               </h3>
               <p className="text-xs text-[#8C7D7E] m-0 mt-0.5">
                 Đơn hàng #{order.orderCode || order.id} • {step === 'bank_form' ? 'Gửi thông tin để showroom đối soát và xử lý hoàn cọc' : 'Lập bởi chuyên viên Atelier UniBridal'}
@@ -310,7 +310,7 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
 
             {/* Thông báo cam kết */}
             <div className="p-3.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[11.5px] text-[#7A6B6C] flex items-start gap-2">
-              <Sparkles size={16} className="text-[#B8737D] shrink-0 mt-0.5" />
+              <Crown size={16} className="text-[#B8737D] shrink-0 mt-0.5" />
               {needsBankDetails ? <span>
                 Sau khi nàng xác nhận, showroom sẽ đối soát và xử lý số tiền đề nghị hoàn{' '}
                 <strong className="text-emerald-700">{formatVnd(finalRefund)}</strong> về số tài khoản trên. Gửi xác nhận chưa đồng nghĩa với việc đã chuyển tiền hoàn cọc.
@@ -333,7 +333,7 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
                 className="flex-1 py-3 px-5 rounded-xl bg-[#1E8347] text-white font-bold text-xs hover:bg-[#166534] transition-colors cursor-pointer shadow-xs flex items-center justify-center gap-2 border-0 disabled:opacity-50"
               >
                 <CheckCircle2 size={16} />
-                <span>{submitting ? 'Đang gửi xác nhận...' : needsBankDetails ? 'Xác Nhận Biên Bản & Gửi Thông Tin Nhận Tiền' : 'Xác Nhận Biên Bản'}</span>
+                <span>{submitting ? 'Đang gửi xác nhận...' : needsBankDetails ? 'Xác Nhận Biên Bản và Gửi Thông Tin Nhận Tiền' : 'Xác Nhận Biên Bản'}</span>
               </button>
             </div>
           </form>
@@ -382,7 +382,7 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
               <div className="p-4 rounded-2xl bg-gradient-to-r from-[#FFF5F2] via-[#FFF9F6] to-[#FFF5F2] border-2 border-[#E8BDB4] text-[#5F2B36] space-y-1.5 shadow-2xs">
                 <div className="flex items-center gap-2 font-bold text-[13.5px] text-[#8C3A48]">
                   <AlertTriangle size={17} className="text-[#B8737D] shrink-0" />
-                  <span>⚡ Yêu Cầu Bắt Buộc: Xác Nhận Biên Bản Kiểm Định & Quyết Toán Hoàn Cọc</span>
+                  <span>⚡ Yêu Cầu Bắt Buộc: Xác Nhận Biên Bản Kiểm Định và Quyết Toán Hoàn Cọc</span>
                 </div>
                 <p className="text-[12px] text-[#6B5A5C] m-0 leading-relaxed">
                   Quý khách bắt buộc kiểm tra hiện trạng lễ phục và bấm xác nhận biên bản để showroom hoàn tất đơn hàng và giải ngân hoàn tiền cọc bảo lãnh về tài khoản; nếu có điểm chưa đồng ý, quý khách có thể bấm gửi khiếu nại trực tiếp.
@@ -539,7 +539,7 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
                     className="flex-1 py-3 px-5 rounded-xl bg-[#1E8347] text-white font-bold text-xs hover:bg-[#166534] transition-colors cursor-pointer shadow-xs flex items-center justify-center gap-2 border-0"
                   >
                     <CheckCircle2 size={16} />
-                    <span>{needsBankDetails ? 'Tôi Đồng Ý Biên Bản & Điền STK Nhận Hoàn Cọc' : 'Tôi Đồng Ý Biên Bản'}</span>
+                    <span>{needsBankDetails ? 'Tôi Đồng Ý Biên Bản và Điền STK Nhận Hoàn Cọc' : 'Tôi Đồng Ý Biên Bản'}</span>
                   </button>
                 </div>
               ) : (

@@ -69,7 +69,7 @@ const Header = ({ onOpenBooking, onLogout, cartCount: propCartCount, wishlistCou
     },
     {
       title: 'Váy Cưới Lụa Tối Giản',
-      subtitle: 'Lụa Mikado Ý & Satin tơ tằm thanh tao',
+      subtitle: 'Lụa Mikado Ý và Satin tơ tằm thanh tao',
       href: '/collection?category=silk-gown',
     },
     {

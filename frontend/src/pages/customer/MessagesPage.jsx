@@ -1,21 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import {
-  Search,
+import { Search,
   Phone,
   Pin,
   Image as ImageIcon,
   Smile,
   SendHorizontal,
   ShieldCheck,
-  Sparkles,
+  Crown,
   Calendar,
   X,
   ChevronLeft,
   ChevronDown,
   CheckCheck,
-  ShoppingBag,
-} from 'lucide-react';
+  ShoppingBag } from 'lucide-react';
 import { message } from 'antd';
 import Header from '../../components/layout/Header';
 import { addToCart } from '../../services/cartService';
@@ -60,7 +58,7 @@ const QUICK_SUGGESTIONS = [
     label: '📅 Đặt lịch thử VIP Fitting Suite',
     text: 'Mình muốn đặt lịch đến thử váy trực tiếp tại showroom vào cuối tuần.',
     reply:
-      'Dạ tuyệt vời quá! UniBridal phục vụ phòng thử riêng tư Fitting Suite VIP 1-1 hoàn toàn miễn phí. Nàng có thể bấm nút "Đặt Lịch Thử Váy" trên thanh menu hoặc để lại Số Điện Thoại & Ngày mong muốn tại đây, chuyên viên sẽ liên hệ xác nhận lịch ngay ạ!',
+      'Dạ tuyệt vời quá! UniBridal phục vụ phòng thử riêng tư Fitting Suite VIP 1-1 hoàn toàn miễn phí. Nàng có thể bấm nút "Đặt Lịch Thử Váy" trên thanh menu hoặc để lại Số Điện Thoại và Ngày mong muốn tại đây, chuyên viên sẽ liên hệ xác nhận lịch ngay ạ!',
   },
 ];
 
@@ -111,7 +109,7 @@ export default function MessagesPage() {
   const isAtBottomRef = useRef(true);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
 
-  // Cuộn lên đầu trang, khóa overflow body để giữ nguyên Header & focus ô nhập không giật trang
+  // Cuộn lên đầu trang, khóa overflow body để giữ nguyên Header và focus ô nhập không giật trang
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     const prevOverflow = document.body.style.overflow;
@@ -543,7 +541,7 @@ export default function MessagesPage() {
           hour: '2-digit',
           minute: '2-digit',
         }).format(new Date()),
-        text: `Dạ UniBridal chào nàng! Mẫu thiết kế "${dress.name}" thuộc dòng Haute Couture cao cấp đang có sẵn tại Atelier VIP. Mẫu này may đo từ chất liệu ${dress.material || 'Lụa & Ren cao cấp'} với cấu trúc siết eo định hình cực kỳ tôn dáng. Nàng có muốn đặt lịch để trực tiếp thử váy riêng tư 1-1 miễn phí không ạ? ✨`,
+        text: `Dạ UniBridal chào nàng! Mẫu thiết kế "${dress.name}" thuộc dòng Haute Couture cao cấp đang có sẵn tại Atelier VIP. Mẫu này may đo từ chất liệu ${dress.material || 'Lụa và Ren cao cấp'} với cấu trúc siết eo định hình cực kỳ tôn dáng. Nàng có muốn đặt lịch để trực tiếp thử váy riêng tư 1-1 miễn phí không ạ? ✨`,
       };
 
       setMessages((prev) => [...prev, staffReply]);
@@ -598,7 +596,7 @@ export default function MessagesPage() {
               showMobileChat ? 'hidden md:flex' : 'flex'
             }`}
           >
-            {/* Sidebar Title & Search */}
+            {/* Sidebar Title và Search */}
             <div className="p-3.5 sm:p-4 border-b border-[#F2E8E0] shrink-0">
               <div className="flex items-center justify-between mb-2.5">
                 <h2 className="font-playfair text-[20px] font-bold text-[#2C2523] m-0">
@@ -683,7 +681,7 @@ export default function MessagesPage() {
               !showMobileChat ? 'hidden md:flex' : 'flex'
             }`}
           >
-            {/* Chat Top Header (Thiết kế đồng bộ với tone Rose Gold & Chi tiết UniBridal Concierge) */}
+            {/* Chat Top Header (Thiết kế đồng bộ với tone Rose Gold và Chi tiết UniBridal Concierge) */}
             <div className="px-4 sm:px-5 py-2.5 sm:py-3 bg-gradient-to-r from-[#9B5C66] via-[#B8737D] to-[#A35D67] text-white flex items-center justify-between shadow-sm shrink-0">
               <div className="flex items-center gap-2.5">
                 {/* Mobile Back Button */}
@@ -706,13 +704,13 @@ export default function MessagesPage() {
                   <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-white ring-1 ring-emerald-300 animate-pulse" />
                 </div>
 
-                {/* Name & Online Status */}
+                {/* Name và Online Status */}
                 <div>
                   <div className="flex items-center gap-1.5">
                     <h3 className="font-playfair text-[15px] sm:text-[17px] font-bold text-white tracking-wide m-0 leading-tight">
                       UniBridal Concierge
                     </h3>
-                    <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+                    <Crown className="w-3.5 h-3.5 text-amber-200" />
                     <span className="bg-white/20 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider backdrop-blur-xs">
                       SENIOR STYLIST
                     </span>
@@ -751,8 +749,8 @@ export default function MessagesPage() {
             {/* Sub-header Ribbon */}
             <div className="px-4 sm:px-5 py-1.5 bg-[#FFF7F4] border-b border-[#F2E6DF] flex items-center text-[11px] text-[#8C5D65] font-medium shrink-0">
               <div className="flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-[#B8737D]" />
-                <span>Chuyên viên Mai Anh hỗ trợ tư vấn phom dáng & may đo lễ phục</span>
+                <Crown className="w-3.5 h-3.5 text-[#B8737D]" />
+                <span>Chuyên viên Mai Anh hỗ trợ tư vấn phom dáng và may đo lễ phục</span>
               </div>
             </div>
 
@@ -779,7 +777,7 @@ export default function MessagesPage() {
                     key={msg.id || index}
                     className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} transition-all`}
                   >
-                    {/* Header: Stylist Name & Time */}
+                    {/* Header: Stylist Name và Time */}
                     {!isUser && (
                       <div className="flex items-center gap-2 text-[11.5px] text-[#7D6E6B] font-medium mb-1 px-1">
                         <img
@@ -869,7 +867,7 @@ export default function MessagesPage() {
                       )}
                     </div>
 
-                    {/* User Timestamp & Check status */}
+                    {/* User Timestamp và Check status */}
                     {isUser && (
                       <div className="flex items-center gap-1 text-[10px] text-[#A89D9B] mt-1 px-1">
                         <span>{msg.time}</span>

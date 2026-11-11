@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import {
-  CalendarClock,
+import { CalendarClock,
   ChartNoAxesCombined,
   ClipboardCheck,
   PackageCheck,
@@ -8,8 +7,7 @@ import {
   Calendar,
   Clock,
   Phone,
-  Sparkles,
-} from 'lucide-react';
+  Crown } from 'lucide-react';
 import { message } from 'antd';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import DashboardChart from '../../components/common/DashboardChart';
@@ -116,7 +114,7 @@ export default function StaffDashboardPage() {
     {
       title: 'SẢN PHẨM BẢO TRÌ',
       value: data?.maintenance ?? '—',
-      note: 'Mẫu váy đang hấp tiệt trùng & bảo dưỡng',
+      note: 'Mẫu váy đang hấp tiệt trùng và bảo dưỡng',
       Icon: ShieldPlus,
       color: 'amber',
     },
@@ -174,7 +172,7 @@ export default function StaffDashboardPage() {
             <p className="ub-dashboard-eyebrow">
               <ChartNoAxesCombined size={16} /> HAUTE COUTURE PERFORMANCE
             </p>
-            <h2 id="staff-chart-title">Đơn Thuê &amp; Bàn Giao Hoàn Tất</h2>
+            <h2 id="staff-chart-title">Đơn Thuê và Bàn Giao Hoàn Tất</h2>
             <p className="ub-dashboard-chart-subtitle">
               Dữ liệu đơn hàng thực tế trong kỳ đã chọn tại showroom.
             </p>
@@ -213,10 +211,10 @@ export default function StaffDashboardPage() {
         <div className="flex items-center justify-between gap-4 border-b border-[#f3e9e5] pb-4 mb-5 max-[768px]:flex-col max-[768px]:items-start">
           <div>
             <p className="ub-dashboard-eyebrow text-[#B8737D] flex items-center gap-1.5 font-bold tracking-[1.5px] uppercase text-[11px]">
-              <Sparkles size={14} /> PRIVATE SUITE ATELIER
+              <Crown size={14} /> PRIVATE SUITE ATELIER
             </p>
             <h2 id="staff-appointments-title" className="font-playfair text-[20px] font-bold text-[#2C2523] mt-1">
-              Lịch Hẹn Thử Váy VIP Hôm Nay & Sắp Tới
+              Lịch Hẹn Thử Váy VIP Hôm Nay và Sắp Tới
             </h2>
             <p className="text-[12.5px] text-[#7A6B6C]">
               Quản lý và tiếp đón cô dâu đặt phòng thử riêng tư 1:1 cùng chuyên viên Haute Couture.
@@ -245,8 +243,8 @@ export default function StaffDashboardPage() {
             <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className="border-b border-[#F2E5E0] bg-[#FFF6F3] text-[11px] font-bold text-[#7A696B] uppercase tracking-wider">
-                  <th className="py-3 px-4">MÃ & KHÁCH HÀNG</th>
-                  <th className="py-3 px-4">NGÀY & KHUNG GIỜ</th>
+                  <th className="py-3 px-4">MÃ VÀ KHÁCH HÀNG</th>
+                  <th className="py-3 px-4">NGÀY VÀ KHUNG GIỜ</th>
                   <th className="py-3 px-4">LỄ PHỤC QUAN TÂM</th>
                   <th className="py-3 px-4 text-center">TRẠNG THÁI</th>
                   <th className="py-3 px-4 text-right">THAO TÁC</th>

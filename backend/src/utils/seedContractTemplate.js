@@ -4,7 +4,7 @@ import ContractTemplate from '../models/contractTemplateModel.js';
 const HAUTE_COUTURE_CLAUSES = [
   {
     id: 1,
-    title: 'ĐIỀU 1: ĐỐI TƯỢNG HỢP ĐỒNG & TIÊU CHUẨN LỄ PHỤC CƯỚI',
+    title: 'ĐIỀU 1: ĐỐI TƯỢNG HỢP ĐỒNG VÀ TIÊU CHUẨN LỄ PHỤC CƯỚI',
     content:
       '1.1. Bên A đồng ý cho Bên B thuê tác phẩm váy cưới độc bản thiết kế mang tên theo thông tin đơn thuê chi tiết, kích cỡ may đo chuẩn mực theo yêu cầu của Bên B.\n' +
       '1.2. Tiêu chuẩn bàn giao: Tác phẩm đạt chuẩn Haute Couture, khung xương nẹp corset siết eo công nghệ Pháp, được giặt sấy tiệt trùng ozone sinh học, ủi phẳng phiu và đặt trong Vali VIP Courier bảo quản chống bụi nhiệt trước giờ trao nhận 02 giờ.\n' +
@@ -12,17 +12,17 @@ const HAUTE_COUTURE_CLAUSES = [
   },
   {
     id: 2,
-    title: 'ĐIỀU 2: THỜI HẠN THUÊ, PHƯƠNG THỨC GIAO NHẬN & QUY TRÌNH THU HỒI, KIỂM ĐỊNH',
+    title: 'ĐIỀU 2: THỜI HẠN THUÊ, PHƯƠNG THỨC GIAO NHẬN VÀ QUY TRÌNH THU HỒI, KIỂM ĐỊNH',
     content:
       '2.1. Tổng thời gian thuê: Được xác định theo gói ngày Bên B lựa chọn (từ 2 đến 30 ngày liên tục).\n' +
       '2.2. Thời điểm nhận váy: Từ 09:00 ngày bắt đầu thuê ghi nhận trên phiếu đặt tại Showroom UniBridal hoặc bàn giao tận nơi bằng Vali VIP Courier.\n' +
       '2.3. Ngày tổ chức hôn lễ chính thức: Được ghi rõ để Atelier hoàn tất ủi sấy và kiểm định phụ kiện trước hôn lễ 24 giờ.\n' +
-      '2.4. Phương thức hoàn trả & thu hồi: Trước 20:00 ngày kết thúc thời hạn thuê. Đối với hình thức giao tận nơi, chuyên viên của Bên A sẽ chủ động liên hệ hẹn giờ và trực tiếp đến tận địa chỉ của Bên B để thu hồi lễ phục trong vali bảo quản niêm phong, thực hiện kiểm định sơ bộ hiện trạng sản phẩm trước khi hoàn trả 100% tiền cọc; đối với hình thức nhận tại showroom, Bên B mang hoàn trả tại Showroom để chuyên viên Bên A kiểm định và hoàn cọc trực tiếp tại quầy.\n' +
+      '2.4. Phương thức hoàn trả và thu hồi: Trước 20:00 ngày kết thúc thời hạn thuê. Đối với hình thức giao tận nơi, chuyên viên của Bên A sẽ chủ động liên hệ hẹn giờ và trực tiếp đến tận địa chỉ của Bên B để thu hồi lễ phục trong vali bảo quản niêm phong, thực hiện kiểm định sơ bộ hiện trạng sản phẩm trước khi hoàn trả 100% tiền cọc; đối với hình thức nhận tại showroom, Bên B mang hoàn trả tại Showroom để chuyên viên Bên A kiểm định và hoàn cọc trực tiếp tại quầy.\n' +
       '2.5. Hai bên thực hiện ký Biên bản kiểm định bàn giao và thu hồi để ghi nhận hiện trạng đính kết ren, hạt cườm và kết cấu váy tại thời điểm giao và nhận lại.',
   },
   {
     id: 3,
-    title: 'ĐIỀU 3: GIÁ THUÊ & PHƯƠNG THỨC THANH TOÁN',
+    title: 'ĐIỀU 3: GIÁ THUÊ VÀ PHƯƠNG THỨC THANH TOÁN',
     content:
       '3.1. Tổng giá trị hợp đồng thuê trọn gói đã bao gồm VAT, dịch vụ giặt hấp khử khuẩn và phí tinh chỉnh phom váy.\n' +
       '3.2. Tiền đặt cọc giữ lịch độc quyền (50% giá trị hợp đồng): Bên B thanh toán ngay khi ký hợp đồng thông qua cổng chuyển khoản VietQR hoặc thẻ ngân hàng.\n' +
@@ -30,14 +30,14 @@ const HAUTE_COUTURE_CLAUSES = [
   },
   {
     id: 4,
-    title: 'ĐIỀU 4: TIỀN ĐẶT CỌC BẢO LÃNH HOÀN TRẢ & CAM KẾT HOÀN TIỀN 100%',
+    title: 'ĐIỀU 4: TIỀN ĐẶT CỌC BẢO LÃNH HOÀN TRẢ VÀ CAM KẾT HOÀN TIỀN 100%',
     content:
       '4.1. Tiền cọc bảo lãnh trách nhiệm bảo quản (Hình thức: Tiền mặt, chuyển khoản hoặc ủy quyền khóa hạn mức thẻ tín dụng).\n' +
       '4.2. Cam kết hoàn cọc 100%: Bên A cam kết hoàn trả đầy đủ 100% số tiền cọc bảo lãnh vào số tài khoản ngân hàng của Bên B trong vòng tối đa 24 giờ làm việc sau khi hai bên nghiệm thu lễ phục hoàn trả nguyên vẹn.',
   },
   {
     id: 5,
-    title: 'ĐIỀU 5: QUY CHUẨN BẢO QUẢN & CHÍNH SÁCH BẢO HIỂM VẢI REN',
+    title: 'ĐIỀU 5: QUY CHUẨN BẢO QUẢN VÀ CHÍNH SÁCH BẢO HIỂM VẢI REN',
     content:
       '5.1. Bảo hiểm vết bẩn sự kiện cưới: Bên A áp dụng chính sách bảo hiểm miễn phí xử lý đối với các vết bẩn thông thường như bụi sân khấu, vết bùn đất gấu váy hoặc vết rượu vang rơi vãi nhẹ. Bên A chịu 100% chi phí xử lý bằng dung môi sinh học chuyên dụng.\n' +
       '5.2. Trách nhiệm của Bên B: Giữ gìn lễ phục ở nơi khô ráo, thoáng mát, treo cao bằng móc chống biến dạng; tuyệt đối không để tàn thuốc lá, pháo sáng hoặc vật sắc nhọn tiếp xúc gần với bề mặt ren.\n' +
@@ -53,14 +53,14 @@ const HAUTE_COUTURE_CLAUSES = [
   },
   {
     id: 7,
-    title: 'ĐIỀU 7: QUYỀN THAY ĐỔI LỊCH CƯỚI, HỦY HỢP ĐỒNG & BẤT KHẢ KHÁNG',
+    title: 'ĐIỀU 7: QUYỀN THAY ĐỔI LỊCH CƯỚI, HỦY HỢP ĐỒNG VÀ BẤT KHẢ KHÁNG',
     content:
       '7.1. Đổi ngày cưới miễn phí: Bên B được quyền chuyển đổi ngày thuê sang bất kỳ ngày nào còn trống trong vòng 12 tháng hoàn toàn miễn phí khi gửi thông báo trước tối thiểu 15 ngày so với ngày nhận váy ban đầu.\n' +
       '7.2. Trường hợp bất khả kháng: Trong trường hợp xảy ra thiên tai, dịch bệnh hoặc các quyết định cấm tập trung của Cơ quan Nhà nước có thẩm quyền, hai bên thống nhất bảo lưu 100% giá trị hợp đồng và tiền đặt cọc trong thời hạn 18 tháng mà không phải chịu bất kỳ khoản phạt nào.',
   },
   {
     id: 8,
-    title: 'ĐIỀU 8: GIẢI QUYẾT TRANH CHẤP & HIỆU LỰC PHÁP LÝ HỢP ĐỒNG ĐIỆN TỬ',
+    title: 'ĐIỀU 8: GIẢI QUYẾT TRANH CHẤP VÀ HIỆU LỰC PHÁP LÝ HỢP ĐỒNG ĐIỆN TỬ',
     content:
       '8.1. Căn cứ theo Điều 12 và Điều 13 Luật Giao dịch điện tử số 20/2023/QH15, Hợp đồng này được xác lập bằng phương tiện điện tử, chữ ký tay số và chữ ký điện tử của hai bên có giá trị pháp lý ràng buộc đầy đủ tương đương với văn bản giấy có chữ ký trực tiếp và con dấu mộc đỏ.\n' +
       '8.2. Mọi tranh chấp phát sinh từ hợp đồng này sẽ được ưu tiên giải quyết thông qua thương lượng hòa giải thiện chí. Nếu không hòa giải được, vụ việc sẽ được đưa ra Tòa án nhân dân có thẩm quyền tại Thành phố Hồ Chí Minh để giải quyết theo quy định pháp luật Việt Nam.\n' +
@@ -79,7 +79,7 @@ const DEFAULT_TEMPLATES = [
     updatedBy: 'Ban Giám Đốc Atelier',
     appliedCount: 5,
     defaultDuration: '4 ngày 3 đêm (Tùy chỉnh 2-30 ngày)',
-    depositRate: '50% giá trị hợp đồng giữ lịch & 15.000.000₫ bảo lãnh hoàn trả 100%',
+    depositRate: '50% giá trị hợp đồng giữ lịch và 15.000.000₫ bảo lãnh hoàn trả 100%',
     overdueFee: '800.000 VNĐ / ngày trễ',
     description: 'Mẫu hợp đồng thuê lễ phục cưới cao cấp tiêu chuẩn pháp lý Việt Nam, tích hợp bảo hiểm vải ren sinh học, cam kết hoàn cọc 100% trong 24h và chữ ký điện tử.',
     pdfUrl: 'http://localhost:5000/api/contract-templates/TPL-HC-01/pdf',

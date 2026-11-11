@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  Search, SlidersHorizontal, Heart,
-  Sparkles, Scissors, ShieldCheck, ChevronLeft, ChevronRight,
-  Check, X, Calendar, LayoutGrid, Grid3X3, Filter
-} from 'lucide-react';
+import { Search, SlidersHorizontal, Heart,
+  Crown, Scissors, ShieldCheck, ChevronLeft, ChevronRight,
+  Check, X, Calendar, LayoutGrid, Grid3X3, Filter } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import { useAuth } from '../../contexts/AuthContext';
@@ -32,7 +30,7 @@ const MATERIAL_OPTIONS = [
   'Satin Tơ Tằm Tự Nhiên',
   'Đính Pha Lê Swarovski',
   'Voan Tulle Thụy Sĩ',
-  'Gấm & Dạ Cao Cấp',
+  'Gấm và Dạ Cao Cấp',
 ];
 
 // Cấu hình thanh kéo mức giá thuê (3.8tr - 25tr trong DB Atelier)
@@ -217,7 +215,7 @@ export default function CollectionPage() {
     showToast(added ? `Đã thêm "${dress.name}" vào giỏ thuê váy!` : `"${dress.name}" đã có trong giỏ thuê váy.`);
   };
 
-  // Thuê Ngay: Thêm vào đơn và chuyển thẳng tới trang Ký Hợp Đồng & Thanh Toán
+  // Thuê Ngay: Thêm vào đơn và chuyển thẳng tới trang Ký Hợp Đồng và Thanh Toán
   const handleRentNow = (dress) => {
     addToCart(dress);
     navigate(`/checkout?dressId=${dress.id}`);
@@ -264,7 +262,7 @@ export default function CollectionPage() {
     setCurrentPage(1);
   };
 
-  // Chuyển trang & cuộn mượt lên đầu lưới sản phẩm
+  // Chuyển trang và cuộn mượt lên đầu lưới sản phẩm
   const handlePageChange = (newPage) => {
     if (newPage < 1 || newPage > totalPages) return;
     setCurrentPage(newPage);
@@ -352,7 +350,7 @@ export default function CollectionPage() {
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-24 right-6 z-50 bg-[#2C2523] text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-[#E6DAC8]/40 animate-bounce text-[13px] font-medium">
-          <Sparkles className="w-4 h-4 text-[#B8737D]" />
+          <Crown className="w-4 h-4 text-[#B8737D]" />
           <span>{toastMessage}</span>
           <button
             type="button"
@@ -386,7 +384,7 @@ export default function CollectionPage() {
 
             {/* Subtext 2 lines */}
             <p className="font-jakarta text-[13.5px] sm:text-[14.5px] leading-[22px] text-[#514344] max-w-[760px] mx-auto mb-6">
-              Hòa quyện giữa kỹ thuật corsetry siết eo quý tộc và chất liệu lụa Mikado tơ tằm thượng hạng Ý & Pháp.
+              Hòa quyện giữa kỹ thuật corsetry siết eo quý tộc và chất liệu lụa Mikado tơ tằm thượng hạng Ý VÀ Pháp.
               <br className="hidden sm:inline" />
               Mỗi thiết kế là một độc bản tôn vinh trọn vẹn đường nét thuần khiết, rạng ngời của nàng dâu trong ngày trọng đại nhất cuộc đời.
             </p>
@@ -394,7 +392,7 @@ export default function CollectionPage() {
             {/* 3 Feature Pills */}
             <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 pt-1">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 border border-[#E6DAC8]/80 text-[#514344] text-[12px] font-medium shadow-xs">
-                <Sparkles className="w-3.5 h-3.5 text-[#B8737D]" />
+                <Crown className="w-3.5 h-3.5 text-[#B8737D]" />
                 <span>Thiết kế độc bản</span>
               </div>
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 border border-[#E6DAC8]/80 text-[#514344] text-[12px] font-medium shadow-xs">
@@ -558,15 +556,6 @@ export default function CollectionPage() {
                     Bộ Lọc Tuyển Chọn
                   </h2>
                 </div>
-                {activeFiltersCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleClearFilters}
-                    className="text-[11.5px] text-[#B8737D] hover:text-[#a6626c] font-medium bg-transparent border-0 cursor-pointer transition-colors p-0"
-                  >
-                    Xóa tất cả
-                  </button>
-                )}
               </div>
 
               {/* Nhóm 1: PHOM DÁNG */}
@@ -689,7 +678,7 @@ export default function CollectionPage() {
               </div>
             </aside>
 
-            {/* CỘT CHÍNH: LƯỚI SẢN PHẨM & THANH SẮP XẾP */}
+            {/* CỘT CHÍNH: LƯỚI SẢN PHẨM VÀ THANH SẮP XẾP */}
             <div ref={gridTopRef} className="lg:col-span-8 xl:col-span-9 flex flex-col scroll-mt-6">
 
               {/* TOP BAR: SỐ LƯỢNG + VIEW SWITCHER + SORT SELECT */}
@@ -780,7 +769,7 @@ export default function CollectionPage() {
                         onClick={() => navigate(`/dresses/${dress.id}`)}
                         className="bg-white border border-[#EEDECF] rounded-[24px] overflow-hidden shadow-[0px_4px_20px_rgba(201,138,144,0.06)] hover:shadow-[0px_12px_32px_rgba(184,115,125,0.14)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group cursor-pointer"
                       >
-                        {/* Hình ảnh & Badges */}
+                        {/* Hình ảnh và Badges */}
                         <div className="relative w-full h-[380px] bg-[#FCEEE9] overflow-hidden rounded-t-[23px]">
                           <img
                             src={dress.image}
@@ -874,7 +863,7 @@ export default function CollectionPage() {
                             </h3>
                           </div>
 
-                          {/* Giá Thuê & Tiền Cọc - Đặt sát tự nhiên ngay dưới tên sản phẩm */}
+                          {/* Giá Thuê và Tiền Cọc - Đặt sát tự nhiên ngay dưới tên sản phẩm */}
                           <div className="mb-3.5">
                             <div className="flex items-baseline gap-1.5 mb-1">
                               <span className="font-playfair font-bold text-[26px] sm:text-[28px] leading-tight text-[#BA7A83] tracking-tight">
@@ -892,7 +881,7 @@ export default function CollectionPage() {
                             </p>
                           </div>
 
-                          {/* Nút Bấm: Thêm Vào Giỏ & Thuê Ngay (Đẩy sát đáy card với mt-auto) */}
+                          {/* Nút Bấm: Thêm Vào Giỏ và Thuê Ngay (Đẩy sát đáy card với mt-auto) */}
                           <div className="mt-auto pt-1">
                             {isLoggedIn ? (
                               <div className="grid grid-cols-2 gap-2.5">

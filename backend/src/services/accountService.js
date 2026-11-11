@@ -134,6 +134,30 @@ export async function getDressDetail(idOrSlug) {
   return dress;
 }
 
+const normalizeSilhouette = (sil = '') => {
+  const s = String(sil).toLowerCase();
+  if (s.includes('ballgown') || s.includes('bồng')) return 'Ballgown';
+  if (s.includes('mermaid') || s.includes('đuôi cá')) return 'Mermaid';
+  if (s.includes('a-line') || s.includes('chữ a') || s.includes('aline')) return 'A-Line';
+  if (s.includes('silk') || s.includes('lụa')) return 'Silk Gown';
+  if (s.includes('princess') || s.includes('hoàng gia')) return 'Princess';
+  return 'Other';
+};
+
+const COLOR_PALETTE = {
+  'trắng tinh khôi': { hex: '#FFFFFF', border: '#D9D9D9' },
+  'trắng ngọc tinh khôi': { hex: '#FFFFFF', border: '#D9D9D9' },
+  'trắng kem (ivory)': { hex: '#FDFBF7', border: '#E7DEC8' },
+  'trắng kem ivory': { hex: '#FDFBF7', border: '#E7DEC8' },
+  'trắng kem': { hex: '#FDFBF7', border: '#E7DEC8' },
+  'champagne': { hex: '#F7E7CE', border: '#DEC8A6' },
+  'hồng pastel': { hex: '#F5D6D8', border: '#E8B6BC' },
+  'hồng nude': { hex: '#EED9D1', border: '#D8BCB2' },
+  'đỏ ruby': { hex: '#9B111E', border: '#780B15' },
+  'xanh khói (dusty blue)': { hex: '#8CA4B8', border: '#6E8B9E' },
+  'xanh khói': { hex: '#8CA4B8', border: '#6E8B9E' },
+};
+
 export async function createDress(data) {
   if (!data?.name) fail(400, 'Tên váy cưới không được để trống.');
   const count = await Dress.countDocuments();
@@ -163,17 +187,21 @@ export async function createDress(data) {
     categoryId = defaultCat._id;
   }
 
-  const normalizeSilhouette = (sil = '') => {
-    const s = String(sil).toLowerCase();
-    if (s.includes('ballgown') || s.includes('bồng')) return 'Ballgown';
-    if (s.includes('mermaid') || s.includes('đuôi cá')) return 'Mermaid';
-    if (s.includes('a-line') || s.includes('chữ a') || s.includes('aline')) return 'A-Line';
-    if (s.includes('silk') || s.includes('lụa')) return 'Silk Gown';
-    if (s.includes('princess') || s.includes('hoàng gia')) return 'Princess';
-    return 'Other';
-  };
-
   const silhouette = data.silhouette ? normalizeSilhouette(data.silhouette) : 'Ballgown';
+
+  let colorOptions = [];
+  if (typeof data.color === 'string' && data.color.trim()) {
+    const colorNames = data.color.split(',').map((c) => c.trim()).filter(Boolean);
+    colorOptions = colorNames.map((cName) => {
+      const key = cName.toLowerCase();
+      const matched = COLOR_PALETTE[key];
+      return {
+        name: cName,
+        hex: matched ? matched.hex : '#FDFBF7',
+        border: matched ? matched.border : '#E7DEC8',
+      };
+    });
+  }
 
   const dress = await Dress.create({
     code,
@@ -183,6 +211,7 @@ export async function createDress(data) {
     silhouette,
     material: data.material || 'Lụa Mikado Ý',
     color: data.color || 'Trắng Tinh Khôi',
+    colorOptions: colorOptions.length > 0 ? colorOptions : undefined,
     sizes: Array.isArray(data.sizes) && data.sizes.length > 0 ? data.sizes : ['XS', 'S', 'M', 'L'],
     rentPrice: Number(data.rentPrice || data.price || 5000000),
     depositAmount: Number(data.depositAmount || 15000000),
@@ -198,7 +227,39 @@ export async function createDress(data) {
 }
 
 export async function updateDress(id, data) {
-  const dress = await Dress.findByIdAndUpdate(id, { $set: data }, { new: true, runValidators: true });
+  const updateData = { ...data };
+
+  // 1. Chuẩn hóa silhouette nếu có (khớp enum schema)
+  if (updateData.silhouette || updateData.category) {
+    updateData.silhouette = normalizeSilhouette(updateData.silhouette || updateData.category);
+  }
+  if (updateData.category) {
+    delete updateData.category;
+  }
+  if (updateData.categoryId && !mongoose.isValidObjectId(updateData.categoryId)) {
+    delete updateData.categoryId;
+  }
+
+  // 2. Tự động cập nhật colorOptions đồng bộ khi thay đổi color
+  if (typeof updateData.color === 'string' && updateData.color.trim()) {
+    const colorNames = updateData.color.split(',').map((c) => c.trim()).filter(Boolean);
+    updateData.colorOptions = colorNames.map((cName) => {
+      const key = cName.toLowerCase();
+      const matched = COLOR_PALETTE[key];
+      return {
+        name: cName,
+        hex: matched ? matched.hex : '#FDFBF7',
+        border: matched ? matched.border : '#E7DEC8',
+      };
+    });
+  }
+
+  // 3. Cho phép tìm theo cả _id ObjectId hoặc mã SKU (UB-012) hoặc slug
+  const filter = mongoose.isValidObjectId(id)
+    ? { _id: id }
+    : { $or: [{ code: String(id).toUpperCase() }, { slug: String(id).toLowerCase() }] };
+
+  const dress = await Dress.findOneAndUpdate(filter, { $set: updateData }, { returnDocument: 'after', runValidators: true });
   if (!dress) fail(404, 'Không tìm thấy mẫu váy cưới cần cập nhật.');
   return dress;
 }

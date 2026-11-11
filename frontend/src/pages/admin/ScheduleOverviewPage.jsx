@@ -13,9 +13,8 @@ import {
 import viVN from 'antd/locale/vi_VN';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
-import {
-  CalendarDays,
-  Sparkles,
+import { CalendarDays,
+  Crown,
   RotateCcw,
   Clock,
   Phone,
@@ -44,8 +43,7 @@ import {
   HeartHandshake,
   MessageSquare,
   RefreshCw,
-  PackageCheck,
-} from 'lucide-react';
+  PackageCheck } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   getAppointmentsApi,
@@ -123,7 +121,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Tab chính: 'calendar' (Lịch Biểu Showroom) | 'appointments' (Danh Sách & Phê Duyệt Lịch Hẹn) | 'returns' (Lịch Hạn Trả Đồ)
+  // Tab chính: 'calendar' (Lịch Biểu Showroom) | 'appointments' (Danh Sách và Phê Duyệt Lịch Hẹn) | 'returns' (Lịch Hạn Trả Đồ)
   const activeMainTab = searchParams.get('tab') || defaultTab || 'calendar';
   const handleTabChange = (tabKey) => {
     setSearchParams((prev) => {
@@ -599,7 +597,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
 
       <AdminLayout activeMenu="lich-tong-quan">
         <div className="space-y-5">
-          {/* Header & Thanh Tiêu Đề */}
+          {/* Header và Thanh Tiêu Đề */}
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="font-playfair text-[32px] sm:text-[38px] font-normal text-[#5F2B36] tracking-tight leading-tight mb-2">
@@ -658,7 +656,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
               
             </div>
 
-            {/* Quick Stats Pill & Sync MongoDB */}
+            {/* Quick Stats Pill và Sync MongoDB */}
             <div className="flex flex-wrap items-center gap-2.5 text-xs">
               <button
                 type="button"
@@ -717,7 +715,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                         : 'bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-200'
                     }`}
                   >
-                    <Sparkles className="w-3.5 h-3.5" />
+                    <Crown className="w-3.5 h-3.5" />
                     <span>Lịch thử váy ({appointments.length})</span>
                   </button>
                   <button
@@ -763,9 +761,9 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                 </div>
               </div>
 
-              {/* Grid 2 Cột: Lịch Tháng (Trái) & Bảng Chi Tiết Ngày VIP Concierge (Phải) */}
+              {/* Grid 2 Cột: Lịch Tháng (Trái) và Bảng Chi Tiết Ngày VIP Concierge (Phải) */}
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                {/* Lịch tháng Ant Design với Custom Styling & Header */}
+                {/* Lịch tháng Ant Design với Custom Styling và Header */}
                 <div className="lg:col-span-3 bg-white p-5 rounded-2xl shadow-xs border border-[#EFE5E1]">
                   {loading ? (
                     <div className="h-96 flex items-center justify-center">
@@ -856,7 +854,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                   <div className="border-b border-[#F2E5E0] pb-3 mb-4">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] uppercase tracking-wider text-[#733F49] font-bold flex items-center gap-1">
-                        <Sparkles className="w-3 h-3" />
+                        <Crown className="w-3 h-3" />
                         <span>Chi tiết ngày được chọn</span>
                       </span>
                       <span className="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
@@ -907,7 +905,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                 : 'border-rose-300 bg-rose-50/30'
                             }`}
                           >
-                            {/* Dòng 1: Header sự kiện & Trạng thái */}
+                            {/* Dòng 1: Header sự kiện và Trạng thái */}
                             <div className="flex items-center justify-between text-xs mb-2">
                               <span className="font-bold text-gray-900 flex items-center gap-1.5">
                                 {isFitting ? (
@@ -1093,13 +1091,13 @@ export default function ScheduleOverviewPage({ defaultTab }) {
           )}
 
           {/* ========================================================= */}
-          {/* NỘI DUNG TAB 2: QUẢN LÝ & PHÊ DUYỆT LỊCH HẸN (DANH SÁCH CHI TIẾT) */}
+          {/* NỘI DUNG TAB 2: QUẢN LÝ VÀ PHÊ DUYỆT LỊCH HẸN (DANH SÁCH CHI TIẾT) */}
           {/* ========================================================= */}
           {activeMainTab === 'appointments' && (
             <div className="space-y-6">
               
 
-                {/* Thanh Tìm Kiếm & Bộ Lọc Nâng Cao */}
+                {/* Thanh Tìm Kiếm và Bộ Lọc Nâng Cao */}
               <div className="bg-white rounded-2xl border border-[#EFE5E1] p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
                 <div className="relative flex-1 min-w-[260px] max-w-md">
                   <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -1144,8 +1142,8 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                   <table className="w-full text-left border-collapse min-w-[900px]">
                     <thead>
                       <tr className="border-b border-gray-200 bg-[#FFF8F6] text-[11px] font-bold text-gray-600 uppercase tracking-wider">
-                        <th className="py-4 px-5">MÃ & KHÁCH HÀNG</th>
-                        <th className="py-4 px-4">SHOWROOM & KHUNG GIỜ</th>
+                        <th className="py-4 px-5">MÃ VÀ KHÁCH HÀNG</th>
+                        <th className="py-4 px-4">SHOWROOM VÀ KHUNG GIỜ</th>
                         <th className="py-4 px-4">LỄ PHỤC QUAN TÂM</th>
                         <th className="py-4 px-5 text-right">THAO TÁC / TRẠNG THÁI</th>
                       </tr>
@@ -1174,7 +1172,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
 
                           return (
                             <tr key={aptId} className="hover:bg-gray-50/70 transition-colors">
-                              {/* Cột 1: Mã & Khách hàng */}
+                              {/* Cột 1: Mã và Khách hàng */}
                               <td className="py-4 px-5">
                                 <div className="inline-block px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-mono text-[10.5px] font-bold mb-1">
                                   {apt.appointmentCode || aptId}
@@ -1197,7 +1195,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                 )}
                               </td>
 
-                              {/* Cột 2: Showroom & Khung giờ */}
+                              {/* Cột 2: Showroom và Khung giờ */}
                               <td className="py-4 px-4">
                                 <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded bg-gray-100 text-gray-700 text-[11px] font-semibold mb-1">
                                   <Building2 size={11} className="text-[#733F49]" />
@@ -1237,7 +1235,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                 )}
                               </td>
 
-                              {/* Cột Thao tác & Trạng thái */}
+                              {/* Cột Thao tác và Trạng thái */}
                               <td className="py-4 px-5 text-right">
                                 <div className="flex items-center justify-end">
                                   {status === 'confirmed' ? (
@@ -1302,13 +1300,13 @@ export default function ScheduleOverviewPage({ defaultTab }) {
               <div className="flex items-center gap-2 text-base font-bold text-gray-900 font-playfair">
                 {selectedEvent?.type === 'fitting' ? (
                   <>
-                    <Sparkles className="w-5 h-5 text-[#733F49]" />
+                    <Crown className="w-5 h-5 text-[#733F49]" />
                     <span>Chi Tiết Lịch Hẹn Thử Váy Private Suite</span>
                   </>
                 ) : (
                   <>
                     <RotateCcw className="w-5 h-5 text-rose-600" />
-                    <span>Chi Tiết Đơn Thuê & Hạn Hoàn Trả Lễ Phục</span>
+                    <span>Chi Tiết Đơn Thuê và Hạn Hoàn Trả Lễ Phục</span>
                   </>
                 )}
               </div>
@@ -1366,7 +1364,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                   </div>
                 </div>
 
-                {/* Ghi chú & Chi tiết váy */}
+                {/* Ghi chú và Chi tiết váy */}
                 {selectedEvent.type === 'fitting' && (
                   <div className="space-y-3">
                     {selectedEvent.interestedDresses?.length > 0 && (
@@ -1434,7 +1432,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                       }}
                       className="w-full py-2.5 px-4 bg-[#733F49] hover:bg-[#5a3239] text-white font-bold rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                     >
-                      <span>Mở Quy Trình Kiểm Định & Hoàn Cọc</span>
+                      <span>Mở Quy Trình Kiểm Định và Hoàn Cọc</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>

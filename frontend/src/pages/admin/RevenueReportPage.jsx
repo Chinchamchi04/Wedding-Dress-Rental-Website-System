@@ -220,7 +220,7 @@ const revenueReportStyles = `
   100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
 }
 
-/* Chart Container & Header */
+/* Chart Container và Header */
 .ub-revenue-chart-card {
   position: relative;
   margin-top: 24px;
@@ -323,7 +323,7 @@ const revenueReportStyles = `
   line-height: 1.4;
 }
 
-/* Chart Foot Legend & Metrics */
+/* Chart Foot Legend và Metrics */
 .ub-revenue-chart-foot {
   display: flex;
   flex-wrap: wrap;
@@ -565,7 +565,7 @@ function LuxuryRevenueChart({ entries = [] }) {
             );
           })}
 
-        {/* Peak badge & X labels */}
+        {/* Peak badge và X labels */}
         {points.map((pt) => {
           const isHovered = hoveredIndex === pt.index;
           const isPeak = peakPoint && peakPoint.index === pt.index && (pt.item.revenue || 0) > 0;
@@ -691,7 +691,7 @@ export default function RevenueReportPage() {
           />
         </section>
 
-        {/* Period Selector & Live Database Indicator */}
+        {/* Period Selector và Live Database Indicator */}
         <section className="ub-revenue-filter-card" aria-label="Bộ lọc kỳ báo cáo">
           <div className="ub-revenue-periods" role="group">
             {Object.entries(PERIODS).map(([key, label]) => (
@@ -748,7 +748,7 @@ export default function RevenueReportPage() {
           </div>
         </section>
 
-        {/* NÂNG CẤP: Phân tích cơ cấu dòng tiền & Top váy cưới doanh thu cao nhất */}
+        {/* NÂNG CẤP: Phân tích cơ cấu dòng tiền và Top váy cưới doanh thu cao nhất */}
         {report && <section className="grid grid-cols-1 lg:grid-cols-12 gap-5 my-6" aria-label="Phân tích chuyên sâu doanh thu">
           {/* Card Trái: Cơ Cấu Dòng Tiền */}
           <div className="lg:col-span-5 bg-white rounded-2xl border border-[#EFE5E1] p-6 shadow-xs flex flex-col justify-between">

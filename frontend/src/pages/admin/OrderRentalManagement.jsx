@@ -59,7 +59,7 @@ const getDressCode = (item) => {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 5;
 
 /** Badge config cho từng status */
 const STATUS_CONFIG = {
@@ -247,6 +247,8 @@ function InspectionModal({ order, onClose, onSuccess }) {
       (order.items || []).map((item) => {
         const itemDeposit = item.depositAmount ?? (order.totalDeposit ? Math.round(order.totalDeposit / Math.max(1, (order.items || []).length)) : 0);
         const itemRent = item.rentPrice ?? (order.totalRentPrice ? Math.round(order.totalRentPrice / Math.max(1, (order.items || []).length)) : 0);
+        // Giới hạn tiền bồi thường tối đa không được vượt quá tiền cọc
+        const maxDepositLimit = itemDeposit > 0 ? itemDeposit : (order.totalDeposit || 0);
         return {
           dressId: item.dressId || item.id || item._id || 'item_default',
           name: item.name,
@@ -254,8 +256,9 @@ function InspectionModal({ order, onClose, onSuccess }) {
           damageNotes: '',
           compensation: 0,
           rentPrice: itemRent,
-          depositAmount: itemDeposit,
-          maxPrice: Math.max(itemDeposit, itemRent, order.totalDeposit || 0),
+          depositAmount: maxDepositLimit,
+          maxPrice: maxDepositLimit,
+          maxDeposit: maxDepositLimit,
         };
       })
   );
@@ -334,9 +337,9 @@ function InspectionModal({ order, onClose, onSuccess }) {
       let val = value;
       if (field === 'compensation') {
         const numVal = Math.max(0, Number(val || 0));
-        const maxLimit = next[idx]?.maxPrice || order.totalDeposit || order.totalRentPrice || 0;
+        const maxLimit = next[idx]?.maxDeposit || next[idx]?.depositAmount || order.totalDeposit || 0;
         if (numVal > maxLimit && maxLimit > 0) {
-          message.warning(`Số tiền bồi thường không được lớn hơn giá trị váy (Tối đa ${fmtVnd(maxLimit)})`);
+          message.warning(`Số tiền bồi thường không được vượt quá tiền cọc (Tối đa ${fmtVnd(maxLimit)})`);
           val = maxLimit;
         } else {
           val = numVal;
@@ -357,13 +360,18 @@ function InspectionModal({ order, onClose, onSuccess }) {
       return;
     }
 
-    // Validate không được nhập số tiền lớn hơn váy
+    // Validate không được nhập số tiền lớn hơn tiền cọc
     for (const ic of itemsCondition) {
-      const maxLimit = ic.maxPrice || order.totalDeposit || order.totalRentPrice || 0;
+      const maxLimit = ic.maxDeposit || ic.depositAmount || order.totalDeposit || 0;
       if (Number(ic.compensation || 0) > maxLimit && maxLimit > 0) {
-        message.error(`Số tiền bồi thường của váy "${ic.name}" không được vượt quá giá trị của váy (${fmtVnd(maxLimit)})`);
+        message.error(`Số tiền bồi thường của váy "${ic.name}" không được vượt quá tiền cọc (${fmtVnd(maxLimit)})`);
         return;
       }
+    }
+
+    if (totalCompensation > (order.totalDeposit || 0) && (order.totalDeposit || 0) > 0) {
+      message.error(`Tổng số tiền bồi thường (${fmtVnd(totalCompensation)}) không được vượt quá tổng tiền cọc của đơn (${fmtVnd(order.totalDeposit || 0)})`);
+      return;
     }
 
     setSubmitting(true);
@@ -402,12 +410,12 @@ function InspectionModal({ order, onClose, onSuccess }) {
             <div>
               <h3 className="font-playfair text-[15px] font-bold text-[#5F2B36] m-0">
                 {isCompletedOrder
-                  ? 'Hồ Sơ Lưu Trữ Đơn Thuê & Quyết Toán Cọc'
+                  ? 'Hồ Sơ Lưu Trữ Đơn Thuê và Quyết Toán Cọc'
                   : isCustomerApproved
                     ? 'Biên Bản Kiểm Định Trả Váy (Khách Đã Duyệt)'
                     : isReturnedOrder
                       ? 'Biên Bản Kiểm Định Trả Váy (Đã Kiểm Định)'
-                      : 'Kiểm Định Trả Váy & Giám Định Hiện Trạng'}
+                      : 'Kiểm Định Trả Váy và Giám Định Hiện Trạng'}
               </h3>
               <p className="text-[10.5px] text-[#8C7D7E] m-0">
                 Đơn #{order.orderCode}
@@ -463,7 +471,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
             <div className="p-2 px-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800 flex items-center gap-1.5">
               <Clock size={13} className="text-amber-600 shrink-0" />
               <span>
-                <strong>Đang chờ khách duyệt &amp; điền STK:</strong> Khách xác nhận thì hệ thống sẽ tự động hoàn cọc ngay.
+                <strong>Đang chờ khách duyệt và điền STK:</strong> Khách xác nhận thì hệ thống sẽ tự động hoàn cọc ngay.
               </span>
             </div>
           )}
@@ -498,7 +506,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
 
           {/* Items inspection - Kiểm định váy */}
           {itemsCondition.map((ic, idx) => {
-            const maxLimit = ic.maxPrice || order.totalDeposit || order.totalRentPrice || 0;
+            const maxLimit = ic.maxDeposit || ic.depositAmount || order.totalDeposit || 0;
             const itemCode = getDressCode(ic) || getDressCode(order.items?.[idx]);
             return (
               <div key={idx} className="p-2.5 px-3 rounded-xl border border-[#EFE5E1] bg-white space-y-1.5">
@@ -519,7 +527,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
                     )}
                   </div>
                   <span className="text-[10.5px] text-[#8C7D7E]">
-                    (Giá trị/Cọc: <strong className="text-[#5F2B36]">{fmtVnd(maxLimit)}</strong>)
+                    (Tiền cọc: <strong className="text-[#5F2B36]">{fmtVnd(maxLimit)}</strong>)
                   </span>
                 </div>
 
@@ -552,17 +560,19 @@ function InspectionModal({ order, onClose, onSuccess }) {
                     <div>
                       <Input
                         disabled={isReadOnly}
-                        type="number"
-                        min={0}
-                        max={maxLimit}
                         placeholder={`Số tiền bồi thường (tối đa ${fmtVnd(maxLimit)})`}
-                        value={ic.compensation}
-                        onChange={(e) => updateItem(idx, 'compensation', e.target.value)}
+                        value={ic.compensation ? String(ic.compensation).replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
+                        onChange={(e) => {
+                          const rawDigits = e.target.value.replace(/\D/g, '');
+                          const num = rawDigits ? parseInt(rawDigits, 10) : 0;
+                          updateItem(idx, 'compensation', num);
+                        }}
+                        suffix={<span className="text-[#8C7D7E] font-medium text-xs">đ</span>}
                         className="text-xs"
                         size="middle"
                       />
                       <span className="text-[10px] text-amber-800 block mt-0.5">
-                        * Tối đa không vượt quá váy: {fmtVnd(maxLimit)}
+                        * Tối đa không vượt quá tiền cọc: {fmtVnd(maxLimit)}
                       </span>
                     </div>
                   </div>
@@ -571,7 +581,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
             );
           })}
 
-          {/* CHỤP ẢNH & LƯU BẰNG CHỨNG HIỆN TRẠNG VÁY - Thu gọn thanh mảnh */}
+          {/* CHỤP ẢNH VÀ LƯU BẰNG CHỨNG HIỆN TRẠNG VÁY - Thu gọn thanh mảnh */}
           <div className="p-2 px-3 rounded-xl border border-[#EFE5E1] bg-[#FCF8F5] space-y-1.5">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-1.5">
@@ -678,7 +688,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
                   ) : (
                     <ShieldCheck size={14} />
                   )}
-                  <span>Lưu &amp; Gửi Biên Bản Cho Khách Hàng</span>
+                  <span>Lưu và Gửi Biên Bản Cho Khách Hàng</span>
                 </button>
               </>
             )}
@@ -736,7 +746,7 @@ function RefundModal({ order, onClose, onSuccess }) {
             </div>
             <div>
               <h3 className="font-playfair text-[18px] font-bold text-[#196C3B]">
-                Quyết Toán &amp; Hoàn Cọc Cho Khách (Bước 2)
+                Quyết Toán và Hoàn Cọc Cho Khách (Bước 2)
               </h3>
               <p className="text-[11.5px] text-[#6E8276]">
                 Đơn #{order.orderCode} • Hoàn trả tiền cọc bảo lãnh sau khi đã qua bước kiểm định
@@ -753,7 +763,7 @@ function RefundModal({ order, onClose, onSuccess }) {
         </div>
 
         <div className="p-5 space-y-4 text-xs font-jakarta">
-          {/* Thông tin khách hàng & Hiện trạng kiểm định */}
+          {/* Thông tin khách hàng và Hiện trạng kiểm định */}
           <div className="p-3.5 rounded-xl bg-[#FAF5F2] border border-[#F0E6E2] space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[#8C7D7E]">Khách hàng nhận hoàn cọc:</span>
@@ -866,7 +876,7 @@ function RefundModal({ order, onClose, onSuccess }) {
               ) : (
                 <CheckCircle2 size={15} />
               )}
-              <span>Xác Nhận Đã Hoàn Cọc &amp; Đóng Đơn</span>
+              <span>Xác Nhận Đã Hoàn Cọc và Đóng Đơn</span>
             </button>
           </div>
         </div>
@@ -905,18 +915,12 @@ export default function OrderRentalManagement() {
 
   const isArchived = (order) => order.status === 'completed' || order.status === 'complete' || order.status === 'cancelled';
   const activeOrdersCount = useMemo(() => {
-    if (!searchTerm.trim()) {
-      return globalStats.active || orders.filter((o) => !isArchived(o)).length;
-    }
-    return orders.filter((o) => !isArchived(o)).length;
-  }, [orders, globalStats, searchTerm]);
+    return globalStats.active ?? (globalStats.total - ((globalStats.completed || 0) + (globalStats.cancelled || 0))) ?? 0;
+  }, [globalStats]);
 
   const archivedOrdersCount = useMemo(() => {
-    if (!searchTerm.trim()) {
-      return (globalStats.completed + globalStats.cancelled) || orders.filter(isArchived).length;
-    }
-    return orders.filter(isArchived).length;
-  }, [orders, globalStats, searchTerm]);
+    return ((globalStats.completed || 0) + (globalStats.cancelled || 0)) || 0;
+  }, [globalStats]);
 
   // ── Load orders ──────────────────────────────────────────────────────────
   const loadOrders = useCallback(async () => {
@@ -925,12 +929,15 @@ export default function OrderRentalManagement() {
       const params = { page: activePage, limit: PAGE_SIZE };
       if (statusFilter !== 'all') params.status = statusFilter;
       if (searchTerm.trim()) params.search = searchTerm.trim();
+      if (!searchTerm.trim()) {
+        params.viewMode = viewMode;
+      }
 
       const result = await getAllOrdersAdmin(params);
       const rawList = result.orders || [];
 
       setOrders(rawList);
-      setTotal(result.total || rawList.length);
+      setTotal(result.total ?? rawList.length);
       setTotalPages(result.totalPages || Math.ceil((result.total || rawList.length) / PAGE_SIZE));
       if (result.stats) {
         setGlobalStats(result.stats);
@@ -945,7 +952,7 @@ export default function OrderRentalManagement() {
     } finally {
       setLoading(false);
     }
-  }, [activePage, statusFilter, searchTerm]);
+  }, [activePage, statusFilter, searchTerm, viewMode]);
 
   const handleOrderUpdated = (orderId, newStatus) => {
     setStatusMenuId(null);
@@ -1020,7 +1027,7 @@ export default function OrderRentalManagement() {
                     }}
                     className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold border-0 cursor-pointer shadow-xs transition-colors"
                   >
-                    Xem &amp; Xử Lý Ngay →
+                    Xem và Xử Lý Ngay →
                   </button>
                 </div>
               </div>
@@ -1033,7 +1040,7 @@ export default function OrderRentalManagement() {
     }
   }, [disputedOrders]);
 
-  // ── Client-side filter (for demo fallback & search) ───────────────────────
+  // ── Client-side filter (for demo fallback và search) ───────────────────────
   const filteredOrders = useMemo(() => {
     const qRaw = searchTerm.trim().toLowerCase();
     const cleanQ = qRaw.replace(/^[#\s]+/, '');
@@ -1186,7 +1193,7 @@ export default function OrderRentalManagement() {
                   className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs transition-all flex items-center justify-center gap-1.5 border-0"
                 >
                   <AlertCircle size={14} />
-                  <span>Xem &amp; Xử Lý Khiếu Nại Ngay</span>
+                  <span>Xem và Xử Lý Khiếu Nại Ngay</span>
                 </button>
               </div>
             ))}
@@ -1305,7 +1312,7 @@ export default function OrderRentalManagement() {
         </div>
       </div>
 
-      {/* Search & Filter Bar (Tích hợp tìm kiếm và tab Đơn Đang Xử Lý / Kho Lưu Trữ) */}
+      {/* Search và Filter Bar (Tích hợp tìm kiếm và tab Đơn Đang Xử Lý / Kho Lưu Trữ) */}
       <div className="bg-white p-1.5 rounded-2xl border border-[#EFE5E1] shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-6">
         <div className="relative flex-1 max-w-md">
           <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A39192]" />
@@ -1556,7 +1563,7 @@ export default function OrderRentalManagement() {
                             <button
                               type="button"
                               onClick={() => setInspectionOrder(order)}
-                              title="Xem biên bản kiểm định & hồ sơ lưu trữ"
+                              title="Xem biên bản kiểm định và hồ sơ lưu trữ"
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#EAF7EE] border border-[#C6F0D4] text-[#1E8347] text-[12px] font-bold hover:bg-[#D5EFE0] transition-all cursor-pointer shadow-2xs"
                             >
                               <FileText size={13} />
@@ -1566,7 +1573,7 @@ export default function OrderRentalManagement() {
                             <button
                               type="button"
                               onClick={() => setInspectionOrder(order)}
-                              title="Bước 1: Tiếp nhận & Kiểm định hiện trạng váy khi khách trả"
+                              title="Bước 1: Tiếp nhận và Kiểm định hiện trạng váy khi khách trả"
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#733F49] text-white text-[12px] font-bold hover:bg-[#5C3038] shadow-xs transition-all cursor-pointer"
                             >
                               <ShieldCheck size={13} />
@@ -1616,11 +1623,11 @@ export default function OrderRentalManagement() {
           <div className="flex flex-wrap items-center gap-2.5 text-[12.5px] text-[#7A6B6C]">
             <span>
               Hiển thị{' '}
-              <span className="font-medium text-[#2C2523]">
-                {filteredOrders.length}
+              <span className="font-bold text-[#5F2B36]">
+                {total > 0 ? `${(activePage - 1) * PAGE_SIZE + 1} – ${Math.min(activePage * PAGE_SIZE, total)}` : 0}
               </span>{' '}
               trong tổng số{' '}
-              <span className="font-medium text-[#2C2523]">{total}</span> đơn
+              <span className="font-bold text-[#2C2523]">{total}</span> đơn
             </span>
             <span className="text-[#D4C5C0]">|</span>
             <button
@@ -1704,7 +1711,7 @@ export default function OrderRentalManagement() {
         />
       )}
 
-      {/* Bước 2: Refund Modal (Quyết toán & Hoàn tiền cọc sau kiểm định) */}
+      {/* Bước 2: Refund Modal (Quyết toán và Hoàn tiền cọc sau kiểm định) */}
       {refundOrder && (
         <RefundModal
           order={refundOrder}

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, Modal } from 'antd';
-import {
-  FileSignature,
+import { FileSignature,
   ExternalLink,
   FileText,
   Printer,
@@ -13,8 +12,7 @@ import {
   CreditCard,
   MapPin,
   CalendarDays,
-  Sparkles,
-} from 'lucide-react';
+  Crown } from 'lucide-react';
 import { getOrder } from '../../services/customerOrderService';
 import { getSignedContract } from '../../utils/signedContract';
 import { formatCurrencyVND } from '../../utils/formatCurrency';
@@ -86,23 +84,23 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
     ? saved.clauses
     : [
       {
-        title: 'ĐIỀU 1: ĐỐI TƯỢNG HỢP ĐỒNG & TIÊU CHUẨN LỄ PHỤC CƯỚI',
+        title: 'ĐIỀU 1: ĐỐI TƯỢNG HỢP ĐỒNG VÀ TIÊU CHUẨN LỄ PHỤC CƯỚI',
         content: '1.1. Bên A đồng ý cho Bên B thuê tác phẩm váy cưới độc bản thiết kế mang tên theo thông tin đơn thuê chi tiết, kích cỡ may đo chuẩn mực theo yêu cầu của Bên B.\n1.2. Tiêu chuẩn bàn giao: Tác phẩm đạt chuẩn Haute Couture, khung xương nẹp corset siết eo công nghệ Pháp, được giặt sấy tiệt trùng sinh học, ủi phẳng phiu và đặt trong Vali VIP Courier bảo quản chống bụi nhiệt trước giờ trao nhận.\n1.3. Tinh chỉnh may đo: Bên A cung cấp dịch vụ tinh chỉnh nới/siết phom theo đúng thông số số đo chuẩn (Chiều cao, Cân nặng, Vòng eo) đã được ghi nhận của Bên B.',
       },
       {
-        title: 'ĐIỀU 2: THỜI HẠN THUÊ, PHƯƠNG THỨC GIAO NHẬN & QUY TRÌNH THU HỒI',
-        content: '2.1. Tổng thời gian thuê: Được xác định theo gói ngày Bên B lựa chọn ghi rõ trên đơn thuê.\n2.2. Thời điểm nhận váy: Từ 09:00 ngày bắt đầu thuê tại Showroom UniBridal hoặc bàn giao tận nơi bằng Vali VIP Courier.\n2.3. Phương thức hoàn trả & thu hồi: Trước 20:00 ngày kết thúc thời hạn thuê. Chuyên viên của Bên A chủ động liên hệ hẹn giờ và trực tiếp đến tận địa chỉ của Bên B thu hồi lễ phục trong vali bảo quản niêm phong, thực hiện kiểm định sơ bộ hiện trạng sản phẩm.\n2.4. Hai bên thực hiện ký Biên bản kiểm định bàn giao và thu hồi để ghi nhận hiện trạng đính kết ren, hạt cườm và kết cấu váy tại thời điểm giao và nhận lại.',
+        title: 'ĐIỀU 2: THỜI HẠN THUÊ, PHƯƠNG THỨC GIAO NHẬN VÀ QUY TRÌNH THU HỒI',
+        content: '2.1. Tổng thời gian thuê: Được xác định theo gói ngày Bên B lựa chọn ghi rõ trên đơn thuê.\n2.2. Thời điểm nhận váy: Từ 09:00 ngày bắt đầu thuê tại Showroom UniBridal hoặc bàn giao tận nơi bằng Vali VIP Courier.\n2.3. Phương thức hoàn trả và thu hồi: Trước 20:00 ngày kết thúc thời hạn thuê. Chuyên viên của Bên A chủ động liên hệ hẹn giờ và trực tiếp đến tận địa chỉ của Bên B thu hồi lễ phục trong vali bảo quản niêm phong, thực hiện kiểm định sơ bộ hiện trạng sản phẩm.\n2.4. Hai bên thực hiện ký Biên bản kiểm định bàn giao và thu hồi để ghi nhận hiện trạng đính kết ren, hạt cườm và kết cấu váy tại thời điểm giao và nhận lại.',
       },
       {
-        title: 'ĐIỀU 3: GIÁ THUÊ & PHƯƠNG THỨC THANH TOÁN',
+        title: 'ĐIỀU 3: GIÁ THUÊ VÀ PHƯƠNG THỨC THANH TOÁN',
         content: '3.1. Tổng giá trị hợp đồng thuê trọn gói đã bao gồm VAT, dịch vụ giặt hấp khử khuẩn và phí tinh chỉnh phom váy.\n3.2. Tiền đặt cọc giữ lịch độc quyền (50% giá trị hợp đồng): Bên B thanh toán ngay khi ký hợp đồng thông qua cổng chuyển khoản VietQR Napas 24/7 hoặc thẻ ngân hàng.\n3.3. Số tiền thuê còn lại sẽ được Bên B thanh toán dứt điểm tại thời điểm nhận bàn giao lễ phục.',
       },
       {
-        title: 'ĐIỀU 4: TIỀN ĐẶT CỌC BẢO LÃNH & CƠ CHẾ HOÀN CỌC',
+        title: 'ĐIỀU 4: TIỀN ĐẶT CỌC BẢO LÃNH VÀ CƠ CHẾ HOÀN CỌC',
         content: '4.1. Tiền đặt cọc bảo lãnh trách nhiệm được Bên B nộp để đảm bảo giữ gìn trang phục cưới nguyên trạng.\n4.2. Số tiền cọc sẽ được hoàn trả 100% cho Bên B trong vòng 02 giờ làm việc qua hình thức chuyển khoản trực tiếp sau khi hoàn tất Biên bản kiểm định thu hồi hiện trạng không phát sinh hư hỏng cấu trúc.\n4.3. Trường hợp phát sinh vết bẩn nhẹ thông thường tẩy được bằng giặt hấp sinh học, Bên A cam kết MIỄN PHÍ và không trừ tiền cọc.',
       },
       {
-        title: 'ĐIỀU 5: TRÁCH NHIỆM BẢO QUẢN & BỒI THƯỜNG HƯ TỔN',
+        title: 'ĐIỀU 5: TRÁCH NHIỆM BẢO QUẢN VÀ BỒI THƯỜNG HƯ TỔN',
         content: '5.1. Bên B cam kết giữ gìn trang phục cẩn trọng, không tự ý cắt may, ủi nhiệt độ cao hoặc tẩy hóa chất.\n5.2. Trường hợp làm rách ren thủng lớn, cháy vải hoặc đứt gãy gọng siết eo corsetry, Bên B đồng ý chịu chi phí phục chế nguyên trạng theo bảng giá niêm yết tại Atelier hoặc trừ trực tiếp vào quỹ cọc bảo lãnh.',
       },
       {
@@ -252,7 +250,7 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
               {/* Bảng danh mục lễ phục thuê */}
               <div>
                 <h3 className="font-playfair text-base font-bold text-[#733F49] mb-2.5">
-                  I. DANH MỤC TRANG PHỤC THUÊ &amp; THỜI GIAN SỬ DỤNG
+                  I. DANH MỤC TRANG PHỤC THUÊ và THỜI GIAN SỬ DỤNG
                 </h3>
                 <div className="overflow-x-auto border border-[#EEDECF] rounded-xl">
                   <table className="w-full text-left text-xs border-collapse">
@@ -294,7 +292,7 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
               {/* Các điều khoản pháp lý */}
               <div>
                 <h3 className="font-playfair text-base font-bold text-[#733F49] mb-3">
-                  II. CÁC ĐIỀU KHOẢN PHÁP LÝ &amp; QUY CHẾ KÝ QUỸ
+                  II. CÁC ĐIỀU KHOẢN PHÁP LÝ và QUY CHẾ KÝ QUỸ
                 </h3>
                 <div className="space-y-3.5 text-xs text-[#4A3D3C] leading-relaxed">
                   {!contractClauses.length && <p>Vui lòng mở file hợp đồng đã lưu để xem nội dung đầy đủ.</p>}
@@ -316,7 +314,7 @@ export default function SignedContractModal({ orderId, order: propOrder, onClose
                       ĐẠI DIỆN BÊN CHO THUÊ (BÊN A)
                     </p>
                     <p className="text-[#847374] text-[11px] italic mt-0.5">
-                      Xác thực Chữ ký số &amp; Con dấu pháp nhân Atelier
+                      Xác thực Chữ ký số và Con dấu pháp nhân Atelier
                     </p>
                   </div>
 

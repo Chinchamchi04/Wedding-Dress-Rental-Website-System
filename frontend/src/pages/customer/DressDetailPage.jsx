@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import {
-  Heart, Star, ShieldCheck, Sparkles, Scissors,
+import { Heart, Star, ShieldCheck, Crown, Scissors,
   Ruler, Calendar, Clock, Phone, MessageCircle,
   ChevronRight, ChevronLeft, Check, CheckCircle2, Info, ArrowRight, Share2,
-  Sparkle, X, ShoppingBag, Headphones
-} from 'lucide-react';
+  X, ShoppingBag, Headphones } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import { useAuth } from '../../contexts/AuthContext';
@@ -13,6 +11,7 @@ import { getDressById, getRelatedDresses, formatCurrencyVND } from '../../servic
 import { getDressBookedDates } from '../../services/orderService';
 import { addToCart } from '../../services/cartService';
 import { isWishlisted as checkWishlisted, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
+import { formatShortDate } from '../../utils/formatDate';
 
 // Import local photos for feedbacks
 import card1 from '../../assets/card1_elysian.jpg';
@@ -132,7 +131,7 @@ export default function DressDetailPage() {
   const [feedbackPage, setFeedbackPage] = useState(1);
   const feedbacksPerPage = 6;
 
-  // Rental date & Booked dates calculations
+  // Rental date và Booked dates calculations
   const [bookedDates, setBookedDates] = useState([]);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const [startDate, setStartDate] = useState(() => {
@@ -326,7 +325,7 @@ export default function DressDetailPage() {
     if (!dress?.realBrides || dress.realBrides.length === 0) return [];
 
     const sampleReviews = [
-      { quote: "Váy đẹp xuất sắc! Cả hội trường cưới ai cũng khen lộng lẫy. Form siết eo tôn dáng cực kỳ mà mặc rất thoải mái suốt cả ngày dài.", name: "Cô dâu Hà My & Lê Anh", date: "15/10/2026" },
+      { quote: "Váy đẹp xuất sắc! Cả hội trường cưới ai cũng khen lộng lẫy. Form siết eo tôn dáng cực kỳ mà mặc rất thoải mái suốt cả ngày dài.", name: "Cô dâu Hà My và Lê Anh", date: "15/10/2026" },
       { quote: "Đuôi váy dài thướt tha khi bước vào lễ đường tạo cảm giác như một nàng công chúa đích thực. Cảm ơn UniBridal rất nhiều!", name: "Cô dâu Thục Quyên", date: "02/10/2026" },
       { quote: "Mặc vào cảm thấy mình như một nữ hoàng trong buổi tiệc tối! Từng đường đính kết bắt sáng lung linh dưới ánh đèn sân khấu. Đáng giá từng đồng!", name: "Cô dâu Lan Chi", date: "28/09/2026" },
       { quote: "Thiết kế corsetry siết eo kỳ diệu, giấu khuyết điểm bụng cực đỉnh. Mình chụp phóng sự cưới góc nào cũng thấy eo thon gọn.", name: "Cô dâu Bích Phương", date: "20/09/2026" },
@@ -464,7 +463,7 @@ export default function DressDetailPage() {
       {/* Toast Notification */}
       {rentNotification && (
         <div className="fixed bottom-24 right-6 z-50 bg-[#2C2523] text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-[#E6DAC8]/40 animate-bounce text-[13px] font-medium max-w-[420px]">
-          <Sparkles className="w-4 h-4 text-[#B8737D] shrink-0" />
+          <Crown className="w-4 h-4 text-[#B8737D] shrink-0" />
           <span className="flex-1 leading-snug">{rentNotification}</span>
           <button
             type="button"
@@ -501,7 +500,7 @@ export default function DressDetailPage() {
       <main className="flex-1 max-w-[1280px] mx-auto w-full px-5 sm:px-8 pt-8 sm:pt-10 pb-16">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
 
-          {/* ================= LEFT COLUMN: IMAGES & HIGHLIGHTS (Col 7) ================= */}
+          {/* ================= LEFT COLUMN: IMAGES VÀ HIGHLIGHTS (Col 7) ================= */}
           <div className="lg:col-span-7 flex flex-col gap-5">
             {/* Main Stage Image */}
             <div className="relative w-full aspect-[3/4] rounded-[24px] overflow-hidden bg-[#F6ECE8] shadow-[0_8px_30px_rgba(44,37,35,0.06)] border border-[#EAE0DC] group">
@@ -568,11 +567,11 @@ export default function DressDetailPage() {
               {dress.highlights?.map((hl, idx) => (
                 <div key={idx} className="flex items-start gap-2 xl:gap-2.5 px-1 sm:px-1.5 pt-2 sm:pt-0 min-w-0">
                   <div className="w-8 h-8 rounded-full bg-[#FFF5F3] border border-[#F4DDD8] flex items-center justify-center text-[#B26B74] shrink-0">
-                    {hl.icon === 'diamond' && <Sparkles className="w-4 h-4" />}
+                    {hl.icon === 'diamond' && <Crown className="w-4 h-4" />}
                     {hl.icon === 'ruler' && <Ruler className="w-4 h-4" />}
-                    {hl.icon === 'sparkles' && <Sparkle className="w-4 h-4" />}
+                    {hl.icon === 'sparkles' && <Crown className="w-4 h-4" />}
                     {hl.icon === 'shield' && <ShieldCheck className="w-4 h-4" />}
-                    {!['diamond', 'ruler', 'sparkles', 'shield'].includes(hl.icon) && <Sparkles className="w-4 h-4" />}
+                    {!['diamond', 'ruler', 'sparkles', 'shield'].includes(hl.icon) && <Crown className="w-4 h-4" />}
                   </div>
                   <div className="min-w-0 flex-1 overflow-hidden">
                     <span
@@ -602,7 +601,7 @@ export default function DressDetailPage() {
             </div>
           </div>
 
-          {/* ================= RIGHT COLUMN: PRODUCT DETAILS & BOOKING (Col 5) ================= */}
+          {/* ================= RIGHT COLUMN: PRODUCT DETAILS VÀ BOOKING (Col 5) ================= */}
           <div className="lg:col-span-5 flex flex-col gap-6">
 
             {/* Header info */}
@@ -709,13 +708,13 @@ export default function DressDetailPage() {
               </div>
             </div>
 
-            {/* Rental Period & Interactive Calendar Grid Box */}
+            {/* Rental Period và Interactive Calendar Grid Box */}
             <div className="border border-[#F2DDD9] bg-[#FFF8F6] rounded-[20px] p-5 sm:p-6 shadow-xs">
               <div className="flex items-center justify-between pb-3.5 border-b border-[#F0D5D0]">
                 <div>
                   <h3 className="font-playfair text-[18px] font-semibold text-[#231A19] m-0 flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-[#B8737D]" />
-                    Lịch Trống & Chọn Ngày Thuê Váy
+                    Lịch Trống và Chọn Ngày Thuê Váy
                   </h3>
                   <p className="text-[12px] text-[#7A6663] mt-0.5 m-0">
                     Bấm trực tiếp vào ngày trên lịch để chọn ngày nhận váy
@@ -774,7 +773,7 @@ export default function DressDetailPage() {
                     const isEnd = endDate === iso;
                     const inRange = startDate && endDate && iso > startDate && iso < endDate;
 
-                    // 1. Ngày trong quá khứ -> Mờ đục & Khóa cursor-not-allowed
+                    // 1. Ngày trong quá khứ -> Mờ đục và Khóa cursor-not-allowed
                     if (past) {
                       return (
                         <div
@@ -872,30 +871,42 @@ export default function DressDetailPage() {
 
               {/* Date pickers row synchronized with Calendar Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-3">
-                <div className="bg-white border border-[#EAE0DC] rounded-[12px] p-2.5 sm:p-3">
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8A7978] mb-1">
+                <div className="bg-white border border-[#EAE0DC] rounded-[12px] p-2.5 sm:p-3 relative cursor-pointer group hover:border-[#733F49] transition-colors">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8A7978] mb-1 pointer-events-none">
                     NGÀY BẮT ĐẦU THUÊ (NHẬN VÁY)
                   </label>
-                  <input
-                    type="date"
-                    value={startDate}
-                    min={new Date().toISOString().split('T')[0]}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full text-[13px] font-semibold text-[#231A19] border-0 outline-none p-0 bg-transparent cursor-pointer"
-                  />
+                  <div className="relative flex items-center justify-between">
+                    <span className="text-[13.5px] font-bold text-[#231A19]">
+                      {formatShortDate(startDate) || 'Chọn ngày nhận'}
+                    </span>
+                    <Calendar className="w-4 h-4 text-[#8A7978] group-hover:text-[#733F49] transition-colors shrink-0" />
+                    <input
+                      type="date"
+                      value={startDate}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                  </div>
                 </div>
 
-                <div className="bg-white border border-[#EAE0DC] rounded-[12px] p-2.5 sm:p-3">
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8A7978] mb-1">
+                <div className="bg-white border border-[#EAE0DC] rounded-[12px] p-2.5 sm:p-3 relative cursor-pointer group hover:border-[#733F49] transition-colors">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8A7978] mb-1 pointer-events-none">
                     NGÀY TRẢ DỰ KIẾN (TRẢ VÁY)
                   </label>
-                  <input
-                    type="date"
-                    value={endDate}
-                    min={startDate || new Date().toISOString().split('T')[0]}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full text-[13px] font-semibold text-[#231A19] border-0 outline-none p-0 bg-transparent cursor-pointer"
-                  />
+                  <div className="relative flex items-center justify-between">
+                    <span className="text-[13.5px] font-bold text-[#231A19]">
+                      {formatShortDate(endDate) || 'Chọn ngày trả'}
+                    </span>
+                    <Calendar className="w-4 h-4 text-[#8A7978] group-hover:text-[#733F49] transition-colors shrink-0" />
+                    <input
+                      type="date"
+                      value={endDate}
+                      min={startDate || new Date().toISOString().split('T')[0]}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -930,7 +941,7 @@ export default function DressDetailPage() {
 
             {/* Action Buttons - Khớp 100% với Hình 2 */}
             <div className="flex flex-col gap-2.5">
-              {/* Row 1: ĐẶT THUÊ NGAY & Wishlist */}
+              {/* Row 1: ĐẶT THUÊ NGAY VÀ Wishlist */}
               <div className="flex items-center gap-2.5">
                 <button
                   type="button"
@@ -942,7 +953,7 @@ export default function DressDetailPage() {
                     <path d="M8 10 5 21h14l-3-11" />
                     <path d="M9 14h6" />
                   </svg>
-                  ĐẶT THUÊ NGAY (KÝ HỢP ĐỒNG & CỌC)
+                  ĐẶT THUÊ NGAY (KÝ HỢP ĐỒNG VÀ CỌC)
                 </button>
 
                 {isLoggedIn && (
@@ -994,7 +1005,7 @@ export default function DressDetailPage() {
               </button>
             </div>
 
-            {/* Commitments & Trust Signals - Khớp 100% với Hình 2 */}
+            {/* Commitments và Trust Signals - Khớp 100% với Hình 2 */}
             <div className="pt-4 border-t border-[#EAE0DC] flex flex-col gap-2.5 text-[12.5px] text-[#4A3B3D]">
               <div className="flex items-start gap-2.5">
                 <CheckCircle2 className="w-4 h-4 text-[#70484E] shrink-0 mt-0.5" strokeWidth={1.75} />
@@ -1074,7 +1085,7 @@ export default function DressDetailPage() {
             <div className="flex items-end justify-between mb-10">
               <div>
                 <span className="font-jakarta font-bold text-[11px] tracking-[2.5px] uppercase text-[#B8737D] block mb-1">
-                  BRIDAL FEEDBACK & MOMENTS
+                  BRIDAL FEEDBACK VÀ MOMENTS
                 </span>
                 <h2 className="font-playfair text-[30px] sm:text-[36px] leading-tight font-semibold text-[#231A19] m-0">
                   Trải Nghiệm Nàng Dâu Thực Tế

@@ -1,8 +1,7 @@
 import { formatCurrencyVND, formatNumberDots } from '../../utils/formatCurrency';
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import {
-  ShieldCheck,
+import { ShieldCheck,
   Calendar,
   MapPin,
   Check,
@@ -15,7 +14,6 @@ import {
   CreditCard,
   Building2,
   FileText,
-  Sparkles,
   Scissors,
   Briefcase,
   HelpCircle,
@@ -41,8 +39,7 @@ import {
   Info,
   Plus,
   Minus,
-  Zap,
-} from 'lucide-react';
+  Zap } from 'lucide-react';
 import { message } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
 import Header from '../../components/layout/Header';
@@ -66,6 +63,12 @@ function toIsoDateString(val) {
   if (str.includes('/')) {
     const parts = str.split('/');
     if (parts.length === 3) {
+      if (parts[0].length === 4) { // YYYY/MM/DD
+        return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+      }
+      if (Number(parts[1]) > 12 && Number(parts[0]) <= 12) { // MM/DD/YYYY
+        return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+      }
       const d = parts[0].padStart(2, '0');
       const m = parts[1].padStart(2, '0');
       const y = parts[2];
@@ -80,11 +83,22 @@ function toDisplayDateString(val) {
   if (!val) return '';
   const str = String(val).trim();
   if (!str || str === 'undefined' || str === 'null' || str === 'Invalid Date') return '';
-  if (str.includes('/')) return str;
+  if (str.includes('/')) {
+    const parts = str.split('/');
+    if (parts.length === 3) {
+      if (parts[0].length === 4) { // YYYY/MM/DD
+        return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
+      }
+      if (Number(parts[1]) > 12 && Number(parts[0]) <= 12) { // MM/DD/YYYY -> DD/MM/YYYY
+        return `${parts[1].padStart(2, '0')}/${parts[0].padStart(2, '0')}/${parts[2]}`;
+      }
+      return `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[2]}`;
+    }
+  }
   if (str.includes('-')) {
     const parts = str.split('T')[0].split('-');
     if (parts.length === 3) {
-      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
     }
   }
   return str;
@@ -163,7 +177,7 @@ export default function CheckoutPage() {
 
 
 
-  // 4. Trạng thái kiểm tra thanh toán & Phương thức thanh toán thực tế
+  // 4. Trạng thái kiểm tra thanh toán và Phương thức thanh toán thực tế
   const [paymentMethod, setPaymentMethod] = useState('vietqr'); // 'vietqr' (Quét mã VietQR) | 'credit_card' (Thẻ quốc tế) | 'showroom' (Tại Showroom)
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
   const [qrImgError, setQrImgError] = useState(false);
@@ -223,7 +237,7 @@ export default function CheckoutPage() {
     return () => { active = false; };
   }, [dressIdParam]);
 
-  // Current Active Wizard Step: 1 = Thông Tin & Số Đo, 2 = Ký Hợp Đồng Điện Tử, 3 = Đặt Cọc & Thanh Toán
+  // Current Active Wizard Step: 1 = Thông Tin và Số Đo, 2 = Ký Hợp Đồng Điện Tử, 3 = Đặt Cọc và Thanh Toán
   const [currentStep, setCurrentStep] = useState(1);
   // Chữ ký tay điện tử (Digital Signature Pad)
   const signatureCanvasRef = React.useRef(null);
@@ -739,7 +753,7 @@ export default function CheckoutPage() {
     });
   };
 
-  // Gợi ý Size thông minh theo Chiều cao & Cân nặng
+  // Gợi ý Size thông minh theo Chiều cao và Cân nặng
   const smartSuggestedSize = useMemo(() => {
     const h = parseFloat(measurements.height);
     const w = parseFloat(measurements.weight);
@@ -1133,7 +1147,7 @@ export default function CheckoutPage() {
 
             <p>Hai bên thống nhất ký kết hợp đồng thuê lễ phục cưới với các điều khoản pháp lý cụ thể như sau:</p>
 
-            <div class="clause-heading">ĐIỀU 1: ĐỐI TƯỢNG HỢP ĐỒNG & TIÊU CHUẨN LỄ PHỤC</div>
+            <div class="clause-heading">ĐIỀU 1: ĐỐI TƯỢNG HỢP ĐỒNG VÀ TIÊU CHUẨN LỄ PHỤC</div>
             ${orderItems && orderItems.length > 1 ? `
               <p>1.1. Bên A đồng ý cho Bên B thuê <strong>${orderItems.length} tác phẩm lễ phục cưới cao cấp</strong> độc bản bao gồm:</p>
               <ul style="margin: 6px 0 10px 20px; font-size: 11pt; line-height: 1.6;">
@@ -1147,27 +1161,27 @@ export default function CheckoutPage() {
             <p>1.2. Tiêu chuẩn bàn giao: Tác phẩm đạt chuẩn Haute Couture, khung xương nẹp corset siết eo công nghệ Pháp, được giặt sấy tiệt trùng ozone sinh học, ủi phẳng phiu và đặt trong Vali VIP Courier bảo quản chống bụi nhiệt trước giờ trao nhận 02 giờ.</p>
             <p>1.3. Tinh chỉnh may đo: Bên A cung cấp dịch vụ tinh chỉnh nới/siết phom theo đúng số đo của Bên B (${measurements.height ? `Chiều cao: ${measurements.height}cm, Cân nặng: ${measurements.weight || '—'}kg, Vòng eo: ${measurements.waist || '—'}cm` : 'Chuyên viên Atelier đo và tinh chỉnh trực tiếp tại Showroom'}).</p>
 
-            <div class="clause-heading">ĐIỀU 2: THỜI HẠN THUÊ, PHƯƠNG THỨC GIAO NHẬN & QUY TRÌNH THU HỒI, KIỂM ĐỊNH</div>
+            <div class="clause-heading">ĐIỀU 2: THỜI HẠN THUÊ, PHƯƠNG THỨC GIAO NHẬN VÀ QUY TRÌNH THU HỒI, KIỂM ĐỊNH</div>
             <p>2.1. Tổng thời gian thuê: <strong>${rentalDays} ngày</strong> liên tục.</p>
             <p>2.2. Thời điểm nhận váy: Từ 09:00 ngày <strong>${rentalSchedule.startDate}</strong>.</p>
             <p>2.3. Ngày tổ chức hôn lễ chính thức: <strong>${rentalSchedule.weddingDate}</strong>.</p>
-            <p>2.4. Phương thức nhận váy & thu hồi: ${deliveryMethod === 'delivery'
+            <p>2.4. Phương thức nhận váy và thu hồi: ${deliveryMethod === 'delivery'
         ? 'Bên A thực hiện giao váy tận nơi bằng Vali VIP Courier theo địa chỉ Bên B đã đăng ký. '
         : 'Bên B nhận váy trực tiếp tại Showroom Atelier của Bên A (được hỗ trợ chuyên viên fitting và ủi sấy hoàn thiện trước giờ trao nhận). '
-      }Đến thời hạn hoàn trả (trước 20:00 ngày <strong>' + rentalSchedule.endDate + '</strong>), <strong>chuyên viên của Bên A sẽ chủ động liên hệ hẹn giờ và trực tiếp đến tận nơi thu hồi lễ phục trong vali bảo quản niêm phong & kiểm định hiện trạng</strong>, Bên B không cần phải tự mang trả.</p>
+      }Đến thời hạn hoàn trả (trước 20:00 ngày <strong>' + rentalSchedule.endDate + '</strong>), <strong>chuyên viên của Bên A sẽ chủ động liên hệ hẹn giờ và trực tiếp đến tận nơi thu hồi lễ phục trong vali bảo quản niêm phong và kiểm định hiện trạng</strong>, Bên B không cần phải tự mang trả.</p>
             <p>2.5. Hai bên thực hiện ký Biên bản kiểm định bàn giao và thu hồi để ghi nhận hiện trạng đính kết ren, hạt cườm và kết cấu váy tại thời điểm giao và nhận lại.</p>
 
-            <div class="clause-heading">ĐIỀU 3: GIÁ THUÊ & PHƯƠNG THỨC THANH TOÁN</div>
+            <div class="clause-heading">ĐIỀU 3: GIÁ THUÊ VÀ PHƯƠNG THỨC THANH TOÁN</div>
             <p>3.1. Tổng giá trị hợp đồng thuê trọn gói (${rentalDays} ngày): <strong>${formatNumberDots(totalRentPrice)} VNĐ</strong> (Đã bao gồm VAT, dịch vụ giặt hấp khử khuẩn và phí tinh chỉnh phom váy).</p>
             <p>3.2. Tiền cọc bảo lãnh trang phục (50% giá trị váy): <strong>${formatNumberDots(depositCollateral)} VNĐ</strong>.</p>
             <p>3.3. Tổng số tiền thanh toán khi ký hợp đồng (Tiền thuê + Cọc bảo lãnh): <strong>${formatNumberDots(totalRentPrice + depositCollateral)} VNĐ</strong>, Bên B thanh toán ngay thông qua cổng chuyển khoản VietQR Techcombank.</p>
             <p>3.4. Cam kết hoàn tiền cọc: Bên A cam kết hoàn trả 100% tiền cọc bảo lãnh (${formatNumberDots(depositCollateral)} VNĐ) vào tài khoản Bên B ngay khi tiếp nhận hoàn trả váy nguyên vẹn.</p>
 
-            <div class="clause-heading">ĐIỀU 4: CAM KẾT DỊCH VỤ & BẢO HIỂM LỄ PHỤC</div>
+            <div class="clause-heading">ĐIỀU 4: CAM KẾT DỊCH VỤ VÀ BẢO HIỂM LỄ PHỤC</div>
             <p>4.1. Cam kết chất lượng: Bên A cam kết bàn giao đúng tác phẩm thiết kế đã chọn, đúng số đo may đo đã ghi nhận và đầy đủ bộ phụ kiện cao cấp đi kèm.</p>
             <p>4.2. Cam kết hoàn cọc: Trường hợp phát sinh thay đổi hoặc hủy hợp đồng theo các điều khoản bất khả kháng quy định tại Điều 7, Bên A cam kết bảo lưu hoặc hoàn trả 100% tiền cọc giữ lịch trong vòng 24 giờ làm việc.</p>
 
-            <div class="clause-heading">ĐIỀU 5: QUY CHUẨN BẢO QUẢN & CHÍNH SÁCH BẢO HIỂM VẢI REN</div>
+            <div class="clause-heading">ĐIỀU 5: QUY CHUẨN BẢO QUẢN VÀ CHÍNH SÁCH BẢO HIỂM VẢI REN</div>
             <p>5.1. Bảo hiểm vết bẩn sự kiện cưới: Bên A áp dụng chính sách bảo hiểm miễn phí xử lý đối với các vết bẩn thông thường như bụi sân khấu, vết bùn đất gấu váy hoặc vết rượu vang rơi vãi nhẹ. Bên A chịu 100% chi phí xử lý bằng dung môi sinh học chuyên dụng.</p>
             <p>5.2. Trách nhiệm của Bên B: Giữ gìn lễ phục ở nơi khô ráo, thoáng mát, treo cao bằng móc chống biến dạng; tuyệt đối không để tàn thuốc lá, pháo sáng hoặc vật sắc nhọn tiếp xúc gần với bề mặt ren.</p>
             <p>5.3. Nghiêm cấm: Bên B tuyệt đối không tự ý cắt may, thay đổi kết cấu, dán keo vải hoặc đem váy đến các tiệm giặt ủi thông thường bên ngoài.</p>
@@ -1177,11 +1191,11 @@ export default function CheckoutPage() {
             <p>6.2. Hư hỏng có thể khắc phục (rách ren nhỏ, đứt chỉ đính hạt): Bên B bồi hoàn chi phí công phục dựng thủ công của nghệ nhân theo hóa đơn thực tế, tối đa không vượt quá 15% tiền cọc bảo lãnh.</p>
             <p>6.3. Hư hỏng nặng không thể phục hồi (cháy rách mảng lớn, loang màu hóa chất không tẩy được, hoặc mất mát): Bên B chịu trách nhiệm bồi thường theo giá trị niêm yết xuất kho của tác phẩm sau khi khấu trừ 20% hao mòn tự nhiên.</p>
 
-            <div class="clause-heading">ĐIỀU 7: QUYỀN THAY ĐỔI LỊCH CƯỚI, HỦY HỢP ĐỒNG & BẤT KHẢ KHÁNG</div>
+            <div class="clause-heading">ĐIỀU 7: QUYỀN THAY ĐỔI LỊCH CƯỚI, HỦY HỢP ĐỒNG VÀ BẤT KHẢ KHÁNG</div>
             <p>7.1. Đổi ngày cưới miễn phí: Bên B được quyền chuyển đổi ngày thuê sang bất kỳ ngày nào còn trống trong vòng 12 tháng hoàn toàn miễn phí khi gửi thông báo trước tối thiểu 15 ngày so với ngày nhận váy ban đầu.</p>
             <p>7.2. Trường hợp bất khả kháng: Trong trường hợp xảy ra thiên tai, dịch bệnh hoặc các quyết định cấm tập trung của Cơ quan Nhà nước có thẩm quyền, hai bên thống nhất bảo lưu 100% giá trị hợp đồng và tiền đặt cọc trong thời hạn 18 tháng mà không phải chịu bất kỳ khoản phạt nào.</p>
 
-            <div class="clause-heading">ĐIỀU 8: GIẢI QUYẾT TRANH CHẤP & HIỆU LỰC PHÁP LÝ HỢP ĐỒNG ĐIỆN TỬ</div>
+            <div class="clause-heading">ĐIỀU 8: GIẢI QUYẾT TRANH CHẤP VÀ HIỆU LỰC PHÁP LÝ HỢP ĐỒNG ĐIỆN TỬ</div>
             <p>8.1. Căn cứ theo Điều 12 và Điều 13 Luật Giao dịch điện tử số 20/2023/QH15, Hợp đồng này được xác lập bằng phương tiện điện tử, chữ ký tay số và chữ ký điện tử của hai bên có giá trị pháp lý ràng buộc đầy đủ tương đương với văn bản giấy có chữ ký trực tiếp và con dấu mộc đỏ.</p>
             <p>8.2. Mọi tranh chấp phát sinh từ hợp đồng này sẽ được ưu tiên giải quyết thông qua thương lượng hòa giải thiện chí. Nếu không hòa giải được, vụ việc sẽ được đưa ra Tòa án nhân dân có thẩm quyền tại Thành phố Hồ Chí Minh để giải quyết theo quy định pháp luật Việt Nam.</p>
             <p>8.3. Hợp đồng có hiệu lực kể từ thời điểm Bên B hoàn tất ký điện tử và thanh toán khoản đặt cọc giữ lịch. Bản điện tử được lưu trữ tại hệ thống cơ sở dữ liệu UniBridal và được tự động gửi vào địa chỉ Email của Bên B để làm bằng chứng pháp lý.</p>
@@ -1211,7 +1225,7 @@ export default function CheckoutPage() {
             </table>
 
             <div class="page-footer">
-              <span>Văn bản hợp đồng thuê điện tử được xác lập & bảo mật bởi UniBridal Atelier Việt Nam</span>
+              <span>Văn bản hợp đồng thuê điện tử được xác lập và bảo mật bởi UniBridal Atelier Việt Nam</span>
               <span>Mã tra cứu: HĐ-UB-2026/8992</span>
             </div>
           </div>
@@ -1283,7 +1297,7 @@ export default function CheckoutPage() {
           </tr>
         </table>
 
-        <div class='clause-title'>ĐIỀU 1: ĐỐI TƯỢNG HỢP ĐỒNG & THỜI HẠN THUÊ</div>
+        <div class='clause-title'>ĐIỀU 1: ĐỐI TƯỢNG HỢP ĐỒNG VÀ THỜI HẠN THUÊ</div>
         ${orderItems && orderItems.length > 1 ? `
           <p>1.1. Bên A đồng ý cho Bên B thuê <strong>${orderItems.length} tác phẩm lễ phục cưới cao cấp</strong> độc bản bao gồm:</p>
           <ul style="margin: 6px 0 10px 20px; line-height: 1.6;">
@@ -1297,21 +1311,21 @@ export default function CheckoutPage() {
         <p>1.2. Thời gian thuê: <strong>${rentalDays} ngày</strong>. Ngày nhận váy: <strong>${rentalSchedule.startDate}</strong>; Ngày cưới chính thức: <strong>${rentalSchedule.weddingDate}</strong>; Ngày hoàn trả: trước 20:00 ngày <strong>${rentalSchedule.endDate}</strong>.</p>
         <p>1.3. Tiêu chuẩn giao nhận: Lễ phục được giặt sấy tiệt trùng sinh học, ủi phẳng phiu và tinh chỉnh theo số đo cô dâu hoàn thiện trước giờ trao nhận 2 giờ trong Vali VIP Courier bảo quản chân không.</p>
 
-        <div class='clause-title'>ĐIỀU 2: GIÁ THUÊ & PHƯƠNG THỨC THANH TOÁN</div>
+        <div class='clause-title'>ĐIỀU 2: GIÁ THUÊ VÀ PHƯƠNG THỨC THANH TOÁN</div>
         <p>2.1. Tổng chi phí thuê váy trọn gói (${rentalDays} ngày): <strong>${formatNumberDots(totalRentPrice)} VNĐ</strong>.</p>
         <p>2.2. Tiền cọc bảo lãnh trang phục (50% giá trị váy): <strong>${formatNumberDots(depositCollateral)} VNĐ</strong>.</p>
         <p>2.3. Tổng số tiền thanh toán khi ký hợp đồng (Tiền thuê + Tiền cọc bảo lãnh): <strong>${formatNumberDots(totalRentPrice + depositCollateral)} VNĐ</strong> (thanh toán qua cổng chuyển khoản VietQR Techcombank).</p>
         <p>2.4. Cam kết hoàn tiền cọc: Bên A hoàn trả 100% khoản cọc bảo lãnh (${formatNumberDots(depositCollateral)} VNĐ) cho Bên B ngay sau khi nhận lại trang phục nguyên vẹn.</p>
 
-        <div class='clause-title'>ĐIỀU 3: CỌC BẢO LÃNH HOÀN TRẢ & CAM KẾT HOÀN TIỀN 100%</div>
+        <div class='clause-title'>ĐIỀU 3: CỌC BẢO LÃNH HOÀN TRẢ VÀ CAM KẾT HOÀN TIỀN 100%</div>
         <p>3.1. Tiền cọc bảo lãnh hoàn trả trang phục: <strong>${formatNumberDots(depositCollateral)} VNĐ</strong>.</p>
         <p>3.2. Bên A cam kết hoàn trả 100% khoản cọc bảo lãnh tự động vào tài khoản ngân hàng của Bên B trong vòng 24 giờ sau khi tiếp nhận lại trang phục nguyên vẹn.</p>
 
-        <div class='clause-title'>ĐIỀU 4: BẢO HIỂM VẢI REN & QUY ĐỊNH BẢO QUẢN</div>
+        <div class='clause-title'>ĐIỀU 4: BẢO HIỂM VẢI REN VÀ QUY ĐỊNH BẢO QUẢN</div>
         <p>4.1. Bên A tài trợ gói bảo hiểm làm sạch sinh học cao cấp: Miễn trừ trách nhiệm bồi thường đối với các vết bẩn bùn đất thông thường, vết rượu vang hay bụi sân khấu tiệc cưới.</p>
         <p>4.2. Bên B cam kết không tự ý đem lễ phục tới tiệm giặt ủi thông thường hoặc can thiệp cắt xén form dáng nguyên bản.</p>
 
-        <div class='clause-title'>ĐIỀU 5: CHÍNH SÁCH ĐỔI NGÀY CƯỚI & DỜI LỊCH</div>
+        <div class='clause-title'>ĐIỀU 5: CHÍNH SÁCH ĐỔI NGÀY CƯỚI VÀ DỜI LỊCH</div>
         <p>5.1. Bên B được quyền thay đổi ngày thuê váy hoàn toàn miễn phí nếu thông báo cho Bên A trước tối thiểu 15 ngày so với ngày nhận dự kiến.</p>
 
         <div class='clause-title'>ĐIỀU 6: HIỆU LỰC PHÁP LÝ CHỮ KÝ SỐ</div>
@@ -1321,7 +1335,7 @@ export default function CheckoutPage() {
           <tr>
             <td style='width: 50%; text-align: center; vertical-align: top;'>
               <strong>ĐẠI DIỆN BÊN CHO THUÊ (BÊN A)</strong><br>
-              <em>(Đã ký điện tử & đóng dấu mộc số)</em><br><br>
+              <em>(Đã ký điện tử và đóng dấu mộc số)</em><br><br>
               <div class='seal-box'>
                 ★ UNIBRIDAL HAUTE COUTURE ★<br>
                 ĐÃ XÁC THỰC KÝ SỐ HỢP LỆ<br>
@@ -1372,7 +1386,7 @@ export default function CheckoutPage() {
     setIsVerifyingPayment(true);
 
     message.loading({
-      content: 'Đang kết nối cổng Techcombank Napas 247 & đối soát giao dịch chuyển khoản...',
+      content: 'Đang kết nối cổng Techcombank Napas 247 VÀ đối soát giao dịch chuyển khoản...',
       key: 'payment_confirm',
       duration: 1.8,
     });
@@ -1633,7 +1647,7 @@ export default function CheckoutPage() {
 
         setIsSuccessModalOpen(true);
         message.success({
-          content: `✓ [Sandbox Test]: Đã nhận thanh toán ${formatCurrencyVND(amountToPayToday)} qua VietQR Techcombank! Hợp đồng & Lịch thuê đã được kích hoạt.`,
+          content: `✓ [Sandbox Test]: Đã nhận thanh toán ${formatCurrencyVND(amountToPayToday)} qua VietQR Techcombank! Hợp đồng và Lịch thuê đã được kích hoạt.`,
           key: 'payment_confirm',
           duration: 3.5,
         });
@@ -1717,19 +1731,19 @@ export default function CheckoutPage() {
               <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${currentStep === 3 ? 'bg-[#733F49] text-white shadow-xs' : 'bg-[#EAE0D5] text-[#847374]'}`}>
                 3
               </span>
-              <span>3. Đặt cọc & Thanh toán</span>
+              <span>3. Đặt cọc và Thanh toán</span>
             </button>
 
           </div>
         </div>
 
-        {/* Two-Column Grid: Form Left & Sticky Order Summary Right */}
+        {/* Two-Column Grid: Form Left và Sticky Order Summary Right */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
           {/* ================= LEFT COLUMN ================= */}
           <div className="lg:col-span-7 xl:col-span-8 space-y-8">
 
-            {/* ================= STEP 1: THÔNG TIN & SỐ ĐO ================= */}
+            {/* ================= STEP 1: THÔNG TIN VÀ SỐ ĐO ================= */}
             {currentStep === 1 && (
               <div className="space-y-8 animate-fade-in">
 
@@ -1756,10 +1770,10 @@ export default function CheckoutPage() {
 
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Họ & tên */}
+                      {/* Họ và tên */}
                       <div data-error={Boolean(formErrors.brideName)}>
                         <label className="block font-jakarta text-[11px] font-bold uppercase tracking-wider text-[#733F49] mb-1.5">
-                          HỌ & TÊN CÔ DÂU *
+                          HỌ VÀ TÊN CÔ DÂU *
                         </label>
                         <input
                           type="text"
@@ -1907,7 +1921,7 @@ export default function CheckoutPage() {
                   </div>
                 </section>
 
-                {/* 2. LỊCH TRÌNH THUÊ & PHƯƠNG THỨC BÀN GIAO */}
+                {/* 2. LỊCH TRÌNH THUÊ VÀ PHƯƠNG THỨC BÀN GIAO */}
                 <section className="bg-white rounded-2xl border border-[#F0E5DC] shadow-[0_4px_24px_rgba(44,37,35,0.03)] p-6 sm:p-7">
                   {/* 3 Thẻ Chọn Ngày Tương Tác Kèm DatePicker */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
@@ -1922,7 +1936,11 @@ export default function CheckoutPage() {
                           CHỌN NGÀY THUÊ
                         </span>
                       </div>
-                      <div className="relative flex items-center">
+                      <div className="relative flex items-center justify-between bg-white border border-[#EEDECF] rounded-xl px-3 py-2 cursor-pointer group hover:border-[#733F49] transition-colors">
+                        <span className="text-[14px] font-bold text-[#2C2523]">
+                          {toDisplayDateString(rentalSchedule.startDate) || 'Chọn ngày nhận'}
+                        </span>
+                        <Calendar className="w-4 h-4 text-[#8C7A7B] group-hover:text-[#733F49] transition-colors shrink-0" />
                         <input
                           type="date"
                           min={todayIso}
@@ -1932,7 +1950,7 @@ export default function CheckoutPage() {
                               handleSelectStartDate(e.target.value);
                             }
                           }}
-                          className="w-full bg-white border border-[#EEDECF] rounded-xl px-3 py-2 text-[14px] font-bold text-[#2C2523] focus:outline-none focus:border-[#733F49] cursor-pointer"
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         />
                       </div>
                       <span className="text-[10.5px] font-medium text-[#2E7D32] mt-1.5 flex items-center gap-1">
@@ -1950,7 +1968,11 @@ export default function CheckoutPage() {
                           TRONG GÓI THUÊ
                         </span>
                       </div>
-                      <div className="relative flex items-center">
+                      <div className="relative flex items-center justify-between bg-white border border-[#F2D8D4] rounded-xl px-3 py-2 cursor-pointer group hover:border-[#733F49] transition-colors shadow-2xs">
+                        <span className="text-[14.5px] font-bold text-[#733F49]">
+                          {toDisplayDateString(rentalSchedule.weddingDate) || 'Chọn ngày cưới'}
+                        </span>
+                        <Calendar className="w-4 h-4 text-[#733F49] transition-colors shrink-0" />
                         <input
                           type="date"
                           min={todayIso}
@@ -1960,7 +1982,7 @@ export default function CheckoutPage() {
                               handleSelectWeddingDate(e.target.value);
                             }
                           }}
-                          className="w-full bg-white border border-[#F2D8D4] rounded-xl px-3 py-2 text-[14.5px] font-bold text-[#733F49] focus:outline-none focus:border-[#733F49] cursor-pointer shadow-2xs"
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         />
                       </div>
                       <span className="text-[10.5px] font-bold text-[#733F49] mt-1.5 flex items-center gap-1">
@@ -1983,7 +2005,11 @@ export default function CheckoutPage() {
                             : 'SAU NGÀY CƯỚI'}
                         </span>
                       </div>
-                      <div className="relative flex items-center">
+                      <div className="relative flex items-center justify-between bg-white border border-[#EEDECF] rounded-xl px-3 py-2 cursor-pointer group hover:border-[#733F49] transition-colors shadow-2xs">
+                        <span className="text-[14px] font-bold text-[#2C2523]">
+                          {toDisplayDateString(rentalSchedule.endDate) || 'Chọn ngày trả'}
+                        </span>
+                        <Calendar className="w-4 h-4 text-[#8C7A7B] group-hover:text-[#733F49] transition-colors shrink-0" />
                         <input
                           type="date"
                           min={toIsoDateString(rentalSchedule.startDate) || todayIso}
@@ -1993,14 +2019,14 @@ export default function CheckoutPage() {
                               handleSelectEndDate(e.target.value);
                             }
                           }}
-                          className="w-full bg-white border border-[#EEDECF] rounded-xl px-3 py-2 text-[14px] font-bold text-[#2C2523] focus:outline-none focus:border-[#733F49] cursor-pointer shadow-2xs"
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         />
                       </div>
                       <span className="text-[10.5px] font-medium text-[#733F49] mt-1.5 flex items-center gap-1">
                         <span>✓</span> {rentalSchedule.endDate ? (
                           toIsoDateString(rentalSchedule.endDate) === toIsoDateString(rentalSchedule.weddingDate)
                             ? `Trả trước 20:00 (Cùng tối ngày cưới - Gói ${rentalDays} ngày)`
-                            : `Trả trước 20:00 ngày ${rentalSchedule.endDate} (Gói ${rentalDays} ngày)`
+                            : `Trả trước 20:00 ngày ${toDisplayDateString(rentalSchedule.endDate)} (Gói ${rentalDays} ngày)`
                         ) : 'Chưa xác định ngày hoàn trả'}
                       </span>
                     </div>
@@ -2217,42 +2243,48 @@ export default function CheckoutPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                       <div
                         onClick={() => setDeliveryMethod('direct')}
-                        className={`p-4 rounded-xl border cursor-pointer transition-all ${deliveryMethod === 'direct'
+                        className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${deliveryMethod === 'direct'
                           ? 'border-[#733F49] bg-[#FAF3F0] ring-1 ring-[#733F49]'
                           : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white'
                           }`}
                       >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-bold text-[13.5px] text-[#2C2523]">
+                        <div>
+                          <span className="font-bold text-[13.5px] text-[#2C2523] block mb-1">
                             Nhận trực tiếp tại Showroom Atelier (Khuyên dùng)
                           </span>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#E8F5E9] text-[#2E7D32]">
+                          <p className="text-[11.5px] text-[#6B5C5D] m-0 leading-relaxed">
+                            Thử và căn chỉnh phom dáng chuẩn xác tại phòng VIP Showroom trước giờ trao nhận.
+                          </p>
+                        </div>
+                        <div className="flex justify-end mt-2.5">
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold px-3 py-1 rounded-full bg-[#2E7D32] text-white shadow-xs tracking-wider uppercase">
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
                             MIỄN PHÍ
                           </span>
                         </div>
-                        <p className="text-[11.5px] text-[#6B5C5D] m-0 leading-relaxed">
-                          Thử và căn chỉnh phom dáng chuẩn xác tại phòng VIP Showroom trước giờ trao nhận.
-                        </p>
                       </div>
 
                       <div
                         onClick={() => setDeliveryMethod('delivery')}
-                        className={`p-4 rounded-xl border cursor-pointer transition-all ${deliveryMethod === 'delivery'
+                        className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${deliveryMethod === 'delivery'
                           ? 'border-[#733F49] bg-[#FAF3F0] ring-1 ring-[#733F49]'
                           : 'border-[#EEDECF] bg-[#FCF9F6] hover:bg-white'
                           }`}
                       >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-bold text-[13.5px] text-[#2C2523]">
+                        <div>
+                          <span className="font-bold text-[13.5px] text-[#2C2523] block mb-1">
                             Giao váy tận nơi (VIP Courier)
                           </span>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FAF0EC] text-[#B8737D]">
+                          <p className="text-[11.5px] text-[#6B5C5D] m-0 leading-relaxed">
+                            Giao vali VIP Courier nguyên seal chống ẩm và móc gỗ bảo quản tận nhà cô dâu.
+                          </p>
+                        </div>
+                        <div className="flex justify-end mt-2.5">
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold px-3 py-1 rounded-full bg-gradient-to-r from-[#733F49] via-[#8C4654] to-[#733F49] text-white shadow-xs tracking-wider uppercase border border-[#B8737D]/30">
+                            <Crown className="w-3.5 h-3.5 text-[#FFD700]" />
                             VIP COURIER
                           </span>
                         </div>
-                        <p className="text-[11.5px] text-[#6B5C5D] m-0 leading-relaxed">
-                          Giao vali VIP Courier nguyên seal chống ẩm và móc gỗ bảo quản tận nhà cô dâu.
-                        </p>
                       </div>
                     </div>
 
@@ -2260,7 +2292,7 @@ export default function CheckoutPage() {
                   </div>
                 </section>
 
-                {/* 3. SỐ ĐO CƠ THỂ MAY ĐO & TÙY CHỌN CONCIERGE */}
+                {/* 3. SỐ ĐO CƠ THỂ MAY ĐO VÀ TÙY CHỌN CONCIERGE */}
                 <section className="bg-white rounded-2xl border border-[#F0E5DC] shadow-[0_4px_24px_rgba(44,37,35,0.03)] p-6 sm:p-7">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-[#F5EDE8] mb-6 gap-3">
                     <div className="flex items-center gap-3">
@@ -2269,7 +2301,7 @@ export default function CheckoutPage() {
                       </div>
                       <div>
                         <h2 className="font-playfair text-[19px] sm:text-[21px] font-semibold text-[#2C2523] m-0">
-                          Số Đo May Đo & Tinh Chỉnh Phom Váy
+                          Số Đo May Đo và Tinh Chỉnh Phom Váy
                         </h2>
                         <p className="text-[12px] text-[#847374] m-0 mt-0.5">
                           Hệ thống đan dây corsetry Pháp cho phép tùy chỉnh nới/siết linh hoạt từ 2 - 4cm
@@ -2305,7 +2337,7 @@ export default function CheckoutPage() {
                   {measurementMode === 'showroom' ? (
                     <div className="p-5 rounded-2xl bg-gradient-to-r from-[#FAF3F0] to-[#FAF8F5] border border-[#F2D8D4] text-[13px] text-[#6B5C5D] space-y-2 mb-4 animate-fade-in">
                       <div className="flex items-center gap-2 font-bold text-[#733F49]">
-                        <Sparkles className="w-4 h-4" />
+                        <Crown className="w-4 h-4" />
                         <span>Dịch vụ May Đo VIP Concierge Miễn Phí Tại Showroom</span>
                       </div>
                       <p className="m-0 leading-relaxed">
@@ -2550,7 +2582,7 @@ export default function CheckoutPage() {
                       </>
                     ) : (
                       <>
-                        <span>TIẾP TỤC: XEM & KÝ HỢP ĐỒNG ĐIỆN TỬ (BƯỚC 2)</span>
+                        <span>TIẾP TỤC: XEM VÀ KÝ HỢP ĐỒNG ĐIỆN TỬ (BƯỚC 2)</span>
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}
@@ -2560,7 +2592,7 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* ================= STEP 2: XEM & KÝ HỢP ĐỒNG ĐIỆN TỬ ================= */}
+            {/* ================= STEP 2: XEM VÀ KÝ HỢP ĐỒNG ĐIỆN TỬ ================= */}
             {currentStep === 2 && (
               <div className="space-y-6 animate-fade-in">
 
@@ -2587,7 +2619,7 @@ export default function CheckoutPage() {
                   {/* Khung viền chỉ đôi thanh lịch kiểu chứng thư Haute Couture */}
                   <div className="relative z-10 border border-[#E8DFD8]/80 p-5 sm:p-8 md:p-10 rounded-xl space-y-7">
 
-                    {/* Top Header: Quốc hiệu & Tiêu đề văn bản */}
+                    {/* Top Header: Quốc hiệu và Tiêu đề văn bản */}
                     <div className="text-center pb-6 border-b border-[#EFE7E0] space-y-2">
                       <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FAF5F0] border border-[#EEDECF] text-[#847374] text-[11px] font-semibold tracking-wider uppercase mb-1">
                         <ShieldCheck className="w-3.5 h-3.5 text-[#2E7D32]" />
@@ -2655,7 +2687,7 @@ export default function CheckoutPage() {
                       <div className="space-y-1.5">
                         <h4 className="font-playfair text-[13.5px] font-bold text-[#733F49] uppercase tracking-wide m-0 flex items-center gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
-                          ĐIỀU 1: ĐỐI TƯỢNG HỢP ĐỒNG & PHƯƠNG THỨC GIAO NHẬN, THU HỒI VÁY
+                          ĐIỀU 1: ĐỐI TƯỢNG HỢP ĐỒNG VÀ PHƯƠNG THỨC GIAO NHẬN, THU HỒI VÁY
                         </h4>
                         <div className="pl-3.5 space-y-1 text-[#554749]">
                           {orderItems && orderItems.length > 1 ? (
@@ -2680,12 +2712,12 @@ export default function CheckoutPage() {
                             1.2. Thời gian thuê trọn gói: <strong>{rentalDays} ngày</strong>. Thời điểm nhận váy: từ 09:00 ngày <strong>{rentalSchedule.startDate}</strong>; Thời điểm hoàn trả: trước 20:00 ngày <strong>{rentalSchedule.endDate}</strong>.
                           </p>
                           <p className="m-0">
-                            1.3. Phương thức bàn giao & thu hồi: {deliveryMethod === 'delivery' ? (
+                            1.3. Phương thức bàn giao và thu hồi: {deliveryMethod === 'delivery' ? (
                               <span>Bên A thực hiện giao váy tận nơi bằng Vali VIP Courier theo địa chỉ đã đăng ký. </span>
                             ) : (
                               <span>Bên B nhận váy trực tiếp tại Showroom Atelier của Bên A (được chuyên viên hỗ trợ fitting và căn chỉnh nẹp eo trước giờ nhận). </span>
                             )}
-                            <span>Đến thời hạn hoàn trả (trước 20:00 ngày <strong>{rentalSchedule.endDate}</strong>), <strong>chuyên viên của Bên A sẽ chủ động liên hệ hẹn giờ và trực tiếp đến tận nơi thu hồi váy trong vali bảo quản niêm phong & kiểm định hiện trạng</strong>, Bên B không cần phải tự mang trả.</span>
+                            <span>Đến thời hạn hoàn trả (trước 20:00 ngày <strong>{rentalSchedule.endDate}</strong>), <strong>chuyên viên của Bên A sẽ chủ động liên hệ hẹn giờ và trực tiếp đến tận nơi thu hồi váy trong vali bảo quản niêm phong và kiểm định hiện trạng</strong>, Bên B không cần phải tự mang trả.</span>
                           </p>
                           <p className="m-0">
                             1.4. Tiêu chuẩn bàn giao: Tác phẩm được giặt sấy tiệt trùng sinh học ozone, ủi phẳng nếp và tinh chỉnh phom dáng theo số đo riêng của Bên B trước giờ giao nhận 2 giờ.
@@ -2697,7 +2729,7 @@ export default function CheckoutPage() {
                       <div className="space-y-1.5">
                         <h4 className="font-playfair text-[13.5px] font-bold text-[#733F49] uppercase tracking-wide m-0 flex items-center gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
-                          ĐIỀU 2: GIÁ TRỊ HỢP ĐỒNG, TIỀN CỌC GIỮ LỊCH & THANH TOÁN
+                          ĐIỀU 2: GIÁ TRỊ HỢP ĐỒNG, TIỀN CỌC GIỮ LỊCH VÀ THANH TOÁN
                         </h4>
                         <div className="pl-3.5 space-y-1 text-[#554749]">
                           <p className="m-0">
@@ -2716,7 +2748,7 @@ export default function CheckoutPage() {
                       <div className="space-y-1.5">
                         <h4 className="font-playfair text-[13.5px] font-bold text-[#733F49] uppercase tracking-wide m-0 flex items-center gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
-                          ĐIỀU 3: CHÍNH SÁCH BẢO HIỂM VẢI REN & QUYỀN ĐỔI NGÀY CƯỚI
+                          ĐIỀU 3: CHÍNH SÁCH BẢO HIỂM VẢI REN VÀ QUYỀN ĐỔI NGÀY CƯỚI
                         </h4>
                         <div className="pl-3.5 space-y-1 text-[#554749]">
                           <p className="m-0">
@@ -2873,7 +2905,7 @@ export default function CheckoutPage() {
 
                     {/* Paper Footer */}
                     <div className="pt-4 border-t border-[#EFE7E0] flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#9E8B89] italic">
-                      <span>* Hợp đồng điện tử được lưu trữ an toàn & mã hóa theo tiêu chuẩn UniBridal Secure Cloud</span>
+                      <span>* Hợp đồng điện tử được lưu trữ an toàn và mã hóa theo tiêu chuẩn UniBridal Secure Cloud</span>
                       <span>Trang 1 / 1 • Số: HĐ-UB-2026/8992</span>
                     </div>
 
@@ -2912,7 +2944,7 @@ export default function CheckoutPage() {
                     onClick={handleSignAndProceedToPayment}
                     className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-[#733F49] hover:bg-[#5F323B] text-white font-jakarta text-[13.5px] font-bold tracking-wider uppercase transition-all shadow-[0_4px_16px_rgba(115,63,73,0.3)] hover:shadow-[0_6px_22px_rgba(115,63,73,0.4)] cursor-pointer border-0 flex items-center justify-center gap-2"
                   >
-                    <span>KÝ HỢP ĐỒNG & CHUYỂN SANG THANH TOÁN (BƯỚC 3)</span>
+                    <span>KÝ HỢP ĐỒNG VÀ CHUYỂN SANG THANH TOÁN (BƯỚC 3)</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -2920,7 +2952,7 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* ================= STEP 3: ĐẶT CỌC & THANH TOÁN ================= */}
+            {/* ================= STEP 3: ĐẶT CỌC VÀ THANH TOÁN ================= */}
             {currentStep === 3 && (
               <div className="space-y-8 animate-fade-in">
 
@@ -2965,7 +2997,7 @@ export default function CheckoutPage() {
                         Thanh Toán Đặt Cọc Chuyển Khoản (VietQR 24/7)
                       </h2>
                       <p className="text-[12px] text-[#847374] m-0 mt-0.5">
-                        Quét mã VietQR liên ngân hàng Napas 24/7 tức thì, hệ thống tự động xác nhận đơn cọc & khóa lịch
+                        Quét mã VietQR liên ngân hàng Napas 24/7 tức thì, hệ thống tự động xác nhận đơn cọc và khóa lịch
                       </p>
                     </div>
                   </div>
@@ -3002,7 +3034,7 @@ export default function CheckoutPage() {
                       <div className="space-y-3 text-[13px] flex-1 w-full">
                         <div>
                           <span className="text-[10.5px] font-bold uppercase tracking-wider text-[#847374] block mb-0.5">
-                            NGÂN HÀNG THỤ HƯỞNG & CHỦ TÀI KHOẢN
+                            NGÂN HÀNG THỤ HƯỞNG VÀ CHỦ TÀI KHOẢN
                           </span>
                           <div className="flex items-center gap-2">
                             <strong className="text-[#2C2523] text-[15px]">
@@ -3079,7 +3111,7 @@ export default function CheckoutPage() {
                       </div>
                       <div className="flex items-start gap-2.5">
                         <span className="w-5 h-5 rounded-full bg-[#733F49] text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">3</span>
-                        <span className="text-[#6B5C5D]">Xác nhận chuyển khoản & bấm nút <strong>Xác nhận</strong> bên dưới</span>
+                        <span className="text-[#6B5C5D]">Xác nhận chuyển khoản và bấm nút <strong>Xác nhận</strong> bên dưới</span>
                       </div>
                     </div>
 
@@ -3088,7 +3120,7 @@ export default function CheckoutPage() {
                       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="flex items-start gap-3.5">
                           <div className="w-11 h-11 rounded-xl bg-[#FAF0EC] border border-[#D4AF37] text-[#854D0E] flex items-center justify-center shrink-0 shadow-xs">
-                            <Sparkles className="w-5 h-5 text-[#854D0E]" />
+                            <Crown className="w-5 h-5 text-[#854D0E]" />
                           </div>
                           <div>
                             <div className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-[#854D0E] uppercase tracking-wider">
@@ -3151,7 +3183,7 @@ export default function CheckoutPage() {
                     ) : (
                       <>
                         <Lock className="w-4 h-4" />
-                        <span>XÁC NHẬN ĐÃ CHUYỂN KHOẢN & KHÓA LỊCH ĐẶT THUÊ</span>
+                        <span>XÁC NHẬN ĐÃ CHUYỂN KHOẢN VÀ KHÓA LỊCH ĐẶT THUÊ</span>
                       </>
                     )}
                   </button>
@@ -3296,7 +3328,7 @@ export default function CheckoutPage() {
                 <div className="border-b-2 border-dashed border-[#E5D7CD] w-full px-5" />
               </div>
 
-              {/* 4. Ticket Lower Section: Breakdown & Amount To Pay (Ghim cố định ở đáy vé, LUÔN HIỂN THỊ TRƯỚC MẮT) */}
+              {/* 4. Ticket Lower Section: Breakdown và Amount To Pay (Ghim cố định ở đáy vé, LUÔN HIỂN THỊ TRƯỚC MẮT) */}
               <div className="shrink-0 p-4 sm:p-5 space-y-2.5 bg-[#FFFCFA] border-t border-[#F5EDE8]">
 
                 {/* Price Breakdown */}
@@ -3314,7 +3346,7 @@ export default function CheckoutPage() {
                     <span className="font-bold text-[#733F49]">{formatCurrencyVND(depositCollateral)}</span>
                   </div>
                   <div className="flex items-center justify-between text-[#6B5C5D]">
-                    <span>Dịch vụ giặt sấy & may đo:</span>
+                    <span>Dịch vụ giặt sấy và may đo:</span>
                     <span className="font-bold text-[#2E7D32]">Miễn phí</span>
                   </div>
                 </div>
@@ -3347,7 +3379,7 @@ export default function CheckoutPage() {
         <div className="max-w-[1320px] mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#FAF0EC] border border-[#F2D8D4] flex items-center justify-center text-[#733F49] shrink-0">
-              <Sparkles className="w-5 h-5" />
+              <Crown className="w-5 h-5" />
             </div>
             <div>
               <div className="text-[11px] font-semibold text-[#847374] uppercase tracking-wider flex items-center gap-1.5">
@@ -3367,7 +3399,7 @@ export default function CheckoutPage() {
                 onClick={handleProceedToContract}
                 className="px-5 sm:px-7 py-2.5 sm:py-3 rounded-xl bg-[#733F49] hover:bg-[#5F323B] text-white text-[12.5px] sm:text-[13.5px] font-bold flex items-center gap-2 shadow-md transition-all cursor-pointer border-0 active:scale-[0.98]"
               >
-                <span>Xem Trước & Ký Hợp Đồng</span>
+                <span>Xem Trước và Ký Hợp Đồng</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             )}
@@ -3389,7 +3421,7 @@ export default function CheckoutPage() {
                 className="px-5 sm:px-7 py-2.5 sm:py-3 rounded-xl bg-[#733F49] hover:bg-[#5F323B] text-white text-[12.5px] sm:text-[13.5px] font-bold flex items-center gap-2 shadow-md transition-all cursor-pointer border-0 active:scale-[0.98]"
               >
                 <Lock className="w-4 h-4" />
-                <span>Xác Nhận & Khóa Lịch</span>
+                <span>Xác Nhận và Khóa Lịch</span>
               </button>
             )}
           </div>
@@ -3398,7 +3430,7 @@ export default function CheckoutPage() {
 
 
 
-      {/* ================= SUCCESS MODAL (HOÀN TẤT ĐẶT THUÊ & HỢP ĐỒNG ĐÃ KÝ) ================= */}
+      {/* ================= SUCCESS MODAL (HOÀN TẤT ĐẶT THUÊ VÀ HỢP ĐỒNG ĐÃ KÝ) ================= */}
       {isSuccessModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <div className="relative w-full max-w-[620px] bg-white rounded-3xl shadow-2xl border border-[#EEDECF] overflow-hidden p-6 sm:p-8 text-center space-y-5">
@@ -3483,16 +3515,16 @@ export default function CheckoutPage() {
                 <div className="bg-white p-2.5 rounded-xl border border-[#F2D8D4] shadow-2xs">
                   <span className="text-[10px] font-bold text-[#733F49] block mb-1">TRƯỚC CƯỚI 7 NGÀY</span>
                   <strong className="text-[#2C2523] block mb-0.5">Thử Vừa Lần Cuối</strong>
-                  <span className="text-[#847374] block leading-tight">Chuyên viên ủi sấy sinh học & chỉnh eo</span>
+                  <span className="text-[#847374] block leading-tight">Chuyên viên ủi sấy sinh học và chỉnh eo</span>
                 </div>
                 <div className="bg-white p-2.5 rounded-xl border border-[#EEDECF] shadow-2xs">
                   <span className="text-[10px] font-bold text-[#847374] block mb-1">{rentalSchedule.startDate}</span>
                   <strong className="text-[#2C2523] block mb-0.5">Bàn Giao Vali VIP</strong>
-                  <span className="text-[#847374] block leading-tight">Nguyên seal chống ẩm & quà tặng găng tay</span>
+                  <span className="text-[#847374] block leading-tight">Nguyên seal chống ẩm và quà tặng găng tay</span>
                 </div>
                 <div className="bg-white p-2.5 rounded-xl border border-[#EEDECF] shadow-2xs">
                   <span className="text-[10px] font-bold text-[#847374] block mb-1">{rentalSchedule.endDate}</span>
-                  <strong className="text-[#2C2523] block mb-0.5">Hoàn Trả & Giải Ngân</strong>
+                  <strong className="text-[#2C2523] block mb-0.5">Hoàn Trả và Giải Ngân</strong>
                   <span className="text-[#847374] block leading-tight">Hoàn cọc 100% qua tài khoản trong 2h</span>
                 </div>
               </div>

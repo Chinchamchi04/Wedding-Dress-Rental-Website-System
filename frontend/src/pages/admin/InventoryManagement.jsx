@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
-import {
-  Search,
+import { Search,
   ChevronDown,
   Plus,
   Clock,
@@ -13,7 +12,7 @@ import {
   Pencil,
   MoreVertical,
   Check,
-  Sparkles,
+  Crown,
   RefreshCw,
   Layers,
   Trash2,
@@ -23,8 +22,7 @@ import {
   TableProperties,
   ChevronUp,
   Upload,
-  Image as ImageIcon,
-} from 'lucide-react';
+  Image as ImageIcon } from 'lucide-react';
 import HangerIcon from '../../components/common/HangerIcon';
 import { getAllDresses, createDress, updateDress, deleteDress, getCategories } from '../../services/dressService';
 import { getAllOrdersAdmin } from '../../services/orderService';
@@ -49,13 +47,13 @@ const DEFAULT_CATEGORIES = [
 // Danh mục Chất Liệu chuẩn từ MongoDB Atlas
 const DEFAULT_MATERIALS = [
   'Lụa Mikado Ý',
-  'Lụa Mikado Ý & Satin Tơ Tằm Tự Nhiên',
+  'Lụa Mikado Ý và Satin Tơ Tằm Tự Nhiên',
   'Ren 3D Floral',
-  'Ren 3D Floral & Đính Kết Pha Lê Swarovski',
+  'Ren 3D Floral và Đính Kết Pha Lê Swarovski',
   'Satin Tơ Tằm Tự Nhiên',
   'Đính Kết Pha Lê Swarovski',
   'Voan Tulle Thụy Sĩ',
-  'Gấm & Dạ Cao Cấp',
+  'Gấm và Dạ Cao Cấp',
 ];
 
 // Danh mục Màu Sắc cưới cao cấp phổ biến
@@ -95,8 +93,8 @@ export default function InventoryManagement() {
   const [editSilhouette, setEditSilhouette] = useState(DEFAULT_CATEGORIES[0].name);
   const [editMaterial, setEditMaterial] = useState(DEFAULT_MATERIALS[0]);
   const [editLocation, setEditLocation] = useState('Tủ A1');
-  const [editRentPrice, setEditRentPrice] = useState(5000000);
-  const [editDepositAmount, setEditDepositAmount] = useState(15000000);
+  const [editRentPrice, setEditRentPrice] = useState('5.000.000');
+  const [editDepositAmount, setEditDepositAmount] = useState('15.000.000');
   const [editStatusType, setEditStatusType] = useState('stored');
   const [editDescription, setEditDescription] = useState('');
   const [editSizes, setEditSizes] = useState({ XS: 0, S: 2, M: 2, L: 0 });
@@ -108,8 +106,8 @@ export default function InventoryManagement() {
   const [newName, setNewName] = useState('');
   const [newSilhouette, setNewSilhouette] = useState(DEFAULT_CATEGORIES[0].name);
   const [newMaterial, setNewMaterial] = useState(DEFAULT_MATERIALS[0]);
-  const [newRentPrice, setNewRentPrice] = useState(5000000);
-  const [newDepositAmount, setNewDepositAmount] = useState(15000000);
+  const [newRentPrice, setNewRentPrice] = useState('5.000.000');
+  const [newDepositAmount, setNewDepositAmount] = useState('15.000.000');
   const [newDescription, setNewDescription] = useState('');
   const [newSizeXS, setNewSizeXS] = useState(1);
   const [newSizeS, setNewSizeS] = useState(2);
@@ -132,7 +130,7 @@ export default function InventoryManagement() {
   const editImagesScrollRef = useRef(null);
   const addImagesScrollRef = useRef(null);
 
-  // Xử lý kéo chuột & lăn chuột để cuộn danh sách ảnh ngang
+  // Xử lý kéo chuột và lăn chuột để cuộn danh sách ảnh ngang
   const handleScrollMouseDown = (e) => {
     const slider = e.currentTarget;
     slider.isDown = true;
@@ -166,14 +164,39 @@ export default function InventoryManagement() {
     setTimeout(() => setToastMsg(''), 3500);
   };
 
+  // Hàm tiện ích chuẩn hóa chuỗi để so khớp chính xác
+  const cleanStr = (s) => (s ? String(s).toLowerCase().replace(/[^a-z0-9]/g, '') : '');
+
+  // Hàm trích xuất số nguyên an toàn (loại bỏ ký tự tiền tệ ₫, dấu chấm, phẩy...)
+  const parseNum = (val, fallback = 0) => {
+    if (typeof val === 'number' && !isNaN(val) && val > 0) return val;
+    if (!val) return fallback;
+    const digits = String(val).replace(/\D/g, '');
+    const parsed = parseInt(digits, 10);
+    return !isNaN(parsed) && parsed > 0 ? parsed : fallback;
+  };
+
+  // Hàm định dạng số có dấu chấm phân cách hàng nghìn (VD: 5.500.000)
+  const formatNumberWithDots = (val) => {
+    if (val === undefined || val === null || val === '') return '';
+    const digits = String(val).replace(/\D/g, '');
+    if (!digits) return '';
+    return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
+  const isColorMatch = (a, b) => {
+    if (!a || !b) return false;
+    const ca = cleanStr(a);
+    const cb = cleanStr(b);
+    return ca && cb && (ca === cb || ca.includes(cb) || cb.includes(ca));
+  };
+
   const handleToggleColorSelection = (colorName, currentVal, setter) => {
     const list = (currentVal || '')
       .split(',')
       .map((c) => c.trim())
       .filter(Boolean);
-    const existingIndex = list.findIndex(
-      (c) => c.toLowerCase() === colorName.toLowerCase()
-    );
+    const existingIndex = list.findIndex((c) => isColorMatch(c, colorName));
     if (existingIndex > -1) {
       list.splice(existingIndex, 1);
     } else {
@@ -181,9 +204,6 @@ export default function InventoryManagement() {
     }
     setter(list.join(', '));
   };
-
-  // Hàm tiện ích chuẩn hóa chuỗi để so khớp chính xác
-  const cleanStr = (s) => (s ? String(s).toLowerCase().replace(/[^a-z0-9]/g, '') : '');
 
   // Tính toán tình trạng kho và liên kết đơn thuê tự động
   const computeItemData = useCallback((d, index, orderList, overrides) => {
@@ -240,7 +260,7 @@ export default function InventoryManagement() {
       String(o.orderCode || o.id || o._id || '').toLowerCase()
     );
 
-    // 1. Các đơn đang trong chu trình kiểm định & bảo dưỡng sau thuê
+    // 1. Các đơn đang trong chu trình kiểm định và bảo dưỡng sau thuê
     const maintenanceOrders = matchedOrders.filter((o) =>
       ['returned', 'inspecting', 'maintenance'].includes(o.rawStatus || o.status)
     );
@@ -307,37 +327,44 @@ export default function InventoryManagement() {
     let statusText = 'CÒN HÀNG';
     let statusSubNote = '';
 
+    const computeStoredSubNote = () => {
+      if (totalStock === 0) return 'Chưa nhập kho';
+      if (rentedCount > 0 || maintenanceCount > 0) {
+        const parts = [`Sẵn sàng: ${availableStock}/${totalStock} bộ`];
+        if (maintenanceCount > 0) parts.push(`Bảo dưỡng: ${maintenanceCount}`);
+        if (rentedCount > 0) parts.push(`Đang thuê: ${rentedCount}`);
+        return parts.join(' • ');
+      }
+      return `Sẵn sàng phục vụ (${availableStock}/${totalStock} bộ)`;
+    };
+
     if (statusType === 'auto') {
       if (maintenanceCount > 0 && availableStock === 0) {
         statusType = 'drying';
         statusText = 'ĐANG BẢO DƯỠNG';
-        statusSubNote = `Đang kiểm định & bảo dưỡng (${maintenanceCount} bộ)`;
+        statusSubNote = `Đang kiểm định và bảo dưỡng (${maintenanceCount} bộ)`;
       } else if (availableStock <= 0 && totalStock > 0) {
         statusType = 'out_of_stock';
         statusText = 'HẾT HÀNG';
         statusSubNote = `Đã xuất thuê toàn bộ (${totalStock} bộ)`;
-      } else if (rentedCount > 0 || maintenanceCount > 0) {
-        statusType = 'stored';
-        statusText = 'CÒN HÀNG';
-        statusSubNote = `Sẵn sàng: ${availableStock}/${totalStock} bộ${maintenanceCount > 0 ? ` • Bảo dưỡng: ${maintenanceCount}` : ''}${rentedCount > 0 ? ` • Đang thuê: ${rentedCount}` : ''}`;
       } else {
         statusType = 'stored';
         statusText = 'CÒN HÀNG';
-        statusSubNote = `Sẵn sàng phục vụ (${availableStock}/${totalStock} bộ)`;
+        statusSubNote = computeStoredSubNote();
       }
     } else if (statusType === 'drying') {
       statusText = 'ĐANG BẢO DƯỠNG';
-      statusSubNote = maintenanceCount > 0 ? `Đang kiểm định & bảo dưỡng (${maintenanceCount} bộ)` : 'Giặt khô, là hơi phục hồi';
+      statusSubNote = maintenanceCount > 0 ? `Đang kiểm định và bảo dưỡng (${maintenanceCount} bộ)` : 'Giặt khô, là hơi phục hồi';
     } else if (statusType === 'ready') {
       statusText = 'ĐÃ CHO THUÊ';
-      statusSubNote = 'Đang phục vụ cô dâu';
+      statusSubNote = rentedCount > 0 ? `Đang phục vụ cô dâu (${rentedCount} bộ)` : 'Đang phục vụ cô dâu';
     } else if (statusType === 'out_of_stock') {
       statusText = 'HẾT HÀNG';
       statusSubNote = 'Tạm hết mẫu này trong kho';
     } else {
       statusType = 'stored';
       statusText = 'CÒN HÀNG';
-      statusSubNote = '';
+      statusSubNote = computeStoredSubNote();
     }
 
     return {
@@ -362,8 +389,8 @@ export default function InventoryManagement() {
       sizes: detailedSizes,
       totalUnits: `Tổng: ${String(totalStock).padStart(2, '0')} bộ`,
       description: override.description || d.description || 'Lễ phục cưới cao cấp UniBridal Haute Couture',
-      rentPrice: override.rentPrice ?? d.rentPrice ?? d.price ?? 5000000,
-      depositAmount: override.depositAmount ?? d.depositAmount ?? d.deposit ?? 15000000,
+      rentPrice: parseNum(override.rentPrice) || parseNum(d.rentPrice) || parseNum(d.price) || 5000000,
+      depositAmount: parseNum(override.depositAmount) || parseNum(d.depositAmount) || parseNum(d.deposit) || 15000000,
       material: override.material || d.material || 'Lụa Mikado Ý',
       color: override.color || d.color || 'Trắng Tinh Khôi',
       silhouette: override.silhouette || d.silhouette || d.category?.name || 'Ballgown',
@@ -590,11 +617,23 @@ export default function InventoryManagement() {
     ) || item.rawDress || {};
 
     setEditLocation(item.location || 'Tủ A1');
-    setEditRentPrice(item.rentPrice || rawDress.rentPrice || rawDress.price || 5000000);
+    setEditRentPrice(
+      formatNumberWithDots(
+        parseNum(rawDress.rentPrice) ||
+        parseNum(item.rentPrice) ||
+        parseNum(rawDress.price) ||
+        parseNum(item.price) ||
+        5000000
+      )
+    );
     setEditDepositAmount(
-      (item.depositAmount !== undefined && item.depositAmount !== '' && Number(item.depositAmount) > 0)
-        ? Number(item.depositAmount)
-        : (rawDress.depositAmount ? Number(rawDress.depositAmount) : 15000000)
+      formatNumberWithDots(
+        parseNum(rawDress.depositAmount) ||
+        parseNum(item.depositAmount) ||
+        parseNum(rawDress.deposit) ||
+        parseNum(item.deposit) ||
+        15000000
+      )
     );
     setEditStatusType(
       item.manualStatus ||
@@ -608,9 +647,36 @@ export default function InventoryManagement() {
     );
     setEditDescription(item.description || rawDress.description || '');
 
-    // Tự động nạp chính xác 100% Màu Sắc hiện tại đang lưu trong MongoDB Atlas của sản phẩm:
-    const currentAtlasColor = rawDress.color || item.color || item.rawDress?.color || 'Trắng Tinh Khôi';
-    setEditColor(currentAtlasColor);
+    // Tự động nạp chính xác 100% tất cả Màu Sắc từ MongoDB Atlas (kể cả mảng colorOptions):
+    let loadedColors = [];
+    if (Array.isArray(rawDress.colorOptions) && rawDress.colorOptions.length > 0) {
+      loadedColors = rawDress.colorOptions.map((co) => (typeof co === 'object' ? co.name : co)).filter(Boolean);
+    } else if (Array.isArray(item.colorOptions) && item.colorOptions.length > 0) {
+      loadedColors = item.colorOptions.map((co) => (typeof co === 'object' ? co.name : co)).filter(Boolean);
+    }
+
+    const singleColorStr = rawDress.color || item.color || item.rawDress?.color || '';
+    if (singleColorStr) {
+      const splitColors = singleColorStr.split(',').map((c) => c.trim()).filter(Boolean);
+      splitColors.forEach((sc) => {
+        if (!loadedColors.some((lc) => cleanStr(lc) === cleanStr(sc))) {
+          loadedColors.push(sc);
+        }
+      });
+    }
+
+    if (loadedColors.length === 0) {
+      loadedColors = ['Trắng Tinh Khôi'];
+    }
+
+    // Chuẩn hóa tên màu để khớp với tên các pill POPULAR_COLORS nếu có
+    const normalizedColorList = loadedColors.map((colName) => {
+      const cleaned = cleanStr(colName);
+      const matchedPopular = POPULAR_COLORS.find((pc) => cleanStr(pc.name) === cleaned);
+      return matchedPopular ? matchedPopular.name : colName;
+    });
+
+    setEditColor(Array.from(new Set(normalizedColorList)).join(', '));
 
     let imgs = [];
     if (Array.isArray(rawDress.images) && rawDress.images.length > 1) {
@@ -720,22 +786,34 @@ export default function InventoryManagement() {
       else if (editStatusType === 'drying') mongoStatus = 'maintenance';
       else if (editStatusType === 'out_of_stock') mongoStatus = 'retired';
 
+      // Chuẩn hóa silhouette an toàn trước khi gửi (đảm bảo đúng enum Schema)
+      const normalizeSil = (s = '') => {
+        const lower = String(s).toLowerCase();
+        if (lower.includes('ballgown') || lower.includes('bồng')) return 'Ballgown';
+        if (lower.includes('mermaid') || lower.includes('đuôi cá')) return 'Mermaid';
+        if (lower.includes('a-line') || lower.includes('chữ a') || lower.includes('aline')) return 'A-Line';
+        if (lower.includes('silk') || lower.includes('lụa')) return 'Silk Gown';
+        if (lower.includes('princess') || lower.includes('hoàng gia')) return 'Princess';
+        return 'Other';
+      };
+
+      const finalSil = normalizeSil(selectedCatObj?.silhouette || selectedCatObj?.name || editSilhouette);
+
       const updatePayload = {
         name: editName.trim(),
-        categoryId: selectedCatObj?._id || selectedCatObj?.id,
-        category: selectedCatObj?.name || editSilhouette,
-        silhouette: selectedCatObj?.silhouette || selectedCatObj?.slug || 'Ballgown',
+        ...(selectedCatObj?._id ? { categoryId: selectedCatObj._id } : {}),
+        silhouette: finalSil,
         material: editMaterial.trim() || 'Lụa Mikado Ý',
         color: editColor.trim() || 'Trắng Tinh Khôi',
-        rentPrice: Number(editRentPrice || 5000000),
-        depositAmount: Number(editDepositAmount || 15000000),
+        rentPrice: parseNum(editRentPrice, 5000000),
+        depositAmount: parseNum(editDepositAmount, 15000000),
         description: editDescription.trim(),
         sizes: activeSizes,
         status: mongoStatus,
         ...(editImages.length > 0 ? { images: editImages } : {}),
       };
 
-      const targetId = editingItem._id || editingItem.id;
+      const targetId = editingItem.rawDress?._id || editingItem._id || editingItem.id || editingItem.code;
       if (targetId && !String(targetId).startsWith('fake') && !String(targetId).startsWith('new_')) {
         try {
           await updateDress(targetId, updatePayload);
@@ -752,8 +830,8 @@ export default function InventoryManagement() {
         category: selectedCatObj?.name || editSilhouette,
         material: editMaterial.trim(),
         color: editColor.trim(),
-        rentPrice: Number(editRentPrice || 0),
-        depositAmount: Number(editDepositAmount || 0),
+        rentPrice: parseNum(editRentPrice, 5000000),
+        depositAmount: parseNum(editDepositAmount, 15000000),
         statusType: editStatusType,
         description: editDescription.trim(),
         sizes: sizeList,
@@ -847,8 +925,8 @@ export default function InventoryManagement() {
         silhouette: selectedCatObj?.slug || selectedCatObj?.silhouette || newSilhouette,
         material: newMaterial.trim() || 'Lụa Mikado Ý',
         color: newColor.trim() || 'Trắng Tinh Khôi',
-        rentPrice: Number(newRentPrice || 5000000),
-        depositAmount: Number(newDepositAmount || 15000000),
+        rentPrice: parseNum(newRentPrice, 5000000),
+        depositAmount: parseNum(newDepositAmount, 15000000),
         description: newDescription.trim() || 'Lễ phục cưới cao cấp bảo quản tiêu chuẩn vi khí hậu.',
         sizes: activeSizes,
         images: newImages.length > 0 ? newImages : [card1Elysian],
@@ -875,8 +953,8 @@ export default function InventoryManagement() {
         color: newColor.trim(),
         silhouette: selectedCatObj?.name || newSilhouette,
         sizes: sizeList,
-        rentPrice: Number(newRentPrice),
-        depositAmount: Number(newDepositAmount),
+        rentPrice: parseNum(newRentPrice, 5000000),
+        depositAmount: parseNum(newDepositAmount, 15000000),
         description: newDescription.trim(),
         location: 'Tủ A1',
       };
@@ -902,12 +980,14 @@ export default function InventoryManagement() {
       setNewImages([]);
       setNewColor('Trắng Tinh Khôi');
       setNewDescription('');
+      setNewRentPrice('5.000.000');
+      setNewDepositAmount('15.000.000');
       setNewSizeXS(1);
       setNewSizeS(2);
       setNewSizeM(2);
       setNewSizeL(1);
 
-      showToast(`Đã lưu & nhập kho thành công tác phẩm "${payload.name}" vào MongoDB Atlas!`);
+      showToast(`Đã lưu và nhập kho thành công tác phẩm "${payload.name}" vào MongoDB Atlas!`);
     } catch (err) {
       console.error('Lỗi khi lưu tác phẩm vào MongoDB Atlas:', err);
       showToast(`Lỗi khi lưu tác phẩm: ${err.message || 'Không thể kết nối máy chủ'}`);
@@ -994,7 +1074,7 @@ export default function InventoryManagement() {
 
   // 5. Tổng giá trị tài sản kho bảo lãnh
   const totalAssetValue = useMemo(() => {
-    return items.reduce((sum, item) => sum + ((item.depositAmount || 15000000) * (item.totalStock || 1)), 0);
+    return items.reduce((sum, item) => sum + ((parseNum(item.depositAmount, 15000000)) * (item.totalStock || 1)), 0);
   }, [items]);
 
   // 6. Tổng số váy khả dụng sẵn sàng ngay
@@ -1039,7 +1119,7 @@ export default function InventoryManagement() {
         </div>
       )}
 
-      {/* Page Title & Main CTA Header */}
+      {/* Page Title và Main CTA Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-playfair text-[32px] sm:text-[38px] font-normal text-[#5F2B36] tracking-tight leading-tight mb-2">
@@ -1074,7 +1154,7 @@ export default function InventoryManagement() {
             }`}
           >
             <TableProperties size={15} />
-            <span>{showMatrixTable ? 'Ẩn Ma Trận Size' : 'Bảng Ma Trận Tồn Kho & Size'}</span>
+            <span>{showMatrixTable ? 'Ẩn Ma Trận Size' : 'Bảng Ma Trận Tồn Kho và Size'}</span>
           </button>
 
           <button
@@ -1138,7 +1218,7 @@ export default function InventoryManagement() {
                 LỄ PHỤC ĐI THUÊ
               </span>
               <div className="w-9 h-9 rounded-xl bg-[#EFF6FF] flex items-center justify-center text-[#1D4ED8]">
-                <Sparkles size={17} />
+                <Crown size={17} />
               </div>
             </div>
             <div className="flex items-baseline">
@@ -1183,7 +1263,7 @@ export default function InventoryManagement() {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-[#2C2523] uppercase tracking-wider">
-                  Bảng Ma Trận Tồn Kho Theo Size & Tình Trạng Lễ Phục
+                  Bảng Ma Trận Tồn Kho Theo Size và Tình Trạng Lễ Phục
                 </h3>
                 <p className="text-xs text-[#8A797A]">Đối soát chi tiết từng kích cỡ và số lượng sẵn sàng phục vụ tại showroom</p>
               </div>
@@ -1194,7 +1274,7 @@ export default function InventoryManagement() {
                 <CheckCircle2 size={13} /> {totalAvailableUnits} chiếc sẵn sàng
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 font-semibold border border-blue-200">
-                <Sparkles size={13} /> {totalRentedUnits} chiếc đang cho thuê
+                <Crown size={13} /> {totalRentedUnits} chiếc đang cho thuê
               </span>
             </div>
           </div>
@@ -1320,7 +1400,7 @@ export default function InventoryManagement() {
         </section>
       )}
 
-      {/* Search & Filter Bar */}
+      {/* Search và Filter Bar */}
       <div className="bg-white p-1.5 rounded-2xl border border-[#EFE5E1] shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4">
         <div className="relative flex-1 max-w-md">
           <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A39192]" />
@@ -1367,13 +1447,13 @@ export default function InventoryManagement() {
             <thead>
               <tr className="border-b border-[#F2E5E0] bg-[#FFF6F3]">
                 <th className="py-4 px-5 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[25%] min-w-[210px]">
-                  SẢN PHẨM &amp; MÃ VÁY
+                  SẢN PHẨM và MÃ VÁY
                 </th>
                 <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[18%] min-w-[160px]">
                   VỊ TRÍ TỦ
                 </th>
                 <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[17%] min-w-[150px]">
-                  GIÁ THUÊ &amp; CỌC
+                  GIÁ THUÊ và CỌC
                 </th>
                 <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[18%] min-w-[160px]">
                   TỒN KHO THEO SIZE
@@ -1434,13 +1514,10 @@ export default function InventoryManagement() {
                           <span className="font-bold text-[#2C2523] text-[13.5px] whitespace-nowrap">
                             {item.location}
                           </span>
-                          <span className="px-2 py-0.5 rounded-md border border-[#E8DCD7] bg-[#FAF5F2] text-[#7A696B] font-mono text-[10px] font-semibold whitespace-nowrap shrink-0">
-                            {item.rfid}
-                          </span>
                         </div>
                       </td>
 
-                      {/* Col 3: Giá thuê & Cọc */}
+                      {/* Col 3: Giá thuê và Cọc */}
                       <td className="py-4 px-4 whitespace-nowrap">
                         <div className="font-bold text-[#733F49] text-[13.5px] leading-tight">
                           {fmtVnd(item.rentPrice)}
@@ -1461,7 +1538,13 @@ export default function InventoryManagement() {
                             <span className="text-[11.5px] font-medium text-[#8C7D7E]"> / {String(item.totalStock || 0).padStart(2, '0')} bộ</span>
                           </div>
                           <div className="flex flex-wrap items-center justify-center gap-1 mt-1.5">
-                            {(Array.isArray(item.sizes) ? item.sizes : []).map((s, idx) => {
+                            {(Array.isArray(item.sizes) ? item.sizes : [])
+                              .filter((s) => {
+                                const sQty = typeof s === 'object' ? (s.quantity ?? 0) : 0;
+                                const sAvail = typeof s === 'object' && s.available !== undefined ? s.available : sQty;
+                                return sQty > 0 || sAvail > 0;
+                              })
+                              .map((s, idx) => {
                               const sName = typeof s === 'object' ? s.size : s;
                               const sQty = typeof s === 'object' ? (s.quantity ?? 0) : 0;
                               const sAvail = typeof s === 'object' && s.available !== undefined ? s.available : sQty;
@@ -1493,7 +1576,7 @@ export default function InventoryManagement() {
                         <div className="flex flex-col items-center gap-1">
                           {item.statusType === 'stored' && (
                             <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase whitespace-nowrap bg-[#EFF6FF] text-[#1D4ED8] border border-[#BFDBFE]">
-                              <Sparkles size={12} className="text-[#1D4ED8]" />
+                              <Crown size={12} className="text-[#1D4ED8]" />
                               <span>Còn Hàng</span>
                             </span>
                           )}
@@ -1517,9 +1600,11 @@ export default function InventoryManagement() {
                           )}
 
                           {/* Chú thích trạng thái rõ ràng, dễ hiểu */}
-                          {item.statusSubNote && (
+                          {(item.statusSubNote || item.statusType === 'stored') && (
                             <span className="text-[11px] text-[#8C7A7B] font-medium leading-tight max-w-[170px] text-center">
-                              {item.statusSubNote}
+                              {item.statusSubNote || (item.availableStock === item.totalStock
+                                ? `Sẵn sàng phục vụ (${item.availableStock}/${item.totalStock} bộ)`
+                                : `Sẵn sàng: ${item.availableStock}/${item.totalStock} bộ`)}
                             </span>
                           )}
                         </div>
@@ -1532,7 +1617,7 @@ export default function InventoryManagement() {
                           <button
                             type="button"
                             onClick={() => handleOpenEditModal(item)}
-                            title="Chỉnh sửa thông tin & kho váy"
+                            title="Chỉnh sửa thông tin và kho váy"
                             className="px-2.5 py-1.5 rounded-xl bg-[#FAF0EC] text-[#733F49] hover:bg-[#F2DCD6] hover:text-[#5F2B36] transition-colors cursor-pointer flex items-center gap-1 text-[11.5px] font-bold border border-[#F2D8D4] shadow-2xs"
                           >
                             <Pencil size={13} />
@@ -1686,23 +1771,22 @@ export default function InventoryManagement() {
       </div>
 
       {/* ========================================================= */}
-      {/* MODAL SỬA SẢN PHẨM & TỒN KHO (EDIT MODAL)                  */}
+      {/* MODAL SỬA SẢN PHẨM VÀ TỒN KHO (EDIT MODAL)                  */}
       {/* ========================================================= */}
       {editingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fadeIn font-jakarta">
           <div
-            className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-[#EFE5E1] max-h-[92vh] overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            className="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-[#EFE5E1] max-h-[92vh] flex flex-col overflow-hidden"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-[#F0E6E2]">
+            {/* Header Cố Định (Sticky / Pinned Header) */}
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-[#F0E6E2] bg-white shrink-0 z-10">
               <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-[#FAF0EC] flex items-center justify-center text-[#733F49]">
+                <div className="w-10 h-10 rounded-xl bg-[#FAF0EC] flex items-center justify-center text-[#733F49] shrink-0">
                   <Pencil size={18} />
                 </div>
                 <div>
                   <h3 className="font-playfair text-xl font-bold text-[#5F2B36] m-0">
-                    Chỉnh Sửa Thông Tin &amp; Tồn Kho
+                    Chỉnh Sửa Thông Tin và Tồn Kho
                   </h3>
                   <p className="text-xs text-[#8C7D7E] m-0 mt-0.5">
                     Mã lễ phục: <strong className="font-mono text-[#733F49]">{editingItem.code}</strong>
@@ -1712,13 +1796,17 @@ export default function InventoryManagement() {
               <button
                 type="button"
                 onClick={() => setEditingItem(null)}
-                className="w-8 h-8 rounded-full bg-[#FAF2EE] text-[#7A6B6C] hover:text-[#5F2B36] flex items-center justify-center transition-colors cursor-pointer border-0"
+                className="w-8 h-8 rounded-full bg-[#FAF2EE] text-[#7A6B6C] hover:text-[#5F2B36] flex items-center justify-center transition-colors cursor-pointer border-0 shrink-0"
               >
                 <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="space-y-4 pt-4 text-xs">
+            <form onSubmit={handleSaveEdit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div
+                className="flex-1 overflow-y-auto px-6 py-4 space-y-4 text-xs no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
               {/* 1. Tên Tác Phẩm */}
               <div>
                 <label className="block font-bold text-[#5F4E50] mb-1">
@@ -1734,7 +1822,7 @@ export default function InventoryManagement() {
                 />
               </div>
 
-              {/* 2. Phom Dáng & Chất Liệu (Chọn trực tiếp từ MongoDB Atlas) */}
+              {/* 2. Phom Dáng và Chất Liệu (Chọn trực tiếp từ MongoDB Atlas) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-[#5F4E50] mb-1">
@@ -1787,19 +1875,19 @@ export default function InventoryManagement() {
                 </select>
               </div>
 
-              {/* 4. Đơn Giá Thuê & Tiền Đặt Cọc */}
+              {/* 4. Đơn Giá Thuê và Tiền Đặt Cọc */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-[#5F4E50] mb-1">
                     Đơn Giá Thuê (VNĐ) *
                   </label>
                   <input
-                    type="number"
-                    min="0"
-                    step="500000"
+                    type="text"
+                    inputMode="numeric"
                     required
-                    value={editRentPrice}
-                    onChange={(e) => setEditRentPrice(e.target.value)}
+                    placeholder="VD: 5.500.000"
+                    value={formatNumberWithDots(editRentPrice)}
+                    onChange={(e) => setEditRentPrice(formatNumberWithDots(e.target.value))}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D]"
                   />
                 </div>
@@ -1808,12 +1896,12 @@ export default function InventoryManagement() {
                     Tiền Đặt Cọc (VNĐ) *
                   </label>
                   <input
-                    type="number"
-                    min="0"
-                    step="500000"
+                    type="text"
+                    inputMode="numeric"
                     required
-                    value={editDepositAmount}
-                    onChange={(e) => setEditDepositAmount(e.target.value)}
+                    placeholder="VD: 15.000.000"
+                    value={formatNumberWithDots(editDepositAmount)}
+                    onChange={(e) => setEditDepositAmount(formatNumberWithDots(e.target.value))}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D]"
                   />
                 </div>
@@ -1913,8 +2001,8 @@ export default function InventoryManagement() {
                   {POPULAR_COLORS.map((c) => {
                     const isSelected = (editColor || '')
                       .split(',')
-                      .map((s) => s.trim().toLowerCase())
-                      .includes(c.name.toLowerCase());
+                      .map((s) => s.trim())
+                      .some((s) => isColorMatch(s, c.name));
                     return (
                       <button
                         key={c.name}
@@ -2057,9 +2145,10 @@ export default function InventoryManagement() {
                   className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D]"
                 />
               </div>
+              </div>
 
-              {/* 9. Nút Thao Tác: Xóa Khỏi Kho, Hủy, Lưu Thay Đổi */}
-              <div className="flex items-center justify-between pt-3 border-t border-[#F0E6E2]">
+              {/* 9. Nút Thao Tác Cố Định Ở Dưới: Xóa Khỏi Kho, Hủy, Lưu Thay Đổi */}
+              <div className="flex items-center justify-between px-6 py-3.5 border-t border-[#F0E6E2] bg-[#FAF5F2]/60 shrink-0">
                 <button
                   type="button"
                   disabled={isSubmittingEdit}
@@ -2101,10 +2190,10 @@ export default function InventoryManagement() {
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fadeIn font-jakarta">
           <div
-            className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-[#EFE5E1] max-h-[90vh] overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-[#EFE5E1] max-h-[90vh] flex flex-col overflow-hidden"
           >
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#F0E6E2]">
+            {/* Header Cố Định (Sticky / Pinned Header) */}
+            <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-[#F0E6E2] bg-white shrink-0 z-10">
               <div className="flex items-center gap-2">
                 <Plus size={18} className="text-[#733F49]" />
                 <h3 className="font-playfair text-xl font-bold text-[#5F2B36] m-0">
@@ -2120,7 +2209,11 @@ export default function InventoryManagement() {
               </button>
             </div>
 
-            <form onSubmit={handleAddNewItem} className="space-y-4 text-xs">
+            <form onSubmit={handleAddNewItem} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div
+                className="flex-1 overflow-y-auto px-6 py-4 space-y-4 text-xs no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
               {/* 1. Tên Tác Phẩm */}
               <div>
                 <label className="block font-bold text-[#5F4E50] mb-1">
@@ -2136,7 +2229,7 @@ export default function InventoryManagement() {
                 />
               </div>
 
-              {/* 2. Phom Dáng & Chất Liệu (Chọn trực tiếp từ MongoDB Atlas) */}
+              {/* 2. Phom Dáng và Chất Liệu (Chọn trực tiếp từ MongoDB Atlas) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-[#5F4E50] mb-1">
@@ -2172,18 +2265,19 @@ export default function InventoryManagement() {
                 </div>
               </div>
 
-              {/* 3. Đơn Giá Thuê & Tiền Đặt Cọc */}
+              {/* 3. Đơn Giá Thuê và Tiền Đặt Cọc */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-[#5F4E50] mb-1">
                     Đơn Giá Thuê (VNĐ) *
                   </label>
                   <input
-                    type="number"
-                    min="0"
-                    step="500000"
-                    value={newRentPrice}
-                    onChange={(e) => setNewRentPrice(e.target.value)}
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    placeholder="VD: 5.000.000"
+                    value={formatNumberWithDots(newRentPrice)}
+                    onChange={(e) => setNewRentPrice(formatNumberWithDots(e.target.value))}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D]"
                   />
                 </div>
@@ -2192,11 +2286,12 @@ export default function InventoryManagement() {
                     Tiền Đặt Cọc (VNĐ) *
                   </label>
                   <input
-                    type="number"
-                    min="0"
-                    step="500000"
-                    value={newDepositAmount}
-                    onChange={(e) => setNewDepositAmount(e.target.value)}
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    placeholder="VD: 15.000.000"
+                    value={formatNumberWithDots(newDepositAmount)}
+                    onChange={(e) => setNewDepositAmount(formatNumberWithDots(e.target.value))}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D]"
                   />
                 </div>
@@ -2276,8 +2371,8 @@ export default function InventoryManagement() {
                   {POPULAR_COLORS.map((c) => {
                     const isSelected = (newColor || '')
                       .split(',')
-                      .map((s) => s.trim().toLowerCase())
-                      .includes(c.name.toLowerCase());
+                      .map((s) => s.trim())
+                      .some((s) => isColorMatch(s, c.name));
                     return (
                       <button
                         key={c.name}
@@ -2420,21 +2515,22 @@ export default function InventoryManagement() {
                   className="w-full px-3.5 py-2 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D]"
                 />
               </div>
+              </div>
 
-              {/* 8. Nút Bấm Thao Tác */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#F0E6E2]">
+              {/* 8. Nút Bấm Thao Tác Cố Định Ở Dưới */}
+              <div className="flex items-center justify-end gap-3 px-6 py-3.5 border-t border-[#F0E6E2] bg-[#FAF5F2]/60 shrink-0">
                 <button
                   type="button"
                   disabled={isSubmitting}
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-5 py-2 rounded-xl border border-[#EFE2DC] bg-white text-[#7A6B6C] font-bold hover:bg-[#FAF2EE] cursor-pointer transition-colors"
+                  className="px-5 py-2.5 rounded-xl border border-[#EFE2DC] bg-white text-[#7A6B6C] font-bold hover:bg-[#FAF2EE] cursor-pointer transition-colors"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-6 py-2 rounded-xl bg-[#733F49] hover:bg-[#5C3038] text-white font-bold cursor-pointer transition-colors shadow-xs border-0 flex items-center gap-2 disabled:opacity-60"
+                  className="px-6 py-2.5 rounded-xl bg-[#733F49] hover:bg-[#5C3038] text-white font-bold cursor-pointer transition-colors shadow-xs border-0 flex items-center gap-2 disabled:opacity-60"
                 >
                   {isSubmitting ? (
                     <>
@@ -2442,7 +2538,7 @@ export default function InventoryManagement() {
                       <span>Đang lưu vào Atlas...</span>
                     </>
                   ) : (
-                    <span>Lưu &amp; Nhập Kho</span>
+                    <span>Lưu và Nhập Kho</span>
                   )}
                 </button>
               </div>

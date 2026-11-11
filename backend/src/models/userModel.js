@@ -39,7 +39,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
       index: true,
     },
-    // Số đo khách hàng phục vụ tư vấn & chọn size váy cưới
+    // Số đo khách hàng phục vụ tư vấn và chọn size váy cưới
     measurements: {
       height: { type: Number, default: null }, // cm
       weight: { type: Number, default: null }, // kg

@@ -2,8 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { getAllOrdersAdmin, createOrder, updateOrderStatus } from '../../services/orderService';
 import { formatCurrencyVND } from '../../utils/formatCurrency';
 import AdminLayout from '../../components/layout/AdminLayout';
-import {
-  Search,
+import { Search,
   FileSignature,
   FileText,
   Calendar,
@@ -18,7 +17,6 @@ import {
   Printer,
   ShieldCheck,
   Send,
-  Sparkles,
   User,
   Phone,
   CreditCard,
@@ -34,8 +32,9 @@ import {
   UserX,
   Crown,
   RefreshCw,
-  ExternalLink
-} from 'lucide-react';
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SignedContractModal from '../../components/common/SignedContractModal';
 import { getContractTemplates } from '../../services/contractService';
@@ -85,6 +84,7 @@ const DRESS_OPTIONS = [
 ];
 
 const fmtVnd = (num) => formatCurrencyVND(num);
+const PAGE_SIZE = 5;
 
 const getRentalDays = (start, end) => {
   if (!start || !end) return 3;
@@ -101,6 +101,7 @@ export default function ContractManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [sortBySigned, setSortBySigned] = useState('desc'); // 'desc': mới nhất -> cũ nhất, 'asc': cũ nhất -> mới nhất
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedContract, setSelectedContract] = useState(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -232,6 +233,34 @@ export default function ContractManagement() {
     });
   }, [contracts, searchTerm, selectedStatus, sortBySigned]);
 
+  // Tự động về trang 1 khi lọc hoặc tìm kiếm
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedStatus, sortBySigned]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredContracts.length / PAGE_SIZE));
+
+  const paginatedContracts = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredContracts.slice(start, start + PAGE_SIZE);
+  }, [filteredContracts, currentPage]);
+
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 6) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    if (currentPage < 3) {
+      return [1, 2, 3, '...', totalPages - 1, totalPages];
+    }
+    if (currentPage >= totalPages - 2) {
+      return ['...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+    if (currentPage + 2 >= totalPages - 1) {
+      return ['...', currentPage - 1, currentPage, currentPage + 1, totalPages - 1, totalPages];
+    }
+    return ['...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages - 1, totalPages];
+  }, [currentPage, totalPages]);
+
   const stats = useMemo(() => {
     return {
       total: contracts.length,
@@ -280,7 +309,7 @@ export default function ContractManagement() {
   };
 
   const handleSendReminder = (contract) => {
-    showToast(`Đã gửi tin nhắn SMS & Email nhắc ký hợp đồng đến ${contract.customerName} (${contract.phone})`);
+    showToast(`Đã gửi tin nhắn SMS VÀ Email nhắc ký hợp đồng đến ${contract.customerName} (${contract.phone})`);
   };
 
   const handlePrint = () => {
@@ -326,7 +355,7 @@ export default function ContractManagement() {
 
     const labels = {
       active: 'Đã kích hoạt hợp đồng có hiệu lực pháp lý!',
-      completed: 'Hợp đồng đã hoàn thành & giải ngân hoàn cọc cho khách hàng!',
+      completed: 'Hợp đồng đã hoàn thành và giải ngân hoàn cọc cho khách hàng!',
       disputed: 'Đã chuyển hợp đồng sang trạng thái đối soát bồi thường cọc!'
     };
     showToast(labels[newStatus] || 'Đã cập nhật trạng thái hợp đồng thành công!');
@@ -440,7 +469,7 @@ export default function ContractManagement() {
         {/* Toast Notification */}
         {toastMsg && (
           <div className="fixed bottom-6 right-6 z-50 bg-[#302626] text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-sm animate-fade-in border border-amber-900/30">
-            <Sparkles size={16} className="text-amber-400" />
+            <Crown size={16} className="text-amber-400" />
             <span>{toastMsg}</span>
           </div>
         )}
@@ -508,7 +537,7 @@ export default function ContractManagement() {
           <div className="bg-white p-4 rounded-xl border border-[#EFE5E1] shadow-xs">
             <span className="text-xs text-[#8A797A] font-medium block">ĐÃ HOÀN THÀNH</span>
             <div className="text-2xl font-bold text-emerald-700 mt-1">{stats.completed}</div>
-            <div className="text-[11px] text-emerald-600 mt-1">Đã giải ngân &amp; hoàn tất cọc</div>
+            <div className="text-[11px] text-emerald-600 mt-1">Đã giải ngân và hoàn tất cọc</div>
           </div>
 
           <div className="bg-white p-4 rounded-xl border border-[#EFE5E1] shadow-xs">
@@ -577,7 +606,7 @@ export default function ContractManagement() {
                   <th className="py-3.5 px-4">Khách Hàng</th>
                   <th className="py-3.5 px-4">Trang Phục Thuê</th>
                   <th className="py-3.5 px-4">Thời Gian Thuê</th>
-                  <th className="py-3.5 px-4">Tiền Thuê &amp; Cọc</th>
+                  <th className="py-3.5 px-4">Tiền Thuê và Cọc</th>
                   <th
                     className="py-3.5 px-4 cursor-pointer select-none hover:text-[#733F49] transition-colors"
                     onClick={() => setSortBySigned((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
@@ -598,7 +627,7 @@ export default function ContractManagement() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F6EEEB]">
-                {filteredContracts.map((item) => (
+                {paginatedContracts.map((item) => (
                   <tr key={item.id} className="hover:bg-[#FCFAF8] transition-colors group">
                     <td className="py-4 px-4 whitespace-nowrap">
                       <button
@@ -722,6 +751,76 @@ export default function ContractManagement() {
               </tbody>
             </table>
           </div>
+
+          {/* Phân trang: 5 hợp đồng / trang */}
+          {filteredContracts.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3.5 border-t border-[#F2E5E0] bg-[#FFFBF9]">
+              <div className="text-xs text-[#7A696B]">
+                Hiển thị{' '}
+                <span className="font-bold text-[#5F333B]">
+                  {Math.min((currentPage - 1) * PAGE_SIZE + 1, filteredContracts.length)}
+                </span>{' '}
+                –{' '}
+                <span className="font-bold text-[#5F333B]">
+                  {Math.min(currentPage * PAGE_SIZE, filteredContracts.length)}
+                </span>{' '}
+                trong tổng số{' '}
+                <span className="font-bold text-[#2C2523]">{filteredContracts.length}</span> hợp đồng
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="w-8 h-8 rounded-lg bg-white border border-[#EFE5E1] shadow-2xs flex items-center justify-center text-[#7A6B6C] hover:bg-[#F5ECE8] disabled:opacity-40 transition-colors cursor-pointer"
+                  title="Trang trước"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+
+                {pageNumbers.map((p, idx) =>
+                  p === '...' ? (
+                    <button
+                      key={`ellipsis-${idx}`}
+                      type="button"
+                      title={idx === 0 ? 'Về các trang trước' : 'Đến các trang sau'}
+                      onClick={() => {
+                        if (idx === 0) setCurrentPage((prev) => Math.max(1, prev - 3));
+                        else setCurrentPage((prev) => Math.min(totalPages, prev + 3));
+                      }}
+                      className="w-8 h-8 rounded-lg bg-white border border-[#EFE5E1] shadow-2xs flex items-center justify-center text-[#8C7D7E] text-xs font-bold hover:bg-[#F5ECE8] hover:text-[#733F49] transition-colors cursor-pointer"
+                    >
+                      ...
+                    </button>
+                  ) : (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setCurrentPage(p)}
+                      className={`w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center transition-colors cursor-pointer ${
+                        currentPage === p
+                          ? 'bg-[#733F49] text-white shadow-xs'
+                          : 'bg-white border border-[#EFE5E1] shadow-2xs text-[#4A3B3D] hover:bg-[#F5ECE8]'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  )
+                )}
+
+                <button
+                  type="button"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className="w-8 h-8 rounded-lg bg-white border border-[#EFE5E1] shadow-2xs flex items-center justify-center text-[#7A6B6C] hover:bg-[#F5ECE8] disabled:opacity-40 transition-colors cursor-pointer"
+                  title="Trang tiếp theo"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* MODAL LẬP HỢP ĐỒNG SHOWROOM MỚI */}
@@ -909,7 +1008,7 @@ export default function ContractManagement() {
                     type="submit"
                     className="px-5 py-2.5 rounded-xl bg-[#733F49] hover:bg-[#5C323A] text-white text-xs font-bold shadow-sm cursor-pointer"
                   >
-                    Ký &amp; Kích Hoạt Hợp Đồng Ngay
+                    Ký và Kích Hoạt Hợp Đồng Ngay
                   </button>
                 </div>
               </form>

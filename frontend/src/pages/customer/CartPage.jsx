@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, CalendarDays, CheckCircle2, Heart, LockKeyhole, Minus, Phone, Plus, ShieldCheck, ShoppingBag, Sparkles, Trash2, X } from 'lucide-react';
+import { ArrowRight, CalendarDays, CheckCircle2, Heart, LockKeyhole, Minus, Phone, Plus, ShieldCheck, ShoppingBag, Crown, Trash2, X } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import { CART_EVENT, addToCart, clearCart, getCart, refreshCartWithDresses, removeFromCart, resolveCartItem, updateCartDays } from '../../services/cartService';
@@ -1170,7 +1170,7 @@ export default function CartPage() {
       <Header onOpenBooking={() => { setSelectedProduct(null); setIsConsultationOpen(true); }} />
       <main>
         <section className="cart-hero" aria-labelledby="cart-title">
-          <span className="cart-hero-label"><Sparkles size={13} /> THUÊ VÁY CƯỚI CAO CẤP</span>
+          <span className="cart-hero-label"><Crown size={13} /> THUÊ VÁY CƯỚI CAO CẤP</span>
           <h1 id="cart-title">Giỏ Hàng Của Nàng</h1>
           <p>Lưu giữ những tác phẩm Haute Couture hoàn mỹ cho khoảnh khắc bước vào lễ đường vĩnh cửu.</p>
           <span className="cart-hero-rule" />
@@ -1186,7 +1186,7 @@ export default function CartPage() {
 
           <aside className="cart-aside" aria-label="Tóm tắt đơn thuê">
             <div className="cart-summary">
-              <span className="cart-eyebrow">TÓM TẮT ĐƠN THUÊ & ĐẶT CỌC</span>
+              <span className="cart-eyebrow">TÓM TẮT ĐƠN THUÊ VÀ ĐẶT CỌC</span>
               <h2>Chi Phí Tạm Tính</h2>
               <div className="cart-summary-line"><span>Tổng phí thuê váy ({items.length} tác phẩm)</span><strong>{money(rentalFee)}</strong></div>
               <div className="cart-summary-line"><span>Phí giao nhận</span><strong className="cart-rose">Xác nhận sau</strong></div>
@@ -1199,12 +1199,12 @@ export default function CartPage() {
                 onClick={(event) => { if (checkoutBlocked) event.preventDefault(); }}
                 className={`cart-checkout ${checkoutBlocked ? 'opacity-50 pointer-events-none' : ''}`}
               >
-                TIẾN HÀNH ĐẶT THUÊ & KÝ HỢP ĐỒNG <ArrowRight size={16} />
+                TIẾN HÀNH ĐẶT THUÊ VÀ KÝ HỢP ĐỒNG <ArrowRight size={16} />
               </Link>
               <p className="cart-checkout-note">Xác thực số đo, chính sách đặt cọc và hợp đồng bảo chứng số.</p>
               <Link className="cart-continue" to="/collection">TIẾP TỤC KHÁM PHÁ BỘ SƯU TẬP</Link>
             </div>
-            <div className="cart-promises"><h2><ShieldCheck size={19} /> CAM KẾT ĐỘC QUYỀN</h2><ul><li><strong>Hoàn cọc theo biên bản</strong><span>Showroom đối soát sau kiểm định và xử lý khoản hoàn theo hợp đồng đã ký.</span></li><li><strong>Hợp đồng điện tử ký số</strong><span>Minh bạch điều khoản, bảo vệ toàn diện quyền lợi và số đo của cô dâu.</span></li><li><strong>Bảo hiểm lỗi sợi & hạt đính</strong><span>Miễn trừ trách nhiệm với các vết dơ thông thường và hạt rơi nhẹ khi khiêu vũ.</span></li><li><strong>Đổi dáng váy miễn phí</strong><span>Được chuyển đổi mẫu váy khác cùng phân khúc trước ngày cưới 15 ngày.</span></li></ul><p>Cần hỗ trợ lựa chọn? <a href="tel:18008998"><Phone size={13} /> Hotline 1800 8998 (24/7)</a></p></div>
+            <div className="cart-promises"><h2><ShieldCheck size={19} /> CAM KẾT ĐỘC QUYỀN</h2><ul><li><strong>Hoàn cọc theo biên bản</strong><span>Showroom đối soát sau kiểm định và xử lý khoản hoàn theo hợp đồng đã ký.</span></li><li><strong>Hợp đồng điện tử ký số</strong><span>Minh bạch điều khoản, bảo vệ toàn diện quyền lợi và số đo của cô dâu.</span></li><li><strong>Bảo hiểm lỗi sợi và hạt đính</strong><span>Miễn trừ trách nhiệm với các vết dơ thông thường và hạt rơi nhẹ khi khiêu vũ.</span></li><li><strong>Đổi dáng váy miễn phí</strong><span>Được chuyển đổi mẫu váy khác cùng phân khúc trước ngày cưới 15 ngày.</span></li></ul><p>Cần hỗ trợ lựa chọn? <a href="tel:18008998"><Phone size={13} /> Hotline 1800 8998 (24/7)</a></p></div>
           </aside>
         </div>
 

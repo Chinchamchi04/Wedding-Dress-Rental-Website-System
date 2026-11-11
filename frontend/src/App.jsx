@@ -148,7 +148,7 @@ export default function App() {
               <Route path="/quan-ly-mau-hop-dong" element={<Navigate to="/admin/hop-dong" replace />} />
               <Route path="/mau-hop-dong" element={<Navigate to="/admin/hop-dong" replace />} />
 
-              {/* Error & Access Control Routes */}
+              {/* Error và Access Control Routes */}
               <Route path="/404" element={<NotFoundPage type="404" />} />
               <Route path="/403" element={<NotFoundPage type="forbidden" />} />
               <Route path="/401" element={<NotFoundPage type="unauthenticated" />} />

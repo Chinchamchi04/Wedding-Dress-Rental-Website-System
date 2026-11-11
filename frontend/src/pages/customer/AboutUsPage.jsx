@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  Sparkles,
-  Scissors,
+import { Scissors,
   Crown,
   Heart,
   ShieldCheck,
@@ -16,8 +14,7 @@ import {
   Award,
   CheckCircle2,
   Building2,
-  Mail
-} from 'lucide-react';
+  Mail } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 
@@ -37,7 +34,7 @@ export default function AboutUsPage() {
       <main className="flex-1 w-full pb-20">
 
         {/* ========================================================================= */}
-        {/* SECTION 1: HERO - TRIẾT LÝ NGHỆ THUẬT & DI SẢN UNIBRIDAL                */}
+        {/* SECTION 1: HERO - TRIẾT LÝ NGHỆ THUẬT VÀ DI SẢN UNIBRIDAL                */}
         {/* ========================================================================= */}
         <section className="relative pt-12 sm:pt-16 pb-12 sm:pb-16 px-6 sm:px-8 overflow-hidden bg-gradient-to-b from-[#FFF7F5] via-[#FFFBF8] to-[#FDFBF7]">
           {/* Subtle Ambient Radial Glows */}
@@ -129,7 +126,7 @@ export default function AboutUsPage() {
                 <div className="relative rounded-[28px] overflow-hidden shadow-[0px_16px_40px_rgba(44,37,35,0.08)] border border-[#EEDECF]">
                   <img
                     src={aboutFounderImg}
-                    alt="Elena Nguyen - Founder & Creative Director UniBridal"
+                    alt="Elena Nguyen - Founder và Creative Director UniBridal"
                     className="w-full h-[460px] sm:h-[540px] object-cover object-top hover:scale-[1.02] transition-transform duration-500"
                   />
                 </div>
@@ -141,7 +138,7 @@ export default function AboutUsPage() {
                   </div>
                   <div>
                     <span className="block font-jakarta text-[10px] font-bold uppercase tracking-[1.4px] text-[#B8737D]">
-                      FOUNDER & CREATIVE DIRECTOR
+                      FOUNDER VÀ CREATIVE DIRECTOR
                     </span>
                     <span className="block font-playfair text-[16px] font-bold text-[#2C2523]">
                       Elena Nguyen
@@ -286,7 +283,7 @@ export default function AboutUsPage() {
         {/* ========================================================================= */}
         <section className="py-20 sm:py-28 px-6 sm:px-8">
           <div className="max-w-[1100px] mx-auto">
-            {/* Tag & Title */}
+            {/* Tag và Title */}
             <div className="text-center mb-16 sm:mb-20">
               <span className="font-jakarta text-[11px] sm:text-[11.5px] font-bold text-[#BA7A83] uppercase tracking-[0.24em] block mb-3">
                 HÀNH TRÌNH TỎA SÁNG
@@ -318,7 +315,7 @@ export default function AboutUsPage() {
                     side: 'right',
                     title: 'Ra Mắt Flagship Atelier Tại Việt Nam',
                     desc: 'Khai trương hai không gian Private Suite độc bản tại Tràng Tiền (Hà Nội) và Nam Kỳ Khởi Nghĩa (TP.HCM), mang chuẩn dịch vụ may đo váy cưới châu Âu đến gần hơn với khách hàng.',
-                    tag: 'FLAGSHIP HANOI & SAIGON',
+                    tag: 'FLAGSHIP HANOI VÀ SAIGON',
                     isActive: false,
                   },
                   {
@@ -420,7 +417,7 @@ export default function AboutUsPage() {
         </section>
 
         {/* ========================================================================= */}
-        {/* SECTION 5: KẾT NỐI CÙNG UNIBRIDAL (SHOWROOM & SALON)                     */}
+        {/* SECTION 5: KẾT NỐI CÙNG UNIBRIDAL (SHOWROOM VÀ SALON)                     */}
         {/* ========================================================================= */}
         <section className="pt-16 sm:pt-20 pb-20 sm:pb-24 px-6 sm:px-8 bg-[#FAF6F3] border-t border-[#EAE0DC]">
           <div className="max-w-[1080px] mx-auto text-center">

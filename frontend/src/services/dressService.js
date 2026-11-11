@@ -186,10 +186,36 @@ export async function getDressById(idOrSlug) {
             ...(((d.code === 'UB-025' || (d.image && d.image.includes('dress_25')))) ? ['/assets/dresses/dress_25_banquet.jpg'] : []),
           ],
           sizes: formatDressSizes(d.sizes),
-          colors: d.colorOptions && d.colorOptions.length > 0 ? d.colorOptions : [
-            { name: d.color || 'Trắng Tinh Khôi', hex: '#FFFFFF', border: '#D9D9D9' },
-            { name: 'Trắng Kem Ivory', hex: '#FDFBF7', border: '#E7DEC8' },
-          ],
+          colors: (d.colorOptions && d.colorOptions.length > 0)
+            ? d.colorOptions
+            : (d.color
+                ? d.color.split(',').map((c) => {
+                    const cName = c.trim();
+                    const key = cName.toLowerCase();
+                    const hexMap = {
+                      'trắng tinh khôi': { hex: '#FFFFFF', border: '#D9D9D9' },
+                      'trắng ngọc tinh khôi': { hex: '#FFFFFF', border: '#D9D9D9' },
+                      'trắng kem (ivory)': { hex: '#FDFBF7', border: '#E7DEC8' },
+                      'trắng kem ivory': { hex: '#FDFBF7', border: '#E7DEC8' },
+                      'trắng kem': { hex: '#FDFBF7', border: '#E7DEC8' },
+                      'champagne': { hex: '#F7E7CE', border: '#DEC8A6' },
+                      'hồng pastel': { hex: '#F5D6D8', border: '#E8B6BC' },
+                      'hồng nude': { hex: '#EED9D1', border: '#D8BCB2' },
+                      'đỏ ruby': { hex: '#9B111E', border: '#780B15' },
+                      'xanh khói (dusty blue)': { hex: '#8CA4B8', border: '#6E8B9E' },
+                      'xanh khói': { hex: '#8CA4B8', border: '#6E8B9E' },
+                    };
+                    return {
+                      name: cName,
+                      hex: hexMap[key]?.hex || '#FDFBF7',
+                      border: hexMap[key]?.border || '#E7DEC8',
+                    };
+                  })
+                : [
+                    { name: 'Trắng Tinh Khôi', hex: '#FFFFFF', border: '#D9D9D9' },
+                    { name: 'Trắng Kem Ivory', hex: '#FDFBF7', border: '#E7DEC8' },
+                  ]
+              ),
         },
       };
     }
@@ -298,6 +324,10 @@ export async function getAllDresses(params = {}) {
         ? d.price
         : (parseInt(String(d.price || d.rentPrice || '5200000').replace(/\D/g, ''), 10) || 5200000);
 
+      const dNum = typeof d.depositAmount === 'number' && !isNaN(d.depositAmount)
+        ? d.depositAmount
+        : (parseInt(String(d.depositAmount || d.deposit || '15000000').replace(/\D/g, ''), 10) || 15000000);
+
       let pCat = '5-10';
       if (pNum < 5000000) pCat = 'under-5';
       else if (pNum <= 10000000) pCat = '5-10';
@@ -311,14 +341,16 @@ export async function getAllDresses(params = {}) {
         rentPrice: pNum,
         priceNumber: pNum,
         price: formatCurrencyVND(pNum),
-        depositAmount: d.depositAmount ? (typeof d.depositAmount === 'string' && d.depositAmount.includes('₫') ? d.depositAmount : formatCurrencyVND(d.depositAmount)) : '15.000.000₫',
+        depositAmount: dNum,
+        depositAmountNumber: dNum,
+        depositAmountFormatted: formatCurrencyVND(dNum),
         priceCategory: pCat,
         image: (d.images && d.images[0]) || d.image || '/assets/dresses/dress_01.jpg',
         badgeMain: d.collectionTag || (pCat === 'vip' ? 'HAUTE COUTURE VIP' : 'HAUTE COUTURE'),
         badgeSub: d.sizes?.length ? `Size: ${d.sizes.join(' - ')}` : 'Đủ size',
         size: d.sizes?.length ? `Size: ${d.sizes.join(' - ')}` : 'Size: S - M',
         sizes: d.sizes,
-        material: d.material || 'Lụa Mikado Ý & Ren Pháp',
+        material: d.material || 'Lụa Mikado Ý VÀ Ren Pháp',
         silhouette: d.silhouette || 'Ballgown',
         category: (d.silhouette || 'ballgown').toLowerCase().replace(/\s+/g, '-'),
         categoryName: d.silhouette || 'Ballgown',

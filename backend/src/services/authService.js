@@ -25,7 +25,7 @@ const generateToken = (user, roleCode) => {
 
 export const authService = {
   /**
-   * Đăng ký tài khoản mới & gửi OTP xác thực email
+   * Đăng ký tài khoản mới và gửi OTP xác thực email
    */
   async register({ fullName, email, password, phone }) {
     if (!fullName || typeof fullName !== 'string' || fullName.trim().length < 2) {

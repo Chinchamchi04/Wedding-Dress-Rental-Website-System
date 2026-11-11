@@ -150,7 +150,7 @@ class ChatService {
         status: 'delivered',
       });
     } else {
-      // Cập nhật lại họ tên & số điện thoại mới nhất từ tài khoản người dùng
+      // Cập nhật lại họ tên và số điện thoại mới nhất từ tài khoản người dùng
       if (user) {
         let changed = false;
         if (!conversation.customerId || conversation.customerId.toString() !== user._id.toString()) {

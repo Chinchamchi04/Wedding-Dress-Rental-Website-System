@@ -1,20 +1,18 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { message } from 'antd';
-import {
-  Search,
+import { Search,
   Pin,
   Phone,
   Image,
   Smile,
   Send,
-  Sparkles,
+  Crown,
   X,
   MessageSquare,
   Check,
   CheckCircle2,
-  ArrowDown,
-} from 'lucide-react';
+  ArrowDown } from 'lucide-react';
 import {
   getConversations,
   getMessages,
@@ -135,7 +133,7 @@ export default function CustomerCareManagement() {
         }));
 
         setActiveMessages((prev) => {
-          // So sánh nếu số lượng và id/text/status không đổi thì giữ nguyên prev để tránh re-render & auto-scroll
+          // So sánh nếu số lượng và id/text/status không đổi thì giữ nguyên prev để tránh re-render và auto-scroll
           if (
             prev.length === mapped.length &&
             prev.every(
@@ -353,7 +351,7 @@ export default function CustomerCareManagement() {
       <div className="flex flex-col lg:flex-row gap-5 h-[calc(100vh-140px)] min-h-[620px]">
         {/* Left Card: Conversation List Panel */}
         <div className="w-full lg:w-[350px] shrink-0 bg-white rounded-2xl border border-[#EFE5E1] shadow-xs overflow-hidden flex flex-col">
-          {/* Search & Filter Header */}
+          {/* Search và Filter Header */}
           <div className="p-4 border-b border-[#F5EBE7] flex flex-col gap-3">
             <div className="relative">
               <Search
@@ -521,7 +519,7 @@ export default function CustomerCareManagement() {
               {activeMessages.length === 0 ? (
                 <div className="h-full min-h-[220px] flex flex-col items-center justify-center text-center text-[#9A8B8C] py-8">
                   <div className="w-12 h-12 rounded-full bg-[#FAF2EE] flex items-center justify-center text-[#BA7A83] mb-3">
-                    <Sparkles size={20} />
+                    <Crown size={20} />
                   </div>
                   <p className="text-xs font-semibold text-[#7A6B6C]">Chưa có tin nhắn trong cuộc hội thoại này.</p>
                   <p className="text-[11px] text-[#A89899] mt-0.5">Nhập phản hồi hoặc bấm câu trả lời nhanh bên dưới để tư vấn nàng dâu.</p>
@@ -596,12 +594,12 @@ export default function CustomerCareManagement() {
             )}
           </div>
 
-          {/* Chat Footer & Input */}
+          {/* Chat Footer và Input */}
           <div className="border-t border-[#F0E6E2] p-4 bg-white space-y-3 shrink-0">
             {/* Quick Replies Row */}
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[10px] font-bold tracking-wider text-[#8C7D7E] uppercase flex items-center gap-1 shrink-0">
-                <Sparkles size={12} className="text-[#B8737D]" />
+                <Crown size={12} className="text-[#B8737D]" />
                 PHẢN HỒI NHANH:
               </span>
               <button
@@ -627,7 +625,7 @@ export default function CustomerCareManagement() {
               </button>
             </div>
 
-            {/* Utility Icons & Hint */}
+            {/* Utility Icons và Hint */}
             <div className="flex items-center justify-between text-[#7A6B6C]">
               <div className="flex items-center gap-1 relative">
                 {/* Hidden File Input */}
@@ -649,7 +647,7 @@ export default function CustomerCareManagement() {
                   <Image size={18} />
                 </button>
 
-                {/* Emoji Picker Button & Popover */}
+                {/* Emoji Picker Button và Popover */}
                 <div className="relative" ref={emojiPickerRef}>
                   <button
                     type="button"
@@ -665,7 +663,7 @@ export default function CustomerCareManagement() {
                     <div className="absolute bottom-10 left-0 bg-white border border-[#EFE5E1] rounded-2xl shadow-xl p-3 z-30 w-64 animate-in fade-in zoom-in-95 duration-150">
                       <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#F5EBE7]">
                         <span className="text-xs font-bold text-[#733F49] flex items-center gap-1">
-                          <Sparkles size={12} />
+                          <Crown size={12} />
                           Biểu tượng cảm xúc
                         </span>
                         <button
@@ -716,7 +714,7 @@ export default function CustomerCareManagement() {
               </div>
             )}
 
-            {/* Message Input & Send Button */}
+            {/* Message Input và Send Button */}
             <form onSubmit={handleSendMessage} className="flex items-center gap-2">
               <input
                 type="text"

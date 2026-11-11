@@ -1,16 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  X,
+import { X,
   SendHorizontal,
   ExternalLink,
-  Sparkles,
+  Crown,
   Calendar,
   CheckCheck,
   ShoppingBag,
   Smile,
-  Search,
-} from 'lucide-react';
+  Search } from 'lucide-react';
 import aboutFounderImg from '../../assets/about_founder_portrait.jpg';
 import chibiBrideImg from '../../assets/chibi_bride_chat.jpg';
 import chibiBride3DImg from '../../assets/chibi_bride_3d.png';
@@ -48,15 +46,6 @@ const QUICK_SUGGESTIONS = [
       'UniBridal sở hữu công nghệ Corsetry siết eo định hình độc quyền: Nếu nàng muốn hóa thân công chúa lộng lẫy thì Ballgown xoè bồng là tuyệt nhất; nếu muốn tôn đường cong quyến rũ thì Mermaid đuôi cá; hoặc A-Line nhẹ nhàng thanh thoát cho mọi vóc dáng. Nàng có thể đặt lịch để chuyên viên trực tiếp đo đạc và tư vấn thử nhé!',
   },
 ];
-
-// Biểu tượng ngôi sao 4 cánh (FourPointStar) chuẩn theo hình ảnh người dùng
-function FourPointStar({ className = '' }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path d="M12 0C12 7 17 12 24 12C17 12 12 17 12 24C12 17 7 12 0 12C7 12 12 7 12 0Z" />
-    </svg>
-  );
-}
 
 export default function ChatWidget() {
   const navigate = useNavigate();
@@ -404,7 +393,7 @@ export default function ChatWidget() {
         senderRole: 'staff',
         name: 'Mai Anh • Senior Stylist',
         time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-        text: `Dạ UniBridal chào nàng! Mẫu thiết kế "${dress.name}" thuộc dòng Haute Couture cao cấp đang có sẵn tại Atelier VIP. Mẫu này may đo từ chất liệu ${dress.material || 'Lụa & Ren cao cấp'} với cấu trúc siết eo định hình cực kỳ tôn dáng. Nàng có muốn đặt lịch để trực tiếp thử váy riêng tư 1-1 miễn phí không ạ? ✨`,
+        text: `Dạ UniBridal chào nàng! Mẫu thiết kế "${dress.name}" thuộc dòng Haute Couture cao cấp đang có sẵn tại Atelier VIP. Mẫu này may đo từ chất liệu ${dress.material || 'Lụa và Ren cao cấp'} với cấu trúc siết eo định hình cực kỳ tôn dáng. Nàng có muốn đặt lịch để trực tiếp thử váy riêng tư 1-1 miễn phí không ạ? ✨`,
       };
 
       setMessages((prev) => [...prev, staffReply]);
@@ -433,8 +422,8 @@ export default function ChatWidget() {
       {isOpen && (
         <aside
           aria-label="Cửa sổ tư vấn trực tuyến"
-          className="fixed z-50 w-[285px] sm:w-[300px] h-[385px] sm:h-[395px] max-h-[calc(100vh-110px)] bg-white rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.22)] border border-[#EADBDE] flex flex-col overflow-hidden transition-all duration-300 animate-in fade-in slide-in-from-bottom-4"
-          style={{ bottom: '86px', right: '20px' }}
+          className="fixed z-50 w-[285px] sm:w-[300px] h-[385px] sm:h-[395px] max-h-[calc(100vh-50px)] bg-white rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.22)] border border-[#EADBDE] flex flex-col overflow-hidden transition-all duration-300 animate-in fade-in slide-in-from-bottom-4"
+          style={{ bottom: '20px', right: '20px' }}
         >
           {/* Header */}
           <div className="bg-gradient-to-r from-[#9B5C66] via-[#B8737D] to-[#A35D67] text-white py-2 px-3 flex items-center justify-between shrink-0 shadow-sm">
@@ -452,7 +441,7 @@ export default function ChatWidget() {
                   <h3 className="font-playfair text-[13px] sm:text-[13.5px] font-bold text-white tracking-wide m-0 leading-tight">
                     UniBridal Concierge
                   </h3>
-                  <Sparkles className="w-3 h-3 text-amber-200" />
+                  <Crown className="w-3 h-3 text-amber-200" />
                 </div>
                 <div className="flex items-center gap-1 text-[9.5px] sm:text-[10px] text-white/85 font-jakarta">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
@@ -695,10 +684,10 @@ export default function ChatWidget() {
           <div className="relative select-none animate-chibi-float">
             {/* Chỉ hiển thị ngôi sao 4 cánh theo đúng mẫu */}
             <span className="absolute -top-1 left-2 w-4 h-4 text-amber-200 drop-shadow-[0_0_8px_rgba(251,191,36,0.9)] pointer-events-none animate-sparkle-1 select-none">
-              <FourPointStar className="w-full h-full" />
+              <Crown className="w-full h-full" />
             </span>
             <span className="absolute top-2 right-2 w-4 h-4 text-amber-200 drop-shadow-[0_0_8px_rgba(251,191,36,0.9)] pointer-events-none animate-sparkle-2 select-none">
-              <FourPointStar className="w-full h-full" />
+              <Crown className="w-full h-full" />
             </span>
 
             <button
