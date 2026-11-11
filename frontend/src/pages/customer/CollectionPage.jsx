@@ -55,12 +55,17 @@ const matchSilhouette = (dress, targetId) => {
   const cat = (dress.category || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const sil = (dress.silhouette || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const name = (dress.name || '').toLowerCase();
+  const catSlug = (typeof dress.categoryId === 'object' ? dress.categoryId?.slug : (dress.categorySlug || ''))?.toLowerCase().replace(/[^a-z0-9]/g, '') || '';
 
-  if (cat.includes(target) || sil.includes(target)) return true;
+  // 1. Khớp chính xác theo slug/category định danh từ MongoDB Atlas
+  if (cat === target || catSlug === target) return true;
+  if (cat.includes(target) || sil.includes(target) || catSlug.includes(target)) return true;
+
+  // 2. Khớp theo từng phom dáng đặc thù
   if (target === 'ballgown' && (sil.includes('ballgown') || cat.includes('ballgown') || name.includes('ballgown') || name.includes('bồng'))) return true;
   if (target === 'mermaid' && (sil.includes('mermaid') || cat.includes('mermaid') || name.includes('mermaid') || name.includes('đuôi cá'))) return true;
   if (target === 'aline' && (sil.includes('aline') || cat.includes('aline') || sil.includes('line') || name.includes('chữ a') || name.includes('a-line'))) return true;
-  if (target === 'silkgown' && (sil.includes('silk') || sil.includes('sheath') || cat.includes('silk') || name.includes('lụa') || name.includes('silk'))) return true;
+  if (target === 'silkgown' && (sil.includes('silkgown') || sil === 'silk' || sil.includes('sheath') || cat.includes('silkgown') || (name.includes('minimal silk') && !sil.includes('mermaid') && !sil.includes('ballgown')))) return true;
   if (target === 'princess' && (sil.includes('princess') || cat.includes('princess') || name.includes('princess') || name.includes('hoàng gia'))) return true;
   if (target === 'traditional' && (sil.includes('traditional') || sil.includes('aodai') || cat.includes('traditional') || name.includes('áo dài'))) return true;
   if (target === 'tuxedo' && (sil.includes('tuxedo') || sil.includes('vest') || cat.includes('tuxedo') || name.includes('vest') || name.includes('tuxedo'))) return true;
@@ -383,7 +388,7 @@ export default function CollectionPage() {
             </h1>
 
             {/* Subtext 2 lines */}
-            <p className="font-jakarta text-[13.5px] sm:text-[14.5px] leading-[22px] text-[#514344] max-w-[760px] mx-auto mb-6">
+            <p className="font-jakarta text-[13.5px] sm:text-[14.5px] leading-[22px] text-[#514344] max-w-[880px] mx-auto mb-6">
               Hòa quyện giữa kỹ thuật corsetry siết eo quý tộc và chất liệu lụa Mikado tơ tằm thượng hạng Ý VÀ Pháp.
               <br className="hidden sm:inline" />
               Mỗi thiết kế là một độc bản tôn vinh trọn vẹn đường nét thuần khiết, rạng ngời của nàng dâu trong ngày trọng đại nhất cuộc đời.

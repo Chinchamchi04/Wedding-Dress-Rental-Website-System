@@ -352,8 +352,9 @@ export async function getAllDresses(params = {}) {
         sizes: d.sizes,
         material: d.material || 'Lụa Mikado Ý VÀ Ren Pháp',
         silhouette: d.silhouette || 'Ballgown',
-        category: (d.silhouette || 'ballgown').toLowerCase().replace(/\s+/g, '-'),
-        categoryName: d.silhouette || 'Ballgown',
+        category: (d.categoryId?.slug || d.category || d.silhouette || 'ballgown').toLowerCase().replace(/\s+/g, '-'),
+        categoryName: d.categoryId?.name || d.categoryName || d.silhouette || 'Ballgown',
+        categoryId: d.categoryId?._id || d.categoryId,
       };
     });
     return { success: true, data: mapped };

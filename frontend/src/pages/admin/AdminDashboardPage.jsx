@@ -212,7 +212,7 @@ export default function AdminDashboardPage() {
       <section className="mt-7 grid grid-cols-2 sm:grid-cols-4 gap-4" aria-label="Phím tắt quản trị">
         {[
           { label: 'Quản Lý Đơn Thuê', to: '/admin/don-thue', icon: PackageCheck, desc: 'Bàn giao, kiểm định và hoàn cọc' },
-          { label: 'Quản Lý Kho Hàng', to: '/admin/kho-hang', icon: Layers, desc: 'Tồn kho size và vị trí tủ' },
+          { label: 'Quản Lý Kho Hàng', to: '/admin/kho-hang', icon: Layers, desc: 'Tồn kho size và vị trí' },
           { label: 'Quản Lý Tài Khoản', to: '/admin/accounts', icon: Users, desc: 'Phân quyền Admin / Staff / Khách' },
           { label: 'Báo Cáo Doanh Thu', to: '/admin/reports/revenue', icon: TrendingUp, desc: 'Dòng tiền và quỹ cọc bảo lãnh' },
         ].map((item) => (

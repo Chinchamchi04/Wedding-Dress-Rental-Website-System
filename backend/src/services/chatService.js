@@ -369,6 +369,92 @@ class ChatService {
     await conversation.save();
     return conversation;
   }
+
+  /**
+   * Thu hồi tin nhắn
+   */
+  async recallMessage(messageId) {
+    const message = await Message.findById(messageId);
+    if (!message) throw new Error('Không tìm thấy tin nhắn');
+
+    message.isRecalled = true;
+    message.recalledAt = new Date();
+    message.text = 'Tin nhắn đã được thu hồi';
+    message.image = '';
+    message.attachments = [];
+    await message.save();
+
+    const conversation = await Conversation.findById(message.conversationId);
+    if (conversation) {
+      if (
+        conversation.pinnedMessage?.messageId &&
+        conversation.pinnedMessage.messageId.toString() === message._id.toString()
+      ) {
+        conversation.pinnedMessage = null;
+      }
+      if (
+        conversation.lastMessage?.text &&
+        conversation.lastMessage.createdAt &&
+        Math.abs(new Date(conversation.lastMessage.createdAt).getTime() - new Date(message.createdAt).getTime()) < 5000
+      ) {
+        conversation.lastMessage.text = 'Tin nhắn đã được thu hồi';
+      }
+      await conversation.save();
+    }
+
+    return message;
+  }
+
+  /**
+   * Ghim / Bỏ ghim một tin nhắn cụ thể
+   */
+  async togglePinMessage(conversationId, messageId) {
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) throw new Error('Không tìm thấy cuộc hội thoại');
+
+    const message = await Message.findById(messageId);
+    if (!message) throw new Error('Không tìm thấy tin nhắn');
+
+    const isCurrentPinned =
+      conversation.pinnedMessage?.messageId &&
+      conversation.pinnedMessage.messageId.toString() === message._id.toString();
+
+    if (isCurrentPinned) {
+      // Đang ghim -> Bỏ ghim
+      message.isPinned = false;
+      await message.save();
+      conversation.pinnedMessage = null;
+      await conversation.save();
+      return { pinned: false, conversation, message };
+    } else {
+      // Ghim tin nhắn mới -> Bỏ ghim các tin trước đó trong cùng hội thoại
+      await Message.updateMany({ conversationId }, { isPinned: false });
+      message.isPinned = true;
+      await message.save();
+
+      conversation.pinnedMessage = {
+        messageId: message._id,
+        text: message.text || (message.image ? '[Hình ảnh]' : ''),
+        senderRole: message.senderRole,
+        pinnedAt: new Date(),
+      };
+      await conversation.save();
+      return { pinned: true, conversation, message };
+    }
+  }
+
+  /**
+   * Bỏ ghim tin nhắn của hội thoại
+   */
+  async unpinMessage(conversationId) {
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) throw new Error('Không tìm thấy cuộc hội thoại');
+
+    await Message.updateMany({ conversationId }, { isPinned: false });
+    conversation.pinnedMessage = null;
+    await conversation.save();
+    return conversation;
+  }
 }
 
 export default new ChatService();

@@ -374,7 +374,16 @@ export const getAllOrders = async (filters = {}) => {
     const isCustomerApproved = insp?.customerStatus === 'approved' || insp?.customerConfirmed;
     if (isCustomerApproved && status !== 'completed' && status !== 'complete') {
       status = 'completed';
-      Order.updateOne({ _id: o._id }, { $set: { status: 'completed' } }).catch(() => {});
+      Order.updateOne(
+        { _id: o._id },
+        {
+          $set: {
+            status: 'completed',
+            completedAt: new Date(),
+            maintenanceUntil: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          },
+        }
+      ).catch(() => {});
     }
 
     const items = (o.items || []).map((it) => {
@@ -428,7 +437,16 @@ export const getOrderByIdOrCode = async (idOrCode) => {
   const isCustomerApproved = inspection?.customerStatus === 'approved' || inspection?.customerConfirmed;
   if (isCustomerApproved && status !== 'completed' && status !== 'complete') {
     status = 'completed';
-    Order.updateOne({ _id: order._id }, { $set: { status: 'completed' } }).catch(() => {});
+    Order.updateOne(
+      { _id: order._id },
+      {
+        $set: {
+          status: 'completed',
+          completedAt: new Date(),
+          maintenanceUntil: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        },
+      }
+    ).catch(() => {});
   }
   return {
     ...order,
@@ -444,6 +462,10 @@ export const updateOrderStatus = async (idOrCode, status) => {
   if (!order) throw new Error('Không tìm thấy đơn hàng.');
 
   order.status = status;
+  if (status === 'completed' || status === 'complete') {
+    order.completedAt = order.completedAt || new Date();
+    order.maintenanceUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  }
   await order.save();
 
   if (status === 'completed' || status === 'complete') {
@@ -662,6 +684,8 @@ export const approveReturnInspection = async (orderId, bankData = {}, customerUs
   await inspection.save();
 
   order.status = 'completed';
+  order.completedAt = order.completedAt || new Date();
+  order.maintenanceUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);
   await order.save();
 
   // Tự động gửi email xác nhận hoàn cọc thành công

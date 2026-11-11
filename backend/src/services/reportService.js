@@ -117,7 +117,10 @@ export async function dashboard(role, period = 'month', now = new Date()) {
     Order.find({ createdAt: { $gte: start, $lt: end } }).select('status createdAt rentalStartDate rentalEndDate totalRentPrice totalDeposit items customerName orderCode').lean(),
     Payment.find({ status: 'success', paidAt: { $gte: start, $lt: end } }).select('transactionType amount paidAt').lean(),
     Order.distinct('items.dressId', {
-      status: { $in: ['returned', 'inspecting', 'maintenance'] },
+      $or: [
+        { status: { $in: ['returned', 'inspecting', 'maintenance'] } },
+        { status: 'completed', maintenanceUntil: { $gt: now } },
+      ],
     }),
     Appointment.find({ appointmentDate: { $gte: start, $lt: end } }).select('status appointmentDate customerName phone serviceType').lean(),
     User.countDocuments({ role: 'customer', isActive: true }),

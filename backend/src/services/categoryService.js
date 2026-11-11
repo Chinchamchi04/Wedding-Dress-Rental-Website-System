@@ -33,8 +33,13 @@ export async function getAllCategories({ includeInactive = true, search = '' } =
 
   const categories = await Category.find(query).sort({ createdAt: 1 }).lean();
 
-  // Đếm số lượng váy thuộc từng danh mục
+  // Đếm số lượng váy thuộc từng danh mục (chỉ đếm váy đang lưu hành / khả dụng, loại trừ váy đã xóa retired)
   const counts = await Dress.aggregate([
+    {
+      $match: {
+        status: { $ne: 'retired' },
+      },
+    },
     {
       $group: {
         _id: '$categoryId',
@@ -65,7 +70,7 @@ export async function getCategoryById(id) {
     throw new Error('Không tìm thấy thông tin danh mục.');
   }
 
-  const dressCount = await Dress.countDocuments({ categoryId: category._id });
+  const dressCount = await Dress.countDocuments({ categoryId: category._id, status: { $ne: 'retired' } });
   return { ...category, dressCount };
 }
 
@@ -164,8 +169,8 @@ export async function deleteCategory(id) {
     throw new Error('Không tìm thấy danh mục để xóa.');
   }
 
-  // Kiểm tra xem danh mục có đang chứa váy cưới hay không
-  const dressCount = await Dress.countDocuments({ categoryId: id });
+  // Kiểm tra xem danh mục có đang chứa váy cưới hay không (loại trừ váy đã xóa retired)
+  const dressCount = await Dress.countDocuments({ categoryId: id, status: { $ne: 'retired' } });
   if (dressCount > 0) {
     throw new Error(`Không thể xóa: Danh mục đang có ${dressCount} mẫu váy cưới liên kết.`);
   }

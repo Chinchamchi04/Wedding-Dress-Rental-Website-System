@@ -22,4 +22,10 @@ router.patch('/:id/read', optionalAuthenticate, chatController.markAsRead);
 // Ghim / Bỏ ghim hội thoại (Staff và Admin)
 router.patch('/:id/pin', authenticate, authorize('ADMIN', 'STAFF'), chatController.togglePin);
 
+// Ghim / Bỏ ghim một tin nhắn cụ thể trong cuộc hội thoại
+router.patch('/:conversationId/messages/:messageId/pin', optionalAuthenticate, chatController.togglePinMessage);
+
+// Bỏ ghim tin nhắn của hội thoại
+router.patch('/:conversationId/unpin-message', optionalAuthenticate, chatController.unpinMessage);
+
 export default router;

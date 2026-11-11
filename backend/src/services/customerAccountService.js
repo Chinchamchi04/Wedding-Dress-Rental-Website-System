@@ -113,6 +113,8 @@ export async function confirmInspection(userId, identifier, bankData = {}) {
         fail(409, 'Biên bản vừa thay đổi. Vui lòng tải lại.');
     // Khi khách ấn duyệt -> cập nhật đơn hàng thành hoàn tất (completed)
     order.status = 'completed';
+    order.completedAt = order.completedAt || new Date();
+    order.maintenanceUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await order.save();
 
     await Contract.findOneAndUpdate(
