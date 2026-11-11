@@ -46,7 +46,8 @@ import {
   RefreshCw,
   PackageCheck,
 } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   getAppointmentsApi,
   updateAppointmentStatusApi,
@@ -121,7 +122,15 @@ const getEventBadge = (item) => {
 
 export default function ScheduleOverviewPage({ defaultTab }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Tự động nhận diện phân hệ đang truy cập: Admin vs Staff để điều hướng đúng màn hình
+  const isStaffContext =
+    location.pathname.startsWith('/staff') ||
+    (user?.role === 'staff' && !location.pathname.startsWith('/admin'));
+  const orderBasePath = isStaffContext ? '/staff/don-thue' : '/admin/don-thue';
 
   // Tab chính: 'calendar' (Lịch Biểu Showroom) | 'appointments' (Danh Sách & Phê Duyệt Lịch Hẹn) | 'returns' (Lịch Hạn Trả Đồ)
   const activeMainTab = searchParams.get('tab') || defaultTab || 'calendar';
@@ -133,7 +142,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
     });
   };
 
-  // Sub-filter trong Tab Lịch Biểu: 'all' | 'fitting' (Thử váy) | 'return' (Trả váy)
+  // Sub-filter trong Tab Lịch Biểu: 'all' | 'fitting' (Thử váy) | 'delivery' (Giao váy) | 'return' (Trả váy)
   const [calendarFilterType, setCalendarFilterType] = useState('all');
   const [calendarBranchFilter, setCalendarBranchFilter] = useState('all');
 
@@ -597,7 +606,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
         }
       `}</style>
 
-      <AdminLayout activeMenu="lich-tong-quan">
+      <AdminLayout activeMenu="lich-tong-quan" role={isStaffContext ? 'staff' : 'admin'}>
         <div className="space-y-5">
           {/* Header & Thanh Tiêu Đề */}
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1022,48 +1031,76 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                             {/* CÁC NÚT THAO TÁC TRỰC TIẾP DÀNH CHO STAFF */}
                             <div className="flex items-center gap-2 pt-3 border-t border-gray-200/70 mt-3">
                               {isFitting && item.status === 'confirmed' && (
-                                <>
-                                  <button
-                                    type="button"
-                                    disabled={updatingId === item.id}
-                                    onClick={() =>
-                                      handleUpdateAppointmentStatus(item.id, 'completed')
-                                    }
-                                    className="flex-1 py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
-                                  >
-                                    <CheckCircle2 className="w-3.5 h-3.5" />
-                                    <span>Hoàn Tất</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    disabled={updatingId === item.id}
-                                    onClick={() =>
-                                      handleUpdateAppointmentStatus(item.id, 'cancelled')
-                                    }
-                                    className="py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer disabled:opacity-50"
-                                    title="Khách bận hoặc không đến: Đánh dấu đã hủy"
-                                  >
-                                    <XCircle className="w-3.5 h-3.5" />
-                                    <span>Đã Hủy</span>
-                                  </button>
-                                </>
+                                (item.date || toDateKey(item.appointmentDate)) <= todayKey ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      disabled={updatingId === item.id}
+                                      onClick={() =>
+                                        handleUpdateAppointmentStatus(item.id, 'completed')
+                                      }
+                                      className="flex-1 py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
+                                    >
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                      <span>Hoàn Tất</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={updatingId === item.id}
+                                      onClick={() =>
+                                        handleUpdateAppointmentStatus(item.id, 'cancelled')
+                                      }
+                                      className="py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer disabled:opacity-50"
+                                      title="Khách bận hoặc không đến: Đánh dấu đã hủy"
+                                    >
+                                      <XCircle className="w-3.5 h-3.5" />
+                                      <span>Đã Hủy</span>
+                                    </button>
+                                  </>
+                                ) : (
+                                  <div className="flex-1 py-1.5 px-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-500 text-xs font-semibold flex items-center justify-center gap-1.5">
+                                    <Clock className="w-3.5 h-3.5 text-gray-400" />
+                                    <span>Chờ đến ngày hẹn</span>
+                                  </div>
+                                )
                               )}
 
                               {isDelivery && (
-                                <button
-                                  type="button"
-                                  onClick={() => navigate('/staff/don-thue')}
-                                  className="flex-1 py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer"
-                                >
-                                  <PackageCheck className="w-3.5 h-3.5" />
-                                  <span>Quản Lý Đơn Thuê</span>
-                                </button>
+                                <div className="flex-1 flex gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const targetCode = item.code || item.id || '';
+                                      navigate(`${orderBasePath}?orderCode=${encodeURIComponent(targetCode)}&action=inspect`);
+                                    }}
+                                    className="flex-1 py-2 px-2.5 rounded-xl bg-[#FAF0EC] hover:bg-[#F2D8D4] text-[#733F49] text-xs font-bold flex items-center justify-center gap-1 transition shadow-xs cursor-pointer border border-[#F2D8D4]"
+                                    title="Mở quy trình kiểm định đối soát váy"
+                                  >
+                                    <RotateCcw className="w-3.5 h-3.5" />
+                                    <span>Kiểm Định</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const targetCode = item.code || item.id || '';
+                                      navigate(`${orderBasePath}?orderCode=${encodeURIComponent(targetCode)}`);
+                                    }}
+                                    className="flex-1 py-2 px-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold flex items-center justify-center gap-1 transition shadow-xs cursor-pointer"
+                                    title="Xem chi tiết đơn thuê và bàn giao"
+                                  >
+                                    <PackageCheck className="w-3.5 h-3.5" />
+                                    <span>Đơn Thuê</span>
+                                  </button>
+                                </div>
                               )}
 
                               {isReturn && (
                                 <button
                                   type="button"
-                                  onClick={() => navigate('/staff/don-thue')}
+                                  onClick={() => {
+                                    const targetCode = item.code || item.id || '';
+                                    navigate(`${orderBasePath}?orderCode=${encodeURIComponent(targetCode)}&action=inspect`);
+                                  }}
                                   className="flex-1 py-2 px-3 rounded-xl bg-[#FAF0EC] hover:bg-[#F2D8D4] text-[#733F49] text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer border border-[#F2D8D4]"
                                 >
                                   <RotateCcw className="w-3.5 h-3.5" />
@@ -1166,6 +1203,8 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                           const dateStr = apt.appointmentDate
                             ? new Date(apt.appointmentDate).toLocaleDateString('vi-VN')
                             : apt.date || '—';
+                          const aptDateKey = apt.date || toDateKey(apt.appointmentDate);
+                          const isDue = aptDateKey <= todayKey;
                           const time = apt.timeSlot || '—';
                           const dresses = apt.interestedDresses || apt.selectedDresses || [];
                           const status = normalizeAptStatus(apt.status);
@@ -1241,28 +1280,39 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                               <td className="py-4 px-5 text-right">
                                 <div className="flex items-center justify-end">
                                   {status === 'confirmed' ? (
-                                    <div className="flex flex-col items-end gap-1.5">
-                                       <button
-                                         type="button"
-                                         disabled={updatingId === aptId}
-                                         onClick={() => handleUpdateAppointmentStatus(aptId, 'completed')}
-                                         className="w-24 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
-                                         title="Khách đến thử đồ: Đánh dấu đã hoàn tất"
-                                       >
-                                         <CheckCircle2 size={13} />
-                                         <span>Hoàn tất</span>
-                                       </button>
-                                       <button
-                                         type="button"
-                                         disabled={updatingId === aptId}
-                                         onClick={() => handleUpdateAppointmentStatus(aptId, 'cancelled')}
-                                         className="w-24 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-800 border border-rose-200 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
-                                         title="Khách không đến hoặc có việc bận: Đánh dấu đã hủy"
-                                       >
-                                         <XCircle size={13} />
-                                         <span>Đã hủy</span>
-                                       </button>
-                                     </div>
+                                    isDue ? (
+                                      <div className="flex flex-col items-end gap-1.5">
+                                        <button
+                                          type="button"
+                                          disabled={updatingId === aptId}
+                                          onClick={() => handleUpdateAppointmentStatus(aptId, 'completed')}
+                                          className="w-24 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
+                                          title="Khách đến thử đồ: Đánh dấu đã hoàn tất"
+                                        >
+                                          <CheckCircle2 size={13} />
+                                          <span>Hoàn tất</span>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          disabled={updatingId === aptId}
+                                          onClick={() => handleUpdateAppointmentStatus(aptId, 'cancelled')}
+                                          className="w-24 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-800 border border-rose-200 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
+                                          title="Khách không đến hoặc có việc bận: Đánh dấu đã hủy"
+                                        >
+                                          <XCircle size={13} />
+                                          <span>Đã hủy</span>
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <div className="flex flex-col items-end gap-1">
+                                        <span className="inline-block px-3 py-1 rounded-xl text-[11px] font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                          Đã xác nhận
+                                        </span>
+                                        <span className="text-[10px] text-gray-500 italic">
+                                          Chờ đến ngày hẹn
+                                        </span>
+                                      </div>
+                                    )
                                   ) : (
                                     <span
                                       className={`inline-block px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase ${
@@ -1399,28 +1449,64 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     {/* Nút hành động phê duyệt trực tiếp trong Modal */}
                     <div className="pt-2 border-t border-gray-100 flex flex-wrap gap-2">
                       {selectedEvent.status === 'confirmed' && (
-                        <>
-                          <button
-                            type="button"
-                            disabled={updatingId === selectedEvent.id}
-                            onClick={() => handleUpdateAppointmentStatus(selectedEvent.id, 'completed')}
-                            className="flex-1 py-2.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
-                          >
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span>Đánh Dấu Đã Thử Xong</span>
-                          </button>
-                          <button
-                            type="button"
-                            disabled={updatingId === selectedEvent.id}
-                            onClick={() => handleUpdateAppointmentStatus(selectedEvent.id, 'cancelled')}
-                            className="py-2.5 px-4 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
-                          >
-                            <XCircle className="w-4 h-4" />
-                            <span>Đánh Dấu Đã Hủy</span>
-                          </button>
-                        </>
+                        (selectedEvent.date || toDateKey(selectedEvent.appointmentDate)) <= todayKey ? (
+                          <>
+                            <button
+                              type="button"
+                              disabled={updatingId === selectedEvent.id}
+                              onClick={() => handleUpdateAppointmentStatus(selectedEvent.id, 'completed')}
+                              className="flex-1 py-2.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span>Đánh Dấu Đã Thử Xong</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={updatingId === selectedEvent.id}
+                              onClick={() => handleUpdateAppointmentStatus(selectedEvent.id, 'cancelled')}
+                              className="py-2.5 px-4 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                            >
+                              <XCircle className="w-4 h-4" />
+                              <span>Đánh Dấu Đã Hủy</span>
+                            </button>
+                          </>
+                        ) : (
+                          <div className="w-full py-2.5 px-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-600 text-xs font-semibold text-center flex items-center justify-center gap-2">
+                            <Clock className="w-4 h-4 text-gray-400" />
+                            <span>Lịch hẹn chưa đến ngày — Chỉ mở thao tác khi đến ngày hẹn</span>
+                          </div>
+                        )
                       )}
                     </div>
+                  </div>
+                )}
+
+                {selectedEvent.type === 'delivery' && (
+                  <div className="pt-2 flex flex-col sm:flex-row gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDetailModalOpen(false);
+                        const targetCode = selectedEvent.code || selectedEvent.id || '';
+                        navigate(`${orderBasePath}?orderCode=${encodeURIComponent(targetCode)}&action=inspect`);
+                      }}
+                      className="flex-1 py-2.5 px-3 bg-[#733F49] hover:bg-[#5a3239] text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      <span>Mở Quy Trình Kiểm Định &amp; Hoàn Cọc</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDetailModalOpen(false);
+                        const targetCode = selectedEvent.code || selectedEvent.id || '';
+                        navigate(`${orderBasePath}?orderCode=${encodeURIComponent(targetCode)}`);
+                      }}
+                      className="py-2.5 px-4 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <PackageCheck className="w-4 h-4" />
+                      <span>Quản Lý Đơn Thuê</span>
+                    </button>
                   </div>
                 )}
 
@@ -1430,11 +1516,12 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                       type="button"
                       onClick={() => {
                         setDetailModalOpen(false);
-                        navigate('/staff/don-thue');
+                        const targetCode = selectedEvent.code || selectedEvent.id || '';
+                        navigate(`${orderBasePath}?orderCode=${encodeURIComponent(targetCode)}&action=inspect`);
                       }}
                       className="w-full py-2.5 px-4 bg-[#733F49] hover:bg-[#5a3239] text-white font-bold rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                     >
-                      <span>Mở Quy Trình Kiểm Định & Hoàn Cọc</span>
+                      <span>Mở Quy Trình Kiểm Định &amp; Hoàn Cọc</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
