@@ -94,6 +94,14 @@ const orderSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    completedAt: {
+      type: Date,
+      default: null,
+    },
+    maintenanceUntil: {
+      type: Date,
+      default: null,
+    },
     totalRentPrice: {
       type: Number,
       required: true,

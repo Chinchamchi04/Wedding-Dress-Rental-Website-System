@@ -22,8 +22,10 @@ import { Search,
   TableProperties,
   ChevronUp,
   Upload,
-  Image as ImageIcon } from 'lucide-react';
+  Image as ImageIcon,
+  Wrench } from 'lucide-react';
 import HangerIcon from '../../components/common/HangerIcon';
+import { getActiveCompletedMaintenances } from '../../utils/maintenanceStorage';
 import { getAllDresses, createDress, updateDress, deleteDress, getCategories } from '../../services/dressService';
 import { getAllOrdersAdmin } from '../../services/orderService';
 import { formatCurrencyVND } from '../../utils/formatCurrency';
@@ -83,6 +85,11 @@ export default function InventoryManagement() {
   const [toastMsg, setToastMsg] = useState('');
   const [showMatrixTable, setShowMatrixTable] = useState(false);
 
+  // State cho Modal Chọn Size Bảo Dưỡng
+  const [maintenanceModalItem, setMaintenanceModalItem] = useState(null);
+  const [maintenanceSizesMap, setMaintenanceSizesMap] = useState({});
+  const [maintenanceDurationDays, setMaintenanceDurationDays] = useState(1);
+
   // Danh mục phom dáng và chất liệu đồng bộ từ MongoDB Atlas
   const [categoriesList, setCategoriesList] = useState(DEFAULT_CATEGORIES);
   const [materialsList, setMaterialsList] = useState(DEFAULT_MATERIALS);
@@ -92,7 +99,7 @@ export default function InventoryManagement() {
   const [editName, setEditName] = useState('');
   const [editSilhouette, setEditSilhouette] = useState(DEFAULT_CATEGORIES[0].name);
   const [editMaterial, setEditMaterial] = useState(DEFAULT_MATERIALS[0]);
-  const [editLocation, setEditLocation] = useState('Tủ A1');
+  const [editLocation, setEditLocation] = useState('A1');
   const [editRentPrice, setEditRentPrice] = useState('5.000.000');
   const [editDepositAmount, setEditDepositAmount] = useState('15.000.000');
   const [editStatusType, setEditStatusType] = useState('stored');
@@ -220,8 +227,9 @@ export default function InventoryManagement() {
       {};
 
     const num = (index + 1).toString().padStart(2, '0');
-    const cabinets = ['Tủ A1', 'Tủ B2', 'Tủ C1', 'Tủ VIP', 'Tủ D3'];
-    const location = override.location || cabinets[index % cabinets.length];
+    const cabinets = ['A1', 'B2', 'C1', 'VIP', 'D3'];
+    const rawLoc = override.location || cabinets[index % cabinets.length];
+    const location = (rawLoc || '').replace(/^Tủ\s*/i, '');
 
     // Xử lý sizes và số lượng tồn kho
     let sizeList = [];
@@ -260,10 +268,54 @@ export default function InventoryManagement() {
       String(o.orderCode || o.id || o._id || '').toLowerCase()
     );
 
-    // 1. Các đơn đang trong chu trình kiểm định và bảo dưỡng sau thuê
-    const maintenanceOrders = matchedOrders.filter((o) =>
-      ['returned', 'inspecting', 'maintenance'].includes(o.rawStatus || o.status)
-    );
+    const now = Date.now();
+    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+    const isOrderIn1DayMaintenance = (o) => {
+      const st = String(o.rawStatus || o.status || '').toLowerCase();
+      if (st !== 'completed' && st !== 'complete') return false;
+      if (o.maintenanceUntil) {
+        return new Date(o.maintenanceUntil).getTime() > now;
+      }
+      if (o.completedAt) {
+        return (now - new Date(o.completedAt).getTime()) < ONE_DAY_MS;
+      }
+      if (o.actualReturnDate) {
+        return (now - new Date(o.actualReturnDate).getTime()) < ONE_DAY_MS;
+      }
+      if (o.updatedAt) {
+        return (now - new Date(o.updatedAt).getTime()) < ONE_DAY_MS;
+      }
+      return false;
+    };
+
+    // 1. Các đơn đang trong chu trình kiểm định và bảo dưỡng sau thuê:
+    // Bao gồm các đơn đang trả/kiểm định VÀ các đơn đã hoàn tất trong vòng 1 ngày (24 giờ)
+    const maintenanceOrders = matchedOrders.filter((o) => {
+      const isDirectMaint = ['returned', 'inspecting', 'maintenance'].includes(o.rawStatus || o.status);
+      const isCompleted1Day = isOrderIn1DayMaintenance(o);
+      return isDirectMaint || isCompleted1Day;
+    });
+
+    // Lấy thêm các bản ghi bảo dưỡng từ localStorage từ các đơn hoàn tất
+    const completedStorageMaintenances = getActiveCompletedMaintenances();
+    const completedStorageItemsForThisDress = [];
+    completedStorageMaintenances.forEach((rec) => {
+      (rec.items || []).forEach((it) => {
+        const itId = String(it.dressId || '');
+        const itCode = cleanStr(it.code);
+        const itName = cleanStr(it.name);
+        const idMatch = itId && (itId === String(dressId) || (d._id && itId === String(d._id)));
+        const codeMatch = itCode && dressCleanCode && itCode === dressCleanCode;
+        const nameMatch = itName && dressCleanName && itName === dressCleanName && dressCleanName.length >= 2;
+        if (idMatch || codeMatch || nameMatch) {
+          completedStorageItemsForThisDress.push({
+            orderId: String(rec.orderId || ''),
+            size: String(it.size || '').replace(/^size\s*/i, '').trim(),
+          });
+        }
+      });
+    });
 
     // 2. Các đơn đang được khách thuê / chuẩn bị giao
     const rentingOrders = matchedOrders.filter((o) =>
@@ -275,7 +327,8 @@ export default function InventoryManagement() {
       const sName = String(sz.size || '').trim();
       const sQty = Number(sz.quantity) || 0;
 
-      const sMaint = maintenanceOrders.filter((o) => {
+      // a) Bảo dưỡng từ đơn thuê (kiểm định sau thuê hoặc hoàn tất trong vòng 1 ngày)
+      const orderMaintCount = maintenanceOrders.filter((o) => {
         const matchedItem = (o.items || []).find((it) => {
           const itId = it.dressId?._id || it.dressId || it.id || it._id;
           const itCleanName = cleanStr(it.name);
@@ -286,9 +339,25 @@ export default function InventoryManagement() {
             (itCleanName && dressCleanName && itCleanName === dressCleanName && dressCleanName.length >= 2)
           );
         });
-        const itemSize = matchedItem?.size || o.size || '';
-        return String(itemSize).trim().toUpperCase() === sName.toUpperCase();
+        const itemSize = String(matchedItem?.size || o.size || '').replace(/^size\s*/i, '').trim();
+        return itemSize.toUpperCase() === sName.toUpperCase();
       }).length;
+
+      // b) Bảo dưỡng từ bản ghi lưu trữ completed records
+      const existingOrderIds = new Set(maintenanceOrders.map((o) => String(o._id || o.id || o.orderCode || '')));
+      const storageMaintCount = completedStorageItemsForThisDress.filter((it) => {
+        if (existingOrderIds.has(String(it.orderId))) return false;
+        return it.size.toUpperCase() === sName.toUpperCase();
+      }).length;
+
+      // c) Bảo dưỡng thủ công do Staff/Admin chủ động chọn theo size
+      const manualMaintCount = Number(
+        override.maintenanceSizes?.[sName] ??
+        override.maintenanceSizes?.[sName.toUpperCase()] ??
+        0
+      );
+
+      const sMaint = Math.min(sQty, orderMaintCount + storageMaintCount + manualMaintCount);
 
       const sRented = rentingOrders.filter((o) => {
         const matchedItem = (o.items || []).find((it) => {
@@ -387,6 +456,7 @@ export default function InventoryManagement() {
       customerPhones: matchedOrders.map((o) => (o.customerPhone || '').toLowerCase()),
       matchedOrders,
       sizes: detailedSizes,
+      detailedSizes,
       totalUnits: `Tổng: ${String(totalStock).padStart(2, '0')} bộ`,
       description: override.description || d.description || 'Lễ phục cưới cao cấp UniBridal Haute Couture',
       rentPrice: parseNum(override.rentPrice) || parseNum(d.rentPrice) || parseNum(d.price) || 5000000,
@@ -515,7 +585,7 @@ export default function InventoryManagement() {
         (statusFilter === 'drying' &&
           (item.statusType === 'drying' || (item.maintenanceCount && item.maintenanceCount > 0))) ||
         (statusFilter === 'stored' &&
-          (item.statusType === 'stored' || item.statusType === 'partially_rented')) ||
+          (item.statusType === 'stored' || item.statusType === 'partially_rented' || (item.availableStock && item.availableStock > 0))) ||
         (statusFilter === 'ready' &&
           (item.statusType === 'out_of_stock' ||
             item.statusType === 'ready' ||
@@ -585,6 +655,81 @@ export default function InventoryManagement() {
     showToast(`Đã cập nhật trạng thái: ${newStatusLabel}`);
   };
 
+  // Xử lý khi nhấn vào 4 Top Metric Cards để lọc tức thời
+  const handleMetricCardClick = (targetStatus) => {
+    if (statusFilter === targetStatus) {
+      setStatusFilter('all');
+    } else {
+      setStatusFilter(targetStatus);
+    }
+    setActivePage(1);
+  };
+
+  // Mở Modal Chọn Size Bảo Dưỡng
+  const handleOpenMaintenanceSizeModal = (item) => {
+    setMaintenanceModalItem(item);
+    const rawList = item.detailedSizes || item.sizes || [];
+    const sizeList = (rawList.length > 0 ? rawList : ['S', 'M']).map((s) => {
+      if (typeof s === 'object' && s.size) return s;
+      const sName = typeof s === 'object' ? (s.label || 'S') : String(s);
+      return { size: sName, quantity: 2, available: 2, maintenance: 0, rented: 0 };
+    });
+    const curSizes = {};
+    sizeList.forEach((sz) => {
+      const sName = sz.size || sz;
+      curSizes[sName] = sz.maintenance || 0;
+    });
+    setMaintenanceSizesMap(curSizes);
+    setMaintenanceDurationDays(1);
+    setActionMenuOpenId(null);
+  };
+
+  // Lưu cấu hình bảo dưỡng theo size cho sản phẩm
+  const handleSaveMaintenanceSizes = (newSizes, durationDays) => {
+    if (!maintenanceModalItem) return;
+    const itemId = maintenanceModalItem.id;
+    const totalMaint = Object.values(newSizes).reduce((sum, v) => sum + (Number(v) || 0), 0);
+    const totalStock = maintenanceModalItem.totalStock || 0;
+
+    const updatedOverrides = {
+      ...manualOverrides,
+      [itemId]: {
+        ...(manualOverrides[itemId] || {}),
+        maintenanceSizes: newSizes,
+        statusType:
+          totalMaint >= totalStock && totalStock > 0
+            ? 'drying'
+            : totalMaint > 0
+            ? 'auto'
+            : manualOverrides[itemId]?.statusType === 'drying'
+            ? 'stored'
+            : manualOverrides[itemId]?.statusType || 'auto',
+      },
+    };
+
+    setManualOverrides(updatedOverrides);
+    try {
+      localStorage.setItem('unibridal_inventory_overrides', JSON.stringify(updatedOverrides));
+    } catch { }
+
+    setItems((prev) =>
+      prev.map((it) => {
+        if (it.id === itemId) {
+          return computeItemData(
+            rawDresses.find((d) => (d._id || d.id) === itemId) || it,
+            0,
+            orders,
+            updatedOverrides
+          );
+        }
+        return it;
+      })
+    );
+
+    setMaintenanceModalItem(null);
+    showToast(`Đã cập nhật bảo dưỡng theo size cho mẫu "${maintenanceModalItem.name}" thành công!`);
+  };
+
   // Mở Modal Sửa Sản Phẩm
   const handleOpenEditModal = (item) => {
     setEditingItem(item);
@@ -616,7 +761,7 @@ export default function InventoryManagement() {
         (cleanStr(d.name) && cleanStr(item.name) && cleanStr(d.name) === cleanStr(item.name))
     ) || item.rawDress || {};
 
-    setEditLocation(item.location || 'Tủ A1');
+    setEditLocation((item.location || 'A1').replace(/^Tủ\s*/i, ''));
     setEditRentPrice(
       formatNumberWithDots(
         parseNum(rawDress.rentPrice) ||
@@ -749,7 +894,7 @@ export default function InventoryManagement() {
     if (!editingItem) return;
 
     if (!editName.trim()) {
-      showToast('Vui lòng nhập tên tác phẩm!');
+      showToast('Vui lòng nhập tên váy cưới!');
       return;
     }
 
@@ -836,7 +981,7 @@ export default function InventoryManagement() {
         description: editDescription.trim(),
         sizes: sizeList,
         images: editImages.length > 0 ? editImages : (editingItem.images || [editingItem.image]),
-        location: editLocation || 'Tủ A1',
+        location: (editLocation || 'A1').replace(/^Tủ\s*/i, ''),
       };
 
       const updatedOverrides = {
@@ -893,7 +1038,7 @@ export default function InventoryManagement() {
   const handleAddNewItem = async (e) => {
     e.preventDefault();
     if (!newName.trim()) {
-      showToast('Vui lòng nhập Tên Tác Phẩm.');
+      showToast('Vui lòng nhập Tên Váy Cưới.');
       return;
     }
 
@@ -956,7 +1101,7 @@ export default function InventoryManagement() {
         rentPrice: parseNum(newRentPrice, 5000000),
         depositAmount: parseNum(newDepositAmount, 15000000),
         description: newDescription.trim(),
-        location: 'Tủ A1',
+        location: 'A1',
       };
 
       const newOverrides = {
@@ -987,7 +1132,7 @@ export default function InventoryManagement() {
       setNewSizeM(2);
       setNewSizeL(1);
 
-      showToast(`Đã lưu và nhập kho thành công tác phẩm "${payload.name}" vào MongoDB Atlas!`);
+      showToast(`Đã lưu và nhập kho thành công váy cưới "${payload.name}" vào MongoDB Atlas!`);
     } catch (err) {
       console.error('Lỗi khi lưu tác phẩm vào MongoDB Atlas:', err);
       showToast(`Lỗi khi lưu tác phẩm: ${err.message || 'Không thể kết nối máy chủ'}`);
@@ -1072,6 +1217,19 @@ export default function InventoryManagement() {
     (i) => i.statusType === 'drying' || (i.maintenanceCount && i.maintenanceCount > 0)
   ).length;
 
+  const totalMaintenanceUnits = useMemo(() => {
+    return items.reduce((sum, it) => sum + (it.maintenanceCount || 0), 0);
+  }, [items]);
+
+  // Đồng bộ số liệu bảo dưỡng kho ra localStorage để các trang khác (như Staff Dashboard) đồng bộ chuẩn xác
+  useEffect(() => {
+    if (items.length > 0) {
+      localStorage.setItem('unibridal_inventory_maintenance_count', String(maintenanceCount));
+      localStorage.setItem('unibridal_inventory_maintenance_units', String(totalMaintenanceUnits));
+      window.dispatchEvent(new Event('unibridal_inventory_updated'));
+    }
+  }, [items, maintenanceCount, totalMaintenanceUnits]);
+
   // 5. Tổng giá trị tài sản kho bảo lãnh
   const totalAssetValue = useMemo(() => {
     return items.reduce((sum, item) => sum + ((parseNum(item.depositAmount, 15000000)) * (item.totalStock || 1)), 0);
@@ -1126,7 +1284,7 @@ export default function InventoryManagement() {
             Quản Lý Sản Phẩm Kho
           </h1>
           <p className="text-[14px] text-[#7A6B6C] font-normal max-w-3xl leading-relaxed">
-            Theo dõi số lượng váy cưới thực tế, vị trí tủ lưu trữ, kiểm định và bảo dưỡng lễ phục showroom UniBridal.
+            Theo dõi số lượng váy cưới thực tế, vị trí lưu trữ, kiểm định và bảo dưỡng lễ phục showroom UniBridal.
           </p>
         </div>
 
@@ -1163,7 +1321,7 @@ export default function InventoryManagement() {
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#733F49] to-[#8C4654] hover:from-[#5A2D35] hover:to-[#733F49] text-white text-xs font-bold transition-all cursor-pointer shadow-xs border-0"
           >
             <Plus size={15} />
-            <span>Nhập Lễ Phục Mới</span>
+            <span>Thêm Váy Cưới</span>
           </button>
         </div>
       </div>
@@ -1171,7 +1329,18 @@ export default function InventoryManagement() {
       {/* 4 Top Metric Cards Nâng Cấp: Tổng số váy, Tổng số mẫu, Đang cho thuê, Đang bảo dưỡng */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Card 1: TỔNG MẪU THIẾT KẾ (Ánh hồng thanh lịch) */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FDE8EC_0%,_transparent_70%)] rounded-2xl border border-[#FAD2DA] py-4 px-5 shadow-xs hover:shadow-md transition-shadow">
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => handleMetricCardClick('all')}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleMetricCardClick('all')}
+          title="Nhấn để xem toàn bộ danh mục mẫu thiết kế"
+          className={`bg-white bg-[radial-gradient(ellipse_at_top_right,_#FDE8EC_0%,_transparent_70%)] rounded-2xl border py-4 px-5 transition-all cursor-pointer select-none active:scale-[0.98] ${
+            statusFilter === 'all'
+              ? 'ring-2 ring-[#733F49] border-[#733F49] shadow-md -translate-y-0.5'
+              : 'border-[#FAD2DA] shadow-xs hover:border-[#733F49]/50 hover:shadow-md hover:-translate-y-0.5'
+          }`}
+        >
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#733F49] uppercase">
@@ -1185,17 +1354,28 @@ export default function InventoryManagement() {
               <span className="text-[28px] font-bold text-[#2C2523] leading-none">
                 {totalCount}
               </span>
-              <span className="text-[12px] font-medium text-[#8C7D7E] ml-2">mẫu thiết kế</span>
+              <span className="text-[12px] font-medium text-[#8C7D7E] ml-2">mẫu</span>
             </div>
           </div>
         </div>
 
-        {/* Card 2: TỔNG SỐ VÁY (Ánh xanh lá dịu mát) */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EAF8EE_0%,_transparent_70%)] rounded-2xl border border-[#C6EED1] py-4 px-5 shadow-xs hover:shadow-md transition-shadow">
+        {/* Card 2: TỔNG SỐ VÁY CƯỚI (Ánh xanh lá dịu mát) */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => handleMetricCardClick('stored')}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleMetricCardClick('stored')}
+          title="Nhấn để lọc các mẫu còn hàng sẵn sàng phục vụ trong kho"
+          className={`bg-white bg-[radial-gradient(ellipse_at_top_right,_#EAF8EE_0%,_transparent_70%)] rounded-2xl border py-4 px-5 transition-all cursor-pointer select-none active:scale-[0.98] ${
+            statusFilter === 'stored'
+              ? 'ring-2 ring-[#1E8347] border-[#1E8347] shadow-md -translate-y-0.5'
+              : 'border-[#C6EED1] shadow-xs hover:border-[#1E8347]/50 hover:shadow-md hover:-translate-y-0.5'
+          }`}
+        >
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#1E8347] uppercase">
-                TỔNG SỐ LỄ PHỤC
+                TỔNG SỐ VÁY CƯỚI
               </span>
               <div className="w-9 h-9 rounded-xl bg-[#EAF8EE] flex items-center justify-center text-[#1E8347]">
                 <HangerIcon size={17} />
@@ -1205,17 +1385,28 @@ export default function InventoryManagement() {
               <span className="text-[28px] font-bold text-[#1E8347] leading-none">
                 {totalUnitsAll}
               </span>
-              <span className="text-[12px] font-medium text-[#736364] ml-2">chiếc váy</span>
+              <span className="text-[12px] font-medium text-[#736364] ml-2">chiếc</span>
             </div>
           </div>
         </div>
 
-        {/* Card 3: MẪU ĐANG CHO THUÊ */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EFF6FF_0%,_transparent_70%)] rounded-2xl border border-[#BFDBFE] py-4 px-5 shadow-xs hover:shadow-md transition-shadow">
+        {/* Card 3: VÁY CƯỚI ĐANG CHO THUÊ (Ánh xanh dương) */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => handleMetricCardClick('ready')}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleMetricCardClick('ready')}
+          title="Nhấn để lọc các mẫu đang có váy cho khách thuê"
+          className={`bg-white bg-[radial-gradient(ellipse_at_top_right,_#EFF6FF_0%,_transparent_70%)] rounded-2xl border py-4 px-5 transition-all cursor-pointer select-none active:scale-[0.98] ${
+            statusFilter === 'ready'
+              ? 'ring-2 ring-[#1D4ED8] border-[#1D4ED8] shadow-md -translate-y-0.5'
+              : 'border-[#BFDBFE] shadow-xs hover:border-[#1D4ED8]/50 hover:shadow-md hover:-translate-y-0.5'
+          }`}
+        >
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#1D4ED8] uppercase">
-                LỄ PHỤC ĐI THUÊ
+                VÁY CƯỚI ĐANG CHO THUÊ
               </span>
               <div className="w-9 h-9 rounded-xl bg-[#EFF6FF] flex items-center justify-center text-[#1D4ED8]">
                 <Crown size={17} />
@@ -1225,29 +1416,38 @@ export default function InventoryManagement() {
               <span className="text-[28px] font-bold text-[#1E3A8A] leading-none">
                 {rentedModelsCount}
               </span>
-              <span className="text-[12px] font-medium text-[#60A5FA] ml-2">
-                mẫu ({totalCount > 0 ? Math.round((rentedModelsCount / totalCount) * 100) : 0}%)
-              </span>
+              <span className="text-[12px] font-medium text-[#60A5FA] ml-2">chiếc</span>
             </div>
           </div>
         </div>
 
-        {/* Card 4: MẪU ĐANG BẢO DƯỠNG */}
-        <div className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FEF3C7_0%,_transparent_70%)] rounded-2xl border border-[#FDE68A] py-4 px-5 shadow-xs hover:shadow-md transition-shadow">
+        {/* Card 4: VÁY ĐANG BẢO DƯỠNG (Ánh vàng cam) */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => handleMetricCardClick('drying')}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleMetricCardClick('drying')}
+          title="Nhấn để lọc các mẫu có váy đang bảo dưỡng / sửa chữa"
+          className={`bg-white bg-[radial-gradient(ellipse_at_top_right,_#FEF3C7_0%,_transparent_70%)] rounded-2xl border py-4 px-5 transition-all cursor-pointer select-none active:scale-[0.98] ${
+            statusFilter === 'drying'
+              ? 'ring-2 ring-[#D97706] border-[#D97706] shadow-md -translate-y-0.5'
+              : 'border-[#FDE68A] shadow-xs hover:border-[#D97706]/50 hover:shadow-md hover:-translate-y-0.5'
+          }`}
+        >
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-bold tracking-[1.2px] text-[#92400E] uppercase">
-                MẪU ĐANG BẢO DƯỠNG
+                VÁY ĐANG BẢO DƯỠNG
               </span>
               <div className="w-9 h-9 rounded-xl bg-[#FEF2E6] flex items-center justify-center text-[#D97706]">
-                <Clock size={17} />
+                <Wrench size={17} strokeWidth={2} />
               </div>
             </div>
             <div className="flex items-baseline">
               <span className="text-[28px] font-bold text-[#78350F] leading-none">
                 {maintenanceCount}
               </span>
-              <span className="text-[12px] font-medium text-[#D97706] ml-2">mẫu đang xử lý</span>
+              <span className="text-[12px] font-medium text-[#D97706] ml-2">chiếc</span>
             </div>
           </div>
         </div>
@@ -1280,12 +1480,12 @@ export default function InventoryManagement() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full text-left text-xs border-collapse font-jakarta">
               <thead>
                 <tr className="bg-[#FAF5F2] text-[#705F60] font-bold uppercase tracking-wider text-[11px] border-b border-[#EFE2DC]">
                   <th className="py-3 px-3.5">Mã Váy</th>
                   <th className="py-3 px-3.5">Tên Mẫu Thiết Kế</th>
-                  <th className="py-3 px-3 text-center">Vị Trí Tủ</th>
+                  <th className="py-3 px-3 text-center">Vị Trí</th>
                   <th className="py-3 px-2 text-center bg-[#FDF8F6]">Size XS</th>
                   <th className="py-3 px-2 text-center bg-[#FDF8F6]">Size S</th>
                   <th className="py-3 px-2 text-center bg-[#FDF8F6]">Size M</th>
@@ -1307,42 +1507,42 @@ export default function InventoryManagement() {
 
                   return (
                     <tr key={it.id} className="hover:bg-[#FFFDFB] transition-colors">
-                      <td className="py-2.5 px-3.5 font-mono font-bold text-[#733F49]">
+                      <td className="py-2.5 px-3.5 font-mono font-bold text-[#733F49] text-[12px]">
                         {it.code}
                       </td>
-                      <td className="py-2.5 px-3.5 font-semibold text-[#2C2523]">
+                      <td className="py-2.5 px-3.5 font-semibold text-[#2C2523] text-[12px]">
                         {it.name}
                       </td>
                       <td className="py-2.5 px-3 text-center text-[#705F60]">
                         <span className="px-2 py-0.5 rounded-md bg-[#FAF2EE] text-[11px] font-semibold border border-[#EFE2DC]">
-                          {it.location || 'Tủ A1'}
+                          {it.location ? String(it.location).replace(/^Tủ\s*/i, '') : 'A1'}
                         </span>
                       </td>
-                      <td className="py-2.5 px-2 text-center bg-[#FFFBF9] font-medium text-[#5D4E50]">
+                      <td className="py-2.5 px-2 text-center bg-[#FFFBF9] font-medium text-[#5D4E50] text-[12px] tabular-nums">
                         {szXS > 0 ? szXS : '—'}
                       </td>
-                      <td className="py-2.5 px-2 text-center bg-[#FFFBF9] font-medium text-[#5D4E50]">
+                      <td className="py-2.5 px-2 text-center bg-[#FFFBF9] font-medium text-[#5D4E50] text-[12px] tabular-nums">
                         {szS > 0 ? szS : '—'}
                       </td>
-                      <td className="py-2.5 px-2 text-center bg-[#FFFBF9] font-medium text-[#5D4E50]">
+                      <td className="py-2.5 px-2 text-center bg-[#FFFBF9] font-medium text-[#5D4E50] text-[12px] tabular-nums">
                         {szM > 0 ? szM : '—'}
                       </td>
-                      <td className="py-2.5 px-2 text-center bg-[#FFFBF9] font-medium text-[#5D4E50]">
+                      <td className="py-2.5 px-2 text-center bg-[#FFFBF9] font-medium text-[#5D4E50] text-[12px] tabular-nums">
                         {szL > 0 ? szL : '—'}
                       </td>
-                      <td className="py-2.5 px-3 text-center font-bold text-[#2C2523]">
+                      <td className="py-2.5 px-3 text-center font-bold text-[#2C2523] text-[12px] tabular-nums">
                         {it.totalStock}
                       </td>
-                      <td className="py-2.5 px-3 text-center font-bold text-emerald-700">
+                      <td className="py-2.5 px-3 text-center font-bold text-emerald-700 text-[12px] tabular-nums">
                         {it.availableStock}
                       </td>
-                      <td className="py-2.5 px-3 text-center font-semibold text-blue-700">
+                      <td className="py-2.5 px-3 text-center font-semibold text-blue-700 text-[12px] tabular-nums">
                         {it.rentedCount > 0 ? it.rentedCount : '0'}
                       </td>
-                      <td className="py-2.5 px-3 text-center font-semibold text-amber-700">
+                      <td className="py-2.5 px-3 text-center font-semibold text-amber-700 text-[12px] tabular-nums">
                         {it.maintenanceCount > 0 ? it.maintenanceCount : '0'}
                       </td>
-                      <td className="py-2.5 px-3.5 text-right font-medium text-[#733F49]">
+                      <td className="py-2.5 px-3.5 text-right font-medium text-[#733F49] text-[12px] tabular-nums">
                         {fmtVnd(it.depositAmount)}
                       </td>
                       <td className="py-2.5 px-3 text-center">
@@ -1359,38 +1559,38 @@ export default function InventoryManagement() {
                   );
                 })}
                 {/* Hàng Tổng Cộng Kho */}
-                <tr className="bg-[#FAF0EC] font-bold text-[#2C2523] border-t-2 border-[#EAD5CF]">
-                  <td colSpan={3} className="py-3 px-3.5 text-xs font-playfair uppercase">
+                <tr className="bg-[#FAF0EC] font-bold text-[#2C2523] border-t-2 border-[#EAD5CF] font-jakarta">
+                  <td colSpan={3} className="py-3 px-3.5 text-[12px] font-bold uppercase tracking-wider text-[#5F2B36]">
                     TỔNG CỘNG TOÀN KHO SHOWROOM
                   </td>
-                  <td className="py-3 px-2 text-center bg-[#FAF0EC]">
+                  <td className="py-3 px-2 text-center bg-[#FAF0EC] text-[12.5px] font-bold text-[#2C2523] tabular-nums">
                     {items.reduce((sum, it) => sum + ((it.sizes || []).find((s) => s.size?.toUpperCase() === 'XS')?.quantity || 0), 0)}
                   </td>
-                  <td className="py-3 px-2 text-center bg-[#FAF0EC]">
+                  <td className="py-3 px-2 text-center bg-[#FAF0EC] text-[12.5px] font-bold text-[#2C2523] tabular-nums">
                     {items.reduce((sum, it) => sum + ((it.sizes || []).find((s) => s.size?.toUpperCase() === 'S')?.quantity || 0), 0)}
                   </td>
-                  <td className="py-3 px-2 text-center bg-[#FAF0EC]">
+                  <td className="py-3 px-2 text-center bg-[#FAF0EC] text-[12.5px] font-bold text-[#2C2523] tabular-nums">
                     {items.reduce((sum, it) => sum + ((it.sizes || []).find((s) => s.size?.toUpperCase() === 'M')?.quantity || 0), 0)}
                   </td>
-                  <td className="py-3 px-2 text-center bg-[#FAF0EC]">
+                  <td className="py-3 px-2 text-center bg-[#FAF0EC] text-[12.5px] font-bold text-[#2C2523] tabular-nums">
                     {items.reduce((sum, it) => sum + ((it.sizes || []).find((s) => s.size?.toUpperCase() === 'L')?.quantity || 0), 0)}
                   </td>
-                  <td className="py-3 px-3 text-center text-sm font-bold text-[#2C2523]">
+                  <td className="py-3 px-3 text-center text-[12.5px] font-bold text-[#2C2523] tabular-nums">
                     {totalUnitsAll}
                   </td>
-                  <td className="py-3 px-3 text-center text-sm font-bold text-emerald-700">
+                  <td className="py-3 px-3 text-center text-[12.5px] font-bold text-emerald-700 tabular-nums">
                     {totalAvailableUnits}
                   </td>
-                  <td className="py-3 px-3 text-center text-sm font-bold text-blue-700">
+                  <td className="py-3 px-3 text-center text-[12.5px] font-bold text-blue-700 tabular-nums">
                     {totalRentedUnits}
                   </td>
-                  <td className="py-3 px-3 text-center text-sm font-bold text-amber-700">
+                  <td className="py-3 px-3 text-center text-[12.5px] font-bold text-amber-700 tabular-nums">
                     {items.reduce((sum, it) => sum + (it.maintenanceCount || 0), 0)}
                   </td>
-                  <td className="py-3 px-3.5 text-right text-xs font-bold text-[#733F49]">
+                  <td className="py-3 px-3.5 text-right text-[12.5px] font-bold text-[#733F49] tabular-nums">
                     {fmtVnd(totalAssetValue)}
                   </td>
-                  <td className="py-3 px-3 text-center text-[11px] text-emerald-700">
+                  <td className="py-3 px-3 text-center text-[12.5px] font-bold text-emerald-700 tabular-nums">
                     Sẵn sàng {totalAvailableUnits}/{totalUnitsAll}
                   </td>
                 </tr>
@@ -1401,20 +1601,26 @@ export default function InventoryManagement() {
       )}
 
       {/* Search và Filter Bar */}
-      <div className="bg-white p-1.5 rounded-2xl border border-[#EFE5E1] shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4">
-        <div className="relative flex-1 max-w-md">
+      <div className="bg-white p-2 rounded-2xl border border-[#EFE5E1] shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4">
+        <div className="relative flex-1 min-w-0">
           <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A39192]" />
           <input
             type="text"
-            placeholder="Tìm theo mã váy, tên thiết kế, vị trí tủ..."
+            placeholder="Tìm theo mã váy, tên thiết kế, vị trí..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setActivePage(1);
+            }}
             className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-[#EFE5E1] bg-[#FCF7F4] text-sm text-[#302626] placeholder-[#A39293] focus:outline-none focus:ring-2 focus:ring-[#B8737D]/30 focus:border-[#B8737D] transition-all"
           />
           {searchTerm && (
             <button
               type="button"
-              onClick={() => setSearchTerm('')}
+              onClick={() => {
+                setSearchTerm('');
+                setActivePage(1);
+              }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A39192] hover:text-[#5F333B] cursor-pointer bg-transparent border-0 p-0"
             >
               <X size={15} />
@@ -1422,7 +1628,7 @@ export default function InventoryManagement() {
           )}
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 shrink-0">
           {statusOptions.map((tab) => (
             <button
               key={tab.value}
@@ -1442,26 +1648,26 @@ export default function InventoryManagement() {
 
       {/* Main Table Card */}
       <div className="bg-white rounded-2xl border border-[#EFE5E1] shadow-xs overflow-hidden mb-6">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto no-scrollbar">
           <table className="w-full min-w-[960px] text-left border-collapse">
             <thead>
               <tr className="border-b border-[#F2E5E0] bg-[#FFF6F3]">
-                <th className="py-4 px-5 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[25%] min-w-[210px]">
-                  SẢN PHẨM và MÃ VÁY
+                <th className="py-4 px-5 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[26%] min-w-[220px]">
+                  TÊN VÁY và MÃ VÁY
                 </th>
-                <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[18%] min-w-[160px]">
-                  VỊ TRÍ TỦ
+                <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[12%] min-w-[110px]">
+                  VỊ TRÍ
                 </th>
-                <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[17%] min-w-[150px]">
+                <th className="py-4 pl-7 pr-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[17%] min-w-[150px]">
                   GIÁ THUÊ và CỌC
                 </th>
-                <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[18%] min-w-[160px]">
+                <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[20%] min-w-[175px]">
                   TỒN KHO THEO SIZE
                 </th>
-                <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[13%] min-w-[140px]">
+                <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[12.5%] min-w-[125px]">
                   TÌNH TRẠNG KHO
                 </th>
-                <th className="py-4 px-5 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[9%] min-w-[100px]">
+                <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[12.5%] min-w-[130px]">
                   THAO TÁC
                 </th>
               </tr>
@@ -1474,7 +1680,8 @@ export default function InventoryManagement() {
                   </td>
                 </tr>
               ) : (
-                paginatedItems.map((item) => {
+                paginatedItems.map((item, idx) => {
+                  const isNearBottom = idx >= Math.max(1, paginatedItems.length - 3);
                   return (
                     <tr key={item.id} className="hover:bg-[#FCF9F7] transition-colors">
                       {/* Col 1: Sản phẩm */}
@@ -1507,18 +1714,18 @@ export default function InventoryManagement() {
                         </div>
                       </td>
 
-                      {/* Col 2: Vị trí tủ */}
+                      {/* Col 2: Vị trí */}
                       <td className="py-4 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-2 whitespace-nowrap">
                           <HangerIcon size={16} strokeWidth={1.8} className="text-[#8A4650] shrink-0" />
                           <span className="font-bold text-[#2C2523] text-[13.5px] whitespace-nowrap">
-                            {item.location}
+                            {item.location ? String(item.location).replace(/^Tủ\s*/i, '') : '—'}
                           </span>
                         </div>
                       </td>
 
                       {/* Col 3: Giá thuê và Cọc */}
-                      <td className="py-4 px-4 whitespace-nowrap">
+                      <td className="py-4 pl-7 pr-4 whitespace-nowrap">
                         <div className="font-bold text-[#733F49] text-[13.5px] leading-tight">
                           {fmtVnd(item.rentPrice)}
                         </div>
@@ -1564,6 +1771,7 @@ export default function InventoryManagement() {
                                 >
                                   {sName}: <span className="font-bold ml-1 text-[#2C2523]">{sAvail}/{sQty}</span>
                                   {sMaint > 0 && <span className="ml-1 text-[9px] text-[#D97706] font-bold">({sMaint} bảo dưỡng)</span>}
+                                  {sRented > 0 && <span className="ml-1 text-[9px] text-[#1D4ED8] font-bold">({sRented} đang thuê)</span>}
                                 </span>
                               );
                             })}
@@ -1594,17 +1802,8 @@ export default function InventoryManagement() {
                           )}
                           {item.statusType === 'drying' && (
                             <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase whitespace-nowrap bg-[#FEF2E6] text-[#D97706] border border-[#FED7AA]">
-                              <Clock size={12} className="text-[#D97706]" />
+                              <Wrench size={12} className="text-[#D97706]" />
                               <span>Đang Bảo Dưỡng</span>
-                            </span>
-                          )}
-
-                          {/* Chú thích trạng thái rõ ràng, dễ hiểu */}
-                          {(item.statusSubNote || item.statusType === 'stored') && (
-                            <span className="text-[11px] text-[#8C7A7B] font-medium leading-tight max-w-[170px] text-center">
-                              {item.statusSubNote || (item.availableStock === item.totalStock
-                                ? `Sẵn sàng phục vụ (${item.availableStock}/${item.totalStock} bộ)`
-                                : `Sẵn sàng: ${item.availableStock}/${item.totalStock} bộ`)}
                             </span>
                           )}
                         </div>
@@ -1651,49 +1850,49 @@ export default function InventoryManagement() {
 
                           {/* Action Popover Menu */}
                           {actionMenuOpenId === item.id && (
-                            <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-2xl shadow-xl border border-[#EFE5E1] py-2 z-30 text-left animate-fadeIn">
-                              <div className="px-3.5 py-1 text-[10px] font-bold text-[#8C7A7B] uppercase tracking-wider bg-[#FCF8F5] mb-1">
-                                TRẠNG THÁI KHO
+                            <>
+                              {/* Backdrop để click ra ngoài đóng menu */}
+                              <div
+                                className="fixed inset-0 z-20 cursor-default"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActionMenuOpenId(null);
+                                }}
+                              />
+                              <div
+                                className={`absolute right-0 ${
+                                  isNearBottom ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+                                } w-48 bg-white rounded-2xl shadow-xl border border-[#EFE5E1] py-2 z-30 text-left animate-fadeIn`}
+                              >
+                                <div className="px-3.5 py-1 text-[10px] font-bold text-[#8C7A7B] uppercase tracking-wider bg-[#FCF8F5] mb-1">
+                                  TRẠNG THÁI KHO
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateItemStatus(item.id, 'stored', 'CÒN HÀNG')}
+                                  className="w-full px-3.5 py-2 text-xs text-[#1D4ED8] hover:bg-[#EFF6FF] font-semibold flex items-center gap-1.5 text-left transition-colors cursor-pointer border-0 bg-transparent"
+                                >
+                                  <Crown size={13} className="text-[#1D4ED8] shrink-0" />
+                                  <span>Còn Hàng</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenMaintenanceSizeModal(item)}
+                                  className="w-full px-3.5 py-2 text-xs text-[#C05621] hover:bg-[#FFF4E6] font-semibold flex items-center gap-1.5 text-left transition-colors cursor-pointer border-0 bg-transparent"
+                                >
+                                  <Wrench size={13} className="text-[#C05621] shrink-0" />
+                                  <span>Đang Bảo Dưỡng</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateItemStatus(item.id, 'out_of_stock', 'HẾT HÀNG')}
+                                  className="w-full px-3.5 py-2 text-xs text-[#DC2626] hover:bg-[#FEF2F2] font-semibold flex items-center gap-1.5 text-left transition-colors cursor-pointer border-0 bg-transparent"
+                                >
+                                  <span className="font-bold text-sm leading-none shrink-0">✕</span>
+                                  <span>Hết Hàng</span>
+                                </button>
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateItemStatus(item.id, 'stored', 'CÒN HÀNG')}
-                                className="w-full px-3.5 py-2 text-xs text-[#1D4ED8] hover:bg-[#EFF6FF] font-semibold block text-left transition-colors cursor-pointer border-0 bg-transparent"
-                              >
-                                ✨ Còn Hàng
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateItemStatus(item.id, 'ready', 'ĐÃ CHO THUÊ')}
-                                className="w-full px-3.5 py-2 text-xs text-[#1E8347] hover:bg-[#EAF8EE] font-semibold block text-left transition-colors cursor-pointer border-0 bg-transparent"
-                              >
-                                ✓ Đã Cho Thuê
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateItemStatus(item.id, 'drying', 'ĐANG BẢO DƯỠNG')}
-                                className="w-full px-3.5 py-2 text-xs text-[#C05621] hover:bg-[#FFF4E6] font-semibold block text-left transition-colors cursor-pointer border-0 bg-transparent"
-                              >
-                                ♨ Đang Bảo Dưỡng
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateItemStatus(item.id, 'out_of_stock', 'HẾT HÀNG')}
-                                className="w-full px-3.5 py-2 text-xs text-[#DC2626] hover:bg-[#FEF2F2] font-semibold block text-left transition-colors cursor-pointer border-0 bg-transparent"
-                              >
-                                ✕ Hết Hàng
-                              </button>
-
-                              <div className="border-t border-[#F2E5E0] my-1" />
-                              <button
-                                type="button"
-                                onClick={() => handleConfirmDeleteItem(item)}
-                                className="w-full px-3.5 py-2 text-xs text-red-600 hover:bg-red-50 font-semibold flex items-center gap-2 text-left transition-colors cursor-pointer border-0 bg-transparent"
-                              >
-                                <Trash2 size={13} />
-                                <span>Xóa mẫu khỏi kho</span>
-                              </button>
-                            </div>
+                            </>
                           )}
                         </div>
                       </td>
@@ -1771,6 +1970,204 @@ export default function InventoryManagement() {
       </div>
 
       {/* ========================================================= */}
+      {/* MODAL CHỌN SIZE BẢO DƯỠNG (MAINTENANCE SIZE MODAL)          */}
+      {/* ========================================================= */}
+      {maintenanceModalItem && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fadeIn font-jakarta"
+          onClick={() => setMaintenanceModalItem(null)}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-[#EFE5E1] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#F0E6E2] bg-[#FFFBF9] shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A] flex items-center justify-center shadow-xs">
+                  <Wrench size={20} strokeWidth={2.2} />
+                </div>
+                <div>
+                  <h3 className="font-playfair text-lg font-bold text-[#5F2B36] m-0 leading-tight">
+                    Chọn Size Bảo Dưỡng
+                  </h3>
+                  <p className="text-xs text-[#8C7D7E] m-0 mt-0.5">
+                    Mẫu váy: <strong className="text-[#2C2523]">{maintenanceModalItem.name}</strong> •{' '}
+                    <span className="font-mono font-bold text-[#733F49]">{maintenanceModalItem.code}</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMaintenanceModalItem(null)}
+                className="w-8 h-8 rounded-full bg-[#FAF2EE] text-[#7A6B6C] hover:text-[#5F2B36] flex items-center justify-center transition-colors cursor-pointer border-0 shrink-0"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+              {/* Danh sách các size của váy */}
+              <div className="space-y-2.5">
+                {(() => {
+                  const rawList = maintenanceModalItem.detailedSizes || maintenanceModalItem.sizes || [];
+                  const sizeList = (rawList.length > 0 ? rawList : ['S', 'M']).map((s) => {
+                    if (typeof s === 'object' && s.size) return s;
+                    const sName = typeof s === 'object' ? (s.label || 'S') : String(s);
+                    return { size: sName, quantity: 2, available: 2, maintenance: 0, rented: 0 };
+                  });
+
+                  return sizeList.map((sz) => {
+                    const sName = sz.size;
+                    const total = sz.quantity || 0;
+                    const rented = sz.rented || 0;
+                    const maxAllowed = Math.max(0, total - rented);
+                    const count = maintenanceSizesMap[sName] ?? (sz.maintenance || 0);
+                    const remainingAvail = Math.max(0, total - rented - count);
+
+                    return (
+                      <div
+                        key={sName}
+                        className={`p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
+                          count > 0
+                            ? 'bg-[#FFFBEB] border-[#FCD34D] shadow-xs'
+                            : 'bg-[#FCF9F7] border-[#EFE5E1] hover:border-[#E0D0CB]'
+                        }`}
+                      >
+                        {/* Cột trái: Thông tin Size */}
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold text-sm tracking-wide ${
+                              count > 0
+                                ? 'bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]'
+                                : 'bg-white text-[#733F49] border border-[#E8D0CC]'
+                            }`}
+                          >
+                            {sName}
+                          </span>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-xs text-[#2C2523]">Size {sName}</span>
+                              {count > 0 ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A]">
+                                  <Wrench size={10} />
+                                  {count} bộ bảo dưỡng
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-semibold text-[#8C7D7E] bg-white px-2 py-0.5 rounded-full border border-[#EFE5E1]">
+                                  Sẵn sàng
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-[#8C7D7E] mt-0.5 flex items-center gap-2">
+                              <span>Tổng: <strong>{total}</strong></span>
+                              {rented > 0 && (
+                                <span className="text-[#1D4ED8]">
+                                  • Đang thuê: <strong>{rented}</strong>
+                                </span>
+                              )}
+                              <span className="text-emerald-700">
+                                • Khả dụng: <strong>{remainingAvail}</strong>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Cột phải: Bộ tăng giảm số lượng bảo dưỡng */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            disabled={count <= 0}
+                            onClick={() =>
+                              setMaintenanceSizesMap((prev) => ({
+                                ...prev,
+                                [sName]: Math.max(0, count - 1),
+                              }))
+                            }
+                            className="w-8 h-8 rounded-xl bg-white border border-[#E8D0CC] text-[#733F49] hover:bg-[#FAF0EC] disabled:opacity-30 disabled:cursor-not-allowed font-bold flex items-center justify-center text-base transition-colors cursor-pointer"
+                          >
+                            –
+                          </button>
+                          <span className="w-8 text-center font-mono font-bold text-sm text-[#78350F]">
+                            {count}
+                          </span>
+                          <button
+                            type="button"
+                            disabled={count >= maxAllowed}
+                            onClick={() =>
+                              setMaintenanceSizesMap((prev) => ({
+                                ...prev,
+                                [sName]: Math.min(maxAllowed, count + 1),
+                              }))
+                            }
+                            className="w-8 h-8 rounded-xl bg-white border border-[#E8D0CC] text-[#733F49] hover:bg-[#FAF0EC] disabled:opacity-30 disabled:cursor-not-allowed font-bold flex items-center justify-center text-base transition-colors cursor-pointer"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+
+              {/* Thời gian bảo dưỡng */}
+              <div className="pt-2 border-t border-[#F0E6E2]">
+                <label className="text-[11.5px] font-bold text-[#733F49] block mb-2">
+                  Thời gian bảo dưỡng dự kiến
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: '1 ngày (Chuẩn)', value: 1 },
+                    { label: '2 ngày', value: 2 },
+                    { label: '3 ngày', value: 3 },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setMaintenanceDurationDays(opt.value)}
+                      className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-center ${
+                        maintenanceDurationDays === opt.value
+                          ? 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A] shadow-xs'
+                          : 'bg-white text-[#7A6B6C] border-[#EFE5E1] hover:bg-[#FAF5F2]'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10.5px] text-[#A39293] mt-2 mb-0">
+                  * Khi đơn thuê hoàn tất, sản phẩm đúng size theo đơn thuê sẽ được hệ thống tự động chuyển sang trạng thái bảo dưỡng trong 1 ngày.
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-3.5 border-t border-[#F0E6E2] bg-[#FAF5F2]/60 shrink-0 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setMaintenanceModalItem(null)}
+                className="px-4 py-2 rounded-xl border border-[#EFE2DC] bg-white text-[#7A6B6C] font-bold hover:bg-[#FAF2EE] text-xs transition-colors cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  handleSaveMaintenanceSizes(maintenanceSizesMap, maintenanceDurationDays)
+                }
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#D97706] to-[#B45309] hover:from-[#B45309] hover:to-[#92400E] text-white font-bold text-xs transition-all shadow-xs border-0 cursor-pointer flex items-center gap-1.5"
+              >
+                <Wrench size={13} />
+                <span>Lưu Thiết Lập Bảo Dưỡng</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
       {/* MODAL SỬA SẢN PHẨM VÀ TỒN KHO (EDIT MODAL)                  */}
       {/* ========================================================= */}
       {editingItem && (
@@ -1807,10 +2204,10 @@ export default function InventoryManagement() {
                 className="flex-1 overflow-y-auto px-6 py-4 space-y-4 text-xs no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
-              {/* 1. Tên Tác Phẩm */}
+              {/* 1. Tên Váy Cưới */}
               <div>
                 <label className="block font-bold text-[#5F4E50] mb-1">
-                  Tên Tác Phẩm *
+                  Tên Váy Cưới *
                 </label>
                 <input
                   type="text"
@@ -2037,26 +2434,6 @@ export default function InventoryManagement() {
                         Đã có {editImages.length} ảnh
                       </span>
                     )}
-                    {editImages.length > 3 && (
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => editImagesScrollRef.current?.scrollBy({ left: -240, behavior: 'smooth' })}
-                          className="w-6 h-6 rounded-lg bg-[#FAF5F2] hover:bg-[#733F49] hover:text-white text-[#733F49] border border-[#E6DAC8] flex items-center justify-center transition-all cursor-pointer shadow-2xs"
-                          title="Cuộn sang trái"
-                        >
-                          <ChevronLeft size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => editImagesScrollRef.current?.scrollBy({ left: 240, behavior: 'smooth' })}
-                          className="w-6 h-6 rounded-lg bg-[#FAF5F2] hover:bg-[#733F49] hover:text-white text-[#733F49] border border-[#E6DAC8] flex items-center justify-center transition-all cursor-pointer shadow-2xs"
-                          title="Cuộn sang phải xem nút thêm ảnh"
-                        >
-                          <ChevronRight size={14} />
-                        </button>
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -2077,7 +2454,7 @@ export default function InventoryManagement() {
                     onMouseUp={handleScrollMouseUp}
                     onMouseMove={handleScrollMouseMove}
                     onWheel={handleScrollWheel}
-                    className="flex items-center gap-2.5 p-2.5 bg-[#FAF5F2] rounded-2xl border border-[#EFE5E1] overflow-x-auto cursor-grab active:cursor-grabbing select-none transition-all scroll-smooth pb-2.5 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-[#F0E6E2] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#D4A59A] [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#733F49]"
+                    className="flex items-center gap-2.5 p-2.5 bg-[#FAF5F2] rounded-2xl border border-[#EFE5E1] overflow-x-auto cursor-grab active:cursor-grabbing select-none transition-all scroll-smooth no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                   >
                     {editImages.map((imgSrc, idx) => (
                       <div
@@ -2197,7 +2574,7 @@ export default function InventoryManagement() {
               <div className="flex items-center gap-2">
                 <Plus size={18} className="text-[#733F49]" />
                 <h3 className="font-playfair text-xl font-bold text-[#5F2B36] m-0">
-                  Nhập Kho Lễ Phục Mới
+                  Thêm Váy Cưới Mới
                 </h3>
               </div>
               <button
@@ -2214,10 +2591,10 @@ export default function InventoryManagement() {
                 className="flex-1 overflow-y-auto px-6 py-4 space-y-4 text-xs no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
-              {/* 1. Tên Tác Phẩm */}
+              {/* 1. Tên Váy Cưới */}
               <div>
                 <label className="block font-bold text-[#5F4E50] mb-1">
-                  Tên Tác Phẩm *
+                  Tên Váy Cưới *
                 </label>
                 <input
                   type="text"
@@ -2407,26 +2784,6 @@ export default function InventoryManagement() {
                         Đã chọn {newImages.length} ảnh
                       </span>
                     )}
-                    {newImages.length > 3 && (
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => addImagesScrollRef.current?.scrollBy({ left: -240, behavior: 'smooth' })}
-                          className="w-6 h-6 rounded-lg bg-[#FAF5F2] hover:bg-[#733F49] hover:text-white text-[#733F49] border border-[#E6DAC8] flex items-center justify-center transition-all cursor-pointer shadow-2xs"
-                          title="Cuộn sang trái"
-                        >
-                          <ChevronLeft size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => addImagesScrollRef.current?.scrollBy({ left: 240, behavior: 'smooth' })}
-                          className="w-6 h-6 rounded-lg bg-[#FAF5F2] hover:bg-[#733F49] hover:text-white text-[#733F49] border border-[#E6DAC8] flex items-center justify-center transition-all cursor-pointer shadow-2xs"
-                          title="Cuộn sang phải xem nút thêm ảnh"
-                        >
-                          <ChevronRight size={14} />
-                        </button>
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -2447,7 +2804,7 @@ export default function InventoryManagement() {
                     onMouseUp={handleScrollMouseUp}
                     onMouseMove={handleScrollMouseMove}
                     onWheel={handleScrollWheel}
-                    className="flex items-center gap-2.5 p-2.5 bg-[#FAF5F2] rounded-2xl border border-[#EFE5E1] overflow-x-auto cursor-grab active:cursor-grabbing select-none transition-all scroll-smooth pb-2.5 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-[#F0E6E2] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#D4A59A] [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#733F49]"
+                    className="flex items-center gap-2.5 p-2.5 bg-[#FAF5F2] rounded-2xl border border-[#EFE5E1] overflow-x-auto cursor-grab active:cursor-grabbing select-none transition-all scroll-smooth no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                   >
                     {newImages.map((imgSrc, idx) => (
                       <div

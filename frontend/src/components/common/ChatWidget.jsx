@@ -166,17 +166,21 @@ export default function ChatWidget() {
         if (res?.data?.conversation) {
           setConversationId(res.data.conversation._id);
           if (Array.isArray(res.data.messages) && res.data.messages.length > 0) {
-            const mapped = res.data.messages.map((m) => ({
-              id: m._id || m.id,
-              sender: m.senderRole === 'customer' ? 'user' : 'staff',
-              senderRole: m.senderRole,
-              name: m.senderRole === 'customer' ? (user?.fullName || 'Bạn') : 'Mai Anh • Senior Stylist',
-              time: new Date(m.createdAt || Date.now()).toLocaleTimeString('vi-VN', {
-                hour: '2-digit',
-                minute: '2-digit',
-              }),
-              text: m.text,
-            }));
+            const mapped = res.data.messages.map((m) => {
+              const isRecalled = Boolean(m.isRecalled) || m.text === 'Tin nhắn đã được thu hồi';
+              return {
+                id: m._id || m.id,
+                sender: m.senderRole === 'customer' ? 'user' : 'staff',
+                senderRole: m.senderRole,
+                name: m.senderRole === 'customer' ? (user?.fullName || 'Bạn') : 'Mai Anh • Senior Stylist',
+                time: new Date(m.createdAt || Date.now()).toLocaleTimeString('vi-VN', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                }),
+                text: isRecalled ? 'Tin nhắn đã được thu hồi' : m.text,
+                isRecalled,
+              };
+            });
             setMessages(mapped);
           }
         }
@@ -502,7 +506,9 @@ export default function ChatWidget() {
                   )}
                   <div
                     className={`max-w-[84%] px-3 py-2 rounded-2xl shadow-xs leading-relaxed break-words ${
-                      isUser
+                      msg.isRecalled
+                        ? 'bg-[#F5F2F0] text-[#9A8B8C] border border-dashed border-[#E3DBD7] italic'
+                        : isUser
                         ? 'bg-gradient-to-r from-[#B8737D] to-[#A8646E] text-white rounded-br-xs'
                         : 'bg-white text-[#2C2523] border border-[#EADBDE] rounded-bl-xs'
                     }`}
@@ -717,13 +723,6 @@ export default function ChatWidget() {
                   WebkitUserDrag: 'none',
                 }}
               />
-
-              {/* Unread badge nếu có tin nhắn mới */}
-              {unreadCount > 0 && (
-                <span className="absolute top-2 right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white font-bold text-[10px] flex items-center justify-center border-2 border-white shadow-sm z-30 animate-bounce">
-                  {unreadCount}
-                </span>
-              )}
             </button>
           </div>
         </aside>

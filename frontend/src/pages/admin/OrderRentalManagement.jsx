@@ -28,6 +28,7 @@ import {
   CreditCard,
   UserCheck,
   UserX,
+  Crown,
 } from 'lucide-react';
 import HangerIcon from '../../components/common/HangerIcon';
 import {
@@ -38,6 +39,7 @@ import {
 } from '../../services/orderService';
 import { formatCurrencyVND } from '../../utils/formatCurrency';
 import { DRESS_CATALOG } from '../../data/dressCatalog';
+import { recordCompletedOrderMaintenance } from '../../utils/maintenanceStorage';
 
 // Helper lấy mã sản phẩm (SKU) của váy cưới từ item hoặc fallback vào catalog
 const getDressCode = (item) => {
@@ -114,6 +116,18 @@ const CONDITION_OPTIONS = [
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('vi-VN') : '—');
 const fmtVnd = (v) => formatCurrencyVND(v ?? 0);
 
+const getRentalDays = (order) => {
+  if (order?.rentalDays) return order.rentalDays;
+  if (order?.rentalStartDate && order?.rentalEndDate) {
+    const start = new Date(order.rentalStartDate);
+    const end = new Date(order.rentalEndDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays || 4;
+  }
+  return 4;
+};
+
 function calcLate(rentalEndDate) {
   if (!rentalEndDate) return 0;
   const end = new Date(rentalEndDate);
@@ -171,6 +185,9 @@ function UpdateStatusDropdown({ order, onUpdated }) {
     setLoading(true);
     try {
       await updateOrderStatus(order._id, newStatus);
+      if (newStatus === 'completed' || newStatus === 'complete') {
+        recordCompletedOrderMaintenance(order);
+      }
       message.success(`Đã cập nhật trạng thái thành "${STATUS_CONFIG[newStatus]?.label ?? newStatus}"`);
       onUpdated?.(order._id, newStatus);
     } catch {
@@ -228,6 +245,168 @@ function UpdateStatusDropdown({ order, onUpdated }) {
         <ChevronDown size={12} className="text-[#846E63]" />
       </button>
     </Dropdown>
+  );
+}
+
+function OrderDetailModal({ order, onClose }) {
+  if (!order) return null;
+
+  const items = order.items && order.items.length > 0 ? order.items : [
+    {
+      name: order.dressName || 'Lễ Phục Cao Cấp',
+      code: order.dressCode,
+      size: order.size,
+      color: order.color,
+      rentPrice: order.totalRentPrice,
+      depositAmount: order.totalDeposit,
+    }
+  ];
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fadeIn font-jakarta"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-[#EFE5E1] flex flex-col overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header: Tiêu đề + Mã đơn + Trạng thái + Nút đóng X */}
+        <div className="flex items-center justify-between px-6 py-3.5 border-b border-[#F0E6E2] bg-white shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-[#FAF0EC] flex items-center justify-center text-[#733F49] shrink-0">
+              <FileText size={17} />
+            </div>
+            <div>
+              <h3 className="font-playfair text-lg font-bold text-[#5F2B36] m-0 leading-tight">
+                Chi Tiết Đơn Thuê
+              </h3>
+              <div className="mt-1 flex items-center gap-1.5">
+                <span className="text-[11px] text-[#8C7D7E] font-medium">Mã đơn thuê:</span>
+                <span className="px-2 py-0.5 rounded bg-[#FAF0EC] text-[#733F49] font-mono text-[11px] font-bold border border-[#F2D8D4]">
+                  {order.orderCode || order._id}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <StatusBadge status={order.status} order={order} />
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-7 h-7 rounded-full bg-[#FAF2EE] text-[#7A6B6C] hover:text-[#5F2B36] flex items-center justify-center transition-colors cursor-pointer border-0 shrink-0"
+            >
+              <X size={15} />
+            </button>
+          </div>
+        </div>
+
+        {/* Nội dung hiển thị trọn vẹn trong 1 trang duy nhất, không cần cuộn */}
+        <div className="p-5 pb-6 space-y-3.5 text-xs">
+          {/* 1. Thông tin khách hàng */}
+          <div className="bg-[#FAF5F2]/70 rounded-2xl p-3.5 border border-[#EFE5E1]">
+            <h4 className="font-bold text-[#733F49] text-[11px] uppercase tracking-wider m-0 mb-2.5">
+              Thông Tin Khách Hàng
+            </h4>
+            <div className="space-y-2 text-[12px]">
+              {/* Dòng 1: Tên khách hàng & Số điện thoại */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[#8C7D7E] shrink-0">Tên khách hàng:</span>
+                  <span className="font-bold text-[#2C2523] inline-flex items-center gap-1.5 truncate" title={order.customerName}>
+                    {order.customerName || '—'}
+                    {(order.hasAccount || order.customerId) && (
+                      <Crown size={13} className="text-[#D4AF37] fill-[#FDF3D6] shrink-0" title="Khách hàng thành viên" />
+                    )}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[#8C7D7E] shrink-0">Số điện thoại:</span>
+                  <span className="font-bold text-[#2C2523]">{order.customerPhone || '—'}</span>
+                </div>
+              </div>
+              {/* Dòng 2: Email khách hàng */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[#8C7D7E] shrink-0">Email khách hàng:</span>
+                  <span className="font-semibold text-[#2C2523] truncate" title={order.customerEmail}>
+                    {order.customerEmail || '—'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Grid 2 cột: Thông tin váy cưới (Trái) & Thời gian + Chi phí (Phải) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            {/* Cột trái: Thông tin váy cưới (1 khung duy nhất, không lồng 2 khung) */}
+            <div className="bg-[#FAF5F2]/70 rounded-2xl p-3.5 border border-[#EFE5E1]">
+              <h4 className="font-bold text-[#733F49] text-[11px] uppercase tracking-wider m-0 mb-2.5">
+                Thông tin váy cưới
+              </h4>
+              <div className="space-y-2 text-[11.5px]">
+                {items.map((it, idx) => {
+                  const code = getDressCode(it);
+                  const sizeStr = it.size ? it.size.replace(/^size\s*/i, '') : '—';
+                  return (
+                    <div key={idx} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[#8C7D7E] shrink-0">Tên váy:</span>
+                        <span className="font-bold text-[#2C2523] text-[12px] truncate" title={it.name}>
+                          {it.name || 'Lễ Phục Cao Cấp'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[#8C7D7E] shrink-0">Mã váy:</span>
+                        <span className="font-mono font-bold text-[#733F49] text-[12px]">
+                          {code || '—'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[#8C7D7E] shrink-0">Size váy:</span>
+                        <span className="font-bold text-[#B8737D] text-[12px]">
+                          Size {sizeStr}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Cột phải: Thời Gian & Chi Phí */}
+            <div className="bg-[#FAF5F2]/70 rounded-2xl p-3.5 border border-[#EFE5E1]">
+              <h4 className="font-bold text-[#733F49] text-[11px] uppercase tracking-wider m-0 mb-2.5">
+                Thời Gian & Chi Phí
+              </h4>
+              <div className="space-y-2 text-[11.5px]">
+                <div className="flex items-center justify-between">
+                  <span className="text-[#8C7D7E]">Chi tiết ngày:</span>
+                  <span className="font-semibold text-[#2C2523]">
+                    {fmtDate(order.rentalStartDate)} – {fmtDate(order.rentalEndDate)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#8C7D7E]">Giá thuê váy:</span>
+                  <span className="font-bold text-[#733F49]">{fmtVnd(order.totalRentPrice)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#8C7D7E]">Tiền đặt cọc:</span>
+                  <span className="font-bold text-[#863E4B]">{fmtVnd(order.totalDeposit)}</span>
+                </div>
+
+                <div className="pt-2 border-t border-[#E8D0CC] flex items-center justify-between text-[12.5px]">
+                  <span className="font-bold text-[#5F2B36]">Tổng thanh toán:</span>
+                  <span className="font-extrabold text-[#733F49] text-[13px]">
+                    {fmtVnd(order.totalAmount || ((order.totalRentPrice || 0) + (order.totalDeposit || 0)))}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -726,6 +905,7 @@ function RefundModal({ order, onClose, onSuccess }) {
     setSubmitting(true);
     try {
       await updateOrderStatus(order._id, 'completed');
+      recordCompletedOrderMaintenance(order);
       message.success(`Đã hoàn tất quyết toán cọc ${fmtVnd(finalRefund)} cho khách hàng! Đơn hàng đã chuyển vào Hồ Sơ Lưu Trữ.`);
       onSuccess();
     } catch {
@@ -911,6 +1091,7 @@ export default function OrderRentalManagement() {
 
   const [inspectionOrder, setInspectionOrder] = useState(null); // for inspection modal (bước 1)
   const [refundOrder, setRefundOrder] = useState(null); // for refund modal (bước 2)
+  const [detailOrder, setDetailOrder] = useState(null); // for detail modal (chi tiết đơn thuê)
   const [statusMenuId, setStatusMenuId] = useState(null); // row dropdown open id
 
   const isArchived = (order) => order.status === 'completed' || order.status === 'complete' || order.status === 'cancelled';
@@ -1206,7 +1387,7 @@ export default function OrderRentalManagement() {
         {/* Card 1: Tổng đơn */}
         <div
           onClick={() => { setViewMode('active'); setStatusFilter('all'); setActivePage(1); }}
-          className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FCDCE1_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] py-3.5 px-5 shadow-xs flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md hover:border-[#B8737D]/50 transition-all"
+          className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FCDCE1_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] py-4 px-5 shadow-xs flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md hover:border-[#B8737D]/50 transition-all"
         >
           <div>
             <div className="flex items-center justify-between mb-1.5">
@@ -1224,16 +1405,12 @@ export default function OrderRentalManagement() {
               <span className="text-[12px] font-medium text-[#8C7D7E] ml-1.5">đơn</span>
             </div>
           </div>
-          <div className="mt-2.5 flex items-center gap-1.5 text-[11.5px] text-[#7A6B6C]">
-            <RefreshCw size={13} className="text-[#8C6D62]" />
-            <span>Hiển thị danh sách đang xử lý</span>
-          </div>
         </div>
 
         {/* Card 2: Đang thuê */}
         <div
           onClick={() => { setViewMode('active'); setStatusFilter('renting'); setActivePage(1); }}
-          className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EDE9FE_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] py-3.5 px-5 shadow-xs flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md hover:border-[#6D28D9]/50 transition-all"
+          className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#EDE9FE_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] py-4 px-5 shadow-xs flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md hover:border-[#6D28D9]/50 transition-all"
         >
           <div>
             <div className="flex items-center justify-between mb-1.5">
@@ -1251,16 +1428,12 @@ export default function OrderRentalManagement() {
               <span className="text-[12px] font-medium text-[#8C7D7E] ml-1.5">đơn</span>
             </div>
           </div>
-          <div className="mt-2.5 flex items-center gap-1.5 text-[11.5px] text-[#7A6B6C]">
-            <Calendar size={13} className="text-[#6D28D9]" />
-            <span>Cần kiểm định khi khách trả</span>
-          </div>
         </div>
 
         {/* Card 3: Hoàn tất (Kho Lưu Trữ) */}
         <div
           onClick={() => { setViewMode('archived'); setStatusFilter('all'); setActivePage(1); }}
-          className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#DEF5E7_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] py-3.5 px-5 shadow-xs flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md hover:border-[#229A53]/50 transition-all"
+          className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#DEF5E7_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] py-4 px-5 shadow-xs flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md hover:border-[#229A53]/50 transition-all"
         >
           <div>
             <div className="flex items-center justify-between mb-1.5">
@@ -1278,16 +1451,12 @@ export default function OrderRentalManagement() {
               <span className="text-[12px] font-medium text-[#8C7D7E] ml-1.5">đơn</span>
             </div>
           </div>
-          <div className="mt-2.5 flex items-center gap-1.5 text-[11.5px] text-[#1E8347] font-medium">
-            <CheckCircle2 size={13} className="text-[#229A53]" />
-            <span>Đã đưa vào Kho Lưu Trữ (Click xem)</span>
-          </div>
         </div>
 
         {/* Card 4: Đã hủy */}
         <div
           onClick={() => { setViewMode('archived'); setStatusFilter('cancelled'); setActivePage(1); }}
-          className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FCDFD9_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] py-3.5 px-5 shadow-xs flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md hover:border-[#B8737D]/50 transition-all"
+          className="bg-white bg-[radial-gradient(ellipse_at_top_right,_#FCDFD9_0%,_transparent_70%)] rounded-2xl border border-[#EFE5E1] py-4 px-5 shadow-xs flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md hover:border-[#B8737D]/50 transition-all"
         >
           <div>
             <div className="flex items-center justify-between mb-1.5">
@@ -1305,16 +1474,12 @@ export default function OrderRentalManagement() {
               <span className="text-[12px] font-medium text-[#8C7D7E] ml-1.5">đơn</span>
             </div>
           </div>
-          <div className="mt-2.5 flex items-center gap-1.5 text-[11.5px] text-[#7A6B6C]">
-            <Clock size={13} className="text-[#B8737D]" />
-            <span>Lưu trữ đơn hủy trong kỳ</span>
-          </div>
         </div>
       </div>
 
       {/* Search và Filter Bar (Tích hợp tìm kiếm và tab Đơn Đang Xử Lý / Kho Lưu Trữ) */}
-      <div className="bg-white p-1.5 rounded-2xl border border-[#EFE5E1] shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-6">
-        <div className="relative flex-1 max-w-md">
+      <div className="bg-white p-2 rounded-2xl border border-[#EFE5E1] shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-6">
+        <div className="relative flex-1 min-w-0">
           <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A39192]" />
           <input
             type="text"
@@ -1334,7 +1499,7 @@ export default function OrderRentalManagement() {
           )}
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
+        <div className="flex items-center gap-2 shrink-0 overflow-x-auto pb-1 md:pb-0">
           <button
             type="button"
             onClick={() => { setViewMode('active'); setStatusFilter('all'); setActivePage(1); }}
@@ -1463,79 +1628,34 @@ export default function OrderRentalManagement() {
                       </td>
 
                       {/* Khách hàng */}
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-1.5 flex-wrap">
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
                           <span className="text-[13.5px] font-semibold text-[#2C2523] leading-tight">
                             {order.customerName || '—'}
                           </span>
-                          {/* Dấu hiệu nhận biết đơn CÓ TÀI KHOẢN vs KHÔNG CÓ TÀI KHOẢN (Guest) */}
-                          {order.hasAccount || order.customerId ? (
-                            <span
-                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-[#FAF0EC] text-[#733F49] border border-[#F2D8D4] shrink-0"
-                              title="Khách hàng thành viên đã có tài khoản UniBridal"
-                            >
-                              <UserCheck size={11} className="text-[#B8737D]" />
-                              <span>Thành Viên</span>
-                            </span>
-                          ) : (
-                            <span
-                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-[#F5F2F0] text-[#7A6A6B] border border-[#E8DFDC] shrink-0"
-                              title="Khách vãng lai thuê trực tiếp (Chưa tạo tài khoản)"
-                            >
-                              <UserX size={11} className="text-[#A39192]" />
-                              <span>Khách Vãng Lai</span>
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[11.5px] text-[#8A797A] mt-1 flex items-center gap-1.5">
-                          <span>{order.customerPhone || '—'}</span>
-                          {order.customerEmail && (
-                            <>
-                              <span className="text-[#D0C0BE]">•</span>
-                              <span className="truncate max-w-[120px] text-[#7A6A6B]" title={order.customerEmail}>
-                                {order.customerEmail}
-                              </span>
-                            </>
+                          {(order.hasAccount || order.customerId) && (
+                            <Crown size={14} className="text-[#D4AF37] fill-[#FDF3D6] shrink-0" title="Khách hàng thành viên" />
                           )}
                         </div>
                       </td>
 
                       {/* Váy thuê */}
                       <td className="py-4 px-4 text-center">
-                        <div className="text-[13px] font-semibold text-[#2C2523] leading-tight mb-1 text-center">
+                        <div className="text-[13px] font-semibold text-[#2C2523] leading-tight text-center">
                           {firstItem.name || '—'}
                         </div>
-                        <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                          {getDressCode(firstItem) && (
-                            <span
-                              className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#FAF0EC] text-[#733F49] font-mono text-[10.5px] font-bold border border-[#F2D8D4] leading-none"
-                              title="Mã sản phẩm váy cưới"
-                            >
-                              {getDressCode(firstItem)}
-                            </span>
-                          )}
-                          {firstItem.size && (
-                            <span className="inline-block px-1.5 py-0.5 rounded bg-[#FCECE8] text-[#B8737D] text-[10.5px] font-bold leading-none">
-                              {firstItem.size.toLowerCase().startsWith('size') ? firstItem.size : `Size: ${firstItem.size}`}
-                            </span>
-                          )}
-                          {order.items?.length > 1 && (
-                            <span className="text-[10px] text-[#8C7D7E] font-medium">
-                              (+{order.items.length - 1} váy khác)
-                            </span>
-                          )}
-                        </div>
+                        {order.items?.length > 1 && (
+                          <div className="text-[11px] text-[#8C7D7E] font-medium mt-0.5">
+                            (+{order.items.length - 1} váy khác)
+                          </div>
+                        )}
                       </td>
 
                       {/* Ngày thuê */}
                       <td className="py-4 px-4 text-center whitespace-nowrap">
-                        <div className="text-[12px] text-[#554748] font-medium">
-                          {fmtDate(order.rentalStartDate)}
-                        </div>
-                        <div className="text-[11px] text-[#8C7D7E]">–</div>
-                        <div className="text-[12px] text-[#554748] font-medium">
-                          {fmtDate(order.rentalEndDate)}
-                        </div>
+                        <span className="inline-block px-2.5 py-1 rounded-full bg-[#FAF0EC] text-[#733F49] text-[12px] font-bold border border-[#F2D8D4]">
+                          {getRentalDays(order)} ngày
+                        </span>
                       </td>
 
                       {/* Tiền cọc */}
@@ -1558,6 +1678,16 @@ export default function OrderRentalManagement() {
                       {/* Thao tác */}
                       <td className="py-4 px-5 text-center whitespace-nowrap">
                         <div className="inline-flex items-center justify-center gap-2">
+                          {/* Nút Xem Chi Tiết Đơn Thuê */}
+                          <button
+                            type="button"
+                            onClick={() => setDetailOrder(order)}
+                            title="Xem chi tiết đầy đủ đơn thuê"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#FAF0EC] hover:bg-[#F3E2DB] border border-[#ECD9D3] text-[#733F49] text-[12px] font-bold transition-all cursor-pointer shadow-2xs"
+                          >
+                            <Eye size={13} />
+                            <span>Chi Tiết</span>
+                          </button>
                           {/* ĐỐI VỚI CÁC ĐƠN ĐÃ HOÀN TẤT TRONG KHO LƯU TRỮ */}
                           {isArchived(order) ? (
                             <button
@@ -1620,7 +1750,7 @@ export default function OrderRentalManagement() {
 
         {/* Pagination Footer */}
         <div className="py-4 px-6 border-t border-[#F0E6E2] bg-[#FAF2EE] rounded-b-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-2.5 text-[12.5px] text-[#7A6B6C]">
+          <div className="text-[12.5px] text-[#7A6B6C]">
             <span>
               Hiển thị{' '}
               <span className="font-bold text-[#5F2B36]">
@@ -1629,15 +1759,6 @@ export default function OrderRentalManagement() {
               trong tổng số{' '}
               <span className="font-bold text-[#2C2523]">{total}</span> đơn
             </span>
-            <span className="text-[#D4C5C0]">|</span>
-            <button
-              type="button"
-              onClick={() => alert('Đang xuất danh sách đơn thuê (Excel/PDF)...')}
-              className="inline-flex items-center gap-1.5 text-[#7A6B6C] hover:text-[#733F49] font-medium transition-colors cursor-pointer bg-transparent border-0 p-0"
-            >
-              <Download size={14} className="stroke-[1.8]" />
-              <span>Xuất Danh Sách (Excel/PDF)</span>
-            </button>
           </div>
 
           <div className="flex items-center gap-2 text-[13px]">
@@ -1728,6 +1849,14 @@ export default function OrderRentalManagement() {
             });
             loadOrders();
           }}
+        />
+      )}
+
+      {/* Modal Chi Tiết Đơn Thuê */}
+      {detailOrder && (
+        <OrderDetailModal
+          order={detailOrder}
+          onClose={() => setDetailOrder(null)}
         />
       )}
     </AdminLayout>

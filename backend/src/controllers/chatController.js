@@ -182,6 +182,60 @@ class ChatController {
       next(error);
     }
   }
+
+  /**
+   * Thu hồi tin nhắn
+   */
+  async recallMessage(req, res, next) {
+    try {
+      const { id } = req.params;
+      const message = await chatService.recallMessage(id);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Đã thu hồi tin nhắn thành công',
+        data: message,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Ghim / Bỏ ghim tin nhắn trong cuộc trò chuyện
+   */
+  async togglePinMessage(req, res, next) {
+    try {
+      const { conversationId, messageId } = req.params;
+      const result = await chatService.togglePinMessage(conversationId, messageId);
+
+      return res.status(200).json({
+        success: true,
+        message: result.pinned ? 'Đã ghim tin nhắn' : 'Đã bỏ ghim tin nhắn',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Bỏ ghim tin nhắn của hội thoại
+   */
+  async unpinMessage(req, res, next) {
+    try {
+      const { conversationId } = req.params;
+      const conversation = await chatService.unpinMessage(conversationId);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Đã bỏ ghim tin nhắn',
+        data: conversation,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new ChatController();

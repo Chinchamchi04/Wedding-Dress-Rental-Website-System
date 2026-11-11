@@ -60,6 +60,18 @@ const messageSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    isRecalled: {
+      type: Boolean,
+      default: false,
+    },
+    recalledAt: {
+      type: Date,
+      default: null,
+    },
+    isPinned: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

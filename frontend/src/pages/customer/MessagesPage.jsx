@@ -8,7 +8,6 @@ import { Search,
   SendHorizontal,
   ShieldCheck,
   Crown,
-  Calendar,
   X,
   ChevronLeft,
   ChevronDown,
@@ -179,17 +178,22 @@ export default function MessagesPage() {
         if (res?.data?.conversation) {
           setConversationId(res.data.conversation._id);
           if (Array.isArray(res.data.messages) && res.data.messages.length > 0) {
-            const mapped = res.data.messages.map((m) => ({
-              id: m._id || m.id,
-              sender: m.senderRole === 'customer' ? 'user' : 'staff',
-              senderRole: m.senderRole,
-              name: m.senderRole === 'customer' ? (user?.fullName || 'Bạn') : 'Mai Anh • Senior Stylist',
-              time: new Date(m.createdAt || Date.now()).toLocaleTimeString('vi-VN', {
-                hour: '2-digit',
-                minute: '2-digit',
-              }),
-              text: m.text,
-            }));
+            const mapped = res.data.messages.map((m) => {
+              const isRecalled = Boolean(m.isRecalled) || m.text === 'Tin nhắn đã được thu hồi';
+              return {
+                id: m._id || m.id,
+                sender: m.senderRole === 'customer' ? 'user' : 'staff',
+                senderRole: m.senderRole,
+                name: m.senderRole === 'customer' ? (user?.fullName || 'Bạn') : 'Mai Anh • Senior Stylist',
+                time: new Date(m.createdAt || Date.now()).toLocaleTimeString('vi-VN', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                }),
+                text: isRecalled ? 'Tin nhắn đã được thu hồi' : m.text,
+                image: isRecalled ? null : m.image,
+                isRecalled,
+              };
+            });
             setMessages(mapped);
           }
         }
@@ -560,6 +564,21 @@ export default function MessagesPage() {
   // Tin nhắn cuối cùng để hiển thị ở hộp thoại bên trái
   const lastMsg = messages[messages.length - 1];
 
+  // Lọc tin nhắn của cuộc hội thoại theo từ khóa tìm kiếm
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const displayedMessages = normalizedSearch
+    ? messages.filter((m) => {
+        const text = (m.text || '').toLowerCase();
+        const productName = (m.product?.name || '').toLowerCase();
+        const productDesc = (m.product?.description || '').toLowerCase();
+        return (
+          text.includes(normalizedSearch) ||
+          productName.includes(normalizedSearch) ||
+          productDesc.includes(normalizedSearch)
+        );
+      })
+    : messages;
+
   return (
     <div className="fixed inset-0 z-10 bg-[#FDFBF7] text-[#2C2523] flex flex-col font-jakarta selection:bg-[#FCEEE9] selection:text-[#B8737D] overflow-hidden">
       {/* 1. Header Navigation */}
@@ -609,7 +628,7 @@ export default function MessagesPage() {
                 <Search className="w-4 h-4 text-[#A89D9B] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Tìm kiếm tin nhắn, chuyên viên..."
+                  placeholder="Tìm kiếm tin nhắn..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-9 pr-3 py-1.5 bg-[#FAF7F3] border border-[#EBE0D6] rounded-xl text-[12.5px] text-[#2C2523] placeholder:text-[#A89D9B] focus:outline-none focus:border-[#B8737D] focus:bg-white transition-all font-jakarta"
@@ -628,43 +647,51 @@ export default function MessagesPage() {
 
             {/* Conversation Item Đồng bộ với Chat Widget */}
             <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5 min-h-0">
-              <div
-                onClick={() => setShowMobileChat(true)}
-                className="relative p-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-2.5 select-none bg-[#FFF5F4] border border-[#F3D9DC] shadow-xs"
-              >
-                {/* Avatar with status indicator */}
-                <div className="relative flex-shrink-0">
-                  <img
-                    src={chibiBrideImg}
-                    alt="UniBridal Concierge"
-                    className="w-11 h-11 rounded-full object-cover border-2 border-white shadow-xs bg-[#FFF2F0]"
-                  />
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full ring-1 ring-emerald-300 animate-pulse" />
+              {normalizedSearch && displayedMessages.length === 0 ? (
+                <div className="p-4 text-center text-xs text-[#9E908D] bg-[#FAF7F3] rounded-xl border border-dashed border-[#EAE0D6]">
+                  Không tìm thấy tin nhắn nào trong cuộc trò chuyện này.
                 </div>
-
-                {/* Conversation Details */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <div className="flex items-center gap-1 min-w-0">
-                      <span className="font-jakarta font-bold text-[14px] text-[#2C2523] truncate">
-                        UniBridal Concierge
-                      </span>
-                      <span className="bg-[#FCEEE9] text-[#B8737D] text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider flex-shrink-0">
-                        STAFF
-                      </span>
-                    </div>
-                    <span className="text-[10.5px] text-[#9E908D] flex-shrink-0">
-                      {lastMsg?.time || '10:41'}
-                    </span>
+              ) : (
+                <div
+                  onClick={() => setShowMobileChat(true)}
+                  className="relative p-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-2.5 select-none bg-[#FFF5F4] border border-[#F3D9DC] shadow-xs"
+                >
+                  {/* Avatar with status indicator */}
+                  <div className="relative flex-shrink-0">
+                    <img
+                      src={chibiBrideImg}
+                      alt="UniBridal Concierge"
+                      className="w-11 h-11 rounded-full object-cover border-2 border-white shadow-xs bg-[#FFF2F0]"
+                    />
+                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full ring-1 ring-emerald-300 animate-pulse" />
                   </div>
 
-                  <p className="font-jakarta text-[12px] text-[#8C7A7C] truncate m-0">
-                    {isTyping
-                      ? 'Mai Anh đang nhập...'
-                      : lastMsg?.text || 'Trò chuyện cùng Master Stylist Mai Anh...'}
-                  </p>
+                  {/* Conversation Details */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <div className="flex items-center gap-1 min-w-0">
+                        <span className="font-jakarta font-bold text-[14px] text-[#2C2523] truncate">
+                          UniBridal Concierge
+                        </span>
+                        <span className="bg-[#FCEEE9] text-[#B8737D] text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider flex-shrink-0">
+                          STAFF
+                        </span>
+                      </div>
+                      <span className="text-[10.5px] text-[#9E908D] flex-shrink-0">
+                        {lastMsg?.time || '10:41'}
+                      </span>
+                    </div>
+
+                    <p className="font-jakarta text-[12px] text-[#8C7A7C] truncate m-0">
+                      {normalizedSearch
+                        ? `Tìm thấy ${displayedMessages.length} tin nhắn phù hợp`
+                        : isTyping
+                        ? 'Mai Anh đang nhập...'
+                        : lastMsg?.text || 'Trò chuyện cùng Master Stylist Mai Anh...'}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Footer Sub-info */}
@@ -724,16 +751,6 @@ export default function MessagesPage() {
 
               {/* Chat Actions Right */}
               <div className="flex items-center gap-2">
-                {/* Nút Đặt Lịch Thử Váy */}
-                <button
-                  type="button"
-                  onClick={() => navigate('/dat-lich')}
-                  className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[11.5px] font-bold tracking-wide flex items-center gap-1.5 transition-all border border-white/30 cursor-pointer shadow-xs active:scale-95"
-                >
-                  <Calendar className="w-3.5 h-3.5 text-amber-200" />
-                  <span className="hidden sm:inline">Đặt Lịch Thử Váy</span>
-                </button>
-
                 {/* Nút Gọi Hotline VIP */}
                 <button
                   type="button"
@@ -754,6 +771,27 @@ export default function MessagesPage() {
               </div>
             </div>
 
+            {/* Search filter indicator banner (Nếu đang tìm kiếm tin nhắn) */}
+            {normalizedSearch && (
+              <div className="px-4 py-2 bg-[#FFF7F5] border-b border-[#F2DDD9] flex items-center justify-between text-xs text-[#733F49] shrink-0">
+                <div className="flex items-center gap-2">
+                  <Search className="w-3.5 h-3.5 text-[#B8737D]" />
+                  <span>
+                    Kết quả tìm kiếm cho: <strong>"{searchTerm}"</strong> (tìm thấy{' '}
+                    <strong>{displayedMessages.length}</strong> tin nhắn)
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  className="text-xs text-[#B8737D] hover:text-[#733F49] font-semibold flex items-center gap-1 cursor-pointer bg-transparent border-0"
+                >
+                  <X className="w-3 h-3" />
+                  <span>Bỏ lọc</span>
+                </button>
+              </div>
+            )}
+
             {/* Chat Messages Body (Người dùng lăn chuột bên trong khung chat này) */}
             <div
               ref={messagesContainerRef}
@@ -769,14 +807,20 @@ export default function MessagesPage() {
               </div>
 
               {/* Message List */}
-              {messages.map((msg, index) => {
-                const isUser = msg.sender === 'user' || msg.senderRole === 'customer';
+              {displayedMessages.length === 0 ? (
+                <div className="py-12 text-center text-[#8C7A7C] text-sm">
+                  <Search className="w-8 h-8 text-[#C9A9A4] mx-auto mb-2 opacity-50" />
+                  <p>Không tìm thấy tin nhắn nào khớp với từ khóa "{searchTerm}".</p>
+                </div>
+              ) : (
+                displayedMessages.map((msg, index) => {
+                  const isUser = msg.sender === 'user' || msg.senderRole === 'customer';
 
-                return (
-                  <div
-                    key={msg.id || index}
-                    className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} transition-all`}
-                  >
+                  return (
+                    <div
+                      key={msg.id || index}
+                      className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} transition-all`}
+                    >
                     {/* Header: Stylist Name và Time */}
                     {!isUser && (
                       <div className="flex items-center gap-2 text-[11.5px] text-[#7D6E6B] font-medium mb-1 px-1">
@@ -796,13 +840,15 @@ export default function MessagesPage() {
                     {/* Speech Bubble */}
                     <div
                       className={`max-w-[85%] sm:max-w-[70%] rounded-2xl p-3.5 sm:p-4 text-[13.5px] leading-relaxed shadow-xs transition-all ${
-                        isUser
+                        msg.isRecalled
+                          ? 'bg-[#F5F2F0] text-[#9A8B8C] border border-dashed border-[#E3DBD7] italic'
+                          : isUser
                           ? 'bg-[#7D4D54] text-white rounded-tr-xs shadow-[0_2px_12px_rgba(125,77,84,0.18)]'
                           : 'bg-white text-[#2C2523] border border-[#EDE4DB] rounded-tl-xs shadow-[0_2px_8px_rgba(0,0,0,0.04)]'
                       }`}
                     >
                       {/* Attached Image Preview if message is image */}
-                      {msg.image && (
+                      {msg.image && !msg.isRecalled && (
                         <div className="mb-2.5 rounded-xl overflow-hidden max-w-xs border border-white/20">
                           <img
                             src={msg.image}
@@ -876,7 +922,7 @@ export default function MessagesPage() {
                     )}
                   </div>
                 );
-              })}
+              }))}
 
               {/* Typing Indicator */}
               {isTyping && (
@@ -961,26 +1007,6 @@ export default function MessagesPage() {
                   onClick={() => inputRef.current?.focus()}
                   className="flex items-center gap-2 bg-[#FAF8F7] border border-[#EADBDE] focus-within:border-[#B8737D] focus-within:ring-2 focus-within:ring-[#B8737D]/20 rounded-2xl px-3 sm:px-4 py-2 sm:py-2.5 shadow-2xs transition-all cursor-text"
                 >
-                  {/* File / Image Attachment Button */}
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      fileInputRef.current?.click();
-                    }}
-                    className="p-1.5 text-[#8C7E7E] hover:text-[#B8737D] hover:bg-[#FFF2F0] rounded-lg transition-colors border-0 bg-transparent cursor-pointer shrink-0"
-                    title="Gửi hình ảnh mẫu váy"
-                  >
-                    <ImageIcon className="w-5 h-5 stroke-[1.8]" />
-                  </button>
-
                   {/* Main Text Input / Textarea */}
                   <textarea
                     ref={inputRef}
@@ -1015,6 +1041,26 @@ export default function MessagesPage() {
                     title="Chọn mẫu váy cưới để hỏi tư vấn"
                   >
                     <ShoppingBag className="w-5 h-5 stroke-[1.8]" />
+                  </button>
+
+                  {/* File / Image Attachment Button (Đã chuyển sang cạnh icon giỏ hàng và mặt cười) */}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      fileInputRef.current?.click();
+                    }}
+                    className="p-1.5 text-[#8C7E7E] hover:text-[#B8737D] hover:bg-[#FFF2F0] rounded-lg transition-colors border-0 bg-transparent cursor-pointer shrink-0"
+                    title="Gửi hình ảnh mẫu váy"
+                  >
+                    <ImageIcon className="w-5 h-5 stroke-[1.8]" />
                   </button>
 
                   {/* Emoji Picker Button */}

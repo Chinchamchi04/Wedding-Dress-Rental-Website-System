@@ -1,19 +1,22 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { CalendarClock,
+import {
+  CalendarClock,
   ChartNoAxesCombined,
   ClipboardCheck,
   PackageCheck,
-  ShieldPlus,
+  Wrench,
   Calendar,
   Clock,
   Phone,
-  Crown } from 'lucide-react';
+  Crown
+} from 'lucide-react';
 import { message } from 'antd';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import DashboardChart from '../../components/common/DashboardChart';
 import { getStaffDashboard } from '../../services/reportService';
 import { APPOINTMENT_EVENT } from '../../services/appointmentService';
 import { getStaffAppointments, updateStaffAppointmentStatus } from '../../services/staffDashboardService';
+import { calculateInventoryMaintenanceSummary } from '../../utils/maintenanceStorage';
 
 const PERIODS = { week: '7 ngày qua', month: 'Tháng này', quarter: 'Quý này' };
 const STATUS_LABELS = { confirmed: 'Đã xác nhận', completed: 'Hoàn tất', cancelled: 'Đã hủy' };
@@ -27,6 +30,42 @@ export default function StaffDashboardPage() {
   const [appointments, setAppointments] = useState([]);
   const [loadingApt, setLoadingApt] = useState(false);
   const [appointmentsError, setAppointmentsError] = useState('');
+
+  // Đồng bộ chỉ số bảo dưỡng trực tiếp từ Quản lý kho hàng
+  const [inventoryMaintenance, setInventoryMaintenance] = useState(() => {
+    const c = localStorage.getItem('unibridal_inventory_maintenance_count');
+    const u = localStorage.getItem('unibridal_inventory_maintenance_units');
+    return {
+      count: c !== null ? Number(c) : null,
+      units: u !== null ? Number(u) : null,
+    };
+  });
+
+  const syncInventoryMaintenance = useCallback(async () => {
+    const cachedCount = localStorage.getItem('unibridal_inventory_maintenance_count');
+    const cachedUnits = localStorage.getItem('unibridal_inventory_maintenance_units');
+    if (cachedCount !== null) {
+      setInventoryMaintenance({
+        count: Number(cachedCount),
+        units: Number(cachedUnits || cachedCount),
+      });
+    }
+
+    try {
+      const summary = await calculateInventoryMaintenanceSummary();
+      if (summary && summary.count !== null) {
+        setInventoryMaintenance(summary);
+      }
+    } catch (err) {
+      console.warn('Lỗi đồng bộ bảo dưỡng từ kho:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    syncInventoryMaintenance();
+    window.addEventListener('unibridal_inventory_updated', syncInventoryMaintenance);
+    return () => window.removeEventListener('unibridal_inventory_updated', syncInventoryMaintenance);
+  }, [syncInventoryMaintenance]);
 
   const fetchAppointments = useCallback(async () => {
     setLoadingApt(true);
@@ -112,10 +151,10 @@ export default function StaffDashboardPage() {
       color: 'gold',
     },
     {
-      title: 'SẢN PHẨM BẢO TRÌ',
-      value: data?.maintenance ?? '—',
+      title: 'SẢN PHẨM BẢO DƯỠNG',
+      value: inventoryMaintenance.count !== null ? inventoryMaintenance.count : (data?.maintenance ?? '—'),
       note: 'Mẫu váy đang hấp tiệt trùng và bảo dưỡng',
-      Icon: ShieldPlus,
+      Icon: Wrench,
       color: 'amber',
     },
   ];
