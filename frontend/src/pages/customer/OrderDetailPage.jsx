@@ -52,7 +52,7 @@ const TIMELINE_STEPS = [
     key: 'completed',
     label: 'Hoàn Tất',
     subLabel: 'Đơn hàng hoàn tất',
-    Icon: Star,
+    Icon: CheckCircle2,
   },
 ];
 
@@ -87,6 +87,7 @@ function OrderStatusTimeline({ rawStatus }) {
     );
   }
 
+  const isAllCompleted = rawStatus === 'completed' || rawStatus === 'complete';
   const activeIndex = STATUS_STEP_MAP[rawStatus] ?? -1;
 
   return (
@@ -94,8 +95,8 @@ function OrderStatusTimeline({ rawStatus }) {
       <p className="mb-5 text-[11px] font-bold uppercase tracking-[1.6px] text-[#BA7A83]">✦ Hành Trình Lễ Phục Của Nàng</p>
       <ol className="flex flex-col sm:flex-row sm:items-start">
         {TIMELINE_STEPS.map(({ key, label, subLabel, Icon }, index) => {
-          const done = index < activeIndex;
-          const active = index === activeIndex;
+          const done = isAllCompleted ? index <= activeIndex : index < activeIndex;
+          const active = !isAllCompleted && index === activeIndex;
           const StepIcon = done ? CheckCircle2 : active ? Icon : Circle;
           const circleClass = done ? 'bg-[#BA7A83] text-white' : active
             ? 'border-2 border-[#BA7A83] bg-white text-[#BA7A83]'
@@ -202,11 +203,9 @@ export default function OrderDetailPage() {
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <span className="account-status account-status-active">{order.statusLabel}</span>
                   <h1 className="font-playfair text-xl sm:text-2xl font-bold text-[#2C2424] m-0">
-                    Chi Tiết Đơn Thuê Lễ Phục
+                    Chi Tiết Đơn Thuê
                   </h1>
-                  <span className="font-mono text-base font-bold text-[#874e57]">
-                    #{order.id}
-                  </span>
+
                 </div>
                 <div className="text-xs text-[#7A6A6B] flex items-center gap-1.5 shrink-0">
                   <CalendarDays size={13} className="text-[#874e57]" />
