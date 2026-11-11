@@ -644,19 +644,12 @@ export default function ContractManagement() {
                     <td className="py-4 px-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-[#302626] text-[13px]">{item.customerName}</span>
-                        {item.hasAccount || item.customerId ? (
+                        {(item.hasAccount || item.customerId) && (
                           <span
                             className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#FAF0EC] border border-[#E8C5BE] text-[#8C4654] shrink-0"
-                            title="Khách hàng thành viên UniBridal"
+                            title="Khách hàng có tài khoản"
                           >
-                            <Crown size={11} className="text-[#C5A880] fill-[#C5A880]" />
-                          </span>
-                        ) : (
-                          <span
-                            className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#F5F2F0] border border-[#E3DBD7] text-[#A39192] shrink-0"
-                            title="Khách vãng lai"
-                          >
-                            <User size={11} className="text-[#9E8B89]" />
+                            <User size={11} className="text-[#8C4654]" />
                           </span>
                         )}
                       </div>
