@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Heart, Star, ShieldCheck, Crown, Scissors,
+import {
+  Heart, Star, ShieldCheck, Crown, Scissors,
   Ruler, Calendar, Clock, Phone, MessageCircle,
   ChevronRight, ChevronLeft, Check, CheckCircle2, Info, ArrowRight, Share2,
-  X, ShoppingBag, Headphones, Sparkles } from 'lucide-react';
+  X, ShoppingBag, Headphones, Sparkles
+} from 'lucide-react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import { useAuth } from '../../contexts/AuthContext';
@@ -595,15 +597,11 @@ export default function DressDetailPage() {
                 <div>
                   <h3 className="font-playfair text-[18px] font-semibold text-[#231A19] m-0 flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-[#B8737D]" />
-                    Bảng Giá Thuê & Đặt Cọc
+                    Bảng Giá Thuê
                   </h3>
-                  <p className="text-[12px] text-[#7A6663] mt-0.5 m-0">
-                    Bao gồm tinh chỉnh may đo theo số đo & giặt hấp khử trùng cao cấp
-                  </p>
+
                 </div>
-                <span className="text-[12px] font-semibold text-[#B26B74] bg-[#FCEEE9] px-2.5 py-1 rounded-full whitespace-nowrap">
-                  Giá thuê 1 ngày
-                </span>
+
               </div>
 
               {/* Price Breakdown items */}
