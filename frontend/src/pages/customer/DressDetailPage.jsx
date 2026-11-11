@@ -130,8 +130,6 @@ export default function DressDetailPage() {
   const [feedbackPage, setFeedbackPage] = useState(1);
   const feedbacksPerPage = 6;
 
-  // Rental duration (mặc định gói 3 ngày)
-  const [rentalDays, setRentalDays] = useState(3);
 
   // Load dress data whenever URL parameter `id` changes
   useEffect(() => {
@@ -188,24 +186,18 @@ export default function DressDetailPage() {
     };
   }, [dress?.id]);
 
-  // Calculate total price based on rental days and base price
+  // Giá thuê niêm yết 1 ngày và tiền cọc bảo lãnh
   const pricing = useMemo(() => {
     if (!dress) return { base: 0, deposit: 0, total: 0 };
-    const basePrice = Number(dress.rentalPrice || dress.price || 3900000);
-    const deposit = Number(dress.depositAmount || dress.depositPrice || 11000000);
-
-    // Rental fee based on rentalDays (chuẩn gói 3 ngày)
-    let rentalFee = basePrice;
-    if (rentalDays > 3) {
-      rentalFee = basePrice + (rentalDays - 3) * (basePrice * 0.25);
-    }
+    const basePrice = Number(dress.price || dress.rentPrice || dress.rentalPrice || 3900000);
+    const deposit = Number(dress.depositAmount || dress.depositPrice || 10000000);
 
     return {
-      base: rentalFee,
+      base: basePrice,
       deposit: deposit,
-      total: rentalFee + deposit,
+      total: basePrice + deposit,
     };
-  }, [dress, rentalDays]);
+  }, [dress]);
 
   // Chuẩn bị danh sách 48 phản hồi thực tế của các nàng dâu
   const allFeedbacks = useMemo(() => {
@@ -257,20 +249,20 @@ export default function DressDetailPage() {
     addToCart({
       ...dress,
       size: selectedSize,
-      rentalDays: rentalDays,
+      rentalDays: 1,
     });
-    navigate(`/checkout?dressId=${dress.id}&size=${selectedSize}&days=${rentalDays}`);
+    navigate(`/checkout?dressId=${dress.id}&size=${selectedSize}`);
   };
 
   const handleOnlineRent = () => {
     const added = addToCart({
       ...dress,
       size: selectedSize,
-      rentalDays: rentalDays,
+      rentalDays: 1,
     });
     setRentNotification(
       added
-        ? `Đã thêm "${dress?.name}" vào giỏ thuê thành công! (Gói ${rentalDays} ngày)`
+        ? `Đã thêm "${dress?.name}" vào giỏ thuê thành công!`
         : `"${dress?.name}" đã có trong giỏ thuê váy.`
     );
     setTimeout(() => {
@@ -609,28 +601,18 @@ export default function DressDetailPage() {
                     Bao gồm tinh chỉnh may đo theo số đo & giặt hấp khử trùng cao cấp
                   </p>
                 </div>
-                <div className="flex items-center gap-1.5 bg-[#FCEEE9] p-1 rounded-full border border-[#F2DDD9]">
-                  {[3, 4, 5].map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => setRentalDays(d)}
-                      className={`px-2.5 py-0.5 rounded-full text-[11.5px] font-semibold transition-all cursor-pointer border-0 ${rentalDays === d
-                        ? 'bg-[#B26B74] text-white shadow-xs'
-                        : 'bg-transparent text-[#7A6663] hover:text-[#B26B74]'
-                        }`}
-                    >
-                      {d} ngày
-                    </button>
-                  ))}
-                </div>
+                <span className="text-[12px] font-semibold text-[#B26B74] bg-[#FCEEE9] px-2.5 py-1 rounded-full whitespace-nowrap">
+                  Giá thuê 1 ngày
+                </span>
               </div>
 
               {/* Price Breakdown items */}
               <div className="flex flex-col gap-2.5 text-[12.5px] pt-4 pb-3">
                 <div className="flex items-center justify-between text-[#5A4848]">
-                  <span>Giá thuê cơ bản (gói {rentalDays} ngày):</span>
-                  <strong className="text-[#231A19] font-semibold">{formatCurrencyVND(pricing.base)}</strong>
+                  <span>Giá thuê váy (1 ngày):</span>
+                  <strong className="text-[#231A19] font-bold text-[14px]">
+                    {formatCurrencyVND(pricing.base)} <span className="text-[12px] font-normal text-[#8A7978]">/ ngày</span>
+                  </strong>
                 </div>
 
                 <div className="flex items-center justify-between text-[#5A4848]">
