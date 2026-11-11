@@ -177,10 +177,10 @@ export default function OrderDetailPage() {
       breadcrumb={[]}
     >
       <div className="account-detail-content">
-        <div className="mb-4 flex justify-end">
+        <div className="mb-3 flex justify-end">
           <Link
             to="/profile/orders"
-            className="inline-flex items-center gap-1 text-xs font-semibold tracking-wider text-[#874e57]"
+            className="inline-flex items-center gap-1 text-xs font-semibold tracking-wider text-[#874e57] hover:text-[#5F2B36] transition-colors"
           >
             <ArrowLeft size={14} /> QUAY LẠI LỊCH SỬ ĐƠN HÀNG
           </Link>
@@ -196,15 +196,23 @@ export default function OrderDetailPage() {
           </section>
         ) : (
           <>
-            {/* ── HEADER ── */}
-            <div className="rounded-2xl bg-gradient-to-br from-[#f8e9e4] to-[#FFF9F6] px-6 py-6 sm:px-8 border border-[#EEDECF]">
-              <span className="account-status account-status-active">{order.statusLabel}</span>
-              <h1 className="mt-2 font-playfair text-3xl sm:text-4xl">Chi Tiết Đơn Thuê Lễ Phục</h1>
-              <p className="mt-2 font-playfair text-[27px] italic text-[#874e57]">#{order.id}</p>
-              <p className="mt-2 text-xs text-[#874e57]">
-                <CalendarDays size={14} className="mr-1 inline" />
-                Lịch thuê: {order.rentalDates}
-              </p>
+            {/* ── HEADER GỌN GÀNG ── */}
+            <div className="rounded-xl bg-gradient-to-r from-[#FAF0EB] to-[#FFF8F5] px-5 py-3.5 sm:px-6 border border-[#EEDECF]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <span className="account-status account-status-active">{order.statusLabel}</span>
+                  <h1 className="font-playfair text-xl sm:text-2xl font-bold text-[#2C2424] m-0">
+                    Chi Tiết Đơn Thuê Lễ Phục
+                  </h1>
+                  <span className="font-mono text-base font-bold text-[#874e57]">
+                    #{order.id}
+                  </span>
+                </div>
+                <div className="text-xs text-[#7A6A6B] flex items-center gap-1.5 shrink-0">
+                  <CalendarDays size={13} className="text-[#874e57]" />
+                  <span>Lịch thuê: <strong className="text-[#2C2424]">{order.rentalDates}</strong></span>
+                </div>
+              </div>
             </div>
 
             {/* ── BANNER BIÊN BẢN KIỂM ĐỊNH VÀ HOÀN CỌC NỔI BẬT ── */}
