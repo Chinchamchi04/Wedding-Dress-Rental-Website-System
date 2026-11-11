@@ -8,7 +8,6 @@ import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import { useAuth } from '../../contexts/AuthContext';
 import { getDressById, getRelatedDresses, formatCurrencyVND } from '../../services/dressService';
-import { getDressBookedDates } from '../../services/orderService';
 import { addToCart } from '../../services/cartService';
 import { isWishlisted as checkWishlisted, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
 import { formatShortDate } from '../../utils/formatDate';
@@ -140,28 +139,30 @@ export default function DressDetailPage() {
     setLoading(true);
 
     const loadData = async () => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      const targetId = id || '1';
-      const result = await getDressById(targetId);
-      const related = await getRelatedDresses(result.data ? result.data.id : targetId);
-      const dressIdentifier = result.data?._id || result.data?.id || targetId;
-      const booked = await getDressBookedDates(dressIdentifier);
+      try {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const targetId = id || '1';
+        const result = await getDressById(targetId);
+        const related = await getRelatedDresses(result.data ? result.data.id : targetId);
 
-      if (isMounted) {
-        if (result.success && result.data) {
-          setDress(result.data);
-          setSelectedImageIndex(0);
-          setSelectedColor(result.data.colors?.[0] || null);
-          setSelectedSize(result.data.sizes?.[1]?.id || 'S');
-          setIsWishlisted(checkWishlisted(result.data.id));
+        if (isMounted) {
+          if (result.success && result.data) {
+            setDress(result.data);
+            setSelectedImageIndex(0);
+            setSelectedColor(result.data.colors?.[0] || null);
+            setSelectedSize(result.data.sizes?.[1]?.id || 'S');
+            setIsWishlisted(checkWishlisted(result.data.id));
+          }
+          if (related.success) {
+            setRelatedDresses(related.data);
+          }
         }
-        if (booked) {
-          setBookedDates(booked);
+      } catch (err) {
+        console.error('Lỗi khi tải chi tiết váy cưới:', err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
         }
-        if (related.success) {
-          setRelatedDresses(related.data);
-        }
-        setLoading(false);
       }
     };
 
