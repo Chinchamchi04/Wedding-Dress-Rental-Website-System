@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Heart, Star, ShieldCheck, Crown, Scissors,
   Ruler, Calendar, Clock, Phone, MessageCircle,
   ChevronRight, ChevronLeft, Check, CheckCircle2, Info, ArrowRight, Share2,
-  X, ShoppingBag, Headphones } from 'lucide-react';
+  X, ShoppingBag, Headphones, Sparkles } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import { useAuth } from '../../contexts/AuthContext';
@@ -131,19 +131,8 @@ export default function DressDetailPage() {
   const [feedbackPage, setFeedbackPage] = useState(1);
   const feedbacksPerPage = 6;
 
-  // Rental date và Booked dates calculations
-  const [bookedDates, setBookedDates] = useState([]);
-  const [calendarMonth, setCalendarMonth] = useState(() => new Date());
-  const [startDate, setStartDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 5);
-    return d.toISOString().split('T')[0];
-  });
-  const [endDate, setEndDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 9);
-    return d.toISOString().split('T')[0];
-  });
+  // Rental duration (mặc định gói 3 ngày)
+  const [rentalDays, setRentalDays] = useState(3);
 
   // Load dress data whenever URL parameter `id` changes
   useEffect(() => {
@@ -198,26 +187,16 @@ export default function DressDetailPage() {
     };
   }, [dress?.id]);
 
-  // Calculate rental duration in days
-  const rentalDays = useMemo(() => {
-    if (!startDate || !endDate) return 4;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = end.getTime() - start.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : 1;
-  }, [startDate, endDate]);
-
   // Calculate total price based on rental days and base price
   const pricing = useMemo(() => {
     if (!dress) return { base: 0, deposit: 0, total: 0 };
-    const basePrice = dress.price || 5200000;
-    const deposit = dress.depositAmount || 15000000;
+    const basePrice = Number(dress.rentalPrice || dress.price || 3900000);
+    const deposit = Number(dress.depositAmount || dress.depositPrice || 11000000);
 
-    // Package 4 days = 100% base price. Additional days = 20% of base price per day
+    // Rental fee based on rentalDays (chuẩn gói 3 ngày)
     let rentalFee = basePrice;
-    if (rentalDays > 4) {
-      rentalFee = basePrice + (rentalDays - 4) * (basePrice * 0.2);
+    if (rentalDays > 3) {
+      rentalFee = basePrice + (rentalDays - 3) * (basePrice * 0.25);
     }
 
     return {
@@ -226,99 +205,6 @@ export default function DressDetailPage() {
       total: rentalFee + deposit,
     };
   }, [dress, rentalDays]);
-
-  // Các ngày trong tháng cho Bảng Lịch (Calendar Grid)
-  const calendarDays = useMemo(() => {
-    const year = calendarMonth.getFullYear();
-    const month = calendarMonth.getMonth();
-    const firstDay = new Date(year, month, 1);
-    let startDayOfWeek = firstDay.getDay() - 1; // 0 = Thứ 2, 6 = Chủ Nhật
-    if (startDayOfWeek === -1) startDayOfWeek = 6;
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    const days = [];
-    for (let i = 0; i < startDayOfWeek; i++) {
-      days.push(null);
-    }
-    for (let d = 1; d <= daysInMonth; d++) {
-      days.push(new Date(year, month, d));
-    }
-    return days;
-  }, [calendarMonth]);
-
-  const isPastDate = (date) => {
-    if (!date) return false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const check = new Date(date);
-    check.setHours(0, 0, 0, 0);
-    return check < today;
-  };
-
-  const formatIsoDate = (d) => {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const getBookingForDate = (date) => {
-    if (!date || !bookedDates || bookedDates.length === 0) return null;
-    const target = new Date(date);
-    target.setHours(0, 0, 0, 0);
-    const targetTime = target.getTime();
-
-    for (const b of bookedDates) {
-      if (!b.startDate || !b.endDate) continue;
-      const s = new Date(b.startDate);
-      s.setHours(0, 0, 0, 0);
-      const e = new Date(b.endDate);
-      e.setHours(0, 0, 0, 0);
-      if (targetTime >= s.getTime() && targetTime <= e.getTime()) {
-        return b;
-      }
-    }
-    return null;
-  };
-
-  const handleSelectCalendarDate = (date) => {
-    if (!date) return;
-    if (isPastDate(date)) return;
-    const booking = getBookingForDate(date);
-    if (booking) return;
-
-    const isoStr = formatIsoDate(date);
-
-    if (!startDate || (startDate && endDate)) {
-      setStartDate(isoStr);
-      const defaultEnd = new Date(date);
-      defaultEnd.setDate(defaultEnd.getDate() + 3);
-      setEndDate(formatIsoDate(defaultEnd));
-    } else {
-      if (isoStr < startDate) {
-        setStartDate(isoStr);
-        const defaultEnd = new Date(date);
-        defaultEnd.setDate(defaultEnd.getDate() + 3);
-        setEndDate(formatIsoDate(defaultEnd));
-      } else {
-        setEndDate(isoStr);
-      }
-    }
-  };
-
-  const handlePrevMonth = () => {
-    const today = new Date();
-    today.setDate(1);
-    today.setHours(0, 0, 0, 0);
-    const prev = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1);
-    if (prev >= today || (prev.getFullYear() === today.getFullYear() && prev.getMonth() === today.getMonth())) {
-      setCalendarMonth(prev);
-    }
-  };
-
-  const handleNextMonth = () => {
-    setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1));
-  };
 
   // Chuẩn bị danh sách 48 phản hồi thực tế của các nàng dâu
   const allFeedbacks = useMemo(() => {
@@ -371,17 +257,19 @@ export default function DressDetailPage() {
       ...dress,
       size: selectedSize,
       rentalDays: rentalDays,
-      startDate: startDate,
-      endDate: endDate,
     });
-    navigate(`/checkout?dressId=${dress.id}&size=${selectedSize}&startDate=${startDate}&endDate=${endDate}&days=${rentalDays}`);
+    navigate(`/checkout?dressId=${dress.id}&size=${selectedSize}&days=${rentalDays}`);
   };
 
   const handleOnlineRent = () => {
-    const added = addToCart(dress);
+    const added = addToCart({
+      ...dress,
+      size: selectedSize,
+      rentalDays: rentalDays,
+    });
     setRentNotification(
       added
-        ? `Đã thêm "${dress?.name}" vào giỏ thuê thành công! (Gói ${rentalDays} ngày từ ${startDate} đến ${endDate})`
+        ? `Đã thêm "${dress?.name}" vào giỏ thuê thành công! (Gói ${rentalDays} ngày)`
         : `"${dress?.name}" đã có trong giỏ thuê váy.`
     );
     setTimeout(() => {
@@ -708,210 +596,37 @@ export default function DressDetailPage() {
               </div>
             </div>
 
-            {/* Rental Period và Interactive Calendar Grid Box */}
+            {/* Thông Tin Giá Thuê & Đặt Cọc */}
             <div className="border border-[#F2DDD9] bg-[#FFF8F6] rounded-[20px] p-5 sm:p-6 shadow-xs">
               <div className="flex items-center justify-between pb-3.5 border-b border-[#F0D5D0]">
                 <div>
                   <h3 className="font-playfair text-[18px] font-semibold text-[#231A19] m-0 flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-[#B8737D]" />
-                    Lịch Trống và Chọn Ngày Thuê Váy
+                    <Sparkles className="w-4 h-4 text-[#B8737D]" />
+                    Bảng Giá Thuê & Đặt Cọc
                   </h3>
                   <p className="text-[12px] text-[#7A6663] mt-0.5 m-0">
-                    Bấm trực tiếp vào ngày trên lịch để chọn ngày nhận váy
+                    Bao gồm tinh chỉnh may đo theo số đo & giặt hấp khử trùng cao cấp
                   </p>
                 </div>
-                <span className="text-[12px] font-semibold text-[#B26B74] bg-[#FCEEE9] px-2.5 py-1 rounded-full whitespace-nowrap">
-                  Gói {rentalDays} ngày
-                </span>
-              </div>
-
-              {/* BẢNG LỊCH KIỂM TRA LỊCH TRỐNG (CALENDAR GRID) */}
-              <div className="my-4 p-3.5 sm:p-4 bg-white border border-[#EFE4E0] rounded-[16px] shadow-2xs">
-                {/* Month Navigator Header */}
-                <div className="flex items-center justify-between pb-3 mb-2 border-b border-[#F4EBE8]">
-                  <button
-                    type="button"
-                    onClick={handlePrevMonth}
-                    className="p-1.5 rounded-full hover:bg-[#F8EFEA] text-[#6E5655] transition-colors cursor-pointer"
-                    title="Tháng trước"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-
-                  <span className="font-playfair font-bold text-[15px] text-[#2C2424] tracking-wide">
-                    Tháng {calendarMonth.getMonth() + 1}, {calendarMonth.getFullYear()}
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={handleNextMonth}
-                    className="p-1.5 rounded-full hover:bg-[#F8EFEA] text-[#6E5655] transition-colors cursor-pointer"
-                    title="Tháng sau"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Day of Week Headers */}
-                <div className="grid grid-cols-7 gap-1 sm:gap-1.5 text-center mb-1">
-                  {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((w) => (
-                    <div key={w} className="text-[11px] font-bold text-[#8A7978] py-1 select-none">
-                      {w}
-                    </div>
+                <div className="flex items-center gap-1.5 bg-[#FCEEE9] p-1 rounded-full border border-[#F2DDD9]">
+                  {[3, 4, 5].map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setRentalDays(d)}
+                      className={`px-2.5 py-0.5 rounded-full text-[11.5px] font-semibold transition-all cursor-pointer border-0 ${rentalDays === d
+                        ? 'bg-[#B26B74] text-white shadow-xs'
+                        : 'bg-transparent text-[#7A6663] hover:text-[#B26B74]'
+                        }`}
+                    >
+                      {d} ngày
+                    </button>
                   ))}
-                </div>
-
-                {/* Days Grid Cells */}
-                <div className="grid grid-cols-7 gap-1 sm:gap-1.5 text-center">
-                  {calendarDays.map((d, index) => {
-                    if (!d) return <div key={`empty-${index}`} className="h-10 sm:h-11" />;
-
-                    const past = isPastDate(d);
-                    const booking = getBookingForDate(d);
-                    const iso = formatIsoDate(d);
-                    const isStart = startDate === iso;
-                    const isEnd = endDate === iso;
-                    const inRange = startDate && endDate && iso > startDate && iso < endDate;
-
-                    // 1. Ngày trong quá khứ -> Mờ đục và Khóa cursor-not-allowed
-                    if (past) {
-                      return (
-                        <div
-                          key={iso}
-                          className="h-10 sm:h-11 rounded-[6px] bg-[#FAF7F5] border border-[#F4EFEA] flex flex-col items-center justify-center text-[11.5px] text-[#C4B5B2] cursor-not-allowed select-none opacity-40"
-                          title="Ngày trong quá khứ"
-                        >
-                          <span className="line-through">{d.getDate()}</span>
-                        </div>
-                      );
-                    }
-
-                    // 2. Ngày đã có người đặt thuê cọc/đang thuê -> Đánh dấu đỏ KÍN LỊCH
-                    if (booking) {
-                      return (
-                        <div
-                          key={iso}
-                          className="h-10 sm:h-11 rounded-[6px] bg-[#FFF0F0] border border-[#FFCDD2] flex flex-col items-center justify-center text-[11px] text-[#D32F2F] cursor-not-allowed select-none font-semibold shadow-2xs"
-                          title={`KÍN LỊCH: Đã có nàng dâu cọc (${booking.bride || 'Khách thuê'})`}
-                        >
-                          <span className="leading-none">{d.getDate()}</span>
-                          <span className="text-[7.5px] sm:text-[8px] font-extrabold text-red-600 tracking-tighter uppercase leading-none mt-0.5">
-                            KÍN LỊCH
-                          </span>
-                        </div>
-                      );
-                    }
-
-                    // 3. Ngày bắt đầu nhận hoặc ngày trả váy
-                    if (isStart || isEnd) {
-                      return (
-                        <button
-                          key={iso}
-                          type="button"
-                          onClick={() => handleSelectCalendarDate(d)}
-                          className={`h-10 sm:h-11 rounded-[6px] ${isStart ? 'bg-[#B8737D]' : 'bg-[#854F55]'} text-white flex flex-col items-center justify-center text-[11.5px] font-bold shadow-xs cursor-pointer transition-transform hover:scale-105`}
-                        >
-                          <span className="leading-none">{d.getDate()}</span>
-                          <span className="text-[7.5px] font-semibold text-white/95 uppercase tracking-tighter leading-none mt-0.5">
-                            {isStart ? 'NHẬN' : 'TRẢ'}
-                          </span>
-                        </button>
-                      );
-                    }
-
-                    // 4. Khoảng ngày đang chọn thuê
-                    if (inRange) {
-                      return (
-                        <button
-                          key={iso}
-                          type="button"
-                          onClick={() => handleSelectCalendarDate(d)}
-                          className="h-10 sm:h-11 rounded-[4px] bg-[#FCEEEA] border-y border-[#F3CFC6] text-[#854F55] flex flex-col items-center justify-center text-[12px] font-semibold cursor-pointer hover:bg-[#F8E3DD] transition-colors"
-                        >
-                          <span>{d.getDate()}</span>
-                        </button>
-                      );
-                    }
-
-                    // 5. Ngày trống khả dụng -> Tự do click chọn
-                    return (
-                      <button
-                        key={iso}
-                        type="button"
-                        onClick={() => handleSelectCalendarDate(d)}
-                        className="h-10 sm:h-11 rounded-[6px] bg-white border border-[#EAE0DC] text-[#2C2424] flex flex-col items-center justify-center text-[12px] font-medium cursor-pointer hover:border-[#B8737D] hover:bg-[#FFF6F3] hover:text-[#B8737D] transition-all hover:scale-105 shadow-2xs"
-                        title="Ngày trống lịch - Bấm để chọn nhận váy"
-                      >
-                        <span>{d.getDate()}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Calendar Legend (Chú thích bảng lịch) */}
-                <div className="flex flex-wrap items-center justify-between gap-2 pt-3 mt-3 border-t border-[#F4EBE8] text-[11px] text-[#6E5655]">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#D32F2F]" />
-                    <span>Đỏ: Kín lịch</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#B8737D]" />
-                    <span>Hồng: Ngày nhận/trả</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#FCEEEA] border border-[#F3CFC6]" />
-                    <span>Khoảng thuê ({rentalDays}N)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-white border border-[#CCC]" />
-                    <span>Trắng: Trống lịch</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Date pickers row synchronized with Calendar Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-3">
-                <div className="bg-white border border-[#EAE0DC] rounded-[12px] p-2.5 sm:p-3 relative cursor-pointer group hover:border-[#733F49] transition-colors">
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8A7978] mb-1 pointer-events-none">
-                    NGÀY BẮT ĐẦU THUÊ (NHẬN VÁY)
-                  </label>
-                  <div className="relative flex items-center justify-between">
-                    <span className="text-[13.5px] font-bold text-[#231A19]">
-                      {formatShortDate(startDate) || 'Chọn ngày nhận'}
-                    </span>
-                    <Calendar className="w-4 h-4 text-[#8A7978] group-hover:text-[#733F49] transition-colors shrink-0" />
-                    <input
-                      type="date"
-                      value={startDate}
-                      min={new Date().toISOString().split('T')[0]}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                  </div>
-                </div>
-
-                <div className="bg-white border border-[#EAE0DC] rounded-[12px] p-2.5 sm:p-3 relative cursor-pointer group hover:border-[#733F49] transition-colors">
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8A7978] mb-1 pointer-events-none">
-                    NGÀY TRẢ DỰ KIẾN (TRẢ VÁY)
-                  </label>
-                  <div className="relative flex items-center justify-between">
-                    <span className="text-[13.5px] font-bold text-[#231A19]">
-                      {formatShortDate(endDate) || 'Chọn ngày trả'}
-                    </span>
-                    <Calendar className="w-4 h-4 text-[#8A7978] group-hover:text-[#733F49] transition-colors shrink-0" />
-                    <input
-                      type="date"
-                      value={endDate}
-                      min={startDate || new Date().toISOString().split('T')[0]}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                  </div>
                 </div>
               </div>
 
               {/* Price Breakdown items */}
-              <div className="flex flex-col gap-2.5 text-[12.5px] pt-1 pb-3">
+              <div className="flex flex-col gap-2.5 text-[12.5px] pt-4 pb-3">
                 <div className="flex items-center justify-between text-[#5A4848]">
                   <span>Giá thuê cơ bản (gói {rentalDays} ngày):</span>
                   <strong className="text-[#231A19] font-semibold">{formatCurrencyVND(pricing.base)}</strong>
