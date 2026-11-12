@@ -416,6 +416,7 @@ function OrderDetailModal({ order, onClose }) {
 function InspectionModal({ order, onClose, onSuccess }) {
   const isCompletedOrder = order.status === 'completed' || order.status === 'complete';
   const isReturnedOrder = order.status === 'returned';
+  const isGuestOrder = !order.hasAccount && !order.customerId && !order.userId;
   const [customerStatus, setCustomerStatus] = useState(order.inspectionCustomerStatus || order.inspection?.customerStatus || 'pending');
   const isCustomerApproved = customerStatus === 'approved';
   const [isEditing, setIsEditing] = useState(!isReturnedOrder && !isCustomerApproved);
@@ -423,6 +424,14 @@ function InspectionModal({ order, onClose, onSuccess }) {
 
   const [disputeReason, setDisputeReason] = useState('');
   const [refundBankDetails, setRefundBankDetails] = useState(null);
+
+  // Trực tiếp tại quầy dành cho Guest hoặc khách tại Showroom
+  const [confirmOnSite, setConfirmOnSite] = useState(isGuestOrder);
+  const [refundMethod, setRefundMethod] = useState('cash'); // 'cash' | 'bank_transfer'
+  const [onSiteBankName, setOnSiteBankName] = useState('Vietcombank');
+  const [onSiteAccountNum, setOnSiteAccountNum] = useState('');
+  const [onSiteAccountHolder, setOnSiteAccountHolder] = useState(order.customerName || '');
+  const [onSiteNotes, setOnSiteNotes] = useState('');
 
   const [itemsCondition, setItemsCondition] = useState(
     () =>
@@ -588,12 +597,33 @@ function InspectionModal({ order, onClose, onSuccess }) {
         compensation: Number(ic.compensation || 0),
       }));
 
-      await submitReturnInspection(order._id, {
+      const body = {
         itemsCondition: payload,
         evidencePhotos,
-      });
+        confirmOnSite,
+        refundMethod,
+        refundBankDetails: confirmOnSite ? (
+          refundMethod === 'cash' ? {
+            bankName: 'Tiền mặt tại quầy',
+            accountNumber: 'TIỀN MẶT',
+            accountHolder: order.customerName || 'Khách hàng',
+            notes: onSiteNotes || 'Đã hoàn tiền mặt trực tiếp cho khách tại quầy showroom',
+          } : {
+            bankName: onSiteBankName || 'Ngân hàng nội địa',
+            accountNumber: onSiteAccountNum || '',
+            accountHolder: onSiteAccountHolder || order.customerName || '',
+            notes: onSiteNotes || 'Showroom chuyển khoản trực tiếp cho khách tại quầy',
+          }
+        ) : null,
+      };
 
-      message.success('Đã lưu biên bản kiểm định thành công! Hệ thống đã gửi email thông báo kèm liên kết xác nhận hoàn cọc tới khách hàng.');
+      await submitReturnInspection(order._id, body);
+
+      if (confirmOnSite) {
+        message.success(`Đã xác nhận kiểm định và quyết toán hoàn cọc ${fmtVnd(finalRefund)} trực tiếp tại quầy thành công! Đơn hàng đã hoàn tất.`);
+      } else {
+        message.success('Đã lưu biên bản kiểm định thành công! Hệ thống đã gửi email thông báo kèm liên kết xác nhận hoàn cọc tới khách hàng.');
+      }
       setIsEditing(false);
       onSuccess();
     } catch {
@@ -671,11 +701,24 @@ function InspectionModal({ order, onClose, onSuccess }) {
           )}
 
           {customerStatus === 'pending' && isReturnedOrder && (
-            <div className="p-2 px-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800 flex items-center gap-1.5">
-              <Clock size={13} className="text-amber-600 shrink-0" />
-              <span>
-                <strong>Đang chờ khách duyệt và điền STK:</strong> Khách xác nhận thì hệ thống sẽ tự động hoàn cọc ngay.
-              </span>
+            <div className="p-2 px-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800 flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-1.5">
+                <Clock size={13} className="text-amber-600 shrink-0" />
+                <span>
+                  <strong>Đang chờ khách duyệt:</strong> {isGuestOrder ? 'Khách vãng lai không có tài khoản online.' : 'Khách xác nhận thì hệ thống sẽ tự động hoàn cọc ngay.'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEditing(true);
+                  setConfirmOnSite(true);
+                }}
+                className="px-2.5 py-1 rounded-lg bg-[#1E8347] text-white font-bold text-[10.5px] cursor-pointer hover:bg-[#166534] transition-colors border-0 flex items-center gap-1 shrink-0"
+              >
+                <CheckCircle2 size={12} />
+                <span>Xác nhận tại quầy ngay</span>
+              </button>
             </div>
           )}
 
@@ -847,6 +890,99 @@ function InspectionModal({ order, onClose, onSuccess }) {
             </div>
           </div>
 
+          {/* Tùy chọn xác nhận trực tiếp tại quầy dành cho Guest hoặc khách tại Showroom */}
+          {!isReadOnly && (
+            <div className={`p-3 rounded-xl border transition-all ${confirmOnSite ? 'border-[#BCE2C5] bg-[#F3FAF5]' : 'border-[#EFE5E1] bg-[#FAF5F2]'}`}>
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={confirmOnSite}
+                    onChange={(e) => setConfirmOnSite(e.target.checked)}
+                    className="w-4 h-4 rounded text-[#1E8347] accent-[#1E8347] cursor-pointer"
+                  />
+                  <span className="font-bold text-[12px] text-[#1E6B37]">
+                    Khách hàng đồng kiểm tra & xác nhận trực tiếp tại quầy
+                  </span>
+                </label>
+                {isGuestOrder && (
+                  <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full border border-amber-200">
+                    Khách vãng lai (Không có tài khoản)
+                  </span>
+                )}
+              </div>
+
+              {confirmOnSite && (
+                <div className="pt-2.5 mt-2 border-t border-[#D5E8D8] space-y-2 text-[11.5px] animate-fadeIn">
+                  <div className="flex items-center gap-4">
+                    <span className="text-[#3F5946] font-semibold">Hình thức hoàn cọc:</span>
+                    <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="refundMethod"
+                        value="cash"
+                        checked={refundMethod === 'cash'}
+                        onChange={() => setRefundMethod('cash')}
+                        className="accent-[#1E8347]"
+                      />
+                      <span className="font-medium text-[#2C2523]">Tiền mặt tại quầy</span>
+                    </label>
+                    <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="refundMethod"
+                        value="bank_transfer"
+                        checked={refundMethod === 'bank_transfer'}
+                        onChange={() => setRefundMethod('bank_transfer')}
+                        className="accent-[#1E8347]"
+                      />
+                      <span className="font-medium text-[#2C2523]">Chuyển khoản ngay</span>
+                    </label>
+                  </div>
+
+                  {refundMethod === 'bank_transfer' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1.5 bg-white p-2.5 rounded-lg border border-[#D5E8D8]">
+                      <div>
+                        <span className="text-[10.5px] text-[#7A6A6B] block mb-0.5">Ngân hàng</span>
+                        <Input
+                          size="small"
+                          placeholder="VD: Vietcombank, MB..."
+                          value={onSiteBankName}
+                          onChange={(e) => setOnSiteBankName(e.target.value)}
+                          className="text-xs"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[10.5px] text-[#7A6A6B] block mb-0.5">Số tài khoản (STK)</span>
+                        <Input
+                          size="small"
+                          placeholder="Nhập STK của khách..."
+                          value={onSiteAccountNum}
+                          onChange={(e) => setOnSiteAccountNum(e.target.value)}
+                          className="text-xs font-mono"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[10.5px] text-[#7A6A6B] block mb-0.5">Chủ tài khoản</span>
+                        <Input
+                          size="small"
+                          placeholder="TÊN CHỦ TÀI KHOẢN"
+                          value={onSiteAccountHolder}
+                          onChange={(e) => setOnSiteAccountHolder(e.target.value.toUpperCase())}
+                          className="text-xs font-semibold"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-[11px] text-[#2E7D47] m-0">
+                    ✓ Sau khi xác nhận, hệ thống sẽ <strong>quyết toán hoàn cọc {fmtVnd(finalRefund)}</strong> và chuyển đơn sang <strong>Hoàn tất</strong> ngay lập tức.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Actions - Nút bấm thu gọn */}
           <div className="flex gap-2.5 pt-1">
             {isReadOnly ? (
@@ -884,14 +1020,20 @@ function InspectionModal({ order, onClose, onSuccess }) {
                   type="button"
                   disabled={submitting}
                   onClick={handleSubmit}
-                  className="flex-1 py-2 rounded-xl bg-[#733F49] text-[12px] font-bold text-white hover:bg-[#5C3038] transition-colors border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
+                  className={`flex-1 py-2 rounded-xl text-[12px] font-bold text-white transition-colors border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs ${
+                    confirmOnSite ? 'bg-[#1E8347] hover:bg-[#166534]' : 'bg-[#733F49] hover:bg-[#5C3038]'
+                  }`}
                 >
                   {submitting ? (
                     <RefreshCw size={13} className="animate-spin" />
+                  ) : confirmOnSite ? (
+                    <CheckCircle2 size={14} />
                   ) : (
                     <ShieldCheck size={14} />
                   )}
-                  <span>Lưu và Gửi Biên Bản Cho Khách Hàng</span>
+                  <span>
+                    {confirmOnSite ? 'Xác Nhận Tại Quầy & Hoàn Tất Đơn' : 'Lưu và Gửi Biên Bản Cho Khách Hàng'}
+                  </span>
                 </button>
               </>
             )}

@@ -569,6 +569,14 @@ export const submitReturnInspection = async (orderId, data, staffUser) => {
   const totalDeduction = latePenaltyFee + damageTotal;
   const finalRefundAmount = Math.max(0, order.totalDeposit - totalDeduction);
   const evidencePhotos = Array.isArray(data.evidencePhotos) ? data.evidencePhotos : [];
+  const confirmOnSite = Boolean(data.confirmOnSite);
+  const refundMethod = data.refundMethod || 'cash';
+  const refundBankDetails = data.refundBankDetails || (refundMethod === 'cash' ? {
+    bankName: 'Tiền mặt tại quầy',
+    accountNumber: 'TIỀN MẶT',
+    accountHolder: order.customerName || order.brideName || 'Khách hàng',
+    notes: 'Đã hoàn tiền mặt trực tiếp cho khách tại quầy showroom',
+  } : null);
 
   // Upsert: nếu đã có biên bản kiểm định thì cập nhật lại biên bản và số tiền trừ
   let inspection = await ReturnInspection.findOne({ orderId });
@@ -587,8 +595,14 @@ export const submitReturnInspection = async (orderId, data, staffUser) => {
     inspection.totalDeduction = totalDeduction;
     inspection.initialDeposit = order.totalDeposit;
     inspection.finalRefundAmount = finalRefundAmount;
-    inspection.customerStatus = 'pending'; // Đưa về chờ khách duyệt
+    inspection.customerStatus = confirmOnSite ? 'approved' : 'pending';
+    inspection.isRefunded = confirmOnSite;
+    inspection.refundedAt = confirmOnSite ? new Date() : null;
+    inspection.customerConfirmedAt = confirmOnSite ? new Date() : null;
     inspection.disputeReason = '';
+    if (confirmOnSite && refundBankDetails) {
+      inspection.refundBankDetails = refundBankDetails;
+    }
     await inspection.save();
   } else {
     inspection = new ReturnInspection({
@@ -602,18 +616,33 @@ export const submitReturnInspection = async (orderId, data, staffUser) => {
       totalDeduction,
       initialDeposit: order.totalDeposit,
       finalRefundAmount,
-      isRefunded: false,
-      customerStatus: 'pending',
+      isRefunded: confirmOnSite,
+      refundedAt: confirmOnSite ? new Date() : null,
+      customerStatus: confirmOnSite ? 'approved' : 'pending',
+      customerConfirmedAt: confirmOnSite ? new Date() : null,
+      refundBankDetails: confirmOnSite && refundBankDetails ? refundBankDetails : undefined,
     });
     await inspection.save();
   }
 
   // Cập nhật trạng thái đơn
-  order.status = 'returned';
   order.actualReturnDate = new Date();
-  await order.save();
+  if (confirmOnSite) {
+    order.status = 'completed';
+    order.completedAt = new Date();
+    order.maintenanceUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await order.save();
 
-  // Tự động gửi email thông báo biên bản kiểm định đến khách hàng
+    await Contract.findOneAndUpdate(
+      { $or: [{ orderId: order._id }, { contractCode: order.contractCode }] },
+      { status: 'completed' }
+    ).catch(() => {});
+  } else {
+    order.status = 'returned';
+    await order.save();
+  }
+
+  // Tự động gửi email thông báo biên bản kiểm định hoặc email hoàn cọc đến khách hàng
   try {
     let customerEmail = order.customerEmail || order.email;
     let customerName = order.customerName || order.brideName || 'Quý khách';
@@ -627,18 +656,28 @@ export const submitReturnInspection = async (orderId, data, staffUser) => {
     }
 
     if (customerEmail) {
-      const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
-      sendInspectionNotificationEmail({
-        to: customerEmail,
-        fullName: customerName,
-        orderCode: order.orderCode,
-        inspectorName: staffUser?.fullName || 'Chuyên Viên Atelier UniBridal',
-        inspectionDate: inspection.returnedAt,
-        totalDeposit: order.totalDeposit,
-        totalDeduction: inspection.totalDeduction,
-        finalRefundAmount: inspection.finalRefundAmount,
-        returnUrl: `${clientUrl}/profile/orders`,
-      }).catch((err) => console.error('[EMAIL INSPECTION SEND ERROR]', err.message));
+      if (confirmOnSite) {
+        sendRefundConfirmationEmail({
+          to: customerEmail,
+          fullName: customerName,
+          orderCode: order.orderCode,
+          finalRefundAmount: inspection.finalRefundAmount,
+          bankDetails: inspection.refundBankDetails,
+        }).catch((err) => console.error('[EMAIL REFUND SEND ERROR]', err.message));
+      } else {
+        const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+        sendInspectionNotificationEmail({
+          to: customerEmail,
+          fullName: customerName,
+          orderCode: order.orderCode,
+          inspectorName: staffUser?.fullName || 'Chuyên Viên Atelier UniBridal',
+          inspectionDate: inspection.returnedAt,
+          totalDeposit: order.totalDeposit,
+          totalDeduction: inspection.totalDeduction,
+          finalRefundAmount: inspection.finalRefundAmount,
+          returnUrl: `${clientUrl}/profile/orders`,
+        }).catch((err) => console.error('[EMAIL INSPECTION SEND ERROR]', err.message));
+      }
     }
   } catch (err) {
     console.error('[EMAIL NOTIFICATION ERROR]', err.message);
