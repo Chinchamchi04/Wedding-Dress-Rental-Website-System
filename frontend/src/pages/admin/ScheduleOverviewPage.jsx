@@ -244,7 +244,7 @@ function CalendarDateCellEvents({
                       </div>
                     )}
                     {returnDateStr && (
-                      <div className="text-sky-300 font-bold border-t border-white/20 pt-1 flex items-center gap-1">
+                      <div className="text-rose-400 font-bold border-t border-white/20 pt-1 flex items-center gap-1">
                         <span>🔄 Hạn trả váy:</span>
                         <span>{returnDateStr}</span>
                       </div>
