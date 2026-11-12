@@ -234,10 +234,15 @@ function CalendarDateCellEvents({
                 title={
                   <div className="text-xs space-y-1">
                     <div className="font-bold flex items-center gap-1">
-                      <span>📦 Lịch Giao váy:</span>
+                      <span>📦 Giao sớm / Lấy váy:</span>
                       <span className="font-mono text-amber-300">{item.code}</span>
                     </div>
                     <div>Khách hàng: <strong>{item.customerName}</strong></div>
+                    {item.rentalStartDate && (
+                      <div className="text-amber-200 text-[11px]">
+                        Thuê chính thức: <strong>{formatShortDate(item.rentalStartDate)}</strong>
+                      </div>
+                    )}
                     {returnDateStr && (
                       <div className="text-sky-300 font-bold border-t border-white/20 pt-1 flex items-center gap-1">
                         <span>🔄 Hạn trả váy:</span>
@@ -273,7 +278,11 @@ function CalendarDateCellEvents({
           // Trả Váy (return)
           const isDone = item.status === 'completed' || item.status === 'returned';
           const isHighlight = Boolean(activeOrderCode && (item.code === activeOrderCode || item.id === activeOrderCode));
-          const deliveryDateStr = item.rentalStartDate ? formatShortDate(item.rentalStartDate) : '';
+          
+          // Ngày giao sớm lùi 1 ngày so với rentalStartDate
+          const deliveryDateObj = item.rentalStartDate ? new Date(item.rentalStartDate) : null;
+          if (deliveryDateObj) deliveryDateObj.setDate(deliveryDateObj.getDate() - 1);
+          const deliveryDateStr = deliveryDateObj ? formatShortDate(deliveryDateObj) : '';
 
           return (
             <Tooltip
@@ -600,7 +609,12 @@ export default function ScheduleOverviewPage({ defaultTab }) {
     ) || null;
   }, [activeOrderCode, orders]);
 
-  const highlightStartDateKey = activeHighlightOrder ? toDateKey(activeHighlightOrder.rentalStartDate) : null;
+  const highlightStartDateKey = useMemo(() => {
+    if (!activeHighlightOrder?.rentalStartDate) return null;
+    const d = new Date(activeHighlightOrder.rentalStartDate);
+    d.setDate(d.getDate() - 1);
+    return toDateKey(d);
+  }, [activeHighlightOrder]);
   const highlightEndDateKey = activeHighlightOrder ? toDateKey(activeHighlightOrder.rentalEndDate) : null;
 
   // Danh sách sự kiện thử váy map theo ngày
@@ -636,14 +650,22 @@ export default function ScheduleOverviewPage({ defaultTab }) {
     [orders]
   );
 
-  // Danh sách sự kiện bàn giao / nhận váy theo ngày bắt đầu thuê (rentalStartDate)
+  // Danh sách sự kiện bàn giao / nhận váy: LÙI 1 NGÀY trước ngày khách bắt đầu thuê
+  // (Do showroom giao sớm 1 ngày hoặc khách đến showroom lấy sớm 1 ngày để thử và chuẩn bị)
   const deliveriesByDate = useMemo(() => {
     const map = {};
     orders.forEach((ord) => {
       // Đơn hàng đã hủy trước khi thuê thì không phát sinh lịch giao
       if ((ord.status || '').toLowerCase() === 'cancelled') return;
 
-      const key = toDateKey(ord.rentalStartDate);
+      const startDate = ord.rentalStartDate ? new Date(ord.rentalStartDate) : null;
+      if (!startDate || isNaN(startDate.getTime())) return;
+
+      // Lùi về 1 ngày trước khi khách bắt đầu thuê
+      const deliveryDate = new Date(startDate);
+      deliveryDate.setDate(deliveryDate.getDate() - 1);
+
+      const key = toDateKey(deliveryDate);
       if (!key) return;
       if (!map[key]) map[key] = [];
       map[key].push({
@@ -656,6 +678,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
         items: ord.items || [],
         totalDeposit: ord.totalDeposit || 0,
         totalRentPrice: ord.totalRentPrice || 0,
+        deliveryDate: key,
         rentalStartDate: ord.rentalStartDate,
         rentalEndDate: ord.rentalEndDate,
         deliveryMethod: ord.deliveryMethod || 'showroom',
@@ -1394,13 +1417,23 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                 </span>
                               </div>
                             ) : isDelivery ? (
-                              <div className="text-[11px] text-gray-600 flex items-center gap-1.5 mt-2 font-medium">
-                                <span className="px-2 py-0.5 rounded bg-gray-100 font-bold text-gray-700">
-                                  {item.deliveryMethod === 'express' ? '🚚 Giao tận nơi' : '🏛️ Nhận tại Showroom'}
-                                </span>
-                                <span className="font-bold text-[#733F49]">
-                                  {formatCurrencyVND(item.totalRentPrice || 0)}
-                                </span>
+                              <div className="space-y-1.5 mt-2">
+                                <div className="text-[11px] text-gray-600 flex items-center justify-between gap-1.5 font-medium">
+                                  <span className="px-2 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200 font-bold">
+                                    {item.deliveryMethod === 'express' ? '🚚 Giao sớm tận nơi' : '🏛️ Khách lấy sớm tại Showroom'}
+                                  </span>
+                                  <span className="font-bold text-[#733F49]">
+                                    {formatCurrencyVND(item.totalRentPrice || 0)}
+                                  </span>
+                                </div>
+                                {item.rentalStartDate && (
+                                  <div className="text-[11px] text-sky-900 bg-sky-50/70 px-2.5 py-1 rounded-lg border border-sky-200/80 font-medium flex items-center justify-between">
+                                    <span className="text-gray-500">Thuê chính thức:</span>
+                                    <span className="font-bold font-mono">
+                                      {formatShortDate(item.rentalStartDate)} ➔ {item.rentalEndDate ? formatShortDate(item.rentalEndDate) : ''}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             ) : (
                               <div className="text-[11px] text-gray-600 flex items-center gap-1.5 mt-2 font-medium">
