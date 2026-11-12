@@ -185,7 +185,7 @@ export const createOrder = async (orderData, currentUser = null) => {
     shippingFee,
     discountAmount,
     totalPayment,
-    status: 'deposit_paid',
+    status: orderData.status || 'deposit_paid',
     shippingAddress: shippingAddress || 'Nhận trực tiếp tại Showroom UniBridal',
     deliveryMethod: deliveryMethod || 'showroom',
     rentalAgreementAccepted: true,
