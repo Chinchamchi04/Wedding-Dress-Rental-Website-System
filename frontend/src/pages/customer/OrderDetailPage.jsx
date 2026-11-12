@@ -201,11 +201,12 @@ export default function OrderDetailPage() {
             <div className="rounded-xl bg-gradient-to-r from-[#FAF0EB] to-[#FFF8F5] px-5 py-3.5 sm:px-6 border border-[#EEDECF]">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  <span className="account-status account-status-active">{order.statusLabel}</span>
                   <h1 className="font-playfair text-xl sm:text-2xl font-bold text-[#2C2424] m-0">
                     Chi Tiết Đơn Thuê
                   </h1>
-
+                  <span className="font-mono text-xs sm:text-sm font-bold text-[#874e57] bg-white px-2.5 py-1 rounded-lg border border-[#EEDECF] shadow-2xs">
+                    #{order.orderCode || order.id}
+                  </span>
                 </div>
                 <div className="text-xs text-[#7A6A6B] flex items-center gap-1.5 shrink-0">
                   <CalendarDays size={13} className="text-[#874e57]" />
@@ -308,14 +309,12 @@ export default function OrderDetailPage() {
                   </p>
                 </div>
 
-                {/* Hợp đồng tích hợp ngay trong ô tài chính và bảng giá */}
+                {/* Mã đơn hàng và Nút xem hợp đồng */}
                 <div className="mt-5 pt-4 border-t border-[#eee2df] flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#874e57] block">HỢP ĐỒNG ĐÃ KÝ</span>
-                    <span className="text-xs text-stone-500 font-mono">
-                      {order.contract?.contractCode || order.contractCode
-                        ? `Mã: ${order.contract?.contractCode || order.contractCode}`
-                        : 'Hợp đồng điện tử đã lưu'}
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#874e57] block">MÃ ĐƠN HÀNG</span>
+                    <span className="text-xs font-mono font-bold text-stone-700">
+                      #{order.orderCode || order.id}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
