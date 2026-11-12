@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { Input } from 'antd';
 import { CheckCircle2, RefreshCw, Crown, Lock, Mail, Phone, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { register as apiRegister, registerAccount, verifyEmailOtp, resendVerificationOtp } from '../../services/authService';
 // lucide-react icons
 import Logo from '../../components/common/Logo';
+import OtpInput from '../../components/common/OtpInput';
 
 // Icons using lucide-react
 const CrownIcon = () => <Crown size={12} fill="currentColor" stroke="none" />;
@@ -33,7 +35,7 @@ export default function RegisterPage() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   // OTP VÀ Feedback states
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [otp, setOtp] = useState('');
   const [devOtp, setDevOtp] = useState('');
   const [fullNameError, setFullNameError] = useState('');
   const [phoneError, setPhoneError] = useState('');
@@ -257,7 +259,7 @@ export default function RegisterPage() {
       setCountdown(60);
       setOtpExpiresIn(180);
       setCanResend(false);
-      setOtp(['', '', '', '', '', '']);
+      setOtp('');
       if (res?.data?.devOtp) {
         setDevOtp(res.data.devOtp);
       }
@@ -933,6 +935,42 @@ export default function RegisterPage() {
           color: #5C2F35;
         }
 
+        /* Luxury OTP Input (Ant Design Input.OTP styling) */
+        .ub-luxury-otp {
+          display: flex !important;
+          justify-content: center !important;
+          gap: 8px !important;
+        }
+        .ub-luxury-otp .ant-otp-input {
+          width: 48px !important;
+          height: 56px !important;
+          font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+          font-variant-numeric: tabular-nums !important;
+          font-size: 24px !important;
+          font-weight: 700 !important;
+          text-align: center !important;
+          background: #FAF8F7 !important;
+          border: 1.5px solid #E5DCD8 !important;
+          border-radius: 12px !important;
+          color: #2C2523 !important;
+          transition: all 0.2s ease !important;
+        }
+        .ub-luxury-otp .ant-otp-input:hover {
+          border-color: #BA7A83 !important;
+          background: #FFFFFF !important;
+        }
+        .ub-luxury-otp .ant-otp-input:focus,
+        .ub-luxury-otp .ant-otp-input-active {
+          border-color: #854F55 !important;
+          background: #FFFFFF !important;
+          box-shadow: 0 0 0 3px rgba(133, 79, 85, 0.15), 0 2px 8px rgba(133, 79, 85, 0.12) !important;
+          outline: none !important;
+        }
+        .ub-luxury-otp .ant-otp-input:not(:placeholder-shown) {
+          border-color: #854F55 !important;
+          background: #FFFFFF !important;
+        }
+
         @media (max-width: 1200px) {
           .ub-reg-screen .ub-top-nav-bar {
             width: 100%;
@@ -1287,38 +1325,18 @@ export default function RegisterPage() {
                       </div>
                     </div>
 
-                    {/* 6 Individual Digit Boxes */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }} onPaste={handleOtpPaste}>
-                      {otp.map((digit, idx) => (
-                        <input
-                          key={idx}
-                          ref={(el) => (otpInputRefs.current[idx] = el)}
-                          type="text"
-                          inputMode="numeric"
-                          maxLength={1}
-                          value={digit}
-                          placeholder={digit ? '' : '•'}
-                          autoFocus={idx === 0}
-                          onChange={(e) => handleOtpChange(idx, e.target.value)}
-                          onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                          style={{
-                            width: '48px',
-                            height: '56px',
-                            textAlign: 'center',
-                            fontFamily: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
-                            fontVariantNumeric: 'tabular-nums',
-                            fontSize: '24px',
-                            fontWeight: 700,
-                            background: digit ? '#FFFFFF' : '#FAF8F7',
-                            border: digit ? '2px solid #854F55' : '1.5px solid #E5DCD8',
-                            borderRadius: '12px',
-                            color: '#2C2523',
-                            outline: 'none',
-                            boxShadow: digit ? '0 2px 8px rgba(133, 79, 85, 0.12)' : 'none',
-                            transition: 'all 0.2s ease',
-                          }}
-                        />
-                      ))}
+                    {/* 6 Digits OTP Box (Single-Input Haute Couture - Chống triệt để nhảy số/lặp số khi dùng Unikey/Telex) */}
+                    <div style={{ display: 'flex', justifyContent: 'center', margin: '6px 0 16px' }}>
+                      <OtpInput
+                        length={6}
+                        autoFocus
+                        value={typeof otp === 'string' ? otp : (Array.isArray(otp) ? otp.join('') : '')}
+                        onChange={(text) => {
+                          setOtp(text);
+                          setError('');
+                        }}
+                        disabled={isLoading || otpExpiresIn === 0}
+                      />
                     </div>
 
                     {/* Resend Timer right below boxes */}

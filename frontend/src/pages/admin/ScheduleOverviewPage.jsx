@@ -37,6 +37,8 @@ import { CalendarDays,
   ChevronRight,
   ChevronDown,
   ChevronUp,
+  ChevronsLeft,
+  ChevronsRight,
   GripVertical,
   Table as TableIcon,
   LayoutGrid,
@@ -345,7 +347,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [updatingId, setUpdatingId] = useState(null);
 
-  // Quản lý kéo co giãn kích thước bảng Chi Tiết Ngày Được Chọn
+  // Quản lý kéo co giãn kích thước & thu gọn/mở rộng bảng Chi Tiết Ngày Được Chọn
   const splitContainerRef = useRef(null);
   const [rightPanelWidth, setRightPanelWidth] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -357,11 +359,27 @@ export default function ScheduleOverviewPage({ defaultTab }) {
     }
     return 480;
   });
+  const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('unibridal_schedule_right_panel_collapsed') === 'true';
+    }
+    return false;
+  });
   const [isDragging, setIsDragging] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(() => {
     if (typeof window !== 'undefined') return window.innerWidth >= 1024;
     return true;
   });
+
+  const handleToggleRightPanel = useCallback(() => {
+    setIsRightPanelCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('unibridal_schedule_right_panel_collapsed', String(next));
+      } catch (_) {}
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -373,12 +391,24 @@ export default function ScheduleOverviewPage({ defaultTab }) {
 
   const handleMouseDownResize = (e) => {
     e.preventDefault();
-    setIsDragging(true);
     const startX = e.clientX;
-    const startWidth = rightPanelWidth;
+    const startWidth = isRightPanelCollapsed ? 320 : rightPanelWidth;
+    let hasMoved = false;
+
+    setIsDragging(true);
 
     const handleMouseMove = (moveEvent) => {
       const deltaX = startX - moveEvent.clientX;
+      if (Math.abs(deltaX) > 4) {
+        hasMoved = true;
+        if (isRightPanelCollapsed) {
+          setIsRightPanelCollapsed(false);
+          try {
+            localStorage.setItem('unibridal_schedule_right_panel_collapsed', 'false');
+          } catch (_) {}
+        }
+      }
+
       let newWidth = startWidth + deltaX;
 
       const containerWidth = splitContainerRef.current?.offsetWidth || 1200;
@@ -396,12 +426,18 @@ export default function ScheduleOverviewPage({ defaultTab }) {
       document.removeEventListener('mouseup', handleMouseUp);
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
-      setRightPanelWidth((curr) => {
-        try {
-          localStorage.setItem('unibridal_schedule_right_panel_width', String(curr));
-        } catch (_) {}
-        return curr;
-      });
+
+      if (!hasMoved) {
+        // Người dùng click vào nút mũi tên mà không kéo chuột -> Toggle Mở / Thu gọn
+        handleToggleRightPanel();
+      } else {
+        setRightPanelWidth((curr) => {
+          try {
+            localStorage.setItem('unibridal_schedule_right_panel_width', String(curr));
+          } catch (_) {}
+          return curr;
+        });
+      }
     };
 
     document.body.style.cursor = 'col-resize';
@@ -1041,52 +1077,81 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                   )}
                 </div>
 
-                {/* Thanh Kéo Co Giãn (Resize Handle) ở giữa 2 cột */}
+                {/* Thanh Kéo Co Giãn & Nút Mũi Tên Kéo Ra (Pull-out Arrow Handle) ở giữa 2 cột */}
                 <div
                   onMouseDown={handleMouseDownResize}
                   onDoubleClick={() => {
+                    setIsRightPanelCollapsed(false);
                     setRightPanelWidth(480);
                     try {
                       localStorage.setItem('unibridal_schedule_right_panel_width', '480');
+                      localStorage.setItem('unibridal_schedule_right_panel_collapsed', 'false');
                     } catch (_) {}
                   }}
-                  className="hidden lg:flex items-center justify-center w-5 shrink-0 cursor-col-resize select-none relative z-10 group"
-                  title="Kéo sang trái để mở rộng / kéo sang phải để thu nhỏ bảng chi tiết (Nhấp đúp để đặt lại mặc định)"
+                  className={`hidden lg:flex items-center justify-center shrink-0 cursor-col-resize select-none relative z-20 group transition-all duration-200 ${
+                    isRightPanelCollapsed ? 'w-8 pl-1.5' : 'w-6'
+                  }`}
+                  title={
+                    isRightPanelCollapsed
+                      ? 'Bấm để kéo ra bảng chi tiết ngày'
+                      : 'Bấm mũi tên để thu gọn / Kéo sang trái để mở rộng (Nhấp đúp đặt lại 480px)'
+                  }
                 >
+                  {/* Đường rãnh phân cách mờ */}
+                  {!isRightPanelCollapsed && (
+                    <div className="absolute inset-y-0 w-[1px] bg-[#EFE5E1] group-hover:bg-[#BA7A83]/60 transition-colors" />
+                  )}
+
+                  {/* Nút Mũi Tên Kéo Ra */}
                   <div
-                    className={`w-1.5 rounded-full transition-all duration-150 flex items-center justify-center ${
+                    className={`relative z-10 w-6 h-16 rounded-full flex flex-col items-center justify-center border shadow-xs transition-all duration-200 cursor-pointer ${
                       isDragging
-                        ? 'h-24 bg-[#733F49] shadow-md ring-4 ring-[#733F49]/20 scale-x-125'
-                        : 'h-14 bg-[#E8DDD8] group-hover:bg-[#BA7A83] group-hover:h-20 group-hover:w-2'
+                        ? 'bg-[#733F49] text-white border-[#5F2B36] shadow-md scale-110 ring-2 ring-[#733F49]/20'
+                        : isRightPanelCollapsed
+                        ? 'bg-[#733F49] text-white border-[#5F2B36] shadow-md hover:scale-105 hover:bg-[#5F2B36]'
+                        : 'bg-white hover:bg-[#733F49] text-[#733F49] hover:text-white border-[#E8DDD8] hover:border-[#733F49] hover:shadow-md'
                     }`}
                   >
-                    <GripVertical
-                      size={10}
-                      className={`transition-colors ${
-                        isDragging ? 'text-white' : 'text-[#733F49] opacity-70 group-hover:opacity-100 group-hover:text-white'
-                      }`}
-                    />
+                    {isRightPanelCollapsed ? (
+                      <ChevronsLeft className="w-4 h-4 stroke-[2.5] animate-pulse" />
+                    ) : (
+                      <ChevronLeft className="w-4 h-4 stroke-[2.5] group-hover:-translate-x-0.5 transition-transform" />
+                    )}
                   </div>
                 </div>
 
                 {/* Cột Phải: Bảng Chi Tiết Ngày VIP Concierge Docket (Có thể kéo co giãn độ rộng tùy ý) */}
-                <div
-                  style={{
-                    width: isLargeScreen ? `${rightPanelWidth}px` : '100%',
-                    minWidth: isLargeScreen ? '320px' : 'auto',
-                  }}
-                  className="w-full shrink-0 bg-white p-5 sm:p-6 rounded-2xl shadow-xs border border-[#EFE5E1] flex flex-col h-fit"
-                >
-                  <div className="border-b border-[#F2E5E0] pb-3 mb-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] uppercase tracking-wider text-[#733F49] font-bold flex items-center gap-1">
-                        <Crown className="w-3.5 h-3.5" />
-                        <span>Chi tiết ngày được chọn</span>
-                      </span>
-                      <span className="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
-                        {currentDayEvents.length} lượt hẹn
-                      </span>
-                    </div>
+                {(!isLargeScreen || !isRightPanelCollapsed) && (
+                  <div
+                    style={{
+                      width: isLargeScreen ? `${rightPanelWidth}px` : '100%',
+                      minWidth: isLargeScreen ? '320px' : 'auto',
+                    }}
+                    className="w-full shrink-0 bg-white p-5 sm:p-6 rounded-2xl shadow-xs border border-[#EFE5E1] flex flex-col h-fit transition-all duration-150"
+                  >
+                    <div className="border-b border-[#F2E5E0] pb-3 mb-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] uppercase tracking-wider text-[#733F49] font-bold flex items-center gap-1">
+                          <Crown className="w-3.5 h-3.5" />
+                          <span>Chi tiết ngày được chọn</span>
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
+                            {currentDayEvents.length} lượt hẹn
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleRightPanel();
+                            }}
+                            className="hidden lg:flex items-center justify-center w-6 h-6 rounded-lg text-gray-400 hover:text-[#733F49] hover:bg-[#FAF0EC] transition cursor-pointer"
+                            title="Thu gọn bảng chi tiết"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
 
                     <div className="text-xl font-bold text-gray-900 mt-1.5 capitalize font-playfair">
                       {selectedDate.toLocaleDateString('vi-VN', {
@@ -1340,6 +1405,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     )}
                   </div>
                 </div>
+              )}
               </div>
             </div>
           )}
