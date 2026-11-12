@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useSearchParams, useLocation } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { message, Modal, Radio, Input, Dropdown, notification } from 'antd';
 import {
@@ -33,6 +35,7 @@ import {
 import HangerIcon from '../../components/common/HangerIcon';
 import {
   getAllOrdersAdmin,
+  getOrder,
   updateOrderStatus,
   submitReturnInspection,
   getReturnInspection,
@@ -483,7 +486,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
       .catch(() => { });
   }, [order._id]);
 
-  // Xử lý chụp ảnh / tải ảnh bằng chứng hiện trạng váy
+  // Xử lý chụp ảnh / tải ảnh bằng chứng hiện trạng váy (tự động nén ảnh nhẹ để tối ưu tốc độ và database)
   const handlePhotoUpload = (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -492,7 +495,28 @@ function InspectionModal({ order, onClose, onSuccess }) {
       if (!file.type.startsWith('image/')) return;
       const reader = new FileReader();
       reader.onload = (event) => {
-        setEvidencePhotos((prev) => [...prev, event.target.result]);
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 800;
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.7);
+          setEvidencePhotos((prev) => [...prev, compressed]);
+        };
+        img.src = event.target.result;
       };
       reader.readAsDataURL(file);
     });
@@ -1068,6 +1092,16 @@ function RefundModal({ order, onClose, onSuccess }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function OrderRentalManagement() {
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const { user } = useAuth();
+  const isStaffContext =
+    location.pathname.startsWith('/staff') ||
+    (user?.role === 'staff' && !location.pathname.startsWith('/admin'));
+
+  const queryOrderCode = searchParams.get('orderCode') || searchParams.get('search') || '';
+  const queryAction = searchParams.get('action') || '';
+
   const [orders, setOrders] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -1084,7 +1118,10 @@ export default function OrderRentalManagement() {
     active: 0,
   });
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(queryOrderCode);
+  const [highlightedOrderCode, setHighlightedOrderCode] = useState(queryOrderCode);
+  const autoHandledRef = useRef(false);
+
   const [statusFilter, setStatusFilter] = useState('all');
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [viewMode, setViewMode] = useState('active'); // 'active' (Đơn Đang Xử Lý) | 'archived' (Kho Lưu Trữ)
@@ -1152,6 +1189,83 @@ export default function OrderRentalManagement() {
   useEffect(() => {
     loadOrders();
   }, [loadOrders]);
+
+  // ── Tự động nhảy vào chính đơn và mở quy trình kiểm định nếu điều hướng từ Lịch Tổng Quan ──
+  useEffect(() => {
+    if (!queryOrderCode || autoHandledRef.current) return;
+    if (loading && orders.length === 0) return;
+
+    const cleanQ = queryOrderCode.trim().toLowerCase().replace(/^[#\s]+/, '');
+    const found = orders.find((o) => {
+      const code = (o.orderCode || o._id || o.id || '').toLowerCase().replace(/^[#\s]+/, '');
+      return code === cleanQ;
+    });
+
+    if (found) {
+      autoHandledRef.current = true;
+      setHighlightedOrderCode(found.orderCode || found._id);
+      if (isArchived(found)) {
+        setViewMode('archived');
+      } else {
+        setViewMode('active');
+      }
+
+      if (queryAction === 'inspect') {
+        setInspectionOrder(found);
+      }
+
+      setTimeout(() => {
+        const rowId = `order-row-${found.orderCode || found._id}`;
+        const el = document.getElementById(rowId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 350);
+
+      const timer = setTimeout(() => {
+        setHighlightedOrderCode(null);
+      }, 6000);
+      return () => clearTimeout(timer);
+    } else if (!loading) {
+      // Trường hợp đơn hàng không nằm ở trang 1, gọi getOrder để nạp trực tiếp
+      getOrder(cleanQ)
+        .then((detail) => {
+          if (detail) {
+            autoHandledRef.current = true;
+            setHighlightedOrderCode(detail.orderCode || detail._id);
+            if (isArchived(detail)) {
+              setViewMode('archived');
+            } else {
+              setViewMode('active');
+            }
+            setOrders((prev) => {
+              const exists = prev.some(
+                (o) => (o.orderCode || o._id) === (detail.orderCode || detail._id)
+              );
+              return exists ? prev : [detail, ...prev];
+            });
+
+            if (queryAction === 'inspect') {
+              setInspectionOrder(detail);
+            }
+
+            setTimeout(() => {
+              const rowId = `order-row-${detail.orderCode || detail._id}`;
+              const el = document.getElementById(rowId);
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }, 350);
+
+            const timer = setTimeout(() => {
+              setHighlightedOrderCode(null);
+            }, 6000);
+            return () => clearTimeout(timer);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [queryOrderCode, queryAction, orders, loading]);
 
   // ── Stats derived from orders ────────────────────────────────────────────
   const stats = useMemo(() => {
@@ -1293,7 +1407,7 @@ export default function OrderRentalManagement() {
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <AdminLayout activeMenu="don-thue">
+    <AdminLayout activeMenu="don-thue" role={isStaffContext ? 'staff' : 'admin'}>
       {/* Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -1603,12 +1717,19 @@ export default function OrderRentalManagement() {
                     order.inspection?.customerStatus === 'disputed' ||
                     order.inspectionCustomerStatus === 'disputed' ||
                     order.status === 'disputed';
+                  const isHighlighted =
+                    highlightedOrderCode &&
+                    ((order.orderCode && order.orderCode.toLowerCase().replace(/^[#\s]+/, '') === highlightedOrderCode.toLowerCase().replace(/^[#\s]+/, '')) ||
+                      order._id === highlightedOrderCode);
 
                   return (
                     <tr
+                      id={`order-row-${order.orderCode || order._id}`}
                       key={order._id || order.orderCode}
-                      className={`transition-colors ${
-                        isDisputed
+                      className={`transition-all duration-300 ${
+                        isHighlighted
+                          ? 'bg-amber-100/80 border-l-4 border-l-amber-500 ring-2 ring-amber-400 ring-inset shadow-md'
+                          : isDisputed
                           ? 'bg-red-50/40 hover:bg-red-50/70 border-l-4 border-l-red-500'
                           : 'hover:bg-[#FCF9F7]'
                       }`}
@@ -1619,6 +1740,11 @@ export default function OrderRentalManagement() {
                           <span className="inline-block px-2 py-0.5 rounded bg-[#F6EDE8] text-[#846E63] font-mono text-[11px] font-semibold tracking-wider">
                             {order.orderCode || order._id}
                           </span>
+                          {isHighlighted && (
+                            <span className="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-amber-500 text-white animate-bounce shadow-2xs">
+                              Đang Chọn
+                            </span>
+                          )}
                           {isArchived(order) && (
                             <span className="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-[#EAF7EE] text-[#1E8347] border border-[#C6F0D4]">
                               Kho Lưu Trữ

@@ -132,7 +132,6 @@ export default function DressDetailPage() {
   const [feedbackPage, setFeedbackPage] = useState(1);
   const feedbacksPerPage = 6;
 
-
   // Load dress data whenever URL parameter `id` changes
   useEffect(() => {
     let isMounted = true;
@@ -599,9 +598,7 @@ export default function DressDetailPage() {
                     <Sparkles className="w-4 h-4 text-[#B8737D]" />
                     Bảng Giá Thuê
                   </h3>
-
                 </div>
-
               </div>
 
               {/* Price Breakdown items */}
