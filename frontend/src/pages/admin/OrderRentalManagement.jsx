@@ -890,7 +890,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
             </div>
           </div>
 
-          {/* Tùy chọn xác nhận trực tiếp tại quầy dành cho Guest hoặc khách tại Showroom */}
+          {/* Tùy chọn xác nhận trực tiếp dành cho 2 hình thức: Trả tại Showroom hoặc Nhân viên đến thu hồi */}
           {!isReadOnly && (
             <div className={`p-3 rounded-xl border transition-all ${confirmOnSite ? 'border-[#BCE2C5] bg-[#F3FAF5]' : 'border-[#EFE5E1] bg-[#FAF5F2]'}`}>
               <div className="flex items-center justify-between">
@@ -902,7 +902,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
                     className="w-4 h-4 rounded text-[#1E8347] accent-[#1E8347] cursor-pointer"
                   />
                   <span className="font-bold text-[12px] text-[#1E6B37]">
-                    Khách hàng đồng kiểm tra & xác nhận trực tiếp tại quầy
+                    Đồng kiểm tra & xác nhận trực tiếp cùng khách (Tại Showroom / Tận nơi thu hồi)
                   </span>
                 </label>
                 {isGuestOrder && (
@@ -925,7 +925,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
                         onChange={() => setRefundMethod('cash')}
                         className="accent-[#1E8347]"
                       />
-                      <span className="font-medium text-[#2C2523]">Tiền mặt tại quầy</span>
+                      <span className="font-medium text-[#2C2523]">Tiền mặt trực tiếp</span>
                     </label>
                     <label className="inline-flex items-center gap-1.5 cursor-pointer">
                       <input
@@ -1032,7 +1032,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
                     <ShieldCheck size={14} />
                   )}
                   <span>
-                    {confirmOnSite ? 'Xác Nhận Tại Quầy & Hoàn Tất Đơn' : 'Lưu và Gửi Biên Bản Cho Khách Hàng'}
+                    {confirmOnSite ? 'Xác Nhận & Hoàn Cọc Cho Khách' : 'Lưu và Gửi Biên Bản Cho Khách Hàng'}
                   </span>
                 </button>
               </>
