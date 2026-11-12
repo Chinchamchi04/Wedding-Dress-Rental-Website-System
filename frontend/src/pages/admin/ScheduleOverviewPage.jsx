@@ -1411,7 +1411,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                   </>
                                 )}
                               </span>
-                              {!isReturn && (
+                              {!isReturn && !isDelivery && (
                                 <span
                                   className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border ${badge.className}`}
                                 >
@@ -1438,7 +1438,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                               </div>
                             )}
 
-                            {/* Chi nhánh Showroom / Phương thức giao */}
+                            {/* Chi nhánh Showroom / Phương thức & Địa chỉ giao */}
                             {isFitting ? (
                               <div className="text-[11px] text-gray-500 flex items-center gap-1.5 mt-2 font-medium">
                                 <Building2 size={12} className="text-[#BA7A83]" />
@@ -1449,23 +1449,27 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                 </span>
                               </div>
                             ) : isDelivery ? (
-                              <div className="space-y-1.5 mt-2">
-                                <div className="text-[11px] text-gray-600 flex items-center justify-between gap-1.5 font-medium">
-                                  <span className="px-2 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200 font-bold">
-                                    {item.deliveryMethod === 'express' ? '🚚 Giao sớm tận nơi' : '🏛️ Khách lấy sớm tại Showroom'}
-                                  </span>
-                                  <span className="font-bold text-[#733F49]">
-                                    {formatCurrencyVND(item.totalRentPrice || 0)}
-                                  </span>
+                              <div className="mt-2.5 text-[11px] text-gray-700 bg-sky-50/80 p-2.5 rounded-xl border border-sky-200 font-medium space-y-1">
+                                <div className="flex items-center gap-1.5 font-bold text-sky-900">
+                                  {item.deliveryMethod === 'express' ? (
+                                    <>
+                                      <MapPin className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                                      <span>Địa chỉ khách yêu cầu giao:</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Building2 className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                                      <span>Khách nhận tại Showroom:</span>
+                                    </>
+                                  )}
                                 </div>
-                                {item.rentalStartDate && (
-                                  <div className="text-[11px] text-sky-900 bg-sky-50/70 px-2.5 py-1 rounded-lg border border-sky-200/80 font-medium flex items-center justify-between">
-                                    <span className="text-gray-500">Thuê chính thức:</span>
-                                    <span className="font-bold font-mono">
-                                      {formatShortDate(item.rentalStartDate)} ➔ {item.rentalEndDate ? formatShortDate(item.rentalEndDate) : ''}
-                                    </span>
-                                  </div>
-                                )}
+                                <div className="text-gray-800 font-semibold pl-5 text-xs">
+                                  {item.deliveryMethod === 'express'
+                                    ? (item.shippingAddress || 'Địa chỉ khách hàng đã đăng ký')
+                                    : (item.branch === 'hn-hoankiem'
+                                        ? 'UniBridal Showroom Hoàn Kiếm, Hà Nội'
+                                        : 'UniBridal Flagship Showroom Q.1, TP.HCM')}
+                                </div>
                               </div>
                             ) : (
                               <div className="text-[11px] text-gray-600 flex items-center gap-1.5 mt-2 font-medium">
@@ -1503,12 +1507,6 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                     </div>
                                   ))}
                                 </div>
-                                {isDelivery && (
-                                  <div className="text-[11px] text-gray-500 pt-1 border-t border-gray-100 flex justify-between">
-                                    <span>Cọc bảo lãnh:</span>
-                                    <strong className="text-gray-900">{formatCurrencyVND(item.totalDeposit || 0)}</strong>
-                                  </div>
-                                )}
                               </div>
                             )}
 
@@ -1599,7 +1597,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                 </button>
                               )}
 
-                              {!isReturn && (
+                              {!isReturn && !isDelivery && (
                                 <button
                                   type="button"
                                   onClick={() => {
