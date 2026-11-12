@@ -457,7 +457,7 @@ export default function AppointmentPage() {
               </p>
               <div className="mt-3.5 inline-flex items-center gap-2 bg-[#F0FDF4] text-[#166534] border border-[#BBF7D0] px-4 py-2 rounded-xl text-[13px] font-medium shadow-xs">
                 <Mail className="w-4 h-4 text-[#16a34a] shrink-0" />
-                <span>Toàn bộ thông tin lịch hẹn và mã check-in đã được gửi tới email <strong>{confirmedBooking.email}</strong></span>
+                <span>Toàn bộ thông tin lịch hẹn đã được gửi tới email <strong>{confirmedBooking.email}</strong></span>
               </div>
             </div>
 
@@ -472,7 +472,7 @@ export default function AppointmentPage() {
               <div className="p-6 sm:p-10 space-y-7">
 
                 {/* Invitation Card Header */}
-                <div className="flex flex-col sm:flex-row items-center justify-between pb-6 border-b border-[#F0E5DC] text-center sm:text-left gap-4">
+                <div className="pb-6 border-b border-[#F0E5DC] text-center sm:text-left">
                   <div className="space-y-1">
                     <div className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-[2px] uppercase text-[#D4AF37]">
                       <Crown className="w-3.5 h-3.5 text-[#D4AF37]" />
@@ -485,14 +485,6 @@ export default function AppointmentPage() {
                     <p className="text-[12px] text-[#847374] m-0">
                       Hệ thống phòng thử váy cô dâu tiêu chuẩn Haute Couture độc bản
                     </p>
-                  </div>
-                  <div className="text-center sm:text-right shrink-0">
-                    <span className="text-[10.5px] uppercase font-bold text-[#847374] block tracking-wider mb-1">
-                      MÃ ĐƠN / CHECK-IN TẠI QUẦY
-                    </span>
-                    <span className="font-mono text-[18px] font-extrabold text-[#733F49] bg-[#FAF0EC] px-4 py-1.5 rounded-xl border border-[#F2D8D4] shadow-xs inline-block tracking-wider">
-                      {confirmedBooking.appointmentCode || confirmedBooking.id || 'APT-2026-8888'}
-                    </span>
                   </div>
                 </div>
 
@@ -720,19 +712,9 @@ export default function AppointmentPage() {
                 </Link>
 
                 <div className="flex items-center gap-3 w-full sm:w-auto">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setConfirmedBooking(null);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-white border border-[#EEDECF] text-[#2C2523] text-[13px] font-bold hover:bg-[#FAF0EC] transition-colors cursor-pointer shadow-2xs"
-                  >
-                    Đặt Thêm Lịch Mới
-                  </button>
                   <Link
                     to="/"
-                    className="flex-1 sm:flex-initial px-6 py-2.5 rounded-xl bg-[#733F49] hover:bg-[#5F323B] text-white text-[13px] font-bold transition-all text-center no-underline shadow-xs"
+                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#733F49] hover:bg-[#5F323B] text-white text-[13px] font-bold transition-all text-center no-underline shadow-xs"
                   >
                     Về Trang Chủ
                   </Link>
