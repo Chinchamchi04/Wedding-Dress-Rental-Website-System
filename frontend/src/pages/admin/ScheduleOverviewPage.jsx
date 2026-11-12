@@ -799,12 +799,13 @@ export default function ScheduleOverviewPage({ defaultTab }) {
         showApts={showApts}
         showDeliveries={showDeliveries}
         showReturns={showReturns}
-        activeOrderCode={activeOrderCode}
+        activeOrderCode={calendarFilterType === 'all' ? activeOrderCode : null}
         onSelectEvent={(item) => {
           setSelectedEvent(item);
           setDetailModalOpen(true);
         }}
         onSelectOrderHighlight={(item) => {
+          if (calendarFilterType !== 'all') return;
           const targetCode = item.code || item.id;
           setHighlightedOrderCode((prev) => (prev === targetCode ? null : targetCode));
         }}
@@ -1039,7 +1040,10 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setCalendarFilterType('fitting')}
+                    onClick={() => {
+                      setCalendarFilterType('fitting');
+                      setHighlightedOrderCode(null);
+                    }}
                     className={`px-3.5 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       calendarFilterType === 'fitting'
                         ? 'bg-purple-700 text-white shadow-xs'
@@ -1051,7 +1055,10 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setCalendarFilterType('delivery')}
+                    onClick={() => {
+                      setCalendarFilterType('delivery');
+                      setHighlightedOrderCode(null);
+                    }}
                     className={`px-3.5 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       calendarFilterType === 'delivery'
                         ? 'bg-sky-700 text-white shadow-xs'
@@ -1063,7 +1070,10 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setCalendarFilterType('return')}
+                    onClick={() => {
+                      setCalendarFilterType('return');
+                      setHighlightedOrderCode(null);
+                    }}
                     className={`px-3.5 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       calendarFilterType === 'return'
                         ? 'bg-rose-700 text-white shadow-xs'
@@ -1112,8 +1122,9 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                         const isToday = toDateKey(d) === todayKey;
                         const dateKey = toDateKey(d);
 
-                        const isDeliveryHighlight = highlightStartDateKey && dateKey === highlightStartDateKey;
-                        const isReturnHighlight = highlightEndDateKey && dateKey === highlightEndDateKey;
+                        const isAllEvents = calendarFilterType === 'all';
+                        const isDeliveryHighlight = isAllEvents && highlightStartDateKey && dateKey === highlightStartDateKey;
+                        const isReturnHighlight = isAllEvents && highlightEndDateKey && dateKey === highlightEndDateKey;
 
                         let highlightClass = '';
                         if (isDeliveryHighlight) {
