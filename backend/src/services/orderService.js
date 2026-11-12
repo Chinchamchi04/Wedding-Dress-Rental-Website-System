@@ -225,6 +225,7 @@ export const createOrder = async (orderData, currentUser = null) => {
       status: 'active',
       signedAt: new Date(),
       signedMethod: 'Chữ ký điện tử trực tuyến',
+      contractSignature: newOrder.contractSignature || newOrder.customerName || '',
       packageType: `Gói ${newOrder.rentalDays} Ngày Tiêu Chuẩn`,
       clauses: defaultTemplate?.clauses || [],
     });

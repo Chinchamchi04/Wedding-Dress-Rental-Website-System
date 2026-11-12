@@ -250,7 +250,7 @@ export default function SignedContractModal({ orderId, order: propOrder, contrac
         : new Date().toLocaleDateString('vi-VN'));
 
     // Chữ ký Bên B
-    const signature = rawOrder.contractSignature || cData.contractSignature || customerName;
+    const signature = rawOrder.contractSignature || cData.contractSignature || rawOrder.contract?.contractSignature || customerName;
 
     return {
       orderCode,
@@ -554,12 +554,12 @@ export default function SignedContractModal({ orderId, order: propOrder, contrac
                           className="max-h-16 w-auto object-contain select-none"
                         />
                       ) : (
-                        <div className="font-serif italic text-lg sm:text-xl text-[#733F49] font-bold tracking-wider px-3 py-1 border-b border-[#733F49]/40">
-                          {effectiveData.customerName}
+                        <div className="font-serif italic text-xl sm:text-2xl text-[#733F49] font-bold tracking-wider px-4 py-1 border-b-2 border-[#733F49]/40 select-none">
+                          {effectiveData.signature || effectiveData.customerName}
                         </div>
                       )}
                       <div className="mt-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-700 text-[9px] font-bold inline-flex items-center gap-1">
-                        <CheckCircle2 size={11} /> E-SIGNED BY {effectiveData.customerName.toUpperCase()}
+                        <CheckCircle2 size={11} /> E-SIGNED BY {String(effectiveData.signature || effectiveData.customerName).toUpperCase()}
                       </div>
                     </div>
 

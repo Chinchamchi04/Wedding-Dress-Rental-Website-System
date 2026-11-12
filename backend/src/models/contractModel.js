@@ -106,6 +106,10 @@ const contractSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    contractSignature: {
+      type: String,
+      default: '',
+    },
     contractPdfUrl: {
       type: String,
       default: '',

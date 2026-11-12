@@ -923,10 +923,12 @@ export default function CheckoutPage() {
         return;
       }
     } else {
-      if (!contractSignature || !contractSignature.trim()) {
+      const typedSig = (contractSignature && !contractSignature.startsWith('data:image') ? contractSignature : brideName).trim();
+      if (!typedSig) {
         message.warning('Vui lòng nhập họ tên xác nhận chữ ký điện tử.');
         return;
       }
+      setContractSignature(typedSig);
     }
     setIsContractSigned(true);
     message.success('Ký hợp đồng thuê điện tử thành công!');
@@ -2829,7 +2831,11 @@ export default function CheckoutPage() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => setSignatureMode('type')}
+                                onClick={() => {
+                                  setSignatureMode('type');
+                                  const existing = contractSignature && !contractSignature.startsWith('data:image') ? contractSignature : brideName;
+                                  if (existing) setContractSignature(existing);
+                                }}
                                 className={`px-2.5 py-1 rounded-md transition-colors border-0 cursor-pointer ${signatureMode === 'type'
                                   ? 'bg-[#733F49] text-white shadow-2xs'
                                   : 'bg-transparent text-[#733F49] hover:bg-white/60'
@@ -2884,7 +2890,7 @@ export default function CheckoutPage() {
                               </div>
                               <input
                                 type="text"
-                                value={contractSignature && !contractSignature.startsWith('data:image') ? contractSignature : ''}
+                                value={contractSignature && !contractSignature.startsWith('data:image') ? contractSignature : (brideName || '')}
                                 onChange={(e) => setContractSignature(e.target.value)}
                                 placeholder="Nhập họ tên cô dâu xác thực chữ ký"
                                 className="w-full text-center bg-white border border-[#D4AF37]/40 rounded-lg px-2.5 py-1 text-[12px] font-semibold text-[#733F49] focus:outline-none focus:border-[#733F49]"
