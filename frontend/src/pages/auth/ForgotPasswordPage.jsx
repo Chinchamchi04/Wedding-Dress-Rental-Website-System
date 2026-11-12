@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { Input } from 'antd';
+import OtpInput from '../../components/common/OtpInput';
 import { ArrowLeft,
   Mail,
   Lock,
@@ -22,7 +24,7 @@ export default function ForgotPasswordPage() {
   // Multi-step states: 1 = Enter Gmail, 2 = Enter OTP, 3 = New Password, 4 = Success
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [otp, setOtp] = useState('');
   const [devOtp, setDevOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -198,12 +200,11 @@ export default function ForgotPasswordPage() {
       setCountdown(60);
       setOtpExpiresIn(180);
       setCanResend(false);
-      setOtp(['', '', '', '', '', '']);
+      setOtp('');
       if (res?.data?.devOtp) {
         setDevOtp(res.data.devOtp);
       }
       setFeedback({ type: 'success', text: res.message || 'Đã gửi lại mã xác thực mới vào hộp thư của bạn.' });
-      otpInputRefs.current[0]?.focus();
     } catch (err) {
       setIsLoading(false);
       setFeedback({ type: 'error', text: err.message || 'Lỗi gửi lại mã OTP.' });
@@ -216,7 +217,7 @@ export default function ForgotPasswordPage() {
       setFeedback({ type: 'error', text: 'Mã OTP đã hết hiệu lực (sau 3 phút). Vui lòng bấm "Gửi lại mã" bên dưới.' });
       return;
     }
-    const code = otp.join('');
+    const code = (typeof otp === 'string' ? otp : (Array.isArray(otp) ? otp.join('') : '')).trim();
     if (code.length < 6) {
       setFeedback({ type: 'error', text: 'Vui lòng nhập đủ 6 chữ số mã xác thực OTP.' });
       return;
@@ -558,22 +559,18 @@ export default function ForgotPasswordPage() {
                     NHẬP 6 CHỮ SỐ XÁC THỰC
                   </label>
                   
-                  {/* 6 Digits Boxes */}
-                  <div className="flex items-center justify-center gap-2 sm:gap-3" onPaste={handleOtpPaste}>
-                    {otp.map((digit, idx) => (
-                      <input
-                        key={idx}
-                        ref={(el) => (otpInputRefs.current[idx] = el)}
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={1}
-                        value={digit}
-                        autoFocus={idx === 0}
-                        onChange={(e) => handleOtpChange(idx, e.target.value)}
-                        onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                        className="w-11 h-13 sm:w-12 sm:h-14 text-center font-jakarta text-2xl font-bold bg-[#FDFBF9] hover:bg-white focus:bg-white border-2 border-[#EADBDA] focus:border-[#854F55] rounded-xl text-[#2C2523] focus:outline-none focus:ring-4 focus:ring-[#B8737D]/20 transition-all duration-200"
-                      />
-                    ))}
+                  {/* 6 Digits OTP Box (Single-Input Haute Couture) */}
+                  <div className="flex justify-center my-3">
+                    <OtpInput
+                      length={6}
+                      autoFocus
+                      value={typeof otp === 'string' ? otp : (Array.isArray(otp) ? otp.join('') : '')}
+                      onChange={(text) => {
+                        setOtp(text);
+                        setFeedback({ type: '', text: '' });
+                      }}
+                      disabled={isLoading || otpExpiresIn === 0}
+                    />
                   </div>
 
                   {/* Resend và Countdown */}

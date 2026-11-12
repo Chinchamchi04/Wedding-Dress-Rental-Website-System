@@ -37,6 +37,8 @@ import { CalendarDays,
   ChevronRight,
   ChevronDown,
   ChevronUp,
+  ChevronsLeft,
+  ChevronsRight,
   GripVertical,
   Table as TableIcon,
   LayoutGrid,
@@ -58,6 +60,7 @@ import {
 } from '../../services/appointmentService';
 import { getAllOrdersAdmin } from '../../services/orderService';
 import { formatCurrencyVND } from '../../utils/formatCurrency';
+import { formatShortDate } from '../../utils/formatDate';
 
 // Thiết lập locale tiếng Việt cho Dayjs
 dayjs.locale('vi');
@@ -124,6 +127,7 @@ const getEventBadge = (item) => {
 
 // Component hiển thị danh sách sự kiện trên từng ô ngày của Lịch Biểu
 // Hỗ trợ hiển thị đầy đủ 1-3 lịch, và tự động kích hoạt cuộn + nút mũi tên lướt xuống khi có từ 4 lịch trở lên
+// Hỗ trợ làm nổi bật ĐỒNG THỜI cả ngày Giao & ngày Trả khi click vào đơn thuê
 function CalendarDateCellEvents({
   dayApts = [],
   dayDeliveries = [],
@@ -131,7 +135,9 @@ function CalendarDateCellEvents({
   showApts = true,
   showDeliveries = true,
   showReturns = true,
+  activeOrderCode = null,
   onSelectEvent,
+  onSelectOrderHighlight,
 }) {
   const scrollRef = React.useRef(null);
   const [canScrollDown, setCanScrollDown] = React.useState(false);
@@ -219,18 +225,45 @@ function CalendarDateCellEvents({
           }
 
           if (item.eventCategory === 'delivery') {
+            const isHighlight = Boolean(activeOrderCode && (item.code === activeOrderCode || item.id === activeOrderCode));
+            const returnDateStr = item.rentalEndDate ? formatShortDate(item.rentalEndDate) : '';
+
             return (
-              <Tooltip key={`del-${item.id || idx}`} title={`📦 Giao váy: ${item.code} - ${item.customerName}`}>
+              <Tooltip
+                key={`del-${item.id || idx}`}
+                title={
+                  <div className="text-xs space-y-1">
+                    <div className="font-bold flex items-center gap-1">
+                      <span>📦 Lịch Giao váy:</span>
+                      <span className="font-mono text-amber-300">{item.code}</span>
+                    </div>
+                    <div>Khách hàng: <strong>{item.customerName}</strong></div>
+                    {returnDateStr && (
+                      <div className="text-sky-300 font-bold border-t border-white/20 pt-1 flex items-center gap-1">
+                        <span>🔄 Hạn trả váy:</span>
+                        <span>{returnDateStr}</span>
+                      </div>
+                    )}
+                    <div className="text-[10px] text-gray-300 italic pt-0.5">
+                      (Bấm vào để làm nổi bật đồng thời ngày Giao & ngày Trả)
+                    </div>
+                  </div>
+                }
+              >
                 <div
                   onClick={(e) => {
                     e.stopPropagation();
-                    onSelectEvent?.(item);
+                    onSelectOrderHighlight?.(item);
                   }}
-                  className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[10.5px] font-medium border shadow-2xs transition-all hover:scale-[1.01] cursor-pointer bg-sky-50/90 text-sky-900 border-sky-300 hover:bg-sky-100"
+                  className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[10.5px] font-medium border shadow-2xs transition-all cursor-pointer ${
+                    isHighlight
+                      ? 'bg-sky-600 text-white border-sky-500 font-bold shadow-xs'
+                      : 'bg-sky-50/90 text-sky-900 border-sky-300 hover:bg-sky-100 hover:scale-[1.02]'
+                  }`}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-sky-600" />
-                  <span className="font-mono text-[9px] font-bold text-sky-950 shrink-0 uppercase">
-                    GIAO
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isHighlight ? 'bg-white' : 'bg-sky-600'}`} />
+                  <span className={`font-mono text-[9px] shrink-0 uppercase ${isHighlight ? 'font-extrabold text-white tracking-wider' : 'font-bold text-sky-950'}`}>
+                    {isHighlight ? '📦 GIAO' : 'GIAO'}
                   </span>
                 </div>
               </Tooltip>
@@ -239,27 +272,55 @@ function CalendarDateCellEvents({
 
           // Trả Váy (return)
           const isDone = item.status === 'completed' || item.status === 'returned';
+          const isHighlight = Boolean(activeOrderCode && (item.code === activeOrderCode || item.id === activeOrderCode));
+          const deliveryDateStr = item.rentalStartDate ? formatShortDate(item.rentalStartDate) : '';
 
           return (
-            <Tooltip key={`ret-${item.id || idx}`} title={`🔄 Hạn trả váy: ${item.code} - ${item.customerName}`}>
+            <Tooltip
+              key={`ret-${item.id || idx}`}
+              title={
+                <div className="text-xs space-y-1">
+                  <div className="font-bold flex items-center gap-1">
+                    <span>🔄 Lịch Hạn trả váy:</span>
+                    <span className="font-mono text-amber-300">{item.code}</span>
+                  </div>
+                  <div>Khách hàng: <strong>{item.customerName}</strong></div>
+                  {deliveryDateStr && (
+                    <div className="text-rose-300 font-bold border-t border-white/20 pt-1 flex items-center gap-1">
+                      <span>📦 Đã giao ngày:</span>
+                      <span>{deliveryDateStr}</span>
+                    </div>
+                  )}
+                  <div className="text-[10px] text-gray-300 italic pt-0.5">
+                    (Bấm vào để làm nổi bật đồng thời ngày Giao & ngày Trả)
+                  </div>
+                </div>
+              }
+            >
               <div
                 onClick={(e) => {
                   e.stopPropagation();
-                  onSelectEvent?.(item);
+                  onSelectOrderHighlight?.(item);
                 }}
-                className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[10.5px] font-medium border shadow-2xs transition-all hover:scale-[1.01] cursor-pointer ${
-                  isDone
-                    ? 'bg-emerald-50/90 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
-                    : 'bg-rose-50/90 text-rose-800 border-rose-300 hover:bg-rose-100'
+                className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[10.5px] font-medium border shadow-2xs transition-all cursor-pointer ${
+                  isHighlight
+                    ? 'bg-rose-500 text-white border-rose-400 font-bold shadow-xs'
+                    : isDone
+                    ? 'bg-emerald-50/90 text-emerald-800 border-emerald-300 hover:bg-emerald-100 hover:scale-[1.02]'
+                    : 'bg-rose-50/90 text-rose-800 border-rose-300 hover:bg-rose-100 hover:scale-[1.02]'
                 }`}
               >
                 <span
                   className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                    isDone ? 'bg-emerald-500' : 'bg-rose-500'
+                    isHighlight
+                      ? 'bg-white'
+                      : isDone
+                      ? 'bg-emerald-500'
+                      : 'bg-rose-500'
                   }`}
                 />
-                <span className="font-mono text-[9px] font-bold text-rose-950 shrink-0 uppercase">
-                  TRẢ
+                <span className={`font-mono text-[9px] shrink-0 uppercase ${isHighlight ? 'font-extrabold text-white tracking-wider' : 'font-bold text-rose-950'}`}>
+                  {isHighlight ? '🔄 TRẢ' : 'TRẢ'}
                 </span>
               </div>
             </Tooltip>
@@ -345,7 +406,10 @@ export default function ScheduleOverviewPage({ defaultTab }) {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [updatingId, setUpdatingId] = useState(null);
 
-  // Quản lý kéo co giãn kích thước bảng Chi Tiết Ngày Được Chọn
+  // Quản lý làm nổi bật ĐỒNG THỜI cả ngày Giao & ngày Trả của cùng một đơn hàng
+  const [highlightedOrderCode, setHighlightedOrderCode] = useState(null);
+
+  // Quản lý kéo co giãn kích thước & thu gọn/mở rộng bảng Chi Tiết Ngày Được Chọn
   const splitContainerRef = useRef(null);
   const [rightPanelWidth, setRightPanelWidth] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -357,11 +421,27 @@ export default function ScheduleOverviewPage({ defaultTab }) {
     }
     return 480;
   });
+  const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('unibridal_schedule_right_panel_collapsed') === 'true';
+    }
+    return false;
+  });
   const [isDragging, setIsDragging] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(() => {
     if (typeof window !== 'undefined') return window.innerWidth >= 1024;
     return true;
   });
+
+  const handleToggleRightPanel = useCallback(() => {
+    setIsRightPanelCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('unibridal_schedule_right_panel_collapsed', String(next));
+      } catch (_) {}
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -373,12 +453,24 @@ export default function ScheduleOverviewPage({ defaultTab }) {
 
   const handleMouseDownResize = (e) => {
     e.preventDefault();
-    setIsDragging(true);
     const startX = e.clientX;
-    const startWidth = rightPanelWidth;
+    const startWidth = isRightPanelCollapsed ? 320 : rightPanelWidth;
+    let hasMoved = false;
+
+    setIsDragging(true);
 
     const handleMouseMove = (moveEvent) => {
       const deltaX = startX - moveEvent.clientX;
+      if (Math.abs(deltaX) > 4) {
+        hasMoved = true;
+        if (isRightPanelCollapsed) {
+          setIsRightPanelCollapsed(false);
+          try {
+            localStorage.setItem('unibridal_schedule_right_panel_collapsed', 'false');
+          } catch (_) {}
+        }
+      }
+
       let newWidth = startWidth + deltaX;
 
       const containerWidth = splitContainerRef.current?.offsetWidth || 1200;
@@ -396,12 +488,18 @@ export default function ScheduleOverviewPage({ defaultTab }) {
       document.removeEventListener('mouseup', handleMouseUp);
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
-      setRightPanelWidth((curr) => {
-        try {
-          localStorage.setItem('unibridal_schedule_right_panel_width', String(curr));
-        } catch (_) {}
-        return curr;
-      });
+
+      if (!hasMoved) {
+        // Người dùng click vào nút mũi tên mà không kéo chuột -> Toggle Mở / Thu gọn
+        handleToggleRightPanel();
+      } else {
+        setRightPanelWidth((curr) => {
+          try {
+            localStorage.setItem('unibridal_schedule_right_panel_width', String(curr));
+          } catch (_) {}
+          return curr;
+        });
+      }
     };
 
     document.body.style.cursor = 'col-resize';
@@ -492,6 +590,18 @@ export default function ScheduleOverviewPage({ defaultTab }) {
 
   const todayKey = toDateKey(new Date());
   const selectedDateKey = toDateKey(selectedDate);
+
+  // Đơn hàng đang được làm nổi bật chu kỳ Giao - Trả
+  const activeOrderCode = highlightedOrderCode;
+  const activeHighlightOrder = useMemo(() => {
+    if (!activeOrderCode) return null;
+    return orders.find(
+      (o) => (o.orderCode || o.contractCode || o._id || o.id) === activeOrderCode
+    ) || null;
+  }, [activeOrderCode, orders]);
+
+  const highlightStartDateKey = activeHighlightOrder ? toDateKey(activeHighlightOrder.rentalStartDate) : null;
+  const highlightEndDateKey = activeHighlightOrder ? toDateKey(activeHighlightOrder.rentalEndDate) : null;
 
   // Danh sách sự kiện thử váy map theo ngày
   const appointmentsByDate = useMemo(() => {
@@ -689,9 +799,14 @@ export default function ScheduleOverviewPage({ defaultTab }) {
         showApts={showApts}
         showDeliveries={showDeliveries}
         showReturns={showReturns}
+        activeOrderCode={activeOrderCode}
         onSelectEvent={(item) => {
           setSelectedEvent(item);
           setDetailModalOpen(true);
+        }}
+        onSelectOrderHighlight={(item) => {
+          const targetCode = item.code || item.id;
+          setHighlightedOrderCode((prev) => (prev === targetCode ? null : targetCode));
         }}
       />
     );
@@ -785,6 +900,29 @@ export default function ScheduleOverviewPage({ defaultTab }) {
           background: #FAFAFA !important;
           opacity: 0.4 !important;
           border-color: #F3F3F3 !important;
+        }
+
+        /* NỔI BẬT ĐỒNG THỜI NGÀY GIAO & NGÀY TRẢ CỦA CÙNG ĐƠN HÀNG */
+        .unibridal-luxury-calendar .ant-picker-calendar-date.cell-delivery-highlight {
+          border: 2px solid #0284C7 !important;
+          background: #F0F9FF !important;
+          box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2) !important;
+          z-index: 2;
+        }
+        .unibridal-luxury-calendar .ant-picker-calendar-date.cell-delivery-highlight .ant-picker-calendar-date-value {
+          color: #0369A1 !important;
+          font-weight: 800 !important;
+        }
+
+        .unibridal-luxury-calendar .ant-picker-calendar-date.cell-return-highlight {
+          border: 2px solid #E11D48 !important;
+          background: #FFF1F2 !important;
+          box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.2) !important;
+          z-index: 2;
+        }
+        .unibridal-luxury-calendar .ant-picker-calendar-date.cell-return-highlight .ant-picker-calendar-date-value {
+          color: #BE123C !important;
+          font-weight: 800 !important;
         }
       `}</style>
 
@@ -972,12 +1110,23 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                         const month = String(d.getMonth() + 1).padStart(2, '0');
                         const dateLabel = `${day}/${month}`;
                         const isToday = toDateKey(d) === todayKey;
+                        const dateKey = toDateKey(d);
+
+                        const isDeliveryHighlight = highlightStartDateKey && dateKey === highlightStartDateKey;
+                        const isReturnHighlight = highlightEndDateKey && dateKey === highlightEndDateKey;
+
+                        let highlightClass = '';
+                        if (isDeliveryHighlight) {
+                          highlightClass = 'cell-delivery-highlight';
+                        } else if (isReturnHighlight) {
+                          highlightClass = 'cell-return-highlight';
+                        }
 
                         return (
                           <div
                             className={`ant-picker-cell-inner ant-picker-calendar-date ${
                               isToday ? 'ant-picker-calendar-date-today' : ''
-                            }`}
+                            } ${highlightClass}`}
                           >
                             <div className="ant-picker-calendar-date-value font-mono">
                               {dateLabel}
@@ -1041,52 +1190,81 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                   )}
                 </div>
 
-                {/* Thanh Kéo Co Giãn (Resize Handle) ở giữa 2 cột */}
+                {/* Thanh Kéo Co Giãn & Nút Mũi Tên Kéo Ra (Pull-out Arrow Handle) ở giữa 2 cột */}
                 <div
                   onMouseDown={handleMouseDownResize}
                   onDoubleClick={() => {
+                    setIsRightPanelCollapsed(false);
                     setRightPanelWidth(480);
                     try {
                       localStorage.setItem('unibridal_schedule_right_panel_width', '480');
+                      localStorage.setItem('unibridal_schedule_right_panel_collapsed', 'false');
                     } catch (_) {}
                   }}
-                  className="hidden lg:flex items-center justify-center w-5 shrink-0 cursor-col-resize select-none relative z-10 group"
-                  title="Kéo sang trái để mở rộng / kéo sang phải để thu nhỏ bảng chi tiết (Nhấp đúp để đặt lại mặc định)"
+                  className={`hidden lg:flex items-center justify-center shrink-0 cursor-col-resize select-none relative z-20 group transition-all duration-200 ${
+                    isRightPanelCollapsed ? 'w-8 pl-1.5' : 'w-6'
+                  }`}
+                  title={
+                    isRightPanelCollapsed
+                      ? 'Bấm để kéo ra bảng chi tiết ngày'
+                      : 'Bấm mũi tên để thu gọn / Kéo sang trái để mở rộng (Nhấp đúp đặt lại 480px)'
+                  }
                 >
+                  {/* Đường rãnh phân cách mờ */}
+                  {!isRightPanelCollapsed && (
+                    <div className="absolute inset-y-0 w-[1px] bg-[#EFE5E1] group-hover:bg-[#BA7A83]/60 transition-colors" />
+                  )}
+
+                  {/* Nút Mũi Tên Kéo Ra */}
                   <div
-                    className={`w-1.5 rounded-full transition-all duration-150 flex items-center justify-center ${
+                    className={`relative z-10 w-6 h-16 rounded-full flex flex-col items-center justify-center border shadow-xs transition-all duration-200 cursor-pointer ${
                       isDragging
-                        ? 'h-24 bg-[#733F49] shadow-md ring-4 ring-[#733F49]/20 scale-x-125'
-                        : 'h-14 bg-[#E8DDD8] group-hover:bg-[#BA7A83] group-hover:h-20 group-hover:w-2'
+                        ? 'bg-[#733F49] text-white border-[#5F2B36] shadow-md scale-110 ring-2 ring-[#733F49]/20'
+                        : isRightPanelCollapsed
+                        ? 'bg-[#733F49] text-white border-[#5F2B36] shadow-md hover:scale-105 hover:bg-[#5F2B36]'
+                        : 'bg-white hover:bg-[#733F49] text-[#733F49] hover:text-white border-[#E8DDD8] hover:border-[#733F49] hover:shadow-md'
                     }`}
                   >
-                    <GripVertical
-                      size={10}
-                      className={`transition-colors ${
-                        isDragging ? 'text-white' : 'text-[#733F49] opacity-70 group-hover:opacity-100 group-hover:text-white'
-                      }`}
-                    />
+                    {isRightPanelCollapsed ? (
+                      <ChevronsLeft className="w-4 h-4 stroke-[2.5] animate-pulse" />
+                    ) : (
+                      <ChevronLeft className="w-4 h-4 stroke-[2.5] group-hover:-translate-x-0.5 transition-transform" />
+                    )}
                   </div>
                 </div>
 
                 {/* Cột Phải: Bảng Chi Tiết Ngày VIP Concierge Docket (Có thể kéo co giãn độ rộng tùy ý) */}
-                <div
-                  style={{
-                    width: isLargeScreen ? `${rightPanelWidth}px` : '100%',
-                    minWidth: isLargeScreen ? '320px' : 'auto',
-                  }}
-                  className="w-full shrink-0 bg-white p-5 sm:p-6 rounded-2xl shadow-xs border border-[#EFE5E1] flex flex-col h-fit"
-                >
-                  <div className="border-b border-[#F2E5E0] pb-3 mb-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] uppercase tracking-wider text-[#733F49] font-bold flex items-center gap-1">
-                        <Crown className="w-3.5 h-3.5" />
-                        <span>Chi tiết ngày được chọn</span>
-                      </span>
-                      <span className="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
-                        {currentDayEvents.length} lượt hẹn
-                      </span>
-                    </div>
+                {(!isLargeScreen || !isRightPanelCollapsed) && (
+                  <div
+                    style={{
+                      width: isLargeScreen ? `${rightPanelWidth}px` : '100%',
+                      minWidth: isLargeScreen ? '320px' : 'auto',
+                    }}
+                    className="w-full shrink-0 bg-white p-5 sm:p-6 rounded-2xl shadow-xs border border-[#EFE5E1] flex flex-col h-fit transition-all duration-150"
+                  >
+                    <div className="border-b border-[#F2E5E0] pb-3 mb-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] uppercase tracking-wider text-[#733F49] font-bold flex items-center gap-1">
+                          <Crown className="w-3.5 h-3.5" />
+                          <span>Chi tiết ngày được chọn</span>
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
+                            {currentDayEvents.length} lượt hẹn
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleRightPanel();
+                            }}
+                            className="hidden lg:flex items-center justify-center w-6 h-6 rounded-lg text-gray-400 hover:text-[#733F49] hover:bg-[#FAF0EC] transition cursor-pointer"
+                            title="Thu gọn bảng chi tiết"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
 
                     <div className="text-xl font-bold text-gray-900 mt-1.5 capitalize font-playfair">
                       {selectedDate.toLocaleDateString('vi-VN', {
@@ -1340,6 +1518,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     )}
                   </div>
                 </div>
+              )}
               </div>
             </div>
           )}

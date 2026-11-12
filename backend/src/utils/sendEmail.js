@@ -570,8 +570,8 @@ export async function sendAppointmentSuccessEmail({
   timeSlot,
   branchName = 'UniBridal Flagship Showroom Q.1 TP.HCM',
   branchAddress = '128 Đồng Khởi, P. Bến Nghé, Quận 1, TP. Hồ Chí Minh',
-  branchPhone = '1800 8998',
-  guestsCount = 2,
+  branchPhone = '028 3822 8998',
+  guestsCount = 1,
   interestedDresses = [],
   vipServices = [],
   stylistName = 'Chuyên Viên Stylist UniBridal',
@@ -652,7 +652,7 @@ export async function sendAppointmentSuccessEmail({
             </tr>
             <tr>
               <td style="padding: 7px 0; color: #7A6B6C;">👥 Số người đồng hành:</td>
-              <td style="padding: 7px 0; font-weight: 600; color: #2C2523;">${guestsCount} khách (Cô dâu + người thân)</td>
+              <td style="padding: 7px 0; font-weight: 600; color: #2C2523;">${guestsCount} khách (Cô dâu)</td>
             </tr>
             <tr>
               <td style="padding: 7px 0; color: #7A6B6C;">👩‍💼 Stylist phụ trách:</td>

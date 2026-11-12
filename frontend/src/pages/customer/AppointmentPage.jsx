@@ -31,6 +31,7 @@ import { Calendar,
 import { message } from 'antd';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
+import { formatVietnameseDate, formatShortDate } from '../../utils/formatDate';
 import {
   SHOWROOM_BRANCHES,
   TIME_SLOTS,
@@ -40,42 +41,12 @@ import {
 } from '../../services/appointmentService';
 import { getAllDresses } from '../../services/dressService';
 
-// Helper: Format Vietnamese Date
-function formatVietnameseDate(dateStr) {
-  if (!dateStr) return '';
-  try {
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-      const year = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10);
-      const day = parseInt(parts[2], 10);
-      const d = new Date(year, month - 1, day);
-      const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-      const dayName = daysOfWeek[d.getDay()];
-      return `${dayName}, ngày ${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
-    }
-    return dateStr;
-  } catch {
-    return dateStr;
-  }
-}
-
-// Helper: Format Short Date (DD/MM/YYYY)
-function formatShortDate(dateStr) {
-  if (!dateStr) return '';
-  const parts = dateStr.split('-');
-  if (parts.length === 3) {
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
-  }
-  return dateStr;
-}
-
 // Helper: Build Google Calendar event URL
 function buildGoogleCalendarUrl(booking) {
   if (!booking) return '#';
   try {
     const title = encodeURIComponent('Lịch Thử Váy Cưới Private Suite — UniBridal Atelier');
-    const dateClean = (booking.date || '').replace(/-/g, '');
+    const dateClean = (booking.date || '').split('T')[0].replace(/-/g, '');
     let startTime = '133000';
     let endTime = '150000';
     if (booking.timeSlot && booking.timeSlot.includes('—')) {
@@ -86,7 +57,7 @@ function buildGoogleCalendarUrl(booking) {
     const dates = `${dateClean}T${startTime}/${dateClean}T${endTime}`;
     const location = encodeURIComponent(`${booking.branchName || ''} - ${booking.branchAddress || ''}`);
     const details = encodeURIComponent(
-      `Mã Check-in: ${booking.id}\nCô dâu vinh dự: ${booking.fullName}\nSĐT: ${booking.phone}\nĐịa chỉ: ${booking.branchAddress || ''}\nPhụ trách đón tiếp: ${booking.stylistName || 'NTK UniBridal'}\nTrân trọng đón tiếp nàng!`
+      `Mã Check-in: ${booking.id}\nCô dâu vinh dự: ${booking.fullName}\nSĐT: ${booking.phone}\nĐịa chỉ: ${booking.branchAddress || ''}\nTrân trọng đón tiếp nàng!`
     );
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&location=${location}&details=${details}`;
   } catch {
@@ -135,7 +106,7 @@ export default function AppointmentPage() {
   const [fullName, setFullName] = useState(() => (isLoggedIn ? (user?.fullName || user?.name || '') : ''));
   const [phone, setPhone] = useState(() => (isLoggedIn ? (user?.phone || '') : ''));
   const [email, setEmail] = useState(() => (isLoggedIn ? (user?.email || '') : ''));
-  const [guestsCount, setGuestsCount] = useState(2);
+  const [guestsCount, setGuestsCount] = useState(1);
   const [weddingDate, setWeddingDate] = useState(() => (isLoggedIn ? (user?.weddingDate || '') : ''));
   const [notes, setNotes] = useState('');
 
@@ -376,13 +347,39 @@ export default function AppointmentPage() {
 
     try {
       const res = await createAppointmentApi(appointmentData);
-      const result = res?.data || createAppointment(appointmentData);
+      const apiData = res?.data || {};
+      const result = {
+        ...appointmentData,
+        ...apiData,
+        id: apiData.appointmentCode || apiData.id || appointmentData.id || `APT-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+        branchId: selectedBranch.id,
+        branch: selectedBranch.id,
+        branchName: selectedBranch.name,
+        branchLocation: selectedBranch.location,
+        branchAddress: selectedBranch.address,
+        branchPhone: selectedBranch.phone,
+        branchMapUrl: selectedBranch.mapUrl,
+        branchHours: selectedBranch.hours,
+        stylistName: apiData.stylistName || 'NTK. Hoàng Yến (Lead Haute Couture Stylist)',
+      };
       setConfirmedBooking(result);
       message.success('Đặt lịch hẹn Private Suite thành công!');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       const localResult = createAppointment(appointmentData);
-      setConfirmedBooking(localResult);
+      setConfirmedBooking({
+        ...appointmentData,
+        ...localResult,
+        branchId: selectedBranch.id,
+        branch: selectedBranch.id,
+        branchName: selectedBranch.name,
+        branchLocation: selectedBranch.location,
+        branchAddress: selectedBranch.address,
+        branchPhone: selectedBranch.phone,
+        branchMapUrl: selectedBranch.mapUrl,
+        branchHours: selectedBranch.hours,
+        stylistName: 'NTK. Hoàng Yến (Lead Haute Couture Stylist)',
+      });
       message.success('Đặt lịch hẹn Private Suite thành công!');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -392,6 +389,20 @@ export default function AppointmentPage() {
   const handlePrintInvitation = () => {
     window.print();
   };
+
+  // Thông tin chi nhánh chính xác hiển thị trên Giấy mời
+  const bookingBranch = useMemo(() => {
+    if (!confirmedBooking) return null;
+    const bId = confirmedBooking.branchId || confirmedBooking.branch;
+    const matched = SHOWROOM_BRANCHES.find(
+      (b) => b.id === bId || (bId === 'hn-hk' && b.id === 'hn-hoankiem')
+    );
+    if (matched) return matched;
+    if (String(confirmedBooking.branchName || '').includes('Hà Nội')) {
+      return SHOWROOM_BRANCHES.find((b) => b.id === 'hn-hoankiem');
+    }
+    return SHOWROOM_BRANCHES[0];
+  }, [confirmedBooking]);
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#2C2523] flex flex-col font-jakarta selection:bg-[#FCEEE9] selection:text-[#B8737D]">
@@ -483,15 +494,12 @@ export default function AppointmentPage() {
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t border-[#EEDECF]/60 flex items-center justify-between text-[12px] text-[#6B5C5D]">
-                      <span>Số người cùng trải nghiệm:</span>
-                      <strong className="text-[#2C2523] font-bold">{confirmedBooking.guestsCount} khách</strong>
-                    </div>
-
                     {confirmedBooking.weddingDate && (
-                      <div className="text-[11.5px] text-[#847374] bg-white px-2.5 py-1.5 rounded-lg border border-[#EEDECF] flex items-center justify-between">
-                        <span>Ngày cưới dự kiến:</span>
-                        <strong className="text-[#733F49]">{formatShortDate(confirmedBooking.weddingDate)}</strong>
+                      <div className="pt-2 border-t border-[#EEDECF]/60">
+                        <div className="text-[11.5px] text-[#847374] bg-white px-2.5 py-1.5 rounded-lg border border-[#EEDECF] flex items-center justify-between">
+                          <span>Ngày cưới dự kiến:</span>
+                          <strong className="text-[#733F49]">{formatShortDate(confirmedBooking.weddingDate)}</strong>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -524,40 +532,36 @@ export default function AppointmentPage() {
 
                 </div>
 
-                {/* Showroom Atelier Location Box */}
-                <div className="bg-[#FAF4EE] p-5 rounded-2xl border border-[#EEDECF] flex flex-col sm:flex-row items-start justify-between gap-4">
-                  <div className="flex items-start gap-3.5">
-                    <div className="w-10 h-10 rounded-xl bg-white border border-[#EEDECF] text-[#B8737D] flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
-                      <MapPin className="w-5 h-5 text-[#B8737D]" />
-                    </div>
-                    <div>
-                      <span className="text-[10.5px] font-bold uppercase tracking-wider text-[#733F49] block mb-0.5">
-                        ĐỊA ĐIỂM SHOWROOM ATELIER ĐÓN TIẾP
-                      </span>
-                      <div className="font-jakarta font-bold text-[16px] text-[#2C2523]">
-                        {confirmedBooking.branchName}
+                {/* Showroom Atelier Location Box (Hiển thị rõ ràng đúng chi nhánh khách đã đặt: TP.HCM hoặc Hoàn Kiếm) */}
+                {bookingBranch && (
+                  <div className="bg-[#FAF4EE] p-5 rounded-2xl border border-[#EEDECF] flex flex-col sm:flex-row items-start justify-between gap-4">
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-11 h-11 rounded-xl bg-white border border-[#EEDECF] text-[#B8737D] flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
+                        <MapPin className="w-5 h-5 text-[#B8737D]" />
                       </div>
-                      <div className="text-[12.5px] text-[#6B5C5D] mt-1">
-                        {confirmedBooking.branchAddress || 'Chi nhánh trung tâm UniBridal'}
-                      </div>
-                      <div className="text-[12px] text-[#733F49] font-medium mt-1">
-                        Hotline showroom: <strong>{confirmedBooking.branchPhone || '1800 8998'}</strong> • Phụ trách đón tiếp: <strong>{confirmedBooking.stylistName}</strong>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                          <span className="text-[10.5px] font-extrabold uppercase tracking-wider text-[#733F49] bg-[#F2DDD7] px-2.5 py-0.5 rounded-md border border-[#E7C7BE]">
+                            {bookingBranch.id.includes('hn') ? '✦ CHI NHÁNH HOÀN KIẾM — HÀ NỘI' : '✦ CHI NHÁNH QUẬN 1 — TP. HỒ CHÍ MINH'}
+                          </span>
+                          <span className="text-[11.5px] text-[#847374] font-medium">
+                            Giờ tiếp đón: {bookingBranch.hours}
+                          </span>
+                        </div>
+                        <div className="font-jakarta font-bold text-[17px] text-[#2C2523] leading-snug">
+                          {bookingBranch.name}
+                        </div>
+                        <div className="text-[13px] text-[#4A3B3C] mt-1 font-semibold flex items-center gap-1.5">
+                          <span>📍</span>
+                          <span>{bookingBranch.address}</span>
+                        </div>
+                        <div className="text-[12px] text-[#733F49] font-medium mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <span>Hotline chi nhánh: <strong className="text-[#2C2523] font-bold">{bookingBranch.phone}</strong></span>
+                        </div>
                       </div>
                     </div>
                   </div>
-
-                  {confirmedBooking.branchMapUrl && (
-                    <a
-                      href={confirmedBooking.branchMapUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-[#EEDECF] hover:bg-[#FAF0EC] text-[#733F49] text-[12px] font-bold transition-all no-underline shrink-0 shadow-2xs print:hidden"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Xem bản đồ</span>
-                    </a>
-                  )}
-                </div>
+                )}
 
                 {/* Selected Dresses Preview */}
                 <div>
