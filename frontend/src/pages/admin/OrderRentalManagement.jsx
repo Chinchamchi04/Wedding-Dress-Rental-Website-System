@@ -1285,6 +1285,7 @@ export default function OrderRentalManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [viewMode, setViewMode] = useState('active'); // 'active' (Đơn Đang Xử Lý) | 'archived' (Kho Lưu Trữ)
+  const [sortOrder, setSortOrder] = useState('desc'); // 'desc': mới nhất -> cũ nhất, 'asc': cũ nhất -> mới nhất
 
   const [inspectionOrder, setInspectionOrder] = useState(null); // for inspection modal (bước 1)
   const [refundOrder, setRefundOrder] = useState(null); // for refund modal (bước 2)
@@ -1540,7 +1541,19 @@ export default function OrderRentalManagement() {
 
       return matchSearch && matchStatus;
     });
-  }, [orders, searchTerm, statusFilter, viewMode]);
+
+    // Tự động sắp xếp đơn mới nhất lên đầu danh sách (ưu tiên ngày tạo/cập nhật mới nhất)
+    return [...list].sort((a, b) => {
+      const timeA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+      const timeB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+      if (timeB !== timeA) {
+        return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+      }
+      return sortOrder === 'desc'
+        ? String(b.orderCode || b._id || '').localeCompare(String(a.orderCode || a._id || ''), undefined, { numeric: true })
+        : String(a.orderCode || a._id || '').localeCompare(String(b.orderCode || b._id || ''), undefined, { numeric: true });
+    });
+  }, [orders, searchTerm, statusFilter, viewMode, sortOrder]);
 
   const selectedFilterLabel =
     FILTER_OPTIONS.find((opt) => opt.value === statusFilter)?.label ?? 'Tất Cả Trạng Thái';
@@ -1818,8 +1831,17 @@ export default function OrderRentalManagement() {
           <table className="w-full text-left border-collapse min-w-[960px]">
             <thead>
               <tr className="border-b border-[#F2E5E0] bg-[#FFF6F3]">
-                <th className="py-4 px-5 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase">
-                  MÃ ĐƠN
+                <th
+                  onClick={() => setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
+                  className="py-4 px-5 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase cursor-pointer hover:text-[#733F49] transition-colors select-none"
+                  title="Nhấp để chuyển đổi sắp xếp: Mới nhất / Cũ nhất"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>MÃ ĐƠN</span>
+                    <span className="text-[#B8737D] text-[10px] font-bold bg-[#FAF0EC] px-1.5 py-0.5 rounded border border-[#F2D8D4]">
+                      {sortOrder === 'desc' ? '↓ Mới nhất' : '↑ Cũ nhất'}
+                    </span>
+                  </div>
                 </th>
                 <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center">
                   KHÁCH HÀNG

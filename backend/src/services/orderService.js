@@ -328,7 +328,7 @@ export const getAllOrders = async (filters = {}) => {
     Order.countDocuments({ status: 'cancelled' }),
     Order.countDocuments(query),
     Order.find(query)
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: -1, _id: -1 })
       .skip(skip)
       .limit(limit)
       .lean(),
