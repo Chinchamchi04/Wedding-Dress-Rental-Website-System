@@ -787,11 +787,6 @@ export default function CollectionPage() {
                             <span className="px-2.5 py-1 rounded-[6px] bg-white text-[#2C2523] font-jakarta font-bold text-[9px] tracking-[0.8px] shadow-xs">
                               {dress.badgeMain}
                             </span>
-                            {dress.badgeSub && (
-                              <span className="px-2.5 py-1 rounded-[6px] bg-[#BA7A83] text-white font-jakarta font-semibold text-[9px] tracking-wide shadow-xs">
-                                {dress.badgeSub}
-                              </span>
-                            )}
                           </div>
 
                           {/* Right Heart Wishlist Button - Chỉ hiển thị khi đã đăng nhập */}
@@ -848,21 +843,8 @@ export default function CollectionPage() {
 
                         {/* Thông Tin Chi Tiết Thẻ */}
                         <div className="p-5 flex flex-col flex-1">
-                          {/* Size Row */}
-                          <div className="flex items-center text-[11.5px] font-jakarta mb-1">
-                            {dress.id === 6 ? (
-                              <span className="text-[#514344] font-semibold uppercase tracking-wider text-[11px]">
-                                Size: Custom Fit
-                              </span>
-                            ) : (
-                              <span className="text-[#514344] font-semibold uppercase tracking-wider text-[11px]">
-                                {dress.size}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Tên Thiết Kế - Căn giữa tự nhiên giữa Size và Giá tiền khi tên chỉ có 1 dòng */}
-                          <div className="min-h-[54px] flex items-center my-1.5">
+                          {/* Tên Thiết Kế */}
+                          <div className="min-h-[54px] flex items-center mb-1.5">
                             <h3 className="font-playfair text-[21px] sm:text-[22px] font-semibold text-[#2C2523] group-hover:text-[#BA7A83] transition-colors leading-[1.25] tracking-tight line-clamp-2 m-0 text-left">
                               {dress.name}
                             </h3>

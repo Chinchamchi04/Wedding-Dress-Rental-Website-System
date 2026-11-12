@@ -69,6 +69,13 @@ export const createOrder = async (orderData, currentUser = null) => {
   } = orderData;
 
   // Chuẩn hóa danh sách sản phẩm thuê
+  const sanitizeImage = (img) => {
+    if (typeof img === 'string' && img.length > 50000) {
+      return 'https://images.unsplash.com/photo-1594552072238-b8a33785b261?auto=format&fit=crop&w=600&q=80';
+    }
+    return img || '';
+  };
+
   let resolvedItems = [];
   if (Array.isArray(items) && items.length > 0) {
     resolvedItems = items.map((item) => ({
@@ -78,7 +85,7 @@ export const createOrder = async (orderData, currentUser = null) => {
       size: item.size || 'S',
       rentPrice: Number(item.rentPrice || item.price || 0),
       depositAmount: Number(item.depositAmount || item.deposit || 0),
-      image: item.image || item.images?.[0] || '',
+      image: sanitizeImage(item.image || item.images?.[0]),
     }));
   } else if (dress) {
     resolvedItems = [
@@ -89,7 +96,7 @@ export const createOrder = async (orderData, currentUser = null) => {
         size: orderData.selectedSize || dress.size || 'S',
         rentPrice: Number(dress.price || 0),
         depositAmount: Number(dress.depositAmount || dress.deposit || 0),
-        image: dress.image || dress.images?.[0] || '',
+        image: sanitizeImage(dress.image || dress.images?.[0]),
       },
     ];
   }
@@ -270,7 +277,7 @@ export const getMyOrders = async (userId) => {
   }
   const orders = await Order.find({ $or: conditions }).sort({ createdAt: -1 }).lean();
   const orderIds = orders.map((o) => o._id);
-  const inspections = await ReturnInspection.find({ orderId: { $in: orderIds } }).lean();
+  const inspections = await ReturnInspection.find({ orderId: { $in: orderIds } }).select('-evidencePhotos').lean();
   const inspectionMap = new Map(inspections.map((i) => [String(i.orderId), i]));
   return orders.map((o) => ({
     ...o,
@@ -328,8 +335,8 @@ export const getAllOrders = async (filters = {}) => {
 
   const orderIds = orders.map((o) => o._id);
   const [inspections, contracts] = await Promise.all([
-    ReturnInspection.find({ orderId: { $in: orderIds } }).lean(),
-    Contract.find({ orderId: { $in: orderIds } }).lean(),
+    ReturnInspection.find({ orderId: { $in: orderIds } }).select('-evidencePhotos').lean(),
+    Contract.find({ orderId: { $in: orderIds } }).select('orderId contractCode status packageType').lean(),
   ]);
   const inspectionMap = new Map(inspections.map((i) => [String(i.orderId), i]));
   const contractMap = new Map(contracts.map((c) => [String(c.orderId), c]));

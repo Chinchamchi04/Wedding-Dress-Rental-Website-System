@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
 import {
   Calendar,
@@ -35,6 +35,9 @@ import { CalendarDays,
   Check,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  GripVertical,
   Table as TableIcon,
   LayoutGrid,
   PhoneCall,
@@ -43,8 +46,10 @@ import { CalendarDays,
   HeartHandshake,
   MessageSquare,
   RefreshCw,
-  PackageCheck } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+  PackageCheck,
+} from 'lucide-react';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   getAppointmentsApi,
   updateAppointmentStatusApi,
@@ -117,11 +122,202 @@ const getEventBadge = (item) => {
   }
 };
 
+// Component hiển thị danh sách sự kiện trên từng ô ngày của Lịch Biểu
+// Hỗ trợ hiển thị đầy đủ 1-3 lịch, và tự động kích hoạt cuộn + nút mũi tên lướt xuống khi có từ 4 lịch trở lên
+function CalendarDateCellEvents({
+  dayApts = [],
+  dayDeliveries = [],
+  dayReturns = [],
+  showApts = true,
+  showDeliveries = true,
+  showReturns = true,
+  onSelectEvent,
+}) {
+  const scrollRef = React.useRef(null);
+  const [canScrollDown, setCanScrollDown] = React.useState(false);
+  const [canScrollUp, setCanScrollUp] = React.useState(false);
+
+  // Gộp tất cả các sự kiện hợp lệ hiển thị trong ô ngày
+  const items = React.useMemo(() => {
+    const list = [];
+    if (showApts) {
+      dayApts.forEach((item) => list.push({ ...item, eventCategory: 'apt' }));
+    }
+    if (showDeliveries) {
+      dayDeliveries.forEach((item) => list.push({ ...item, eventCategory: 'delivery' }));
+    }
+    if (showReturns) {
+      dayReturns.forEach((item) => list.push({ ...item, eventCategory: 'return' }));
+    }
+    return list;
+  }, [dayApts, dayDeliveries, dayReturns, showApts, showDeliveries, showReturns]);
+
+  const total = items.length;
+  const isScrollable = total > 3;
+
+  const checkScroll = React.useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const { scrollTop, scrollHeight, clientHeight } = el;
+    setCanScrollUp(scrollTop > 4);
+    setCanScrollDown(scrollTop + clientHeight < scrollHeight - 4);
+  }, []);
+
+  React.useEffect(() => {
+    checkScroll();
+  }, [items.length, checkScroll]);
+
+  if (total === 0) return null;
+
+  return (
+    <div className="relative flex flex-col h-full w-full">
+      {/* Danh sách các sự kiện trong ô */}
+      <div
+        ref={scrollRef}
+        onScroll={checkScroll}
+        className={`space-y-1 mt-0.5 px-0.5 ${
+          isScrollable
+            ? 'max-h-[76px] overflow-y-auto custom-mini-scrollbar pr-0.5'
+            : 'overflow-hidden'
+        }`}
+      >
+        {items.map((item, idx) => {
+          if (item.eventCategory === 'apt') {
+            const startTime = extractStartTime(item.timeSlot);
+            const displayName = extractDisplayName(item.customerName);
+            const isConfirmed = item.status === 'confirmed';
+            const isCompleted = item.status === 'completed';
+
+            const badgeBg = isCompleted
+              ? 'bg-purple-50/90 text-purple-900 border-purple-300 hover:bg-purple-100'
+              : isConfirmed
+              ? 'bg-emerald-50/90 text-emerald-900 border-emerald-300 hover:bg-emerald-100'
+              : 'bg-amber-50/90 text-amber-900 border-amber-300 hover:bg-amber-100';
+
+            const dotBg = isCompleted
+              ? 'bg-purple-500'
+              : isConfirmed
+              ? 'bg-emerald-500'
+              : 'bg-amber-500';
+
+            return (
+              <Tooltip key={item.id || `apt-${idx}`} title={`👗 Thử váy: ${item.customerName} (${item.timeSlot})`}>
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectEvent?.(item);
+                  }}
+                  className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[10.5px] font-medium border shadow-2xs transition-all hover:scale-[1.01] cursor-pointer ${badgeBg}`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotBg}`} />
+                  <span className="font-mono text-[9.5px] font-bold text-gray-900 shrink-0">
+                    {startTime}
+                  </span>
+                </div>
+              </Tooltip>
+            );
+          }
+
+          if (item.eventCategory === 'delivery') {
+            return (
+              <Tooltip key={`del-${item.id || idx}`} title={`📦 Giao váy: ${item.code} - ${item.customerName}`}>
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectEvent?.(item);
+                  }}
+                  className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[10.5px] font-medium border shadow-2xs transition-all hover:scale-[1.01] cursor-pointer bg-sky-50/90 text-sky-900 border-sky-300 hover:bg-sky-100"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-sky-600" />
+                  <span className="font-mono text-[9px] font-bold text-sky-950 shrink-0 uppercase">
+                    GIAO
+                  </span>
+                </div>
+              </Tooltip>
+            );
+          }
+
+          // Trả Váy (return)
+          const isDone = item.status === 'completed' || item.status === 'returned';
+
+          return (
+            <Tooltip key={`ret-${item.id || idx}`} title={`🔄 Hạn trả váy: ${item.code} - ${item.customerName}`}>
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectEvent?.(item);
+                }}
+                className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[10.5px] font-medium border shadow-2xs transition-all hover:scale-[1.01] cursor-pointer ${
+                  isDone
+                    ? 'bg-emerald-50/90 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                    : 'bg-rose-50/90 text-rose-800 border-rose-300 hover:bg-rose-100'
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                    isDone ? 'bg-emerald-500' : 'bg-rose-500'
+                  }`}
+                />
+                <span className="font-mono text-[9px] font-bold text-rose-950 shrink-0 uppercase">
+                  TRẢ
+                </span>
+              </div>
+            </Tooltip>
+          );
+        })}
+      </div>
+
+      {/* Dấu mũi tên lướt xuống để báo hiệu còn nhiều lịch chưa hiện lên */}
+      {isScrollable && (
+        <div className="pt-0.5 mt-0.5">
+          {canScrollDown ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (scrollRef.current) {
+                  scrollRef.current.scrollBy({ top: 32, behavior: 'smooth' });
+                }
+              }}
+              className="w-full h-3.5 bg-[#FFF2EE] hover:bg-[#FDE2D9] text-[#733F49] border border-[#F5CDC3] rounded-md flex items-center justify-center transition-all cursor-pointer select-none group shadow-2xs"
+              title="Còn lịch hẹn khác bên dưới — Bấm hoặc cuộn chuột để xem"
+            >
+              <ChevronDown size={12} className="stroke-[2.2] text-[#733F49] animate-bounce group-hover:translate-y-0.5 transition-transform" />
+            </button>
+          ) : canScrollUp ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (scrollRef.current) {
+                  scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }}
+              className="w-full h-3.5 bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 rounded-md flex items-center justify-center transition-all cursor-pointer select-none group shadow-2xs"
+              title="Đã xem hết — Bấm để cuộn lên đầu ô"
+            >
+              <ChevronUp size={12} className="stroke-[2.2] group-hover:-translate-y-0.5 transition-transform" />
+            </button>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ScheduleOverviewPage({ defaultTab }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Tab chính: 'calendar' (Lịch Biểu Showroom) | 'appointments' (Danh Sách và Phê Duyệt Lịch Hẹn) | 'returns' (Lịch Hạn Trả Đồ)
+  // Tự động nhận diện phân hệ đang truy cập: Admin vs Staff để điều hướng đúng màn hình
+  const isStaffContext =
+    location.pathname.startsWith('/staff') ||
+    (user?.role === 'staff' && !location.pathname.startsWith('/admin'));
+  const orderBasePath = isStaffContext ? '/staff/don-thue' : '/admin/don-thue';
+
+  // Tab chính: 'calendar' (Lịch Biểu Showroom) | 'appointments' (Danh Sách & Phê Duyệt Lịch Hẹn) | 'returns' (Lịch Hạn Trả Đồ)
   const activeMainTab = searchParams.get('tab') || defaultTab || 'calendar';
   const handleTabChange = (tabKey) => {
     setSearchParams((prev) => {
@@ -131,13 +327,13 @@ export default function ScheduleOverviewPage({ defaultTab }) {
     });
   };
 
-  // Sub-filter trong Tab Lịch Biểu: 'all' | 'fitting' (Thử váy) | 'return' (Trả váy)
+  // Sub-filter trong Tab Lịch Biểu: 'all' | 'fitting' (Thử váy) | 'delivery' (Giao váy) | 'return' (Trả váy)
   const [calendarFilterType, setCalendarFilterType] = useState('all');
-  const [calendarBranchFilter, setCalendarBranchFilter] = useState('all');
+  const [calendarBranchFilter, setCalendarBranchFilter] = useState('hcm-q1');
 
   // Bộ lọc cho Tab Danh Sách Lịch Hẹn (Merged từ AppointmentManagement)
   const [searchTerm, setSearchTerm] = useState('');
-  const [branchFilter, setBranchFilter] = useState('all');
+  const [branchFilter, setBranchFilter] = useState('hcm-q1');
   const [statusFilter, setStatusFilter] = useState('all');
 
   // Dữ liệu
@@ -148,6 +344,71 @@ export default function ScheduleOverviewPage({ defaultTab }) {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [updatingId, setUpdatingId] = useState(null);
+
+  // Quản lý kéo co giãn kích thước bảng Chi Tiết Ngày Được Chọn
+  const splitContainerRef = useRef(null);
+  const [rightPanelWidth, setRightPanelWidth] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('unibridal_schedule_right_panel_width');
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed >= 320 && parsed <= 900) return parsed;
+      }
+    }
+    return 480;
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const [isLargeScreen, setIsLargeScreen] = useState(() => {
+    if (typeof window !== 'undefined') return window.innerWidth >= 1024;
+    return true;
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsLargeScreen(window.innerWidth >= 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleMouseDownResize = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+    const startX = e.clientX;
+    const startWidth = rightPanelWidth;
+
+    const handleMouseMove = (moveEvent) => {
+      const deltaX = startX - moveEvent.clientX;
+      let newWidth = startWidth + deltaX;
+
+      const containerWidth = splitContainerRef.current?.offsetWidth || 1200;
+      // Đảm bảo lịch tháng bên trái luôn còn ít nhất 380px
+      const maxAllowed = Math.max(340, Math.min(850, containerWidth - 380));
+      const minAllowed = 320;
+
+      newWidth = Math.max(minAllowed, Math.min(newWidth, maxAllowed));
+      setRightPanelWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      setRightPanelWidth((curr) => {
+        try {
+          localStorage.setItem('unibridal_schedule_right_panel_width', String(curr));
+        } catch (_) {}
+        return curr;
+      });
+    };
+
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
 
   // Lấy dữ liệu cả Lịch Hẹn Thử Váy và Đơn Thuê
   const fetchData = useCallback(async () => {
@@ -421,114 +682,18 @@ export default function ScheduleOverviewPage({ defaultTab }) {
     if (totalEvents === 0) return null;
 
     return (
-      <div className="space-y-1 mt-1 overflow-hidden px-0.5">
-        {/* Lịch Thử Váy */}
-        {showApts &&
-          visibleApts.slice(0, 1).map((item) => {
-            const startTime = extractStartTime(item.timeSlot);
-            const displayName = extractDisplayName(item.customerName);
-            const isConfirmed = item.status === 'confirmed';
-            const isCompleted = item.status === 'completed';
-
-            const badgeBg = isCompleted
-              ? 'bg-purple-50/90 text-purple-900 border-purple-300'
-              : isConfirmed
-              ? 'bg-emerald-50/90 text-emerald-900 border-emerald-300'
-              : 'bg-amber-50/90 text-amber-900 border-amber-300';
-
-            const dotBg = isCompleted
-              ? 'bg-purple-500'
-              : isConfirmed
-              ? 'bg-emerald-500'
-              : 'bg-amber-500';
-
-            return (
-              <Tooltip key={item.id} title={`👗 Thử váy: ${item.customerName} (${item.timeSlot})`}>
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedEvent(item);
-                    setDetailModalOpen(true);
-                  }}
-                  className={`group flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[11px] font-medium border shadow-2xs transition-all hover:scale-[1.02] cursor-pointer ${badgeBg}`}
-                >
-                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotBg}`} />
-                  <span className="font-mono text-[10px] font-bold text-gray-900 shrink-0">
-                    {startTime}
-                  </span>
-                  <span className="text-gray-400 text-[9px]">•</span>
-                  <span className="truncate text-[10.5px] font-semibold text-gray-800">
-                    {displayName}
-                  </span>
-                </div>
-              </Tooltip>
-            );
-          })}
-
-        {/* Lịch Giao / Nhận Váy (Đơn Thuê Bắt Đầu) */}
-        {showDeliveries &&
-          dayDeliveries.slice(0, 1).map((item) => {
-            const displayName = extractDisplayName(item.customerName);
-            return (
-              <Tooltip key={`del-${item.id}`} title={`📦 Giao váy: ${item.code} - ${item.customerName}`}>
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedEvent(item);
-                    setDetailModalOpen(true);
-                  }}
-                  className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[11px] font-medium border shadow-2xs transition-all hover:scale-[1.02] cursor-pointer bg-sky-50/90 text-sky-900 border-sky-300 hover:bg-sky-100"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-sky-600" />
-                  <span className="font-mono text-[9.5px] font-bold text-sky-950 shrink-0 uppercase">
-                    GIAO
-                  </span>
-                  <span className="text-gray-400 text-[9px]">•</span>
-                  <span className="truncate text-[10.5px] font-semibold text-gray-800">
-                    {displayName}
-                  </span>
-                </div>
-              </Tooltip>
-            );
-          })}
-
-        {/* Lịch Trả Váy (Đơn Thuê Kết Thúc) */}
-        {showReturns &&
-          dayReturns.slice(0, 1).map((item) => {
-            const isDone = item.status === 'completed' || item.status === 'returned';
-            const displayName = extractDisplayName(item.customerName);
-
-            return (
-              <Tooltip key={`ret-${item.id}`} title={`🔄 Hạn trả váy: ${item.code} - ${item.customerName}`}>
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedEvent(item);
-                    setDetailModalOpen(true);
-                  }}
-                  className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[11px] font-medium border shadow-2xs transition-all hover:scale-[1.02] cursor-pointer ${
-                    isDone
-                      ? 'bg-emerald-50/90 text-emerald-800 border-emerald-300'
-                      : 'bg-rose-50/90 text-rose-800 border-rose-300'
-                  }`}
-                >
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                      isDone ? 'bg-emerald-500' : 'bg-rose-500'
-                    }`}
-                  />
-                  <span className="font-mono text-[9.5px] font-bold text-rose-950 shrink-0 uppercase">
-                    TRẢ
-                  </span>
-                  <span className="text-gray-400 text-[9px]">•</span>
-                  <span className="truncate text-[10.5px] font-semibold text-gray-800">
-                    {displayName}
-                  </span>
-                </div>
-              </Tooltip>
-            );
-          })}
-      </div>
+      <CalendarDateCellEvents
+        dayApts={visibleApts}
+        dayDeliveries={dayDeliveries}
+        dayReturns={dayReturns}
+        showApts={showApts}
+        showDeliveries={showDeliveries}
+        showReturns={showReturns}
+        onSelectEvent={(item) => {
+          setSelectedEvent(item);
+          setDetailModalOpen(true);
+        }}
+      />
     );
   };
 
@@ -557,15 +722,43 @@ export default function ScheduleOverviewPage({ defaultTab }) {
           border: 1px solid #F1E5E2 !important;
           border-radius: 14px !important;
           margin: 3px !important;
-          min-height: 108px !important;
+          min-height: 122px !important;
           background: #FFFFFF !important;
           transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
           box-shadow: 0 1px 3px rgba(0,0,0,0.015) !important;
+          display: flex !important;
+          flex-direction: column !important;
         }
         .unibridal-luxury-calendar .ant-picker-calendar-date:hover {
           border-color: #BA7A83 !important;
           background: #FFFDFD !important;
           box-shadow: 0 4px 16px rgba(115, 63, 73, 0.08) !important;
+        }
+        .unibridal-luxury-calendar .ant-picker-calendar-date-value {
+          padding: 4px 8px 1px 8px !important;
+          line-height: 1.2 !important;
+        }
+        .unibridal-luxury-calendar .ant-picker-calendar-date-content {
+          flex: 1 1 auto !important;
+          height: auto !important;
+          max-height: 98px !important;
+          overflow: visible !important;
+          padding: 0 2px 2px 2px !important;
+        }
+        /* Custom scrollbar siêu nhỏ cho ô lịch */
+        .custom-mini-scrollbar::-webkit-scrollbar {
+          width: 3.5px;
+        }
+        .custom-mini-scrollbar::-webkit-scrollbar-track {
+          background: #FAF3F0;
+          border-radius: 4px;
+        }
+        .custom-mini-scrollbar::-webkit-scrollbar-thumb {
+          background: #D8B7AE;
+          border-radius: 4px;
+        }
+        .custom-mini-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #733F49;
         }
         /* Ô ĐƯỢC CHỌN (SELECTED CELL): KHÔNG BỊ XÁM ĐEN MÙ MỊT NỮA */
         .unibridal-luxury-calendar .ant-picker-cell-selected .ant-picker-calendar-date {
@@ -595,7 +788,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
         }
       `}</style>
 
-      <AdminLayout activeMenu="lich-tong-quan">
+      <AdminLayout activeMenu="lich-tong-quan" role={isStaffContext ? 'staff' : 'admin'}>
         <div className="space-y-5">
           {/* Header và Thanh Tiêu Đề */}
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -754,17 +947,16 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     onChange={(e) => setCalendarBranchFilter(e.target.value)}
                     className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 font-bold outline-none cursor-pointer text-xs focus:border-[#733F49]"
                   >
-                    <option value="all">Toàn bộ 2 Showroom</option>
                     <option value="hcm-q1">UniBridal Q.1 TP.HCM</option>
                     <option value="hn-hoankiem">UniBridal Hoàn Kiếm, HN</option>
                   </select>
                 </div>
               </div>
 
-              {/* Grid 2 Cột: Lịch Tháng (Trái) và Bảng Chi Tiết Ngày VIP Concierge (Phải) */}
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Container 2 Cột: Lịch Tháng (Trái) + Thanh Kéo Co Giãn (Giữa) + Bảng Chi Tiết Ngày (Phải) */}
+              <div ref={splitContainerRef} className="flex flex-col lg:flex-row items-stretch gap-0 relative">
                 {/* Lịch tháng Ant Design với Custom Styling và Header */}
-                <div className="lg:col-span-3 bg-white p-5 rounded-2xl shadow-xs border border-[#EFE5E1]">
+                <div className="flex-1 min-w-[340px] bg-white p-5 rounded-2xl shadow-xs border border-[#EFE5E1]">
                   {loading ? (
                     <div className="h-96 flex items-center justify-center">
                       <Spin tip="Đang tải dữ liệu lịch showroom..." />
@@ -849,20 +1041,54 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                   )}
                 </div>
 
-                {/* Cột Phải: Bảng Chi Tiết Ngày VIP Concierge Docket */}
-                <div className="bg-white p-5 rounded-2xl shadow-xs border border-[#EFE5E1] flex flex-col h-fit">
+                {/* Thanh Kéo Co Giãn (Resize Handle) ở giữa 2 cột */}
+                <div
+                  onMouseDown={handleMouseDownResize}
+                  onDoubleClick={() => {
+                    setRightPanelWidth(480);
+                    try {
+                      localStorage.setItem('unibridal_schedule_right_panel_width', '480');
+                    } catch (_) {}
+                  }}
+                  className="hidden lg:flex items-center justify-center w-5 shrink-0 cursor-col-resize select-none relative z-10 group"
+                  title="Kéo sang trái để mở rộng / kéo sang phải để thu nhỏ bảng chi tiết (Nhấp đúp để đặt lại mặc định)"
+                >
+                  <div
+                    className={`w-1.5 rounded-full transition-all duration-150 flex items-center justify-center ${
+                      isDragging
+                        ? 'h-24 bg-[#733F49] shadow-md ring-4 ring-[#733F49]/20 scale-x-125'
+                        : 'h-14 bg-[#E8DDD8] group-hover:bg-[#BA7A83] group-hover:h-20 group-hover:w-2'
+                    }`}
+                  >
+                    <GripVertical
+                      size={10}
+                      className={`transition-colors ${
+                        isDragging ? 'text-white' : 'text-[#733F49] opacity-70 group-hover:opacity-100 group-hover:text-white'
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                {/* Cột Phải: Bảng Chi Tiết Ngày VIP Concierge Docket (Có thể kéo co giãn độ rộng tùy ý) */}
+                <div
+                  style={{
+                    width: isLargeScreen ? `${rightPanelWidth}px` : '100%',
+                    minWidth: isLargeScreen ? '320px' : 'auto',
+                  }}
+                  className="w-full shrink-0 bg-white p-5 sm:p-6 rounded-2xl shadow-xs border border-[#EFE5E1] flex flex-col h-fit"
+                >
                   <div className="border-b border-[#F2E5E0] pb-3 mb-4">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] uppercase tracking-wider text-[#733F49] font-bold flex items-center gap-1">
-                        <Crown className="w-3 h-3" />
+                        <Crown className="w-3.5 h-3.5" />
                         <span>Chi tiết ngày được chọn</span>
                       </span>
-                      <span className="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                      <span className="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
                         {currentDayEvents.length} lượt hẹn
                       </span>
                     </div>
 
-                    <div className="text-lg font-bold text-gray-900 mt-1 capitalize font-playfair">
+                    <div className="text-xl font-bold text-gray-900 mt-1.5 capitalize font-playfair">
                       {selectedDate.toLocaleDateString('vi-VN', {
                         weekday: 'long',
                         day: 'numeric',
@@ -872,7 +1098,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     </div>
                   </div>
 
-                  <div className="space-y-4 overflow-y-auto max-h-[600px] pr-1">
+                  <div className="space-y-4 overflow-y-auto max-h-[680px] pr-1">
                     {currentDayEvents.length === 0 ? (
                       <div className="py-14 text-center text-gray-400 text-xs">
                         <Empty
@@ -1020,48 +1246,76 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                             {/* CÁC NÚT THAO TÁC TRỰC TIẾP DÀNH CHO STAFF */}
                             <div className="flex items-center gap-2 pt-3 border-t border-gray-200/70 mt-3">
                               {isFitting && item.status === 'confirmed' && (
-                                <>
-                                  <button
-                                    type="button"
-                                    disabled={updatingId === item.id}
-                                    onClick={() =>
-                                      handleUpdateAppointmentStatus(item.id, 'completed')
-                                    }
-                                    className="flex-1 py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
-                                  >
-                                    <CheckCircle2 className="w-3.5 h-3.5" />
-                                    <span>Hoàn Tất</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    disabled={updatingId === item.id}
-                                    onClick={() =>
-                                      handleUpdateAppointmentStatus(item.id, 'cancelled')
-                                    }
-                                    className="py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer disabled:opacity-50"
-                                    title="Khách bận hoặc không đến: Đánh dấu đã hủy"
-                                  >
-                                    <XCircle className="w-3.5 h-3.5" />
-                                    <span>Đã Hủy</span>
-                                  </button>
-                                </>
+                                (item.date || toDateKey(item.appointmentDate)) <= todayKey ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      disabled={updatingId === item.id}
+                                      onClick={() =>
+                                        handleUpdateAppointmentStatus(item.id, 'completed')
+                                      }
+                                      className="flex-1 py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
+                                    >
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                      <span>Hoàn Tất</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={updatingId === item.id}
+                                      onClick={() =>
+                                        handleUpdateAppointmentStatus(item.id, 'cancelled')
+                                      }
+                                      className="py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer disabled:opacity-50"
+                                      title="Khách bận hoặc không đến: Đánh dấu đã hủy"
+                                    >
+                                      <XCircle className="w-3.5 h-3.5" />
+                                      <span>Đã Hủy</span>
+                                    </button>
+                                  </>
+                                ) : (
+                                  <div className="flex-1 py-1.5 px-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-500 text-xs font-semibold flex items-center justify-center gap-1.5">
+                                    <Clock className="w-3.5 h-3.5 text-gray-400" />
+                                    <span>Chờ đến ngày hẹn</span>
+                                  </div>
+                                )
                               )}
 
                               {isDelivery && (
-                                <button
-                                  type="button"
-                                  onClick={() => navigate('/staff/don-thue')}
-                                  className="flex-1 py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer"
-                                >
-                                  <PackageCheck className="w-3.5 h-3.5" />
-                                  <span>Quản Lý Đơn Thuê</span>
-                                </button>
+                                <div className="flex-1 flex gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const targetCode = item.code || item.id || '';
+                                      navigate(`${orderBasePath}?orderCode=${encodeURIComponent(targetCode)}&action=inspect`);
+                                    }}
+                                    className="flex-1 py-2 px-2.5 rounded-xl bg-[#FAF0EC] hover:bg-[#F2D8D4] text-[#733F49] text-xs font-bold flex items-center justify-center gap-1 transition shadow-xs cursor-pointer border border-[#F2D8D4]"
+                                    title="Mở quy trình kiểm định đối soát váy"
+                                  >
+                                    <RotateCcw className="w-3.5 h-3.5" />
+                                    <span>Kiểm Định</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const targetCode = item.code || item.id || '';
+                                      navigate(`${orderBasePath}?orderCode=${encodeURIComponent(targetCode)}`);
+                                    }}
+                                    className="flex-1 py-2 px-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold flex items-center justify-center gap-1 transition shadow-xs cursor-pointer"
+                                    title="Xem chi tiết đơn thuê và bàn giao"
+                                  >
+                                    <PackageCheck className="w-3.5 h-3.5" />
+                                    <span>Đơn Thuê</span>
+                                  </button>
+                                </div>
                               )}
 
                               {isReturn && (
                                 <button
                                   type="button"
-                                  onClick={() => navigate('/staff/don-thue')}
+                                  onClick={() => {
+                                    const targetCode = item.code || item.id || '';
+                                    navigate(`${orderBasePath}?orderCode=${encodeURIComponent(targetCode)}&action=inspect`);
+                                  }}
                                   className="flex-1 py-2 px-3 rounded-xl bg-[#FAF0EC] hover:bg-[#F2D8D4] text-[#733F49] text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer border border-[#F2D8D4]"
                                 >
                                   <RotateCcw className="w-3.5 h-3.5" />
@@ -1117,7 +1371,6 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     onChange={(e) => setBranchFilter(e.target.value)}
                     className="px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-700 font-medium outline-none cursor-pointer"
                   >
-                    <option value="all">Tất cả chi nhánh showroom (2 cơ sở)</option>
                     <option value="hcm-q1">UniBridal Q.1 TP.HCM</option>
                     <option value="hn-hoankiem">UniBridal Hoàn Kiếm, HN</option>
                   </select>
@@ -1164,6 +1417,8 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                           const dateStr = apt.appointmentDate
                             ? new Date(apt.appointmentDate).toLocaleDateString('vi-VN')
                             : apt.date || '—';
+                          const aptDateKey = apt.date || toDateKey(apt.appointmentDate);
+                          const isDue = aptDateKey <= todayKey;
                           const time = apt.timeSlot || '—';
                           const dresses = apt.interestedDresses || apt.selectedDresses || [];
                           const status = normalizeAptStatus(apt.status);
@@ -1239,28 +1494,39 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                               <td className="py-4 px-5 text-right">
                                 <div className="flex items-center justify-end">
                                   {status === 'confirmed' ? (
-                                    <div className="flex flex-col items-end gap-1.5">
-                                       <button
-                                         type="button"
-                                         disabled={updatingId === aptId}
-                                         onClick={() => handleUpdateAppointmentStatus(aptId, 'completed')}
-                                         className="w-24 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
-                                         title="Khách đến thử đồ: Đánh dấu đã hoàn tất"
-                                       >
-                                         <CheckCircle2 size={13} />
-                                         <span>Hoàn tất</span>
-                                       </button>
-                                       <button
-                                         type="button"
-                                         disabled={updatingId === aptId}
-                                         onClick={() => handleUpdateAppointmentStatus(aptId, 'cancelled')}
-                                         className="w-24 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-800 border border-rose-200 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
-                                         title="Khách không đến hoặc có việc bận: Đánh dấu đã hủy"
-                                       >
-                                         <XCircle size={13} />
-                                         <span>Đã hủy</span>
-                                       </button>
-                                     </div>
+                                    isDue ? (
+                                      <div className="flex flex-col items-end gap-1.5">
+                                        <button
+                                          type="button"
+                                          disabled={updatingId === aptId}
+                                          onClick={() => handleUpdateAppointmentStatus(aptId, 'completed')}
+                                          className="w-24 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
+                                          title="Khách đến thử đồ: Đánh dấu đã hoàn tất"
+                                        >
+                                          <CheckCircle2 size={13} />
+                                          <span>Hoàn tất</span>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          disabled={updatingId === aptId}
+                                          onClick={() => handleUpdateAppointmentStatus(aptId, 'cancelled')}
+                                          className="w-24 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-800 border border-rose-200 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
+                                          title="Khách không đến hoặc có việc bận: Đánh dấu đã hủy"
+                                        >
+                                          <XCircle size={13} />
+                                          <span>Đã hủy</span>
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <div className="flex flex-col items-end gap-1">
+                                        <span className="inline-block px-3 py-1 rounded-xl text-[11px] font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                          Đã xác nhận
+                                        </span>
+                                        <span className="text-[10px] text-gray-500 italic">
+                                          Chờ đến ngày hẹn
+                                        </span>
+                                      </div>
+                                    )
                                   ) : (
                                     <span
                                       className={`inline-block px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase ${
@@ -1397,28 +1663,64 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     {/* Nút hành động phê duyệt trực tiếp trong Modal */}
                     <div className="pt-2 border-t border-gray-100 flex flex-wrap gap-2">
                       {selectedEvent.status === 'confirmed' && (
-                        <>
-                          <button
-                            type="button"
-                            disabled={updatingId === selectedEvent.id}
-                            onClick={() => handleUpdateAppointmentStatus(selectedEvent.id, 'completed')}
-                            className="flex-1 py-2.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
-                          >
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span>Đánh Dấu Đã Thử Xong</span>
-                          </button>
-                          <button
-                            type="button"
-                            disabled={updatingId === selectedEvent.id}
-                            onClick={() => handleUpdateAppointmentStatus(selectedEvent.id, 'cancelled')}
-                            className="py-2.5 px-4 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
-                          >
-                            <XCircle className="w-4 h-4" />
-                            <span>Đánh Dấu Đã Hủy</span>
-                          </button>
-                        </>
+                        (selectedEvent.date || toDateKey(selectedEvent.appointmentDate)) <= todayKey ? (
+                          <>
+                            <button
+                              type="button"
+                              disabled={updatingId === selectedEvent.id}
+                              onClick={() => handleUpdateAppointmentStatus(selectedEvent.id, 'completed')}
+                              className="flex-1 py-2.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span>Đánh Dấu Đã Thử Xong</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={updatingId === selectedEvent.id}
+                              onClick={() => handleUpdateAppointmentStatus(selectedEvent.id, 'cancelled')}
+                              className="py-2.5 px-4 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                            >
+                              <XCircle className="w-4 h-4" />
+                              <span>Đánh Dấu Đã Hủy</span>
+                            </button>
+                          </>
+                        ) : (
+                          <div className="w-full py-2.5 px-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-600 text-xs font-semibold text-center flex items-center justify-center gap-2">
+                            <Clock className="w-4 h-4 text-gray-400" />
+                            <span>Lịch hẹn chưa đến ngày — Chỉ mở thao tác khi đến ngày hẹn</span>
+                          </div>
+                        )
                       )}
                     </div>
+                  </div>
+                )}
+
+                {selectedEvent.type === 'delivery' && (
+                  <div className="pt-2 flex flex-col sm:flex-row gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDetailModalOpen(false);
+                        const targetCode = selectedEvent.code || selectedEvent.id || '';
+                        navigate(`${orderBasePath}?orderCode=${encodeURIComponent(targetCode)}&action=inspect`);
+                      }}
+                      className="flex-1 py-2.5 px-3 bg-[#733F49] hover:bg-[#5a3239] text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      <span>Mở Quy Trình Kiểm Định &amp; Hoàn Cọc</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDetailModalOpen(false);
+                        const targetCode = selectedEvent.code || selectedEvent.id || '';
+                        navigate(`${orderBasePath}?orderCode=${encodeURIComponent(targetCode)}`);
+                      }}
+                      className="py-2.5 px-4 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <PackageCheck className="w-4 h-4" />
+                      <span>Quản Lý Đơn Thuê</span>
+                    </button>
                   </div>
                 )}
 
@@ -1428,11 +1730,12 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                       type="button"
                       onClick={() => {
                         setDetailModalOpen(false);
-                        navigate('/staff/don-thue');
+                        const targetCode = selectedEvent.code || selectedEvent.id || '';
+                        navigate(`${orderBasePath}?orderCode=${encodeURIComponent(targetCode)}&action=inspect`);
                       }}
                       className="w-full py-2.5 px-4 bg-[#733F49] hover:bg-[#5a3239] text-white font-bold rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                     >
-                      <span>Mở Quy Trình Kiểm Định và Hoàn Cọc</span>
+                      <span>Mở Quy Trình Kiểm Định &amp; Hoàn Cọc</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>

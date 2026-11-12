@@ -413,7 +413,27 @@ export default function CustomerCareManagement() {
 
     const reader = new FileReader();
     reader.onload = () => {
-      setSelectedImage(reader.result);
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 800;
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        setSelectedImage(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.src = reader.result;
     };
     reader.readAsDataURL(file);
     e.target.value = '';

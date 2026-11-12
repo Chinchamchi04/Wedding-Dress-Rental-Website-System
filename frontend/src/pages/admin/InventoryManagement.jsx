@@ -69,6 +69,50 @@ const POPULAR_COLORS = [
   { name: 'Xanh Khói (Dusty Blue)', hex: '#A2B2C8', border: '#8A9DB5' },
 ];
 
+// Cấu hình Trạng Thái Kho chuẩn (khớp 100% màu sắc và icon với bảng danh sách bên ngoài)
+const STATUS_OPTIONS_CONFIG = [
+  {
+    value: 'stored',
+    label: 'Còn Hàng',
+    icon: Crown,
+    textColor: 'text-[#1D4ED8]',
+    bgColor: 'bg-[#EFF6FF]',
+    borderColor: 'border-[#BFDBFE]',
+    hoverBg: 'hover:bg-[#EFF6FF]',
+    activeBg: 'bg-[#EFF6FF]',
+  },
+  {
+    value: 'ready',
+    label: 'Đã Cho Thuê',
+    icon: CheckCircle2,
+    textColor: 'text-[#1E8347]',
+    bgColor: 'bg-[#EAF7EE]',
+    borderColor: 'border-[#BCE7C7]',
+    hoverBg: 'hover:bg-[#EAF7EE]',
+    activeBg: 'bg-[#EAF7EE]',
+  },
+  {
+    value: 'drying',
+    label: 'Đang Bảo Dưỡng',
+    icon: Wrench,
+    textColor: 'text-[#D97706]',
+    bgColor: 'bg-[#FEF2E6]',
+    borderColor: 'border-[#FED7AA]',
+    hoverBg: 'hover:bg-[#FEF2E6]',
+    activeBg: 'bg-[#FEF2E6]',
+  },
+  {
+    value: 'out_of_stock',
+    label: 'Hết Hàng',
+    icon: AlertTriangle,
+    textColor: 'text-[#DC2626]',
+    bgColor: 'bg-[#FEF2F2]',
+    borderColor: 'border-[#FECACA]',
+    hoverBg: 'hover:bg-[#FEF2F2]',
+    activeBg: 'bg-[#FEF2F2]',
+  },
+];
+
 export default function InventoryManagement() {
   const [rawDresses, setRawDresses] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -103,6 +147,7 @@ export default function InventoryManagement() {
   const [editRentPrice, setEditRentPrice] = useState('5.000.000');
   const [editDepositAmount, setEditDepositAmount] = useState('15.000.000');
   const [editStatusType, setEditStatusType] = useState('stored');
+  const [editStatusDropdownOpen, setEditStatusDropdownOpen] = useState(false);
   const [editDescription, setEditDescription] = useState('');
   const [editSizes, setEditSizes] = useState({ XS: 0, S: 2, M: 2, L: 0 });
   const [editColor, setEditColor] = useState('Trắng Tinh Khôi');
@@ -557,13 +602,13 @@ export default function InventoryManagement() {
     }
   }, [rawDresses]);
 
-  // Bộ lọc trạng thái
+  // Bộ lọc trạng thái (kèm icon và màu sắc đồng bộ)
   const statusOptions = [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'stored', label: 'Còn Hàng' },
-    { value: 'ready', label: 'Đã Cho Thuê' },
-    { value: 'drying', label: 'Đang Bảo Dưỡng' },
-    { value: 'out_of_stock', label: 'Hết Hàng' },
+    { value: 'all', label: 'Tất cả', icon: Layers },
+    { value: 'stored', label: 'Còn Hàng', icon: Crown, color: 'text-[#1D4ED8]' },
+    { value: 'ready', label: 'Đã Cho Thuê', icon: CheckCircle2, color: 'text-[#1E8347]' },
+    { value: 'drying', label: 'Đang Bảo Dưỡng', icon: Wrench, color: 'text-[#D97706]' },
+    { value: 'out_of_stock', label: 'Hết Hàng', icon: AlertTriangle, color: 'text-[#DC2626]' },
   ];
 
   const filteredItems = useMemo(() => {
@@ -733,6 +778,7 @@ export default function InventoryManagement() {
   // Mở Modal Sửa Sản Phẩm
   const handleOpenEditModal = (item) => {
     setEditingItem(item);
+    setEditStatusDropdownOpen(false);
     setEditName(item.name || '');
 
     // Tìm phom dáng phù hợp từ categoriesList
@@ -876,7 +922,27 @@ export default function InventoryManagement() {
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
-          setEditImages((prev) => [...prev, event.target.result]);
+          const img = new Image();
+          img.onload = () => {
+            const maxDim = 1200;
+            let { width, height } = img;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            setEditImages((prev) => [...prev, canvas.toDataURL('image/jpeg', 0.8)]);
+          };
+          img.src = event.target.result;
         }
       };
       reader.readAsDataURL(file);
@@ -1022,7 +1088,27 @@ export default function InventoryManagement() {
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
-          setNewImages((prev) => [...prev, event.target.result]);
+          const img = new Image();
+          img.onload = () => {
+            const maxDim = 1200;
+            let { width, height } = img;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            setNewImages((prev) => [...prev, canvas.toDataURL('image/jpeg', 0.8)]);
+          };
+          img.src = event.target.result;
         }
       };
       reader.readAsDataURL(file);
@@ -1409,7 +1495,7 @@ export default function InventoryManagement() {
                 VÁY CƯỚI ĐANG CHO THUÊ
               </span>
               <div className="w-9 h-9 rounded-xl bg-[#EFF6FF] flex items-center justify-center text-[#1D4ED8]">
-                <Crown size={17} />
+                <CheckCircle2 size={17} />
               </div>
             </div>
             <div className="flex items-baseline">
@@ -1629,20 +1715,30 @@ export default function InventoryManagement() {
         </div>
 
         <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 shrink-0">
-          {statusOptions.map((tab) => (
-            <button
-              key={tab.value}
-              type="button"
-              onClick={() => setStatusFilter(tab.value)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer border-0 ${
-                statusFilter === tab.value
-                  ? 'bg-[#733F49] text-white shadow-xs'
-                  : 'bg-[#FCF7F4] text-[#7A6B6C] hover:bg-[#FAF0EC] hover:text-[#733F49]'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+          {statusOptions.map((tab) => {
+            const TabIcon = tab.icon;
+            const isSelected = statusFilter === tab.value;
+            return (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => setStatusFilter(tab.value)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer border-0 flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-[#733F49] text-white shadow-xs'
+                    : 'bg-[#FCF7F4] text-[#7A6B6C] hover:bg-[#FAF0EC] hover:text-[#733F49]'
+                }`}
+              >
+                {TabIcon && (
+                  <TabIcon
+                    size={13}
+                    className={isSelected ? 'text-white' : tab.color || 'text-[#7A6B6C]'}
+                  />
+                )}
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -2256,20 +2352,86 @@ export default function InventoryManagement() {
               </div>
 
               {/* 3. Cơ Chế Trạng Thái Kho (Chỉ có ở modal Chỉnh Sửa) */}
-              <div>
+              <div className="relative">
                 <label className="block font-bold text-[#5F4E50] mb-1">
                   Cơ Chế Trạng Thái Kho *
                 </label>
-                <select
-                  value={editStatusType}
-                  onChange={(e) => setEditStatusType(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] font-medium outline-none focus:border-[#B8737D] cursor-pointer"
-                >
-                  <option value="stored">Còn Hàng</option>
-                  <option value="ready">Đã Cho Thuê</option>
-                  <option value="drying">Đang Bảo Dưỡng</option>
-                  <option value="out_of_stock">Hết Hàng</option>
-                </select>
+                {(() => {
+                  const currentOpt =
+                    STATUS_OPTIONS_CONFIG.find((opt) => opt.value === editStatusType) ||
+                    STATUS_OPTIONS_CONFIG[0];
+                  const CurrIcon = currentOpt.icon;
+
+                  return (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setEditStatusDropdownOpen((prev) => !prev)}
+                        className={`w-full px-3.5 py-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all shadow-2xs ${currentOpt.bgColor} ${currentOpt.borderColor}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <CurrIcon size={15} className={currentOpt.textColor} />
+                          <span className={`font-bold text-[13px] ${currentOpt.textColor}`}>
+                            {currentOpt.label}
+                          </span>
+                        </div>
+                        <ChevronDown
+                          size={16}
+                          className={`transition-transform duration-200 text-[#7A6B6C] ${
+                            editStatusDropdownOpen ? 'rotate-180' : ''
+                          }`}
+                        />
+                      </button>
+
+                      {editStatusDropdownOpen && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-20 cursor-default"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditStatusDropdownOpen(false);
+                            }}
+                          />
+                          <div className="absolute left-0 right-0 top-full mt-1.5 bg-white rounded-2xl shadow-xl border border-[#EFE5E1] z-30 animate-fadeIn overflow-hidden">
+                            {STATUS_OPTIONS_CONFIG.map((opt) => {
+                              const OptIcon = opt.icon;
+                              const isSelected = editStatusType === opt.value;
+                              return (
+                                <button
+                                  key={opt.value}
+                                  type="button"
+                                  onClick={() => {
+                                    setEditStatusType(opt.value);
+                                    setEditStatusDropdownOpen(false);
+                                  }}
+                                  className={`w-full px-4 py-3 flex items-center justify-between transition-colors cursor-pointer border-0 text-left first:rounded-t-2xl last:rounded-b-2xl ${
+                                    isSelected ? opt.activeBg : `bg-white ${opt.hoverBg}`
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2.5">
+                                    <div
+                                      className={`w-7 h-7 rounded-lg flex items-center justify-center ${opt.bgColor} border ${opt.borderColor} shrink-0`}
+                                    >
+                                      <OptIcon size={14} className={opt.textColor} />
+                                    </div>
+                                    <span
+                                      className={`font-bold text-[13px] leading-tight ${opt.textColor}`}
+                                    >
+                                      {opt.label}
+                                    </span>
+                                  </div>
+                                  {isSelected && (
+                                    <Check size={16} className={`${opt.textColor} shrink-0`} />
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
 
               {/* 4. Đơn Giá Thuê và Tiền Đặt Cọc */}
@@ -2524,39 +2686,23 @@ export default function InventoryManagement() {
               </div>
               </div>
 
-              {/* 9. Nút Thao Tác Cố Định Ở Dưới: Xóa Khỏi Kho, Hủy, Lưu Thay Đổi */}
-              <div className="flex items-center justify-between px-6 py-3.5 border-t border-[#F0E6E2] bg-[#FAF5F2]/60 shrink-0">
+              {/* 9. Nút Thao Tác Cố Định Ở Dưới: Hủy, Lưu Thay Đổi */}
+              <div className="flex items-center justify-end gap-3 px-6 py-3.5 border-t border-[#F0E6E2] bg-[#FAF5F2]/60 shrink-0">
                 <button
                   type="button"
                   disabled={isSubmittingEdit}
-                  onClick={() => {
-                    const itemToDelete = editingItem;
-                    setEditingItem(null);
-                    handleConfirmDeleteItem(itemToDelete);
-                  }}
-                  className="px-4 py-2.5 rounded-xl border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 cursor-pointer transition-colors flex items-center gap-1.5 text-xs disabled:opacity-50"
+                  onClick={() => setEditingItem(null)}
+                  className="px-5 py-2.5 rounded-xl border border-[#EFE2DC] bg-white text-[#7A6B6C] font-bold hover:bg-[#FAF2EE] cursor-pointer transition-colors"
                 >
-                  <Trash2 size={14} />
-                  <span>Xóa Khỏi Kho</span>
+                  Hủy
                 </button>
-
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    disabled={isSubmittingEdit}
-                    onClick={() => setEditingItem(null)}
-                    className="px-5 py-2.5 rounded-xl border border-[#EFE2DC] bg-white text-[#7A6B6C] font-bold hover:bg-[#FAF2EE] cursor-pointer transition-colors"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmittingEdit}
-                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#733F49] to-[#8C4654] hover:from-[#5A2D35] hover:to-[#733F49] text-white font-bold cursor-pointer transition-all shadow-md border-0 flex items-center gap-2 disabled:opacity-60"
-                  >
-                    {isSubmittingEdit ? 'Đang Lưu...' : 'Lưu Thay Đổi'}
-                  </button>
-                </div>
+                <button
+                  type="submit"
+                  disabled={isSubmittingEdit}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#733F49] to-[#8C4654] hover:from-[#5A2D35] hover:to-[#733F49] text-white font-bold cursor-pointer transition-all shadow-md border-0 flex items-center gap-2 disabled:opacity-60"
+                >
+                  {isSubmittingEdit ? 'Đang Lưu...' : 'Lưu Thay Đổi'}
+                </button>
               </div>
             </form>
           </div>
