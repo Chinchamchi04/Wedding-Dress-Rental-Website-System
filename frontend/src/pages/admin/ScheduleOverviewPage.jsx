@@ -127,7 +127,7 @@ const getEventBadge = (item) => {
 
 // Component hiển thị danh sách sự kiện trên từng ô ngày của Lịch Biểu
 // Hỗ trợ hiển thị đầy đủ 1-3 lịch, và tự động kích hoạt cuộn + nút mũi tên lướt xuống khi có từ 4 lịch trở lên
-// Hỗ trợ làm nổi bật ĐỒNG THỜI cả ngày Giao & ngày Trả khi click/hover vào đơn thuê
+// Hỗ trợ làm nổi bật ĐỒNG THỜI cả ngày Giao & ngày Trả khi click vào đơn thuê
 function CalendarDateCellEvents({
   dayApts = [],
   dayDeliveries = [],
@@ -138,7 +138,6 @@ function CalendarDateCellEvents({
   activeOrderCode = null,
   onSelectEvent,
   onSelectOrderHighlight,
-  onHoverOrder,
 }) {
   const scrollRef = React.useRef(null);
   const [canScrollDown, setCanScrollDown] = React.useState(false);
@@ -246,7 +245,7 @@ function CalendarDateCellEvents({
                       </div>
                     )}
                     <div className="text-[10px] text-gray-300 italic pt-0.5">
-                      (Bấm vào để làm nổi bật đồng thời ngày Giao & ngày Trả trên lịch)
+                      (Bấm vào để làm nổi bật đồng thời ngày Giao & ngày Trả)
                     </div>
                   </div>
                 }
@@ -256,11 +255,9 @@ function CalendarDateCellEvents({
                     e.stopPropagation();
                     onSelectOrderHighlight?.(item);
                   }}
-                  onMouseEnter={() => onHoverOrder?.(item.code || item.id)}
-                  onMouseLeave={() => onHoverOrder?.(null)}
                   className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[10.5px] font-medium border shadow-2xs transition-all cursor-pointer ${
                     isHighlight
-                      ? 'bg-sky-600 text-white border-sky-400 ring-2 ring-sky-300 font-bold scale-[1.04] shadow-md animate-pulse'
+                      ? 'bg-sky-600 text-white border-sky-500 font-bold shadow-xs'
                       : 'bg-sky-50/90 text-sky-900 border-sky-300 hover:bg-sky-100 hover:scale-[1.02]'
                   }`}
                 >
@@ -295,7 +292,7 @@ function CalendarDateCellEvents({
                     </div>
                   )}
                   <div className="text-[10px] text-gray-300 italic pt-0.5">
-                    (Bấm vào để làm nổi bật đồng thời ngày Giao & ngày Trả trên lịch)
+                    (Bấm vào để làm nổi bật đồng thời ngày Giao & ngày Trả)
                   </div>
                 </div>
               }
@@ -305,11 +302,9 @@ function CalendarDateCellEvents({
                   e.stopPropagation();
                   onSelectOrderHighlight?.(item);
                 }}
-                onMouseEnter={() => onHoverOrder?.(item.code || item.id)}
-                onMouseLeave={() => onHoverOrder?.(null)}
                 className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[10.5px] font-medium border shadow-2xs transition-all cursor-pointer ${
                   isHighlight
-                    ? 'bg-rose-600 text-white border-rose-400 ring-2 ring-rose-300 font-bold scale-[1.04] shadow-md animate-pulse'
+                    ? 'bg-rose-500 text-white border-rose-400 font-bold shadow-xs'
                     : isDone
                     ? 'bg-emerald-50/90 text-emerald-800 border-emerald-300 hover:bg-emerald-100 hover:scale-[1.02]'
                     : 'bg-rose-50/90 text-rose-800 border-rose-300 hover:bg-rose-100 hover:scale-[1.02]'
@@ -413,7 +408,6 @@ export default function ScheduleOverviewPage({ defaultTab }) {
 
   // Quản lý làm nổi bật ĐỒNG THỜI cả ngày Giao & ngày Trả của cùng một đơn hàng
   const [highlightedOrderCode, setHighlightedOrderCode] = useState(null);
-  const [hoveredOrderCode, setHoveredOrderCode] = useState(null);
 
   // Quản lý kéo co giãn kích thước & thu gọn/mở rộng bảng Chi Tiết Ngày Được Chọn
   const splitContainerRef = useRef(null);
@@ -598,7 +592,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
   const selectedDateKey = toDateKey(selectedDate);
 
   // Đơn hàng đang được làm nổi bật chu kỳ Giao - Trả
-  const activeOrderCode = highlightedOrderCode || hoveredOrderCode;
+  const activeOrderCode = highlightedOrderCode;
   const activeHighlightOrder = useMemo(() => {
     if (!activeOrderCode) return null;
     return orders.find(
@@ -813,12 +807,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
         onSelectOrderHighlight={(item) => {
           const targetCode = item.code || item.id;
           setHighlightedOrderCode((prev) => (prev === targetCode ? null : targetCode));
-          const targetDateStr = item.rentalStartDate || item.rentalEndDate || item.date;
-          if (targetDateStr) {
-            setSelectedDate(dayjs(targetDateStr).toDate());
-          }
         }}
-        onHoverOrder={(code) => setHoveredOrderCode(code)}
       />
     );
   };
@@ -915,11 +904,10 @@ export default function ScheduleOverviewPage({ defaultTab }) {
 
         /* NỔI BẬT ĐỒNG THỜI NGÀY GIAO & NGÀY TRẢ CỦA CÙNG ĐƠN HÀNG */
         .unibridal-luxury-calendar .ant-picker-calendar-date.cell-delivery-highlight {
-          border: 2.5px solid #0284C7 !important;
+          border: 2px solid #0284C7 !important;
           background: #F0F9FF !important;
-          box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.25), 0 8px 24px rgba(2, 132, 199, 0.15) !important;
-          transform: translateY(-2px);
-          z-index: 5;
+          box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2) !important;
+          z-index: 2;
         }
         .unibridal-luxury-calendar .ant-picker-calendar-date.cell-delivery-highlight .ant-picker-calendar-date-value {
           color: #0369A1 !important;
@@ -927,21 +915,14 @@ export default function ScheduleOverviewPage({ defaultTab }) {
         }
 
         .unibridal-luxury-calendar .ant-picker-calendar-date.cell-return-highlight {
-          border: 2.5px solid #E11D48 !important;
+          border: 2px solid #E11D48 !important;
           background: #FFF1F2 !important;
-          box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.25), 0 8px 24px rgba(225, 29, 72, 0.15) !important;
-          transform: translateY(-2px);
-          z-index: 5;
+          box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.2) !important;
+          z-index: 2;
         }
         .unibridal-luxury-calendar .ant-picker-calendar-date.cell-return-highlight .ant-picker-calendar-date-value {
           color: #BE123C !important;
           font-weight: 800 !important;
-        }
-
-        .unibridal-luxury-calendar .ant-picker-calendar-date.cell-range-highlight {
-          background: #FFFBF5 !important;
-          border-color: #FCD34D !important;
-          border-style: dashed !important;
         }
       `}</style>
 
@@ -1114,57 +1095,6 @@ export default function ScheduleOverviewPage({ defaultTab }) {
               <div ref={splitContainerRef} className="flex flex-col lg:flex-row items-stretch gap-0 relative">
                 {/* Lịch tháng Ant Design với Custom Styling và Header */}
                 <div className="flex-1 min-w-[340px] bg-white p-5 rounded-2xl shadow-xs border border-[#EFE5E1]">
-                  {/* Thanh Banner Chu Kỳ Thuê: Xuất hiện khi bấm chọn/hover vào đơn giao hoặc trả */}
-                  {activeHighlightOrder && (
-                    <div className="mb-3.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-sky-50 via-[#FAF0EC] to-rose-50 border-2 border-[#BA7A83] shadow-xs flex flex-wrap items-center justify-between gap-3 animate-fadeIn">
-                      <div className="flex items-center gap-2.5 text-xs flex-wrap">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#733F49] animate-ping" />
-                        <span className="font-bold text-gray-900">
-                          Chu kỳ đơn thuê <strong className="font-mono text-[#733F49] px-2 py-0.5 rounded-md bg-white border border-[#EEDECF]">{activeHighlightOrder.orderCode || activeHighlightOrder.contractCode}</strong>:
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (activeHighlightOrder.rentalStartDate) {
-                              setSelectedDate(dayjs(activeHighlightOrder.rentalStartDate).toDate());
-                            }
-                          }}
-                          className="px-2.5 py-1 rounded-lg bg-sky-100 hover:bg-sky-200 text-sky-900 font-extrabold border border-sky-300 flex items-center gap-1 transition cursor-pointer shadow-2xs"
-                          title="Bấm để xem ngày giao trên lịch"
-                        >
-                          📦 GIAO: {formatShortDate(activeHighlightOrder.rentalStartDate)}
-                        </button>
-                        <span className="text-[#854F55] font-black text-sm">➔</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (activeHighlightOrder.rentalEndDate) {
-                              setSelectedDate(dayjs(activeHighlightOrder.rentalEndDate).toDate());
-                            }
-                          }}
-                          className="px-2.5 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-900 font-extrabold border border-rose-300 flex items-center gap-1 transition cursor-pointer shadow-2xs"
-                          title="Bấm để xem ngày trả trên lịch"
-                        >
-                          🔄 HẠN TRẢ: {formatShortDate(activeHighlightOrder.rentalEndDate)}
-                        </button>
-                        <span className="text-gray-600 font-medium">
-                          • Khách hàng: <strong className="text-gray-900">{activeHighlightOrder.customerName || activeHighlightOrder.brideName}</strong>
-                        </span>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setHighlightedOrderCode(null);
-                          setHoveredOrderCode(null);
-                        }}
-                        className="px-2.5 py-1 text-xs rounded-lg bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 font-bold transition shadow-2xs cursor-pointer shrink-0"
-                      >
-                        ✕ Tắt nổi bật
-                      </button>
-                    </div>
-                  )}
-
                   {loading ? (
                     <div className="h-96 flex items-center justify-center">
                       <Spin tip="Đang tải dữ liệu lịch showroom..." />
@@ -1184,19 +1114,12 @@ export default function ScheduleOverviewPage({ defaultTab }) {
 
                         const isDeliveryHighlight = highlightStartDateKey && dateKey === highlightStartDateKey;
                         const isReturnHighlight = highlightEndDateKey && dateKey === highlightEndDateKey;
-                        const isRangeHighlight =
-                          highlightStartDateKey &&
-                          highlightEndDateKey &&
-                          dateKey > highlightStartDateKey &&
-                          dateKey < highlightEndDateKey;
 
                         let highlightClass = '';
                         if (isDeliveryHighlight) {
                           highlightClass = 'cell-delivery-highlight';
                         } else if (isReturnHighlight) {
                           highlightClass = 'cell-return-highlight';
-                        } else if (isRangeHighlight) {
-                          highlightClass = 'cell-range-highlight';
                         }
 
                         return (
@@ -1205,18 +1128,8 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                               isToday ? 'ant-picker-calendar-date-today' : ''
                             } ${highlightClass}`}
                           >
-                            <div className="ant-picker-calendar-date-value font-mono flex items-center justify-between">
-                              <span>{dateLabel}</span>
-                              {isDeliveryHighlight && (
-                                <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-sky-600 text-white tracking-wider animate-pulse">
-                                  GIAO
-                                </span>
-                              )}
-                              {isReturnHighlight && (
-                                <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-rose-600 text-white tracking-wider animate-pulse">
-                                  TRẢ
-                                </span>
-                              )}
+                            <div className="ant-picker-calendar-date-value font-mono">
+                              {dateLabel}
                             </div>
                             <div className="ant-picker-calendar-date-content">
                               {dateCellRender(date)}
