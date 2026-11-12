@@ -101,9 +101,61 @@ class ChatService {
   }
 
   /**
-   * Lấy hoặc tạo mới cuộc hội thoại cho khách hàng hiện tại (Đăng nhập hoặc Khách vãng lai)
+   * Tự động xóa sạch toàn bộ tin nhắn & cuộc hội thoại của khách vãng lai
+   * Chỉ giữ lại các cuộc hội thoại của khách hàng có tài khoản và đầy đủ thông tin
+   */
+  async cleanupGuestConversations() {
+    try {
+      // 1. Tìm các cuộc hội thoại không có customerId hoặc tên mặc định "Khách hàng"
+      const guestConversations = await Conversation.find({
+        $or: [
+          { customerId: null },
+          { customerId: { $exists: false } },
+          { customerName: { $regex: /^khách\s*hàng$/i } },
+          { customerName: '' },
+          { customerName: null },
+          { guestSessionId: { $ne: null } },
+        ],
+      }).select('_id');
+
+      const guestConvIds = guestConversations.map((c) => c._id);
+
+      // 2. Kiểm tra các conversation khác xem customerId có còn tồn tại tài khoản User thực tế hay không
+      const otherConvs = await Conversation.find({ _id: { $nin: guestConvIds } }).populate('customerId', '_id fullName email phone role');
+      for (const conv of otherConvs) {
+        if (!conv.customerId || !conv.customerId._id) {
+          guestConvIds.push(conv._id);
+        } else {
+          const name = (conv.customerId.fullName || conv.customerName || '').trim();
+          if (!name || name.toLowerCase() === 'khách hàng') {
+            guestConvIds.push(conv._id);
+          }
+        }
+      }
+
+      // 3. Xóa toàn bộ tin nhắn của các cuộc hội thoại khách vãng lai
+      if (guestConvIds.length > 0) {
+        await Message.deleteMany({ conversationId: { $in: guestConvIds } });
+        // 4. Xóa vĩnh viễn các cuộc hội thoại khách vãng lai
+        await Conversation.deleteMany({ _id: { $in: guestConvIds } });
+      }
+    } catch (err) {
+      console.warn('Lỗi dọn dẹp hội thoại khách vãng lai:', err);
+    }
+  }
+
+  /**
+   * Lấy hoặc tạo mới cuộc hội thoại cho khách hàng hiện tại (Chỉ dành cho khách hàng đã có tài khoản)
    */
   async getOrCreateCustomerConversation({ user, guestSessionId, guestName, guestPhone }) {
+    // Chỉ tạo hoặc lấy cuộc hội thoại nếu khách hàng đã đăng nhập có tài khoản
+    if (!user?._id) {
+      return {
+        conversation: null,
+        messages: [],
+      };
+    }
+
     let conversation = null;
 
     if (user?._id) {
@@ -185,11 +237,16 @@ class ChatService {
 
   /**
    * Lấy danh sách toàn bộ hội thoại cho Quản trị viên / Nhân viên Showroom
+   * Đã tự động xóa sạch các tin nhắn của khách vãng lai
    */
   async getAllConversations(params = {}) {
-    await this.seedInitialConversationsIfEmpty();
+    // 1. Tự động xóa sạch toàn bộ tin nhắn & cuộc hội thoại của khách vãng lai
+    await this.cleanupGuestConversations();
 
-    const query = {};
+    const query = {
+      customerId: { $ne: null, $exists: true },
+    };
+
     if (params.status && params.status !== 'all') {
       if (params.status === 'unread') {
         query.unreadStaffCount = { $gt: 0 };
@@ -223,16 +280,21 @@ class ChatService {
       .populate('staffId', 'fullName email phone avatar')
       .sort({ isPinned: -1, updatedAt: -1 });
 
-    // Chỉ giữ lại hội thoại của KHÁCH HÀNG thực tế (loại trừ tài khoản Admin / Staff)
+    // Chỉ giữ lại hội thoại của KHÁCH HÀNG CÓ TÀI KHOẢN VÀ THÔNG TIN (loại trừ tài khoản Admin / Staff và Khách vãng lai)
     const customerOnly = conversations.filter((c) => {
+      if (!c.customerId || !c.customerId._id) return false;
       const userRole = (c.customerId?.role || '').toLowerCase();
       if (userRole === 'admin' || userRole === 'staff') return false;
-      const name = (c.customerId?.fullName || c.customerName || '').toLowerCase();
+
+      const name = (c.customerId?.fullName || c.customerName || '').trim();
+      if (!name || name.toLowerCase() === 'khách hàng') return false;
+
+      const lowerName = name.toLowerCase();
       if (
-        name.includes('quản trị') ||
-        name.includes('administrator') ||
-        name.includes('chuyên viên') ||
-        name.includes('staff')
+        lowerName.includes('quản trị') ||
+        lowerName.includes('administrator') ||
+        lowerName.includes('chuyên viên') ||
+        lowerName.includes('staff')
       ) {
         return false;
       }
@@ -240,6 +302,15 @@ class ChatService {
     });
 
     return customerOnly;
+  }
+
+  /**
+   * Xóa một cuộc hội thoại và toàn bộ tin nhắn bên trong
+   */
+  async deleteConversation(id) {
+    await Message.deleteMany({ conversationId: id });
+    const deleted = await Conversation.findByIdAndDelete(id);
+    return deleted;
   }
 
   /**

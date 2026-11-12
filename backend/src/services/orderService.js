@@ -83,6 +83,7 @@ export const createOrder = async (orderData, currentUser = null) => {
       code: item.code || item.dressCode || '',
       name: item.name || 'Váy cưới Haute Couture',
       size: item.size || 'S',
+      color: item.color || item.selectedColor?.name || item.fabric || orderData.color || orderData.selectedColor || 'Trắng Sữa',
       rentPrice: Number(item.rentPrice || item.price || 0),
       depositAmount: Number(item.depositAmount || item.deposit || 0),
       image: sanitizeImage(item.image || item.images?.[0]),
@@ -94,6 +95,7 @@ export const createOrder = async (orderData, currentUser = null) => {
         code: dress.code || '',
         name: dress.name || 'Váy cưới Haute Couture',
         size: orderData.selectedSize || dress.size || 'S',
+        color: orderData.selectedColor || orderData.color || dress.color || 'Trắng Sữa',
         rentPrice: Number(dress.price || 0),
         depositAmount: Number(dress.depositAmount || dress.deposit || 0),
         image: sanitizeImage(dress.image || dress.images?.[0]),
@@ -402,6 +404,7 @@ export const getAllOrders = async (filters = {}) => {
       return {
         ...it,
         code,
+        color: it.color || it.fabric || o.color || 'Trắng Sữa',
       };
     });
 
@@ -455,8 +458,13 @@ export const getOrderByIdOrCode = async (idOrCode) => {
       }
     ).catch(() => {});
   }
+  const items = (order.items || []).map((it) => ({
+    ...it,
+    color: it.color || it.fabric || order.color || 'Trắng Sữa',
+  }));
   return {
     ...order,
+    items,
     status,
     inspection: inspection || null,
   };

@@ -249,16 +249,25 @@ export default function DressDetailPage() {
   const handleDirectRent = () => {
     addToCart({
       ...dress,
+      selectedSize,
       size: selectedSize,
+      selectedColor,
+      color: selectedColor?.name,
+      fabric: selectedColor?.name,
       rentalDays: 1,
     });
-    navigate(`/checkout?dressId=${dress.id}&size=${selectedSize}`);
+    const colorQuery = selectedColor?.name ? `&color=${encodeURIComponent(selectedColor.name)}` : '';
+    navigate(`/checkout?dressId=${dress.id}&size=${selectedSize}${colorQuery}`);
   };
 
   const handleOnlineRent = () => {
     const added = addToCart({
       ...dress,
+      selectedSize,
       size: selectedSize,
+      selectedColor,
+      color: selectedColor?.name,
+      fabric: selectedColor?.name,
       rentalDays: 1,
     });
     setRentNotification(
@@ -495,19 +504,8 @@ export default function DressDetailPage() {
                 {dress.name}
               </h1>
 
-              {/* Rating and SKU row */}
+              {/* SKU row */}
               <div className="flex items-center justify-between pb-4 border-b border-[#EAE0DC] text-[13px]">
-                <div className="flex items-center gap-1.5 text-[#B26B74]">
-                  <div className="flex text-[#B26B74]">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-current" />
-                    ))}
-                  </div>
-                  <span className="font-bold ml-1 text-[#231A19]">
-                    {Number(dress.rating || 5).toFixed(1)}
-                  </span>
-                  <span className="text-[#8A7978]">({dress.rentCount})</span>
-                </div>
                 <div className="text-[#8A7978] tracking-wider text-[12px] font-medium">
                   MÃ SẢN PHẨM: <span className="text-[#231A19] font-bold">{dress.code}</span>
                 </div>

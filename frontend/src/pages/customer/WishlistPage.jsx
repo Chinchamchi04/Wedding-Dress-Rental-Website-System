@@ -15,6 +15,7 @@ import {
 } from '../../services/wishlistService';
 import { addToCart } from '../../services/cartService';
 import { getAllDresses, formatCurrencyVND } from '../../services/dressService';
+import RentSelectionModal from '../../components/common/RentSelectionModal';
 import { DRESS_CATALOG } from '../../data/dressCatalog';
 import logoEmblemImg from '../../assets/logo_emblem.png';
 
@@ -24,6 +25,8 @@ export default function WishlistPage() {
 
   const [wishlistItems, setWishlistItems] = useState(() => getWishlistDresses());
   const [wishlistIds, setWishlistIds] = useState(() => getWishlistIds());
+  const [selectedDressForRent, setSelectedDressForRent] = useState(null);
+  const [isRentModalOpen, setIsRentModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [collectionDresses, setCollectionDresses] = useState(() => DRESS_CATALOG || []);
   const [recommendedDresses, setRecommendedDresses] = useState([]);
@@ -119,10 +122,10 @@ export default function WishlistPage() {
     );
   };
 
-  // Thuê ngay -> Chuyển đến checkout
+  // Thuê ngay -> Mở Popup chọn màu sắc & kích thước chuẩn Ảnh 3
   const handleRentNow = (dress) => {
-    addToCart(dress);
-    navigate(`/checkout?dressId=${dress.id}`);
+    setSelectedDressForRent(dress);
+    setIsRentModalOpen(true);
   };
 
   // Thêm tất cả sản phẩm trong Wishlist vào giỏ thuê hàng
@@ -538,6 +541,16 @@ export default function WishlistPage() {
             </div>
           </section>
         </div>
+
+        {/* Popup chọn màu sắc & kích thước chuẩn Ảnh 3 khi bấm Thuê Ngay */}
+        <RentSelectionModal
+          isOpen={isRentModalOpen}
+          onClose={() => {
+            setIsRentModalOpen(false);
+            setSelectedDressForRent(null);
+          }}
+          dress={selectedDressForRent}
+        />
       </main>
 
       {/* 3. Booking Modal */}

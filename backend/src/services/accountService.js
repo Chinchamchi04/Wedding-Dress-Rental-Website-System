@@ -159,7 +159,11 @@ const COLOR_PALETTE = {
 };
 
 export async function createDress(data) {
-  if (!data?.name) fail(400, 'Tên váy cưới không được để trống.');
+  if (!data?.name?.trim()) fail(400, 'Tên váy cưới không được để trống.');
+  if (!data?.rentPrice || Number(data.rentPrice) <= 0) fail(400, 'Đơn giá thuê váy cưới không được để trống và phải lớn hơn 0.');
+  if (!data?.depositAmount || Number(data.depositAmount) <= 0) fail(400, 'Tiền đặt cọc váy cưới không được để trống và phải lớn hơn 0.');
+  if (!data?.color?.trim()) fail(400, 'Màu sắc váy cưới không được để trống.');
+  if (!Array.isArray(data?.images) || data.images.length === 0) fail(400, 'Váy cưới bắt buộc phải có ít nhất một hình ảnh sản phẩm.');
   const count = await Dress.countDocuments();
   const code = data.code || `UB-${(count + 1).toString().padStart(3, '0')}`;
   const slug = (data.slug || data.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now().toString().slice(-4);

@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { getAllDresses } from '../../services/dressService';
 import { dressImage } from '../../services/dressApiService';
 import { getWishlistIds, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
+import RentSelectionModal from '../common/RentSelectionModal';
 import card1Img from '../../assets/card1_elysian.jpg';
 import card2Img from '../../assets/card2_celeste.jpg';
 import card3Img from '../../assets/card3_lumiere.jpg';
@@ -89,9 +90,11 @@ const renderDepositWithDong = (amountVal) => {
 const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: propWishlistedIds }) => {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState(products);
   const [error, setError] = useState('');
   const [internalWishlistIds, setInternalWishlistIds] = useState(() => getWishlistIds());
+  const [selectedDressForRent, setSelectedDressForRent] = useState(null);
+  const [isRentModalOpen, setIsRentModalOpen] = useState(false);
 
   useEffect(() => {
     const refresh = () => setInternalWishlistIds(getWishlistIds());
@@ -121,6 +124,9 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
             size: d.sizes?.length
               ? `Size: ${d.sizes.map((s) => (typeof s === 'string' ? s : s.id || s.label)).join(' - ')}`
               : 'Size: S - M',
+            sizes: d.sizes,
+            colors: d.colors || d.colorOptions,
+            color: d.color,
             price: d.price || d.rentPrice || 5000000,
             depositAmount: d.depositAmount || 15000000,
             image: dressImage(d) || card1Img,
@@ -128,11 +134,13 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
           setItems(mapped);
           setError('');
         } else if (isMounted) {
+          setItems(products);
           setError('');
         }
       })
       .catch((err) => {
         if (isMounted) {
+          setItems(products);
           setError('');
         }
       });
@@ -278,7 +286,8 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/checkout?dressId=${item.id}`);
+                        setSelectedDressForRent(item);
+                        setIsRentModalOpen(true);
                       }}
                       className="w-full py-3 rounded-[13px] bg-[#B26B74] hover:bg-[#a05a63] text-white font-jakarta text-[14px] font-medium tracking-[0.8px] transition-colors cursor-pointer border-0 shadow-xs flex items-center justify-center active:scale-[0.99]"
                     >
@@ -291,6 +300,16 @@ const TrendingCollection = ({ onBookProduct, onToggleWishlist, wishlistedIds: pr
           })}
         </div>
       </div>
+
+      {/* Popup chọn màu sắc & kích thước chuẩn Ảnh 3 khi bấm Thuê Ngay */}
+      <RentSelectionModal
+        isOpen={isRentModalOpen}
+        onClose={() => {
+          setIsRentModalOpen(false);
+          setSelectedDressForRent(null);
+        }}
+        dress={selectedDressForRent}
+      />
     </section>
   );
 };

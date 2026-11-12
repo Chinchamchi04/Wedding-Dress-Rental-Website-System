@@ -9,6 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { addToCart } from '../../services/cartService';
 import { getWishlistIds, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
 import { getAllDresses, getCategories, formatCurrencyVND } from '../../services/dressService';
+import RentSelectionModal from '../../components/common/RentSelectionModal';
 
 import logoEmblemImg from '../../assets/logo_emblem.png';
 import { DRESS_CATALOG } from '../../data/dressCatalog';
@@ -117,6 +118,8 @@ export default function CollectionPage() {
   const [wishlistIds, setWishlistIds] = useState(() => getWishlistIds());
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedDressForRent, setSelectedDressForRent] = useState(null);
+  const [isRentModalOpen, setIsRentModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
   // Danh mục sản phẩm (kết hợp dữ liệu chuẩn Figma 72 mẫu + backend API nếu có)
@@ -220,10 +223,10 @@ export default function CollectionPage() {
     showToast(added ? `Đã thêm "${dress.name}" vào giỏ thuê váy!` : `"${dress.name}" đã có trong giỏ thuê váy.`);
   };
 
-  // Thuê Ngay: Thêm vào đơn và chuyển thẳng tới trang Ký Hợp Đồng và Thanh Toán
+  // Thuê Ngay: Mở Popup chọn màu sắc & kích thước chuẩn Ảnh 3
   const handleRentNow = (dress) => {
-    addToCart(dress);
-    navigate(`/checkout?dressId=${dress.id}`);
+    setSelectedDressForRent(dress);
+    setIsRentModalOpen(true);
   };
 
   // Đặt Lịch Thử Váy Riêng Tư
@@ -1039,6 +1042,16 @@ export default function CollectionPage() {
           </div>
 
         </div>
+
+        {/* Popup chọn màu sắc & kích thước chuẩn Ảnh 3 khi bấm Thuê Ngay */}
+        <RentSelectionModal
+          isOpen={isRentModalOpen}
+          onClose={() => {
+            setIsRentModalOpen(false);
+            setSelectedDressForRent(null);
+          }}
+          dress={selectedDressForRent}
+        />
 
       </main>
 
