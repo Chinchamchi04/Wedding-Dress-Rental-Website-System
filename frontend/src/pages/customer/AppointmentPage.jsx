@@ -12,7 +12,7 @@ import { Calendar,
   Phone,
   Mail,
   Heart,
-  QrCode,
+  Sparkles,
   Download,
   CalendarCheck,
   ChevronRight,
@@ -359,11 +359,16 @@ export default function AppointmentPage() {
 
     try {
       const res = await createAppointmentApi(appointmentData);
-      const apiData = res?.data || {};
+      const raw = res?.data || res || {};
+      const apiData = raw?.appointmentCode ? raw : (raw?.data || raw);
+      const generatedCode = `APT-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+      const appointmentCode = apiData?.appointmentCode || apiData?.id || raw?.appointmentCode || raw?.data?.appointmentCode || appointmentData.id || generatedCode;
+
       const result = {
         ...appointmentData,
-        ...apiData,
-        id: apiData.appointmentCode || apiData.id || appointmentData.id || `APT-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+        ...(typeof apiData === 'object' ? apiData : {}),
+        id: appointmentCode,
+        appointmentCode: appointmentCode,
         branchId: selectedBranch.id,
         branch: selectedBranch.id,
         branchName: selectedBranch.name,
@@ -379,9 +384,13 @@ export default function AppointmentPage() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       const localResult = createAppointment(appointmentData);
+      const generatedCode = `APT-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+      const appointmentCode = localResult?.appointmentCode || localResult?.id || generatedCode;
       setConfirmedBooking({
         ...appointmentData,
-        ...localResult,
+        ...(typeof localResult === 'object' ? localResult : {}),
+        id: appointmentCode,
+        appointmentCode: appointmentCode,
         branchId: selectedBranch.id,
         branch: selectedBranch.id,
         branchName: selectedBranch.name,
@@ -479,10 +488,10 @@ export default function AppointmentPage() {
                   </div>
                   <div className="text-center sm:text-right shrink-0">
                     <span className="text-[10.5px] uppercase font-bold text-[#847374] block tracking-wider mb-1">
-                      MÃ CHECK-IN TẠI QUẦY
+                      MÃ ĐƠN / CHECK-IN TẠI QUẦY
                     </span>
-                    <span className="font-mono text-[17px] font-extrabold text-[#733F49] bg-[#FAF0EC] px-3.5 py-1.5 rounded-xl border border-[#F2D8D4] shadow-xs inline-block">
-                      {confirmedBooking.id}
+                    <span className="font-mono text-[18px] font-extrabold text-[#733F49] bg-[#FAF0EC] px-4 py-1.5 rounded-xl border border-[#F2D8D4] shadow-xs inline-block tracking-wider">
+                      {confirmedBooking.appointmentCode || confirmedBooking.id || 'APT-2026-8888'}
                     </span>
                   </div>
                 </div>
@@ -651,18 +660,23 @@ export default function AppointmentPage() {
                   </div>
                 )}
 
-                {/* QR Code Check-in Pass Strip */}
+                {/* Check-in Pass Strip (Đã xóa ô QR, hiển thị mã đơn rõ ràng) */}
                 <div className="p-4 sm:p-5 rounded-2xl bg-[#FCF9F6] border border-[#EEDECF] flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-4 text-center sm:text-left">
-                    <div className="w-16 h-16 bg-white p-1.5 rounded-2xl border border-[#EEDECF] flex items-center justify-center shrink-0 shadow-sm">
-                      <QrCode className="w-12 h-12 text-[#2C2523]" />
+                  <div className="flex items-center gap-3.5 text-center sm:text-left">
+                    <div className="w-11 h-11 bg-white rounded-xl border border-[#EEDECF] flex items-center justify-center shrink-0 shadow-xs text-[#733F49]">
+                      <Sparkles className="w-5 h-5 text-[#D4AF37]" />
                     </div>
                     <div>
-                      <div className="font-bold text-[13.5px] text-[#2C2523]">
-                        Mã QR Thẻ Khách Hàng Danh Dự
+                      <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-start">
+                        <span className="font-bold text-[13.5px] text-[#2C2523]">
+                          Mã Đơn Lịch Hẹn:
+                        </span>
+                        <span className="font-mono text-[16px] font-extrabold text-[#733F49] bg-white px-3 py-0.5 rounded-lg border border-[#F2D8D4] shadow-2xs">
+                          {confirmedBooking.appointmentCode || confirmedBooking.id || 'APT-2026-8888'}
+                        </span>
                       </div>
-                      <div className="text-[11.5px] text-[#847374] leading-relaxed max-w-[380px]">
-                        Xuất trình mã này tại quầy tiếp tân để chuyên viên hướng dẫn nàng bước thẳng vào Private Suite.
+                      <div className="text-[12px] text-[#847374] leading-relaxed mt-1 max-w-[420px]">
+                        Quý cô chỉ cần đọc mã này tại quầy tiếp tân để chuyên viên hướng dẫn nàng bước thẳng vào Private Suite.
                       </div>
                     </div>
                   </div>
