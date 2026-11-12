@@ -536,11 +536,19 @@ function InspectionModal({ order, onClose, onSuccess }) {
   };
 
   const lateDays = calcLate(order.rentalEndDate);
-  const dailyLateFee = itemsCondition.reduce((acc, ic) => acc + ic.rentPrice * 0.05, 0);
-  const lateFee = lateDays * dailyLateFee;
+  const totalDeposit = Number(order.totalDeposit || 0);
+  const totalRentPrice = Number(order.totalRentPrice || itemsCondition.reduce((acc, ic) => acc + (ic.rentPrice || 0), 0) || 0);
+
+  // Phạt trễ hạn: 50% tiền thuê mỗi ngày, quá 5 ngày chưa trả tịch thu 100% tiền cọc
+  let lateFee = 0;
+  if (lateDays > 5) {
+    lateFee = totalDeposit;
+  } else if (lateDays > 0) {
+    lateFee = Math.min(totalDeposit, lateDays * Math.round(totalRentPrice * 0.5));
+  }
   const totalCompensation = itemsCondition.reduce((acc, ic) => acc + Number(ic.compensation || 0), 0);
-  const totalDeduction = lateFee + totalCompensation;
-  const finalRefund = Math.max(0, (order.totalDeposit ?? 0) - totalDeduction);
+  const totalDeduction = Math.min(totalDeposit, lateFee + totalCompensation);
+  const finalRefund = Math.max(0, totalDeposit - totalDeduction);
 
   const updateItem = (idx, field, value) => {
     if (isReadOnly) return;
@@ -744,8 +752,8 @@ function InspectionModal({ order, onClose, onSuccess }) {
               </strong>
             </div>
             {lateDays > 0 && (
-              <span className="text-amber-800 font-bold bg-amber-100 px-2 py-0.5 rounded text-[11px]">
-                Trễ {lateDays} ngày (+{fmtVnd(lateFee)})
+              <span className={`font-bold px-2 py-0.5 rounded text-[11px] ${lateDays > 5 ? 'text-rose-900 bg-rose-100 border border-rose-300' : 'text-amber-800 bg-amber-100'}`}>
+                {lateDays > 5 ? `Trễ ${lateDays} ngày (Quá 5 ngày: Tịch thu 100% cọc -${fmtVnd(lateFee)})` : `Trễ ${lateDays} ngày (Phạt 50%/ngày: -${fmtVnd(lateFee)})`}
               </span>
             )}
           </div>
@@ -1020,9 +1028,8 @@ function InspectionModal({ order, onClose, onSuccess }) {
                   type="button"
                   disabled={submitting}
                   onClick={handleSubmit}
-                  className={`flex-1 py-2 rounded-xl text-[12px] font-bold text-white transition-colors border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs ${
-                    confirmOnSite ? 'bg-[#1E8347] hover:bg-[#166534]' : 'bg-[#733F49] hover:bg-[#5C3038]'
-                  }`}
+                  className={`flex-1 py-2 rounded-xl text-[12px] font-bold text-white transition-colors border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs ${confirmOnSite ? 'bg-[#1E8347] hover:bg-[#166534]' : 'bg-[#733F49] hover:bg-[#5C3038]'
+                    }`}
                 >
                   {submitting ? (
                     <RefreshCw size={13} className="animate-spin" />
@@ -1062,10 +1069,21 @@ function RefundModal({ order, onClose, onSuccess }) {
   }, [order._id]);
 
   const lateDays = inspectionData?.lateDays ?? calcLate(order.rentalEndDate);
-  const lateFee = inspectionData?.latePenaltyFee ?? 0;
+  const totalDeposit = Number(order.totalDeposit || 0);
+  const totalRentPrice = Number(order.totalRentPrice || 0);
+  let lateFee = inspectionData?.latePenaltyFee;
+  if (lateFee === undefined) {
+    if (lateDays > 5) {
+      lateFee = totalDeposit;
+    } else if (lateDays > 0) {
+      lateFee = Math.min(totalDeposit, lateDays * Math.round(totalRentPrice * 0.5));
+    } else {
+      lateFee = 0;
+    }
+  }
   const compensation = inspectionData?.itemsCondition?.reduce((sum, item) => sum + (item.repairFee || 0), 0) ?? 0;
-  const totalDeduction = inspectionData?.totalDeduction ?? (lateFee + compensation);
-  const finalRefund = inspectionData?.finalRefundAmount ?? Math.max(0, (order.totalDeposit ?? 0) - totalDeduction);
+  const totalDeduction = inspectionData?.totalDeduction ?? Math.min(totalDeposit, lateFee + compensation);
+  const finalRefund = inspectionData?.finalRefundAmount ?? Math.max(0, totalDeposit - totalDeduction);
 
   const handleConfirmRefund = async () => {
     setSubmitting(true);
@@ -1405,7 +1423,7 @@ export default function OrderRentalManagement() {
             return () => clearTimeout(timer);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [queryOrderCode, queryAction, orders, loading]);
 
@@ -1503,8 +1521,8 @@ export default function OrderRentalManagement() {
         statusFilter === 'all'
           ? true
           : statusFilter === 'disputed'
-          ? isDisputed
-          : o.status === statusFilter;
+            ? isDisputed
+            : o.status === statusFilter;
 
       // Khi người dùng đang tìm kiếm cụ thể: Hiển thị ngay kết quả kể cả đơn nằm ở Kho Lưu Trữ
       if (cleanQ) {
@@ -1759,18 +1777,16 @@ export default function OrderRentalManagement() {
           <button
             type="button"
             onClick={() => { setViewMode('active'); setStatusFilter('all'); setActivePage(1); }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer border-0 ${
-              viewMode === 'active'
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer border-0 ${viewMode === 'active'
                 ? 'bg-[#733F49] text-white shadow-xs'
                 : 'bg-[#FCF7F4] text-[#7A6B6C] hover:bg-[#FAF0EC] hover:text-[#733F49]'
-            }`}
+              }`}
           >
             <SlidersHorizontal size={14} />
             <span>Đơn Đang Xử Lý</span>
             <span
-              className={`px-2 py-0.5 rounded-full text-[10.5px] font-bold ${
-                viewMode === 'active' ? 'bg-white/20 text-white' : 'bg-[#FAF0EC] text-[#733F49]'
-              }`}
+              className={`px-2 py-0.5 rounded-full text-[10.5px] font-bold ${viewMode === 'active' ? 'bg-white/20 text-white' : 'bg-[#FAF0EC] text-[#733F49]'
+                }`}
             >
               {activeOrdersCount}
             </span>
@@ -1779,18 +1795,16 @@ export default function OrderRentalManagement() {
           <button
             type="button"
             onClick={() => { setViewMode('archived'); setStatusFilter('all'); setActivePage(1); }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer border-0 ${
-              viewMode === 'archived'
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer border-0 ${viewMode === 'archived'
                 ? 'bg-[#1E8347] text-white shadow-xs'
                 : 'bg-[#FCF7F4] text-[#7A6B6C] hover:bg-[#FAF0EC] hover:text-[#733F49]'
-            }`}
+              }`}
           >
             <Archive size={14} />
             <span>Kho Lưu Trữ Đơn Hoàn Tất</span>
             <span
-              className={`px-2 py-0.5 rounded-full text-[10.5px] font-bold ${
-                viewMode === 'archived' ? 'bg-white/20 text-white' : 'bg-[#EAF7EE] text-[#1E8347]'
-              }`}
+              className={`px-2 py-0.5 rounded-full text-[10.5px] font-bold ${viewMode === 'archived' ? 'bg-white/20 text-white' : 'bg-[#EAF7EE] text-[#1E8347]'
+                }`}
             >
               {archivedOrdersCount}
             </span>
@@ -1868,13 +1882,12 @@ export default function OrderRentalManagement() {
                     <tr
                       id={`order-row-${order.orderCode || order._id}`}
                       key={order._id || order.orderCode}
-                      className={`transition-all duration-300 ${
-                        isHighlighted
+                      className={`transition-all duration-300 ${isHighlighted
                           ? 'bg-amber-100/80 border-l-4 border-l-amber-500 ring-2 ring-amber-400 ring-inset shadow-md'
                           : isDisputed
-                          ? 'bg-red-50/40 hover:bg-red-50/70 border-l-4 border-l-red-500'
-                          : 'hover:bg-[#FCF9F7]'
-                      }`}
+                            ? 'bg-red-50/40 hover:bg-red-50/70 border-l-4 border-l-red-500'
+                            : 'hover:bg-[#FCF9F7]'
+                        }`}
                     >
                       {/* Mã đơn */}
                       <td className="py-4 px-5">
@@ -1982,11 +1995,10 @@ export default function OrderRentalManagement() {
                               type="button"
                               onClick={() => setInspectionOrder(order)}
                               title={isDisputed ? 'Khách đã gửi khiếu nại — Nhấn để xem và đối soát xử lý' : 'Xem biên bản kiểm định hiện trạng'}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all cursor-pointer border ${
-                                isDisputed
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all cursor-pointer border ${isDisputed
                                   ? 'bg-red-600 text-white hover:bg-red-700 border-red-600 shadow-xs'
                                   : 'bg-[#FAF0EB] text-[#733F49] hover:bg-[#F3E2DB] border-[#ECD9D3]'
-                              }`}
+                                }`}
                             >
                               {isDisputed ? (
                                 <>

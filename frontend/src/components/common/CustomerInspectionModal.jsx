@@ -479,8 +479,8 @@ export default function CustomerInspectionModal({ order, onClose, onUpdated }) {
                         <span className="font-semibold text-[#2C2523]">{formatVnd(initialDeposit)}</span>
                       </div>
                       {lateDays > 0 && (
-                        <div className="flex justify-between text-[#92400E]">
-                          <span>Phí trễ hạn ({lateDays} ngày):</span>
+                        <div className={`flex justify-between ${lateDays > 5 ? 'text-rose-700 font-bold' : 'text-[#92400E]'}`}>
+                          <span>Phí trễ hạn ({lateDays} ngày{lateDays > 5 ? ' - Quá 5 ngày: Tịch thu cọc' : ' - 50%/ngày'}):</span>
                           <span className="font-semibold">-{formatVnd(lateFee)}</span>
                         </div>
                       )}

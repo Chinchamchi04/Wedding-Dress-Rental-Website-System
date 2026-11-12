@@ -544,14 +544,24 @@ export const submitReturnInspection = async (orderId, data, staffUser) => {
     throw new Error('Đơn thuê chưa ở trạng thái có thể kiểm định. Vui lòng xác nhận khách đã nhận váy trước.');
   }
 
-  // Tính số ngày trễ
+  // Tính số ngày trễ và phí phạt trễ hạn: 50% tiền thuê mỗi ngày, quá 5 ngày chưa trả tịch thu 100% tiền cọc
   const today = new Date();
   const dueDate = new Date(order.rentalEndDate);
   const lateDays = Math.max(0, Math.floor((today - dueDate) / (1000 * 60 * 60 * 24)));
-  const latePenaltyFee = lateDays * Math.round(order.totalRentPrice * 0.05); // 5% mỗi ngày trễ
+  const totalDeposit = Number(order.totalDeposit || 0);
+  const totalRentPrice = Number(order.totalRentPrice || 0);
+
+  let latePenaltyFee = 0;
+  if (lateDays > 5) {
+    // Quá 5 ngày chưa trả: tịch thu 100% tiền cọc
+    latePenaltyFee = totalDeposit;
+  } else if (lateDays > 0) {
+    // Trễ hạn 1 - 5 ngày: phạt 50% giá phí thuê mỗi ngày
+    latePenaltyFee = Math.min(totalDeposit, lateDays * Math.round(totalRentPrice * 0.5));
+  }
 
   // Tổng khấu trừ từ hư hỏng
-  const maxAllowed = order.totalDeposit || order.totalRentPrice || 0;
+  const maxAllowed = totalDeposit || totalRentPrice || 0;
   const itemsCondition = (data.itemsCondition || []).map((item) => {
     const fee = Number(item.repairFee ?? item.compensation ?? 0);
     if (fee > maxAllowed && maxAllowed > 0) {
@@ -566,8 +576,8 @@ export const submitReturnInspection = async (orderId, data, staffUser) => {
   });
   const damageTotal = itemsCondition.reduce((sum, i) => sum + i.repairFee, 0);
 
-  const totalDeduction = latePenaltyFee + damageTotal;
-  const finalRefundAmount = Math.max(0, order.totalDeposit - totalDeduction);
+  const totalDeduction = Math.min(totalDeposit, latePenaltyFee + damageTotal);
+  const finalRefundAmount = Math.max(0, totalDeposit - totalDeduction);
   const evidencePhotos = Array.isArray(data.evidencePhotos) ? data.evidencePhotos : [];
   const confirmOnSite = Boolean(data.confirmOnSite);
   const refundMethod = data.refundMethod || 'cash';
