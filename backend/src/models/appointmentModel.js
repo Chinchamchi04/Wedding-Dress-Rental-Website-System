@@ -50,7 +50,7 @@ const appointmentSchema = new mongoose.Schema(
     },
     guestsCount: {
       type: Number,
-      default: 2,
+      default: 1,
     },
     interestedDresses: [
       {

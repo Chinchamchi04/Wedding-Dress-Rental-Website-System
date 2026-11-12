@@ -85,7 +85,7 @@ const INITIAL_APPOINTMENTS = [
     branchPhone: '028 3822 8998',
     date: '2026-10-25',
     timeSlot: '13:30 — 15:00',
-    guestsCount: 2,
+    guestsCount: 1,
     selectedDresses: [
       { id: 1, name: 'Elysian Rose Ballgown', code: 'BGW-2026' },
       { id: 2, name: 'Celeste Royal Mermaid', code: 'MMD-2026' },

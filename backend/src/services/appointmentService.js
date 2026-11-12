@@ -3,14 +3,25 @@ import { sendAppointmentSuccessEmail } from '../utils/sendEmail.js';
 
 const BRANCH_DETAILS = {
   'hcm-q1': {
-    name: 'UniBridal Flagship Showroom Q.1 TP.HCM',
-    address: '128 Đồng Khởi, P. Bến Nghé, Quận 1, TP. Hồ Chí Minh',
-    phone: '1800 8998',
+    name: 'UniBridal Flagship Atelier — Quận 1, TP. HCM',
+    location: 'Quận 1, TP. HCM',
+    address: '88 Nam Kỳ Khởi Nghĩa, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh',
+    phone: '028 3822 8998',
+    mapUrl: 'https://maps.google.com/?q=88+Nam+Ky+Khoi+Nghia+Quan+1+TP+Ho+Chi+Minh',
+  },
+  'hn-hoankiem': {
+    name: 'UniBridal Heritage Mansion — Hoàn Kiếm, Hà Nội',
+    location: 'Hoàn Kiếm, Hà Nội',
+    address: '26 Lý Thường Kiệt, Phường Hàng Bài, Quận Hoàn Kiếm, Hà Nội',
+    phone: '024 3936 8998',
+    mapUrl: 'https://maps.google.com/?q=26+Ly+Thuong+Kiet+Hoan+Kiem+Ha+Noi',
   },
   'hn-hk': {
-    name: 'UniBridal Heritage Showroom Hoàn Kiếm Hà Nội',
-    address: '45 Tràng Tiền, P. Tràng Tiền, Q. Hoàn Kiếm, Hà Nội',
-    phone: '1800 8999',
+    name: 'UniBridal Heritage Mansion — Hoàn Kiếm, Hà Nội',
+    location: 'Hoàn Kiếm, Hà Nội',
+    address: '26 Lý Thường Kiệt, Phường Hàng Bài, Quận Hoàn Kiếm, Hà Nội',
+    phone: '024 3936 8998',
+    mapUrl: 'https://maps.google.com/?q=26+Ly+Thuong+Kiet+Hoan+Kiem+Ha+Noi',
   },
 };
 
@@ -94,7 +105,7 @@ export const createAppointment = async (appointmentData, currentUser = null) => 
     appointmentDate: parsedAppointmentDate,
     weddingDate: parseDateSafe(weddingDate, null),
     timeSlot: timeSlot.trim(),
-    guestsCount: Number(guestsCount) || 2,
+    guestsCount: Number(guestsCount) || 1,
     interestedDresses: interestedDresses || selectedDresses || [],
     vipServices: vipServices || [],
     notes: (notes || '').trim(),
@@ -128,7 +139,19 @@ export const createAppointment = async (appointmentData, currentUser = null) => 
     console.error('[TRIGGER APPOINTMENT EMAIL ERROR]', err.message);
   }
 
-  return newAppointment;
+  const branchKey = newAppointment.branch || 'hcm-q1';
+  const branchInfo = BRANCH_DETAILS[branchKey] || (String(branchKey).includes('hn') ? BRANCH_DETAILS['hn-hoankiem'] : BRANCH_DETAILS['hcm-q1']);
+
+  const responseObj = newAppointment.toObject();
+  responseObj.id = newAppointment.appointmentCode;
+  responseObj.branch = branchKey;
+  responseObj.branchName = branchInfo.name;
+  responseObj.branchAddress = branchInfo.address;
+  responseObj.branchPhone = branchInfo.phone;
+  responseObj.branchMapUrl = branchInfo.mapUrl;
+  responseObj.stylistName = 'Chuyên Viên Stylist UniBridal';
+
+  return responseObj;
 };
 
 export const getMyAppointments = async (userId) => {
