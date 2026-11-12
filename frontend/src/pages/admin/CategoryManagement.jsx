@@ -409,6 +409,36 @@ export default function CategoryManagement() {
 
   return (
     <AdminLayout activeMenu="categories">
+      {/* Stylesheet đồng bộ typography và bảng chuẩn Quản Lý Tài Khoản */}
+      <style>{`
+        .unibridal-admin-table .ant-table {
+          background: transparent !important;
+          font-family: inherit !important;
+        }
+        .unibridal-admin-table .ant-table-thead > tr > th {
+          background-color: #FAF5F2 !important;
+          border-bottom: 1px solid #F0E5DC !important;
+          color: #7A696B !important;
+          font-size: 11px !important;
+          font-weight: 700 !important;
+          letter-spacing: 1px !important;
+          text-transform: uppercase !important;
+          font-family: inherit !important;
+          padding: 16px 20px !important;
+        }
+        .unibridal-admin-table .ant-table-thead > tr > th::before {
+          display: none !important;
+        }
+        .unibridal-admin-table .ant-table-tbody > tr > td {
+          border-bottom: 1px solid #F6EDE9 !important;
+          padding: 14px 20px !important;
+          font-family: inherit !important;
+        }
+        .unibridal-admin-table .ant-table-tbody > tr:hover > td {
+          background-color: #FCF9F7 !important;
+        }
+      `}</style>
+
       <div className="space-y-5">
         {/* Header và Tiêu đề trang */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">

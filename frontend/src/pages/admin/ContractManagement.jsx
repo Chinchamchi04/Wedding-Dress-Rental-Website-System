@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { getAllOrdersAdmin, createOrder, updateOrderStatus } from '../../services/orderService';
 import { formatCurrencyVND } from '../../utils/formatCurrency';
+import { formatShortDate } from '../../utils/formatDate';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { Search,
   FileSignature,
@@ -94,6 +95,38 @@ const getRentalDays = (start, end) => {
   return diff > 0 ? diff : 1;
 };
 
+// Định dạng thời gian và ngày ký với 2 khoảng trắng phân tách rõ ràng
+const formatSignedDateTime = (dateVal) => {
+  if (!dateVal) return '—';
+  try {
+    const d = new Date(dateVal);
+    if (!isNaN(d.getTime())) {
+      const timeStr = d.toLocaleTimeString('vi-VN', {
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+      const dateStr = d.toLocaleDateString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+      return `${timeStr}\u00A0\u00A0${dateStr}`;
+    }
+  } catch {}
+
+  if (typeof dateVal === 'string') {
+    const trimmed = dateVal.trim();
+    const parts = trimmed.split(/\s+/);
+    if (parts.length >= 2) {
+      return `${parts[0]}\u00A0\u00A0${parts[1]}`;
+    }
+    return trimmed;
+  }
+  return '—';
+};
+
 export default function ContractManagement() {
   const [contracts, setContracts] = useState([]);
   const [error, setError] = useState('');
@@ -106,7 +139,38 @@ export default function ContractManagement() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
-  const [activeTemplate, setActiveTemplate] = useState(null);
+  const DEFAULT_HAUTE_COUTURE_TEMPLATE = {
+    code: 'TPL-HC-01',
+    name: 'Hợp Đồng Thuê Lễ Phục Cưới Cao Cấp (Haute Couture)',
+    clauses: [
+      {
+        title: 'ĐIỀU 1: ĐỐI TƯỢNG HỢP ĐỒNG VÀ TIÊU CHUẨN LỄ PHỤC CƯỚI',
+        content: '1.1. Bên A đồng ý cho Bên B thuê tác phẩm váy cưới độc bản thiết kế mang tên theo thông tin đơn thuê chi tiết, kích cỡ may đo chuẩn mực theo yêu cầu của Bên B.\n1.2. Tiêu chuẩn bàn giao: Tác phẩm đạt chuẩn Haute Couture, khung xương nẹp corset siết eo công nghệ Pháp, được giặt sấy tiệt trùng sinh học, ủi phẳng phiu và đặt trong Vali VIP Courier bảo quản chống bụi nhiệt trước giờ trao nhận 02 giờ.\n1.3. Tinh chỉnh may đo: Bên A cung cấp dịch vụ tinh chỉnh nới/siết phom theo đúng thông số số đo chuẩn (Chiều cao, Cân nặng, Vòng eo) đã được ghi nhận của Bên B.'
+      },
+      {
+        title: 'ĐIỀU 2: THỜI HẠN THUÊ, PHƯƠNG THỨC GIAO NHẬN VÀ QUY TRÌNH THU HỒI',
+        content: '2.1. Tổng thời gian thuê: Được xác định theo gói ngày Bên B lựa chọn ghi rõ trên đơn thuê.\n2.2. Thời điểm nhận váy: Từ 09:00 ngày bắt đầu thuê tại Showroom UniBridal hoặc bàn giao tận nơi bằng Vali VIP Courier.\n2.3. Phương thức hoàn trả và thu hồi: Trước 20:00 ngày kết thúc thời hạn thuê. Chuyên viên của Bên A chủ động liên hệ hẹn giờ và trực tiếp đến tận địa chỉ của Bên B thu hồi lễ phục trong vali bảo quản niêm phong, thực hiện kiểm định sơ bộ hiện trạng sản phẩm.\n2.4. Hai bên thực hiện ký Biên bản kiểm định bàn giao và thu hồi để ghi nhận hiện trạng đính kết ren, hạt cườm và kết cấu váy tại thời điểm giao và nhận lại.'
+      },
+      {
+        title: 'ĐIỀU 3: GIÁ THUÊ VÀ PHƯƠNG THỨC THANH TOÁN',
+        content: '3.1. Tổng giá trị hợp đồng thuê trọn gói đã bao gồm VAT, dịch vụ giặt hấp khử khuẩn và phí tinh chỉnh phom váy.\n3.2. Tiền đặt cọc giữ lịch độc quyền (50% giá trị hợp đồng): Bên B thanh toán ngay khi ký hợp đồng thông qua cổng chuyển khoản VietQR Napas 24/7 hoặc thẻ ngân hàng.\n3.3. Số tiền thuê còn lại sẽ được Bên B thanh toán dứt điểm tại thời điểm nhận bàn giao lễ phục.'
+      },
+      {
+        title: 'ĐIỀU 4: TIỀN ĐẶT CỌC BẢO LÃNH VÀ CƠ CHẾ HOÀN CỌC',
+        content: '4.1. Tiền đặt cọc bảo lãnh trách nhiệm được Bên B nộp để đảm bảo giữ gìn trang phục cưới nguyên trạng.\n4.2. Số tiền cọc sẽ được hoàn trả 100% cho Bên B trong vòng 02 giờ làm việc qua hình thức chuyển khoản trực tiếp sau khi hoàn tất Biên bản kiểm định thu hồi hiện trạng không phát sinh hư hỏng cấu trúc.\n4.3. Trường hợp phát sinh vết bẩn nhẹ thông thường tẩy được bằng giặt hấp sinh học, Bên A cam kết MIỄN PHÍ và không trừ tiền cọc.'
+      },
+      {
+        title: 'ĐIỀU 5: TRÁCH NHIỆM BẢO QUẢN VÀ BỒI THƯỜNG HƯ TỔN',
+        content: '5.1. Bên B cam kết giữ gìn trang phục cẩn trọng, không tự ý cắt may, ủi nhiệt độ cao hoặc tẩy hóa chất.\n5.2. Trường hợp làm rách ren thủng lớn, cháy vải hoặc đứt gãy gọng siết eo corsetry, Bên B đồng ý chịu chi phí phục chế nguyên trạng theo bảng giá niêm yết tại Atelier hoặc trừ trực tiếp vào quỹ cọc bảo lãnh.'
+      },
+      {
+        title: 'ĐIỀU 6: HIỆU LỰC HỢP ĐỒNG ĐIỆN TỬ',
+        content: '6.1. Hợp đồng điện tử này được khởi tạo và ký kết trực tuyến hợp pháp, có giá trị pháp lý ràng buộc tương đương văn bản ký tay theo Luật Giao dịch điện tử Việt Nam.\n6.2. Hợp đồng có hiệu lực kể từ thời điểm Bên B ký điện tử và thanh toán cọc thành công cho đến khi hai bên hoàn tất biên bản bàn giao, thu hồi và thanh quyết toán cọc.'
+      }
+    ]
+  };
+
+  const [activeTemplate, setActiveTemplate] = useState(DEFAULT_HAUTE_COUTURE_TEMPLATE);
   const [toastMsg, setToastMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -114,10 +178,21 @@ export default function ContractManagement() {
     getContractTemplates()
       .then((res) => {
         const list = res?.data && Array.isArray(res.data) ? res.data : (Array.isArray(res) ? res : []);
-        const def = list.find((t) => t.isDefault) || list[0] || null;
+        const def = list.find((t) => t.isDefault) || list[0] || DEFAULT_HAUTE_COUTURE_TEMPLATE;
         setActiveTemplate(def);
       })
-      .catch((err) => console.warn('Lỗi tải mẫu hợp đồng:', err));
+      .catch((err) => {
+        console.warn('Lỗi tải mẫu hợp đồng:', err);
+        setActiveTemplate(DEFAULT_HAUTE_COUTURE_TEMPLATE);
+      });
+  }, []);
+
+  // Đảm bảo thanh cuộn trang web nền luôn hoạt động bình thường
+  useEffect(() => {
+    document.body.style.overflow = '';
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, []);
 
   // Form tạo hợp đồng mới tại showroom
@@ -148,40 +223,67 @@ export default function ContractManagement() {
   const loadContractsFromOrders = async () => {
     setLoading(true);
     try {
-      const res = await getAllOrdersAdmin();
+      const res = await getAllOrdersAdmin({ limit: 1000 });
       const orderList = res?.orders || [];
       if (orderList.length > 0) {
         const liveContracts = orderList.map((ord) => {
           const item = ord.items?.[0] || {};
           let status = 'active';
-          if (ord.status === 'completed') status = 'completed';
-          else if (ord.status === 'cancelled') status = 'disputed';
-          else if (ord.status === 'pending_payment') status = 'pending_signature';
+          if (ord.status === 'completed' || ord.status === 'complete') {
+            status = 'completed';
+          } else if (ord.status === 'returned') {
+            status = 'disputed'; // Đang xử lý cọc sau khi nhận trả váy
+          } else if (ord.status === 'pending_payment') {
+            status = 'pending_signature'; // Chờ ký & cọc
+          } else if (ord.status === 'cancelled') {
+            status = 'disputed';
+          } else {
+            status = 'active'; // Có hiệu lực (deposit_paid, preparing, delivering, delivered, renting)
+          }
+
+          let dressName = item.name || item.dressId?.name;
+          if (!dressName || dressName.trim().length <= 1) {
+            const match = ord.notes?.match(/mẫu\s+(.*?)\s+phục vụ/i);
+            dressName = match ? match[1].trim() : 'Váy cưới Haute Couture Tiêu Chuẩn';
+          }
+
+          const addr = ord.shippingAddress;
+          let shippingAddress = 'Nhận trực tiếp tại Showroom UniBridal (186 Nam Kỳ Khởi Nghĩa, Q.3, TP.HCM)';
+          if (typeof addr === 'string' && addr.trim()) {
+            shippingAddress = addr.trim();
+          } else if (addr && typeof addr === 'object') {
+            const parts = ['street', 'ward', 'district', 'city'].map((k) => addr[k]).filter(Boolean);
+            if (parts.length > 0) shippingAddress = parts.join(', ');
+          }
+
+          const rentalPrice = Number(ord.totalRentPrice || 0);
+          const depositAmount = Number(ord.totalDeposit || 0);
 
           return {
-            id: ord.contractCode || (`HD-${ord.orderCode || (ord._id ? String(ord._id).slice(-6).toUpperCase() : '001')}`),
-            orderCode: ord.orderCode,
+            id: ord.contractCode || ord.contract?.contractCode || (`HD-${ord.orderCode || (ord._id ? String(ord._id).slice(-6).toUpperCase() : '001')}`),
+            orderCode: ord.orderCode || (ord._id ? String(ord._id).slice(-6).toUpperCase() : ''),
             orderId: ord._id || ord.id,
             customerId: ord.customerId,
-            hasAccount: Boolean(ord.customerId || ord.hasAccount),
+            hasAccount: Boolean(ord.customerId || ord.hasAccount || ord.userId),
             customerName: ord.customerName || ord.brideName || ord.userId?.fullName || 'Khách hàng',
             phone: ord.customerPhone || ord.phone || ord.userId?.phone || '—',
-            idCard: ord.customerCccd || ord.cccd || ord.idCard || '001198012345',
-            dressName: item.name || item.dressId?.name || 'Váy cưới Haute Couture',
-            dressCode: item.dressCode || item.dressId?.code || 'BGW-2026',
-            dressSize: item.size ? `Size ${item.size}` : 'Size S',
+            idCard: ord.customerCccd || ord.cccd || ord.idCard || ord.contract?.idCard || '001198012345',
+            shippingAddress,
+            dressName,
+            dressCode: item.dressCode || item.code || item.dressId?.code || 'UB-HC-2026',
+            dressSize: item.size ? (String(item.size).startsWith('Size') ? item.size : `Size ${item.size}`) : 'Size S',
             dressImage: item.image || item.dressId?.image || DRESS_OPTIONS[0].image,
-            templateName: ord.contract?.templateName || 'Hợp đồng Thuê Váy Cưới Haute Couture Tiêu Chuẩn',
+            templateName: ord.contract?.templateName || 'Hợp Đồng Thuê Lễ Phục Cưới Cao Cấp (Haute Couture)',
             startDate: ord.rentalStartDate ? new Date(ord.rentalStartDate).toISOString().split('T')[0] : '2026-11-01',
             endDate: ord.rentalEndDate ? new Date(ord.rentalEndDate).toISOString().split('T')[0] : '2026-11-04',
-            rentalPrice: ord.totalRentPrice || 5200000,
-            depositAmount: ord.totalDeposit || 15000000,
-            totalValue: (ord.totalRentPrice || 5200000) + (ord.totalDeposit || 15000000),
+            rentalPrice,
+            depositAmount,
+            totalValue: rentalPrice + depositAmount,
             status,
             signedAt: ord.contract?.signedAt
-              ? new Date(ord.contract.signedAt).toLocaleString('vi-VN')
+              ? formatSignedDateTime(ord.contract.signedAt)
               : ord.createdAt
-              ? new Date(ord.createdAt).toLocaleString('vi-VN')
+              ? formatSignedDateTime(ord.createdAt)
               : '—',
             rawSignedAt: ord.contract?.signedAt || ord.createdAt || null,
             signedAtTime: ord.contract?.signedAt
@@ -321,7 +423,7 @@ export default function ContractManagement() {
     const updated = contracts.map((c) => {
       if (c.id === contractId) {
         const signedAt = newStatus === 'active' && !c.signedAt
-          ? new Date().toLocaleString('vi-VN')
+          ? formatSignedDateTime(new Date())
           : c.signedAt;
         const rawSignedAt = newStatus === 'active' && !c.rawSignedAt
           ? new Date().toISOString()
@@ -339,7 +441,7 @@ export default function ContractManagement() {
       setSelectedContract((prev) => ({
         ...prev,
         status: newStatus,
-        signedAt: newStatus === 'active' && !prev.signedAt ? new Date().toLocaleString('vi-VN') : prev.signedAt
+        signedAt: newStatus === 'active' && !prev.signedAt ? formatSignedDateTime(new Date()) : prev.signedAt
       }));
     }
 
@@ -390,7 +492,7 @@ export default function ContractManagement() {
       depositAmount: dress.deposit,
       totalValue: dress.price + dress.deposit,
       status: 'active',
-      signedAt: new Date().toLocaleString('vi-VN'),
+      signedAt: formatSignedDateTime(new Date()),
       signedMethod: 'Ký trực tiếp tại Showroom',
       staffInCharge: 'Chuyên Viên Atelier',
       packageType: 'Gói Thuê Lễ Phục Tiêu Chuẩn',
@@ -605,14 +707,14 @@ export default function ContractManagement() {
                   <th className="py-3.5 px-4">Mã Hợp Đồng</th>
                   <th className="py-3.5 px-4">Khách Hàng</th>
                   <th className="py-3.5 px-4">Trang Phục Thuê</th>
-                  <th className="py-3.5 px-4">Thời Gian Thuê</th>
-                  <th className="py-3.5 px-4">Tiền Thuê và Cọc</th>
+                  <th className="py-3.5 px-4 text-center">Thời Gian Thuê</th>
+                  <th className="py-3.5 px-4 text-center">Tiền Thuê</th>
                   <th
-                    className="py-3.5 px-4 cursor-pointer select-none hover:text-[#733F49] transition-colors"
+                    className="py-3.5 px-4 cursor-pointer select-none hover:text-[#733F49] transition-colors text-center"
                     onClick={() => setSortBySigned((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
                     title="Nhấp để sắp xếp theo thời gian ký"
                   >
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center justify-center gap-1.5">
                       <span>Trạng Thái</span>
                       <span className="text-[#B8737D] inline-flex items-center" title={`Sắp xếp: ${sortBySigned === 'desc' ? 'Mới nhất ↓' : 'Cũ nhất ↑'}`}>
                         {sortBySigned === 'desc' ? (
@@ -623,7 +725,7 @@ export default function ContractManagement() {
                       </span>
                     </div>
                   </th>
-                  <th className="py-3.5 px-4 text-right">Thao Tác</th>
+                  <th className="py-3.5 px-4 text-center">Thao Tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F6EEEB]">
@@ -668,41 +770,43 @@ export default function ContractManagement() {
                       </div>
                     </td>
 
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <div className="text-xs font-semibold text-[#302626]">
-                        {item.startDate} <span className="text-[#A39192]">→</span> {item.endDate}
-                      </div>
-                      <span className="inline-block mt-0.5 text-[11px] text-[#8C4654] font-medium">
+                    <td className="py-4 px-4 whitespace-nowrap text-center">
+                      <span className="inline-block mb-1 text-[11.5px] text-[#8C4654] font-semibold">
                         {getRentalDays(item.startDate, item.endDate)} ngày
                       </span>
+                      <div className="text-xs font-semibold text-[#302626]">
+                        {formatShortDate(item.startDate)} <span className="text-[#A39192]">→</span> {formatShortDate(item.endDate)}
+                      </div>
                     </td>
 
-                    <td className="py-4 px-4">
-                      <div className="text-xs font-bold text-[#87565C]">
-                        Thuê: {fmtVnd(item.rentalPrice)}
+                    <td className="py-4 px-4 whitespace-nowrap text-center">
+                      <div className="text-[13px] font-bold text-[#87565C]">
+                        {fmtVnd(item.rentalPrice)}
                       </div>
                       <div className="text-[11px] text-[#7A6A6B] mt-0.5">
-                        Cọc: <span className="font-semibold">{fmtVnd(item.depositAmount)}</span>
+                        (Cọc: <span className="font-semibold">{fmtVnd(item.depositAmount)}</span>)
                       </div>
                     </td>
 
-                    <td className="py-4 px-4">
-                      {getStatusBadge(item.status)}
-                      {item.signedAt ? (
-                        <div className="text-[10px] text-[#A39192] mt-1 flex items-center gap-1">
-                          <ShieldCheck size={11} className="text-emerald-600" />
-                          <span>Ký: {item.signedAt}</span>
-                        </div>
-                      ) : (
-                        <div className="text-[10px] text-amber-600 mt-1 flex items-center gap-1">
-                          <Clock size={11} />
-                          <span>{item.signedMethod}</span>
-                        </div>
-                      )}
+                    <td className="py-4 px-4 whitespace-nowrap text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        {getStatusBadge(item.status)}
+                        {item.signedAt ? (
+                          <div className="text-[10px] text-[#A39192] mt-1 flex items-center justify-center gap-1">
+                            <ShieldCheck size={11} className="text-emerald-600 shrink-0" />
+                            <span className="whitespace-pre">Ký: {formatSignedDateTime(item.rawSignedAt || item.signedAt)}</span>
+                          </div>
+                        ) : (
+                          <div className="text-[10px] text-amber-600 mt-1 flex items-center justify-center gap-1">
+                            <Clock size={11} />
+                            <span>{item.signedMethod}</span>
+                          </div>
+                        )}
+                      </div>
                     </td>
 
-                    <td className="py-4 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
+                    <td className="py-4 px-4 whitespace-nowrap text-center">
+                      <div className="flex items-center justify-center gap-1.5">
                         <button
                           type="button"
                           onClick={() => handleOpenPreview(item)}
@@ -825,8 +929,14 @@ export default function ContractManagement() {
 
         {/* MODAL LẬP HỢP ĐỒNG SHOWROOM MỚI */}
         {isCreateOpen && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
-            <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-[#E8DDD8] overflow-hidden my-6">
+          <div
+            onClick={() => setIsCreateOpen(false)}
+            className="fixed inset-0 z-50 bg-transparent flex items-center justify-center p-3 sm:p-5 overflow-y-auto cursor-pointer no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white w-full max-w-2xl rounded-2xl shadow-[0_25px_70px_rgba(44,37,35,0.35)] border border-[#DFD3C8] overflow-hidden my-6 cursor-default"
+            >
               <div className="px-6 py-4 bg-[#FAF5F2] border-b border-[#EFE5E1] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-[#733F49] text-white flex items-center justify-center font-bold">
@@ -1021,6 +1131,7 @@ export default function ContractManagement() {
           <SignedContractModal
             orderId={selectedContract.orderId || selectedContract.orderCode || selectedContract.id}
             order={selectedContract.rawOrder || selectedContract}
+            contractData={selectedContract}
             onClose={() => {
               setIsPreviewOpen(false);
               setSelectedContract(null);
@@ -1030,10 +1141,16 @@ export default function ContractManagement() {
 
         {/* MODAL XEM MẪU HỢP ĐỒNG ĐANG ÁP DỤNG */}
         {isTemplateModalOpen && activeTemplate && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-            <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-[#E8DFD8] overflow-hidden">
+          <div
+            onClick={() => setIsTemplateModalOpen(false)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-transparent animate-in fade-in duration-200 cursor-pointer"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-[0_25px_70px_rgba(44,37,35,0.35)] border border-[#DFD3C8] overflow-hidden cursor-default"
+            >
               {/* Modal Header */}
-              <div className="p-5 border-b border-[#EFE5E1] flex items-center justify-between bg-[#FAF7F2]">
+              <div className="p-5 border-b border-[#EFE5E1] flex items-center justify-between bg-white">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-amber-100/70 text-[#C5A880] flex items-center justify-center">
                     <FileText className="w-5 h-5 text-[#733F49]" />
@@ -1054,7 +1171,7 @@ export default function ContractManagement() {
               </div>
 
               {/* Modal Body */}
-              <div className="p-8 overflow-y-auto space-y-6 text-[#2C2523] font-serif bg-[#FCFAF8]">
+              <div className="p-8 overflow-y-auto space-y-6 text-[#2C2523] font-serif bg-white no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 {/* National Header */}
                 <div className="text-center space-y-1 font-sans border-b border-[#E8DFD8] pb-6">
                   <p className="text-xs uppercase font-bold tracking-widest text-[#594B43]">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>

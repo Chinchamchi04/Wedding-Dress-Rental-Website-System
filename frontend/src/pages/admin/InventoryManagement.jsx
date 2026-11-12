@@ -1754,8 +1754,8 @@ export default function InventoryManagement() {
                 <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[12%] min-w-[110px]">
                   VỊ TRÍ
                 </th>
-                <th className="py-4 pl-7 pr-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase w-[17%] min-w-[150px]">
-                  GIÁ THUÊ và CỌC
+                <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[17%] min-w-[150px]">
+                  TIỀN THUÊ
                 </th>
                 <th className="py-4 px-4 text-[11px] font-bold tracking-[1px] text-[#7A696B] uppercase text-center w-[20%] min-w-[175px]">
                   TỒN KHO THEO SIZE
@@ -1820,13 +1820,13 @@ export default function InventoryManagement() {
                         </div>
                       </td>
 
-                      {/* Col 3: Giá thuê và Cọc */}
-                      <td className="py-4 pl-7 pr-4 whitespace-nowrap">
-                        <div className="font-bold text-[#733F49] text-[13.5px] leading-tight">
+                      {/* Col 3: Tiền thuê */}
+                      <td className="py-4 px-4 text-center whitespace-nowrap">
+                        <div className="font-bold text-[#733F49] text-[14.5px] leading-tight">
                           {fmtVnd(item.rentPrice)}
                         </div>
                         <div className="text-[11px] text-[#8C7D7E] mt-1 font-medium">
-                          Cọc: <span className="font-semibold text-[#5F4E50]">{fmtVnd(item.depositAmount)}</span>
+                          (Cọc: <span className="font-semibold text-[#5F4E50]">{fmtVnd(item.depositAmount)}</span>)
                         </div>
                       </td>
 
