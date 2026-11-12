@@ -271,22 +271,34 @@ export default function AppointmentPage() {
     }
   };
 
+  // Validate helpers
+  const validateFullNameInput = (val) => {
+    const trimmed = (val || '').trim();
+    if (!trimmed) return 'Vui lòng nhập họ và tên cô dâu';
+    if (/\d/.test(trimmed)) return 'Họ và tên không được chứa chữ số';
+    return null;
+  };
+
+  const validatePhoneInput = (val) => {
+    const clean = (val || '').replace(/[\s.-]/g, '');
+    if (!clean) return 'Vui lòng nhập số điện thoại liên hệ';
+    if (!/^\d+$/.test(clean)) return 'Số điện thoại chỉ được chứa chữ số';
+    if (clean.length !== 10) return `Số điện thoại phải có đúng 10 số (hiện có ${clean.length} số)`;
+    if (!/^(0[2|3|5|7|8|9])[0-9]{8}$/.test(clean)) {
+      return 'Số điện thoại không hợp lệ (phải bắt đầu bằng các đầu số 03, 05, 07, 08, 09, 02)';
+    }
+    return null;
+  };
+
   // Validate form
   const validateForm = () => {
     const errs = {};
-    if (!fullName.trim()) {
-      errs.fullName = 'Vui lòng nhập họ và tên cô dâu';
-    } else if (/\d/.test(fullName.trim())) {
-      errs.fullName = 'Họ và tên không được chứa chữ số';
-    }
-    if (!phone.trim()) {
-      errs.phone = 'Vui lòng nhập số điện thoại liên hệ';
-    } else {
-      const cleanPhone = phone.replace(/[\s.-]/g, '');
-      if (!/^[0-9]{9,11}$/.test(cleanPhone)) {
-        errs.phone = 'Số điện thoại không hợp lệ (từ 9 đến 11 số)';
-      }
-    }
+    const nameErr = validateFullNameInput(fullName);
+    if (nameErr) errs.fullName = nameErr;
+
+    const phoneErr = validatePhoneInput(phone);
+    if (phoneErr) errs.phone = phoneErr;
+
     if (!email.trim()) {
       errs.email = 'Vui lòng nhập email nhận thư xác nhận';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
@@ -1232,12 +1244,23 @@ export default function AppointmentPage() {
                           required
                           value={fullName}
                           onChange={(e) => {
-                            setFullName(e.target.value);
-                            if (errors.fullName) setErrors({ ...errors, fullName: null });
+                            const val = e.target.value;
+                            setFullName(val);
+                            if (/\d/.test(val)) {
+                              setErrors((prev) => ({ ...prev, fullName: 'Họ và tên không được chứa chữ số' }));
+                            } else if (errors.fullName) {
+                              setErrors((prev) => ({ ...prev, fullName: null }));
+                            }
+                          }}
+                          onBlur={() => {
+                            const err = validateFullNameInput(fullName);
+                            if (err) {
+                              setErrors((prev) => ({ ...prev, fullName: err }));
+                            }
                           }}
                           className={`w-full bg-[#FCF9F6] border rounded-xl px-3.5 py-2.5 text-[14px] text-[#2C2523] font-medium focus:outline-none focus:bg-white ${errors.fullName ? 'border-red-500' : 'border-[#EEDECF] focus:border-[#733F49]'
                             }`}
-                          placeholder="Nhập họ tên cô dâu"
+                          placeholder="Nhập họ tên cô dâu (không chứa số)"
                         />
                         {errors.fullName && (
                           <span className="text-[11px] text-red-600 mt-1 block">{errors.fullName}</span>
@@ -1249,16 +1272,31 @@ export default function AppointmentPage() {
                           SỐ ĐIỆN THOẠI *
                         </label>
                         <input
-                          type="text"
+                          type="tel"
                           required
+                          maxLength={10}
                           value={phone}
                           onChange={(e) => {
-                            setPhone(e.target.value);
-                            if (errors.phone) setErrors({ ...errors, phone: null });
+                            const rawVal = e.target.value;
+                            const cleanVal = rawVal.replace(/[^\d]/g, '').slice(0, 10);
+                            setPhone(cleanVal);
+                            if (errors.phone) {
+                              if (cleanVal.length === 10 && /^(0[2|3|5|7|8|9])[0-9]{8}$/.test(cleanVal)) {
+                                setErrors((prev) => ({ ...prev, phone: null }));
+                              }
+                            }
+                          }}
+                          onBlur={() => {
+                            const err = validatePhoneInput(phone);
+                            if (err) {
+                              setErrors((prev) => ({ ...prev, phone: err }));
+                            } else if (errors.phone) {
+                              setErrors((prev) => ({ ...prev, phone: null }));
+                            }
                           }}
                           className={`w-full bg-[#FCF9F6] border rounded-xl px-3.5 py-2.5 text-[14px] text-[#2C2523] font-medium focus:outline-none focus:bg-white ${errors.phone ? 'border-red-500' : 'border-[#EEDECF] focus:border-[#733F49]'
                             }`}
-                          placeholder="Nhập số điện thoại liên hệ"
+                          placeholder="Nhập số điện thoại liên hệ (10 số)"
                         />
                         {errors.phone && (
                           <span className="text-[11px] text-red-600 mt-1 block">{errors.phone}</span>
