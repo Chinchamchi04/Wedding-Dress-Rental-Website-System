@@ -249,9 +249,6 @@ function CalendarDateCellEvents({
                         <span>{returnDateStr}</span>
                       </div>
                     )}
-                    <div className="text-[10px] text-gray-300 italic pt-0.5">
-                      (Bấm vào để làm nổi bật đồng thời ngày Giao & ngày Trả)
-                    </div>
                   </div>
                 }
               >
@@ -296,13 +293,10 @@ function CalendarDateCellEvents({
                   <div>Khách hàng: <strong>{item.customerName}</strong></div>
                   {deliveryDateStr && (
                     <div className="text-rose-300 font-bold border-t border-white/20 pt-1 flex items-center gap-1">
-                      <span>📦 Đã giao ngày:</span>
+                      <span>📦 Ngày giao/lấy:</span>
                       <span>{deliveryDateStr}</span>
                     </div>
                   )}
-                  <div className="text-[10px] text-gray-300 italic pt-0.5">
-                    (Bấm vào để làm nổi bật đồng thời ngày Giao & ngày Trả)
-                  </div>
                 </div>
               }
             >
