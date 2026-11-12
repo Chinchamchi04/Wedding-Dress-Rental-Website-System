@@ -630,10 +630,19 @@ export default function ScheduleOverviewPage({ defaultTab }) {
     return map;
   }, [appointments]);
 
+  // Danh sách các đơn thuê còn hiệu lực (loại bỏ các đơn đã bị hủy trước khi thuê)
+  const activeOrders = useMemo(
+    () => orders.filter((o) => (o.status || '').toLowerCase() !== 'cancelled'),
+    [orders]
+  );
+
   // Danh sách sự kiện bàn giao / nhận váy theo ngày bắt đầu thuê (rentalStartDate)
   const deliveriesByDate = useMemo(() => {
     const map = {};
     orders.forEach((ord) => {
+      // Đơn hàng đã hủy trước khi thuê thì không phát sinh lịch giao
+      if ((ord.status || '').toLowerCase() === 'cancelled') return;
+
       const key = toDateKey(ord.rentalStartDate);
       if (!key) return;
       if (!map[key]) map[key] = [];
@@ -662,6 +671,9 @@ export default function ScheduleOverviewPage({ defaultTab }) {
   const returnsByDate = useMemo(() => {
     const map = {};
     orders.forEach((ord) => {
+      // Đơn hàng đã hủy trước khi thuê thì không phát sinh lịch trả váy
+      if ((ord.status || '').toLowerCase() === 'cancelled') return;
+
       const key = toDateKey(ord.rentalEndDate);
       if (!key) return;
       if (!map[key]) map[key] = [];
@@ -1036,7 +1048,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200/80'
                     }`}
                   >
-                    Tất cả sự kiện ({appointments.length + orders.length * 2})
+                    Tất cả sự kiện ({appointments.length + activeOrders.length * 2})
                   </button>
                   <button
                     type="button"
@@ -1066,7 +1078,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     }`}
                   >
                     <PackageCheck className="w-3.5 h-3.5" />
-                    <span>Lịch giao váy ({orders.length})</span>
+                    <span>Lịch giao váy ({activeOrders.length})</span>
                   </button>
                   <button
                     type="button"
@@ -1081,7 +1093,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     }`}
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Hạn trả váy ({orders.length})</span>
+                    <span>Hạn trả váy ({activeOrders.length})</span>
                   </button>
                 </div>
 
