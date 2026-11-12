@@ -1379,13 +1379,19 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                     : 'Flagship Showroom Q.1, TP. HCM'}
                                 </span>
                               </div>
-                            ) : (
+                            ) : isDelivery ? (
                               <div className="text-[11px] text-gray-600 flex items-center gap-1.5 mt-2 font-medium">
                                 <span className="px-2 py-0.5 rounded bg-gray-100 font-bold text-gray-700">
                                   {item.deliveryMethod === 'express' ? '🚚 Giao tận nơi' : '🏛️ Nhận tại Showroom'}
                                 </span>
                                 <span className="font-bold text-[#733F49]">
                                   {formatCurrencyVND(item.totalRentPrice || 0)}
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="text-[11px] text-gray-600 flex items-center gap-1.5 mt-2 font-medium">
+                                <span className="px-2 py-0.5 rounded bg-gray-100 font-bold text-gray-700">
+                                  {item.deliveryMethod === 'express' ? '🚚 Thu hồi tận nơi' : '🏛️ Trả tại Showroom'}
                                 </span>
                               </div>
                             )}
@@ -1409,7 +1415,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                             {!isFitting && item.items?.length > 0 && (
                               <div className="p-2.5 rounded-xl bg-white/80 border border-[#EFE5E1] text-xs font-medium mt-2.5 space-y-1">
                                 <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                                  {isDelivery ? '📦 Lễ phục bàn giao:' : '🔄 Lễ phục thu hồi:'}
+                                  {isDelivery ? '📦 Lễ phục bàn giao:' : '🔄 Lễ phục trả:'}
                                 </div>
                                 <div className="space-y-0.5">
                                   {item.items.map((it, idx) => (
@@ -1418,10 +1424,12 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                     </div>
                                   ))}
                                 </div>
-                                <div className="text-[11px] text-gray-500 pt-1 border-t border-gray-100 flex justify-between">
-                                  <span>Cọc bảo lãnh:</span>
-                                  <strong className="text-gray-900">{formatCurrencyVND(item.totalDeposit || 0)}</strong>
-                                </div>
+                                {isDelivery && (
+                                  <div className="text-[11px] text-gray-500 pt-1 border-t border-gray-100 flex justify-between">
+                                    <span>Cọc bảo lãnh:</span>
+                                    <strong className="text-gray-900">{formatCurrencyVND(item.totalDeposit || 0)}</strong>
+                                  </div>
+                                )}
                               </div>
                             )}
 
@@ -1505,24 +1513,26 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                     const targetCode = item.code || item.id || '';
                                     navigate(`${orderBasePath}?orderCode=${encodeURIComponent(targetCode)}&action=inspect`);
                                   }}
-                                  className="flex-1 py-2 px-3 rounded-xl bg-[#FAF0EC] hover:bg-[#F2D8D4] text-[#733F49] text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer border border-[#F2D8D4]"
+                                  className="w-full py-2 px-3 rounded-xl bg-[#FAF0EC] hover:bg-[#F2D8D4] text-[#733F49] text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer border border-[#F2D8D4]"
                                 >
                                   <RotateCcw className="w-3.5 h-3.5" />
                                   <span>Kiểm Định Cọc</span>
                                 </button>
                               )}
 
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedEvent(item);
-                                  setDetailModalOpen(true);
-                                }}
-                                className="p-2 rounded-xl bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 text-xs font-medium transition cursor-pointer"
-                                title="Xem chi tiết đầy đủ"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
+                              {!isReturn && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedEvent(item);
+                                    setDetailModalOpen(true);
+                                  }}
+                                  className="p-2 rounded-xl bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 text-xs font-medium transition cursor-pointer"
+                                  title="Xem chi tiết đầy đủ"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                              )}
                             </div>
                           </div>
                         );                      })
