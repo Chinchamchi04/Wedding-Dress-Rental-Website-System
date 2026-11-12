@@ -393,11 +393,11 @@ export default function ScheduleOverviewPage({ defaultTab }) {
 
   // Sub-filter trong Tab Lịch Biểu: 'all' | 'fitting' (Thử váy) | 'delivery' (Giao váy) | 'return' (Trả váy)
   const [calendarFilterType, setCalendarFilterType] = useState('all');
-  const [calendarBranchFilter, setCalendarBranchFilter] = useState('hcm-q1');
+  const [calendarBranchFilter, setCalendarBranchFilter] = useState('all');
 
   // Bộ lọc cho Tab Danh Sách Lịch Hẹn (Merged từ AppointmentManagement)
   const [searchTerm, setSearchTerm] = useState('');
-  const [branchFilter, setBranchFilter] = useState('hcm-q1');
+  const [branchFilter, setBranchFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
   // Dữ liệu
@@ -644,6 +644,21 @@ export default function ScheduleOverviewPage({ defaultTab }) {
     [orders]
   );
 
+  // Lọc danh sách lịch hẹn và đơn thuê theo chi nhánh hiển thị trên lịch
+  const calendarVisibleAppointments = useMemo(() => {
+    if (calendarBranchFilter === 'all') return appointments;
+    return appointments.filter(
+      (a) => a.branch === calendarBranchFilter || a.branchId === calendarBranchFilter
+    );
+  }, [appointments, calendarBranchFilter]);
+
+  const calendarVisibleActiveOrders = useMemo(() => {
+    if (calendarBranchFilter === 'all') return activeOrders;
+    return activeOrders.filter(
+      (o) => (o.branch || o.branchId || 'hcm-q1') === calendarBranchFilter
+    );
+  }, [activeOrders, calendarBranchFilter]);
+
   // Danh sách sự kiện bàn giao / nhận váy: LÙI 1 NGÀY trước ngày khách bắt đầu thuê
   // (Do showroom giao sớm 1 ngày hoặc khách đến showroom lấy sớm 1 ngày để thử và chuẩn bị)
   const deliveriesByDate = useMemo(() => {
@@ -679,6 +694,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
         shippingAddress: ord.shippingAddress,
         notes: ord.notes,
         date: key,
+        branch: ord.branch || ord.branchId || 'hcm-q1',
       });
     });
     return map;
@@ -712,6 +728,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
         shippingAddress: ord.shippingAddress,
         notes: ord.notes,
         date: key,
+        branch: ord.branch || ord.branchId || 'hcm-q1',
       });
     });
     return map;
@@ -780,13 +797,23 @@ export default function ScheduleOverviewPage({ defaultTab }) {
     const filteredApts =
       calendarBranchFilter === 'all'
         ? apts
-        : apts.filter((a) => a.branch === calendarBranchFilter);
+        : apts.filter((a) => a.branch === calendarBranchFilter || a.branchId === calendarBranchFilter);
+
+    const filteredDeliveries =
+      calendarBranchFilter === 'all'
+        ? deliveries
+        : deliveries.filter((d) => (d.branch || 'hcm-q1') === calendarBranchFilter);
+
+    const filteredReturns =
+      calendarBranchFilter === 'all'
+        ? returns
+        : returns.filter((r) => (r.branch || 'hcm-q1') === calendarBranchFilter);
 
     if (calendarFilterType === 'fitting') return filteredApts;
-    if (calendarFilterType === 'delivery') return deliveries;
-    if (calendarFilterType === 'return') return returns;
+    if (calendarFilterType === 'delivery') return filteredDeliveries;
+    if (calendarFilterType === 'return') return filteredReturns;
 
-    return [...filteredApts, ...deliveries, ...returns];
+    return [...filteredApts, ...filteredDeliveries, ...filteredReturns];
   }, [
     appointmentsByDate,
     deliveriesByDate,
@@ -812,19 +839,29 @@ export default function ScheduleOverviewPage({ defaultTab }) {
     const visibleApts =
       calendarBranchFilter === 'all'
         ? dayApts
-        : dayApts.filter((a) => a.branch === calendarBranchFilter);
+        : dayApts.filter((a) => a.branch === calendarBranchFilter || a.branchId === calendarBranchFilter);
+
+    const visibleDeliveries =
+      calendarBranchFilter === 'all'
+        ? dayDeliveries
+        : dayDeliveries.filter((d) => (d.branch || 'hcm-q1') === calendarBranchFilter);
+
+    const visibleReturns =
+      calendarBranchFilter === 'all'
+        ? dayReturns
+        : dayReturns.filter((r) => (r.branch || 'hcm-q1') === calendarBranchFilter);
 
     const totalEvents =
       (showApts ? visibleApts.length : 0) +
-      (showDeliveries ? dayDeliveries.length : 0) +
-      (showReturns ? dayReturns.length : 0);
+      (showDeliveries ? visibleDeliveries.length : 0) +
+      (showReturns ? visibleReturns.length : 0);
     if (totalEvents === 0) return null;
 
     return (
       <CalendarDateCellEvents
         dayApts={visibleApts}
-        dayDeliveries={dayDeliveries}
-        dayReturns={dayReturns}
+        dayDeliveries={visibleDeliveries}
+        dayReturns={visibleReturns}
         showApts={showApts}
         showDeliveries={showDeliveries}
         showReturns={showReturns}
@@ -1065,7 +1102,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200/80'
                     }`}
                   >
-                    Tất cả sự kiện ({appointments.length + activeOrders.length * 2})
+                    Tất cả sự kiện ({calendarVisibleAppointments.length + calendarVisibleActiveOrders.length * 2})
                   </button>
                   <button
                     type="button"
@@ -1080,7 +1117,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     }`}
                   >
                     <Crown className="w-3.5 h-3.5" />
-                    <span>Lịch thử váy ({appointments.length})</span>
+                    <span>Lịch thử váy ({calendarVisibleAppointments.length})</span>
                   </button>
                   <button
                     type="button"
@@ -1095,7 +1132,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     }`}
                   >
                     <PackageCheck className="w-3.5 h-3.5" />
-                    <span>Lịch giao váy ({activeOrders.length})</span>
+                    <span>Lịch giao váy ({calendarVisibleActiveOrders.length})</span>
                   </button>
                   <button
                     type="button"
@@ -1110,7 +1147,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     }`}
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Hạn trả váy ({activeOrders.length})</span>
+                    <span>Hạn trả váy ({calendarVisibleActiveOrders.length})</span>
                   </button>
                 </div>
 
@@ -1124,6 +1161,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     onChange={(e) => setCalendarBranchFilter(e.target.value)}
                     className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 font-bold outline-none cursor-pointer text-xs focus:border-[#733F49]"
                   >
+                    <option value="all">Tất cả chi nhánh</option>
                     <option value="hcm-q1">UniBridal Q.1 TP.HCM</option>
                     <option value="hn-hoankiem">UniBridal Hoàn Kiếm, HN</option>
                   </select>
@@ -1612,6 +1650,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     onChange={(e) => setBranchFilter(e.target.value)}
                     className="px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-700 font-medium outline-none cursor-pointer"
                   >
+                    <option value="all">Tất cả chi nhánh</option>
                     <option value="hcm-q1">UniBridal Q.1 TP.HCM</option>
                     <option value="hn-hoankiem">UniBridal Hoàn Kiếm, HN</option>
                   </select>
