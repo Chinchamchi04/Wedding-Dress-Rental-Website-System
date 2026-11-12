@@ -1344,11 +1344,13 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                   </>
                                 )}
                               </span>
-                              <span
-                                className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border ${badge.className}`}
-                              >
-                                {badge.label}
-                              </span>
+                              {!isReturn && (
+                                <span
+                                  className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border ${badge.className}`}
+                                >
+                                  {badge.label}
+                                </span>
+                              )}
                             </div>
 
                             {/* Tên khách hàng */}
