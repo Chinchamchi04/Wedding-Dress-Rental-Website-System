@@ -292,7 +292,7 @@ function CalendarDateCellEvents({
                   </div>
                   <div>Khách hàng: <strong>{item.customerName}</strong></div>
                   {deliveryDateStr && (
-                    <div className="text-rose-300 font-bold border-t border-white/20 pt-1 flex items-center gap-1">
+                    <div className="text-sky-300 font-bold border-t border-white/20 pt-1 flex items-center gap-1">
                       <span>📦 Ngày giao/lấy:</span>
                       <span>{deliveryDateStr}</span>
                     </div>
