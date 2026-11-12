@@ -75,7 +75,7 @@ export default function AdminDashboardPage() {
       )}
       {loading && <p role="status" className="mb-4 text-sm text-stone-500">Đang tải thống kê...</p>}
       {/* Tổng đơn thuê, lịch hẹn và người dùng */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" aria-label="Chỉ số kinh doanh trọng yếu">
+      <section className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Chỉ số kinh doanh trọng yếu">
         {[
           {
             title: 'TỔNG ĐƠN THUÊ',
@@ -101,18 +101,18 @@ export default function AdminDashboardPage() {
         ].map(({ title, value, note, Icon, color }) => (
           <article
             key={title}
-            className="ub-dashboard-metric admin-metric min-w-0 rounded-2xl border border-[#EFE5E1] bg-white p-5 shadow-xs hover:shadow-md transition-shadow"
+            className="min-w-0 rounded-2xl border border-[#EFE5E1] bg-white px-5 py-4 shadow-sm transition-shadow hover:shadow-md"
           >
-            <div className="ub-dashboard-metric-head flex items-center justify-between mb-3">
-              <span className="text-[11px] font-bold tracking-[1.2px] text-[#705F60] uppercase">{title}</span>
-              <span className={`w-10 h-10 rounded-xl flex items-center justify-center ${color === 'rose' ? 'bg-[#FAF0EC] text-[#733F49]' : 'bg-[#FAF2EE] text-[#8C6B46]'}`}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="m-0 text-[11px] font-bold leading-snug tracking-[1.2px] text-[#705F60]">{title}</h2>
+                <p className="mb-0 mt-2 font-serif text-[40px] font-bold leading-none tracking-tight tabular-nums text-[#2C2523] sm:text-[46px]">{value}</p>
+              </div>
+              <span aria-hidden="true" className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${color === 'rose' ? 'bg-[#FAF0EC] text-[#733F49]' : 'bg-[#FAF2EE] text-[#8C6B46]'}`}>
                 <Icon size={19} />
               </span>
             </div>
-            <div className="text-[28px] font-bold text-[#2C2523] tracking-tight leading-none mb-2 font-serif">{value}</div>
-            <div className="flex items-center justify-between text-xs text-[#8A797A] pt-2 border-t border-[#F5EAE6]">
-              <span>{note}</span>
-            </div>
+            <p className="mb-0 mt-3 border-t border-[#F5EAE6] pt-2 text-xs leading-relaxed text-[#786663]">{note}</p>
           </article>
         ))}
       </section>
