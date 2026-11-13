@@ -481,15 +481,14 @@ function DamagePriceCatalogModal({ open, onClose }) {
                       {row.feeLabel}
                     </td>
                     <td className="py-2.5 px-3 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${
-                        row.authority === 'admin_only'
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${row.authority === 'admin_only'
                           ? 'bg-rose-100 text-rose-800 border-rose-300'
                           : row.authority === 'admin'
-                          ? 'bg-red-50 text-red-700 border-red-200'
-                          : row.authority === 'both'
-                          ? 'bg-purple-50 text-purple-700 border-purple-200'
-                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      }`}>
+                            ? 'bg-red-50 text-red-700 border-red-200'
+                            : row.authority === 'both'
+                              ? 'bg-purple-50 text-purple-700 border-purple-200'
+                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        }`}>
                         {row.authorityLabel}
                       </span>
                     </td>
@@ -522,7 +521,7 @@ function DamagePriceCatalogModal({ open, onClose }) {
 function InspectionModal({ order, onClose, onSuccess }) {
   const [showPriceCatalogModal, setShowPriceCatalogModal] = useState(false);
   const isCompletedOrder = order.status === 'completed' || order.status === 'complete';
-  const isReturnedOrder = order.status === 'returned';
+  const isReturnedOrder = order.status === 'waiting_refund' || order.status === 'returned';
   const isGuestOrder = !order.hasAccount && !order.customerId && !order.userId;
   const [customerStatus, setCustomerStatus] = useState(order.inspectionCustomerStatus || order.inspection?.customerStatus || 'pending');
   const isCustomerApproved = customerStatus === 'approved';
@@ -763,6 +762,8 @@ function InspectionModal({ order, onClose, onSuccess }) {
         };
       });
 
+      const isDisputeCase = customerDecision === 'disputed';
+
       const body = {
         itemsCondition: payload,
         evidencePhotos,
@@ -784,7 +785,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
       if (isDisputeCase) {
         message.warning('Đã lưu ảnh lỗi & chuyển đơn sang [Tạm giữ - Chờ Quản lý đàm phán]. Nhân viên vui lòng báo Quản lý xử lý!');
       } else {
-        message.success(`Đã xác nhận kiểm định và hoàn cọc ${fmtVnd(finalRefund)} thành công! Đơn hàng chuyển sang Hoàn tất và gửi email kèm biên lai.`);
+        message.success(`Đã hoàn tất kiểm định váy! Đơn hàng tự động chuyển sang [Chờ Hoàn Cọc].`);
       }
       setIsEditing(false);
       onSuccess();
@@ -811,7 +812,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
                   : isCustomerApproved
                     ? 'Biên Bản Giám Định Lễ Phục (Khách Đã Duyệt)'
                     : isReturnedOrder
-                      ? 'Biên Bản Giám Định Lễ Phục (Đã Hoàn Tất Kiểm Tra)'
+                      ? 'Biên Bản Giám Định Lễ Phục (Đã Hoàn Tất Kiểm Tra - Chờ Hoàn Cọc)'
                       : 'Biên Bản Giám Định Hiện Trạng & Quyết Toán Cọc'}
               </h3>
               <p className="text-[11px] text-[#8C7D7E] m-0 flex items-center gap-1.5 mt-0.5">
@@ -929,9 +930,8 @@ function InspectionModal({ order, onClose, onSuccess }) {
                 Thời gian thuê: <strong className="text-[#2C2523]">{fmtDate(order.rentalStartDate)} – {fmtDate(order.rentalEndDate)}</strong>
               </div>
               {lateDays > 0 ? (
-                <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10.5px] font-bold ${
-                  lateDays > 5 ? 'bg-red-100 text-red-800 border border-red-200' : 'bg-amber-100 text-amber-800 border border-amber-200'
-                }`}>
+                <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10.5px] font-bold ${lateDays > 5 ? 'bg-red-100 text-red-800 border border-red-200' : 'bg-amber-100 text-amber-800 border border-amber-200'
+                  }`}>
                   {lateDays > 5 ? `Trễ hạn ${lateDays} ngày (Tịch thu 100% cọc: -${fmtVnd(lateFee)})` : `Trễ hạn ${lateDays} ngày (Phạt 50%/ngày: -${fmtVnd(lateFee)})`}
                 </span>
               ) : (
@@ -983,15 +983,14 @@ function InspectionModal({ order, onClose, onSuccess }) {
                         <span>Nhóm lỗi theo Bảng Giá Niêm Yết:</span>
                         <span className="text-[10px] text-[#8C7D7E] font-normal">(Staff không tự ý định giá)</span>
                       </span>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${
-                        catItem.authority === 'admin_only'
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${catItem.authority === 'admin_only'
                           ? 'bg-rose-100 text-rose-800 border-rose-300'
                           : catItem.authority === 'admin'
-                          ? 'bg-red-50 text-red-700 border-red-200'
-                          : catItem.authority === 'both'
-                          ? 'bg-purple-50 text-purple-700 border-purple-200'
-                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      }`}>
+                            ? 'bg-red-50 text-red-700 border-red-200'
+                            : catItem.authority === 'both'
+                              ? 'bg-purple-50 text-purple-700 border-purple-200'
+                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        }`}>
                         {catItem.authorityLabel}
                       </span>
                     </div>
@@ -1034,11 +1033,10 @@ function InspectionModal({ order, onClose, onSuccess }) {
                                   type="button"
                                   disabled={isReadOnly}
                                   onClick={() => updateOption(idx, opt.value)}
-                                  className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
-                                    isSelected
+                                  className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${isSelected
                                       ? 'bg-[#733F49] text-white border-[#733F49] shadow-xs'
                                       : 'bg-white text-[#5F4E50] border-[#E5D7D0] hover:bg-[#FAF0EC]'
-                                  }`}
+                                    }`}
                                 >
                                   {opt.label}
                                 </button>
@@ -1198,11 +1196,10 @@ function InspectionModal({ order, onClose, onSuccess }) {
                 {/* Phương Án 1: Khách Đồng Thuận */}
                 <div
                   onClick={() => setCustomerDecision('agreed')}
-                  className={`p-3 rounded-2xl border-2 cursor-pointer transition-all ${
-                    customerDecision === 'agreed'
+                  className={`p-3 rounded-2xl border-2 cursor-pointer transition-all ${customerDecision === 'agreed'
                       ? 'border-[#1E8347] bg-[#F3FAF5] shadow-xs'
                       : 'border-[#E5D7D0] bg-white hover:border-[#BCE2C5]'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-start gap-2.5">
                     <input
@@ -1226,11 +1223,10 @@ function InspectionModal({ order, onClose, onSuccess }) {
                 {/* Phương Án 2: Khách Bảo Lưu Ý Kiến */}
                 <div
                   onClick={() => setCustomerDecision('disputed')}
-                  className={`p-3 rounded-2xl border-2 cursor-pointer transition-all ${
-                    customerDecision === 'disputed'
+                  className={`p-3 rounded-2xl border-2 cursor-pointer transition-all ${customerDecision === 'disputed'
                       ? 'border-[#8B2635] bg-red-50/60 shadow-xs'
                       : 'border-[#E5D7D0] bg-white hover:border-red-300'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-start gap-2.5">
                     <input
@@ -1306,104 +1302,104 @@ function InspectionModal({ order, onClose, onSuccess }) {
 
                   <p className="text-[11px] text-[#2E7D47] m-0 bg-emerald-50/70 p-2 rounded-xl border border-emerald-100 flex items-center gap-1.5">
                     <CheckCircle2 size={13} className="shrink-0" />
-                    <span>Sau khi xác nhận, showroom sẽ quyết toán hoàn cọc <strong>{fmtVnd(finalRefund)}</strong> và gửi thông báo điện tử kèm biên lai tới khách hàng.</span>
+                    <span>Sau khi hoàn tất kiểm định, đơn sẽ tự động chuyển sang <strong>Chờ hoàn cọc</strong> ({fmtVnd(finalRefund)}).</span>
                   </p>
                 </div>
               )}
 
-              {/* Chi tiết Phương Án 2: Khách Bảo Lưu Ý Kiến */}
-              {customerDecision === 'disputed' && (
-                <div className="pt-2.5 border-t border-red-200 space-y-2.5 text-[11.5px] animate-fadeIn">
-                  <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-amber-900 text-[11.5px] leading-relaxed">
-                    <div className="font-bold flex items-center gap-1.5 text-amber-950 mb-0.5">
-                      <Clock size={13} className="text-amber-700" />
-                      <span>Quy trình bảo lưu hồ sơ:</span>
-                    </div>
-                    <span>Toàn bộ hình ảnh đối soát và ghi chú hiện trạng sẽ được bảo lưu nguyên vẹn trên hệ thống. Đơn hàng chuyển sang trạng thái <strong>"Tạm giữ - Chờ Quản lý đàm phán"</strong> để Quản lý showroom trực tiếp liên hệ và thống nhất phương án hỗ trợ tối ưu cùng khách hàng.</span>
-                  </div>
-                  <div>
-                    <span className="text-[11px] font-semibold text-[#662020] block mb-1">
-                      Nội dung phản hồi / Nguyện vọng của khách hàng:
-                    </span>
-                    <Input.TextArea
-                      rows={2}
-                      placeholder="Ghi nhận chi tiết ý kiến phản hồi của khách hàng để Quản lý nắm thông tin khi liên hệ đàm phán..."
-                      value={customerDisputeNote}
-                      onChange={(e) => setCustomerDisputeNote(e.target.value)}
-                      className="text-xs"
-                    />
-                  </div>
+          {/* Chi tiết Phương Án 2: Khách Bảo Lưu Ý Kiến */}
+          {customerDecision === 'disputed' && (
+            <div className="pt-2.5 border-t border-red-200 space-y-2.5 text-[11.5px] animate-fadeIn">
+              <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-amber-900 text-[11.5px] leading-relaxed">
+                <div className="font-bold flex items-center gap-1.5 text-amber-950 mb-0.5">
+                  <Clock size={13} className="text-amber-700" />
+                  <span>Quy trình bảo lưu hồ sơ:</span>
                 </div>
-              )}
+                <span>Toàn bộ hình ảnh đối soát và ghi chú hiện trạng sẽ được bảo lưu nguyên vẹn trên hệ thống. Đơn hàng chuyển sang trạng thái <strong>"Tạm giữ - Chờ Quản lý đàm phán"</strong> để Quản lý showroom trực tiếp liên hệ và thống nhất phương án hỗ trợ tối ưu cùng khách hàng.</span>
+              </div>
+              <div>
+                <span className="text-[11px] font-semibold text-[#662020] block mb-1">
+                  Nội dung phản hồi / Nguyện vọng của khách hàng:
+                </span>
+                <Input.TextArea
+                  rows={2}
+                  placeholder="Ghi nhận chi tiết ý kiến phản hồi của khách hàng để Quản lý nắm thông tin khi liên hệ đàm phán..."
+                  value={customerDisputeNote}
+                  onChange={(e) => setCustomerDisputeNote(e.target.value)}
+                  className="text-xs"
+                />
+              </div>
             </div>
           )}
+        </div>
+          )}
 
-          {/* Actions - Nút bấm hoàn tất chuẩn mực */}
-          <div className="flex gap-2.5 pt-1.5">
-            {isReadOnly ? (
-              <div className="flex w-full gap-2.5">
+        {/* Actions - Nút bấm hoàn tất chuẩn mực */}
+        <div className="flex gap-2.5 pt-1.5">
+          {isReadOnly ? (
+            <div className="flex w-full gap-2.5">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 py-2.5 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
+              >
+                {isCompletedOrder ? 'Đóng Hồ Sơ Lưu Trữ' : isCustomerApproved ? 'Đóng (Khách Đã Duyệt - Hồ Sơ Đã Khóa)' : 'Đóng'}
+              </button>
+              {!isCompletedOrder && !isCustomerApproved && (
                 <button
                   type="button"
-                  onClick={onClose}
-                  className="flex-1 py-2.5 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
+                  onClick={() => setIsEditing(true)}
+                  className="flex-1 py-2.5 rounded-xl bg-[#733F49] text-[12px] font-bold text-white hover:bg-[#5C3038] transition-colors border-0 cursor-pointer shadow-xs"
                 >
-                  {isCompletedOrder ? 'Đóng Hồ Sơ Lưu Trữ' : isCustomerApproved ? 'Đóng (Khách Đã Duyệt - Hồ Sơ Đã Khóa)' : 'Đóng'}
+                  Chỉnh Sửa Chi Phí Khấu Trừ
                 </button>
-                {!isCompletedOrder && !isCustomerApproved && (
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing(true)}
-                    className="flex-1 py-2.5 rounded-xl bg-[#733F49] text-[12px] font-bold text-white hover:bg-[#5C3038] transition-colors border-0 cursor-pointer shadow-xs"
-                  >
-                    Chỉnh Sửa Chi Phí Khấu Trừ
-                  </button>
-                )}
-              </div>
-            ) : (
-              <>
+              )}
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  if (isReturnedOrder) setIsEditing(false);
+                  else onClose();
+                }}
+                className="w-28 py-2.5 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
+              >
+                Hủy
+              </button>
+              {customerDecision === 'agreed' ? (
                 <button
                   type="button"
-                  onClick={() => {
-                    if (isReturnedOrder) setIsEditing(false);
-                    else onClose();
-                  }}
-                  className="w-28 py-2.5 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
+                  disabled={submitting}
+                  onClick={handleSubmit}
+                  className="flex-1 py-2.5 rounded-xl bg-[#1E8347] hover:bg-[#166534] text-white text-[12.5px] font-bold transition-all border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
                 >
-                  Hủy
+                  {submitting ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
+                  <span>Hoàn Tất Kiểm Định Váy → Chuyển [Chờ Hoàn Cọc] ({fmtVnd(finalRefund)})</span>
                 </button>
-                {customerDecision === 'agreed' ? (
-                  <button
-                    type="button"
-                    disabled={submitting}
-                    onClick={handleSubmit}
-                    className="flex-1 py-2.5 rounded-xl bg-[#1E8347] hover:bg-[#166534] text-white text-[12.5px] font-bold transition-all border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
-                  >
-                    {submitting ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
-                    <span>Xác Nhận Hoàn Cọc & Hoàn Tất Đơn ({fmtVnd(finalRefund)})</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={submitting}
-                    onClick={handleSubmit}
-                    className="flex-1 py-2.5 rounded-xl bg-[#8B2635] hover:bg-[#701E2A] text-white text-[12.5px] font-bold transition-all border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
-                  >
-                    {submitting ? <RefreshCw size={14} className="animate-spin" /> : <PhoneCall size={14} />}
-                    <span>Bảo Lưu Đơn & Chuyển Quản Lý</span>
-                  </button>
-                )}
-              </>
-            )}
-          </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={handleSubmit}
+                  className="flex-1 py-2.5 rounded-xl bg-[#8B2635] hover:bg-[#701E2A] text-white text-[12.5px] font-bold transition-all border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
+                >
+                  {submitting ? <RefreshCw size={14} className="animate-spin" /> : <PhoneCall size={14} />}
+                  <span>Bảo Lưu Đơn & Chuyển Quản Lý</span>
+                </button>
+              )}
+            </>
+          )}
         </div>
       </div>
-
-      {/* Bảng Giá Đền Bù Thiệt Hại Niêm Yết Popup */}
-      <DamagePriceCatalogModal
-        open={showPriceCatalogModal}
-        onClose={() => setShowPriceCatalogModal(false)}
-      />
     </div>
+
+    {/* Bảng Giá Đền Bù Thiệt Hại Niêm Yết Popup */}
+    <DamagePriceCatalogModal
+      open={showPriceCatalogModal}
+      onClose={() => setShowPriceCatalogModal(false)}
+    />
+  </div>
   );
 }
 
@@ -1742,55 +1738,57 @@ function AdminNegotiationModal({ order, onClose, onSuccess }) {
               </div>
             </div>
 
-            {/* Ghi chú kết quả đàm phán */}
-            <div className="bg-white p-3 rounded-xl border border-[#D5E8D8]">
-              <span className="text-[11px] font-bold text-stone-800 block mb-1">
-                Ghi chú nội dung đàm phán & đồng thuận:
-              </span>
-              <Input.TextArea
-                rows={2}
-                placeholder="VD: Admin đã gọi trao đổi với khách, thống nhất mức hỗ trợ phục chế 50% (300.000đ). Khách đã đồng thuận và nhận hoàn tiền cọc."
-                value={negotiationNotes}
-                onChange={(e) => setNegotiationNotes(e.target.value)}
-                className="text-xs"
-              />
-            </div>
+          {/* Ghi chú kết quả đàm phán */}
+          <div className="bg-white p-3 rounded-xl border border-[#D5E8D8]">
+            <span className="text-[11px] font-bold text-stone-800 block mb-1">
+              Ghi chú nội dung đàm phán & đồng thuận:
+            </span>
+            <Input.TextArea
+              rows={2}
+              placeholder="VD: Admin đã gọi trao đổi với khách, thống nhất mức hỗ trợ phục chế 50% (300.000đ). Khách đã đồng thuận và nhận hoàn tiền cọc."
+              value={negotiationNotes}
+              onChange={(e) => setNegotiationNotes(e.target.value)}
+              className="text-xs"
+            />
           </div>
+        </div>
 
-          {/* Actions */}
-          <div className="flex gap-2.5 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-28 py-2.5 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-stone-700 hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
-            >
-              Đóng
-            </button>
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={handleSubmitAdminSettle}
-              className="flex-1 py-2.5 rounded-xl bg-[#1E8347] hover:bg-[#166534] text-white text-[12.5px] font-bold transition-all border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
-            >
-              {submitting ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
-              <span>XÁC NHẬN ĐÀM PHÁN & HOÀN TIỀN ({fmtVnd(finalRefund)})</span>
-            </button>
-          </div>
+        {/* Actions */}
+        <div className="flex gap-2.5 pt-1">
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-28 py-2.5 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-stone-700 hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
+          >
+            Đóng
+          </button>
+          <button
+            type="button"
+            disabled={submitting}
+            onClick={handleSubmitAdminSettle}
+            className="flex-1 py-2.5 rounded-xl bg-[#1E8347] hover:bg-[#166534] text-white text-[12.5px] font-bold transition-all border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
+          >
+            {submitting ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
+            <span>XÁC NHẬN ĐÀM PHÁN & HOÀN TIỀN ({fmtVnd(finalRefund)})</span>
+          </button>
         </div>
       </div>
-
-      {/* Lightbox xem ảnh lỗi phóng to */}
-      {previewPhoto && (
-        <div
-          onClick={() => setPreviewPhoto(null)}
-          className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4 cursor-zoom-out animate-fadeIn"
-        >
-          <div className="max-w-2xl max-h-[85vh] bg-white rounded-2xl overflow-hidden shadow-2xl p-2">
-            <img src={previewPhoto} alt="Bằng chứng lỗi chi tiết" className="w-full h-full object-contain max-h-[80vh] rounded-xl" />
-          </div>
-        </div>
-      )}
     </div>
+
+      {/* Lightbox xem ảnh lỗi phóng to */ }
+  {
+    previewPhoto && (
+      <div
+        onClick={() => setPreviewPhoto(null)}
+        className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4 cursor-zoom-out animate-fadeIn"
+      >
+        <div className="max-w-2xl max-h-[85vh] bg-white rounded-2xl overflow-hidden shadow-2xl p-2">
+          <img src={previewPhoto} alt="Bằng chứng lỗi chi tiết" className="w-full h-full object-contain max-h-[80vh] rounded-xl" />
+        </div>
+      </div>
+    )
+  }
+    </div >
   );
 }
 
@@ -1833,7 +1831,7 @@ function RefundModal({ order, onClose, onSuccess }) {
     try {
       await updateOrderStatus(order._id, 'completed');
       recordCompletedOrderMaintenance(order);
-      message.success(`Đã hoàn tất quyết toán cọc ${fmtVnd(finalRefund)} cho khách hàng! Đơn hàng đã chuyển vào Hồ Sơ Lưu Trữ.`);
+      message.success(`Hoàn cọc thành công ${fmtVnd(finalRefund)}! Đơn hàng đã chuyển sang trạng thái Hoàn Tất.`);
       onSuccess();
     } catch {
       message.error('Quyết toán hoàn cọc thất bại. Vui lòng thử lại.');
@@ -1931,6 +1929,24 @@ function RefundModal({ order, onClose, onSuccess }) {
 
           {/* Lựa chọn phương thức hoàn tiền */}
           <div className="p-3.5 rounded-xl border border-[#EFE5E1] bg-white space-y-3">
+            <label className="font-bold text-[#2C2523] block">
+              Phương thức hoàn trả tiền cọc cho khách:
+            </label>
+            <Radio.Group
+              value={refundMethod}
+              onChange={(e) => setRefundMethod(e.target.value)}
+              className="flex flex-col gap-2"
+            >
+              <Radio value="bank_transfer">
+                <span className="font-medium text-[#2C2523]">Chuyển khoản trực tuyến (Internet Banking)</span>
+              </Radio>
+              <Radio value="cash">
+                <span className="font-medium text-[#2C2523]">Tiền mặt trực tiếp tại quầy Showroom</span>
+              </Radio>
+              <Radio value="card">
+                <span className="font-medium text-[#2C2523]">Hoàn trả vào thẻ ngân hàng / Cổng thanh toán</span>
+              </Radio>
+            </Radio.Group>
             <div className="flex items-center justify-between">
               <label className="font-bold text-[#2C2523] flex items-center gap-1.5 text-xs">
                 <CreditCard size={15} className="text-[#1E8347]" />
@@ -1940,6 +1956,29 @@ function RefundModal({ order, onClose, onSuccess }) {
                 Chính sách duy nhất: CK ngân hàng
               </span>
             </div>
+
+            {inspectionData?.refundBankDetails && (
+              <div className="p-3 rounded-xl bg-[#F0FDF4] border border-[#BBF7D0] space-y-1.5">
+                <div className="font-bold text-[#166534] text-[11.5px] flex items-center gap-1.5">
+                  <CreditCard size={13} />
+                  <span>Tài khoản thụ hưởng của khách (theo biên bản kiểm định):</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-[12px] text-[#2C2523]">
+                  <div>
+                    <span className="text-[#6E8276] block text-[11px]">Ngân hàng:</span>
+                    <strong>{inspectionData.refundBankDetails.bankName || 'Ngân hàng nội địa'}</strong>
+                  </div>
+                  <div>
+                    <span className="text-[#6E8276] block text-[11px]">Số tài khoản (STK):</span>
+                    <strong className="font-mono text-[#166534] text-[13px]">{inspectionData.refundBankDetails.accountNumber}</strong>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-[#6E8276] block text-[11px]">Chủ tài khoản:</span>
+                    <strong className="uppercase">{inspectionData.refundBankDetails.accountHolder}</strong>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="text-[11.5px] text-[#8C7D7E] block mb-1">
@@ -1974,7 +2013,7 @@ function RefundModal({ order, onClose, onSuccess }) {
               ) : (
                 <CheckCircle2 size={15} />
               )}
-              <span>Xác Nhận Đã Hoàn Cọc và Đóng Đơn</span>
+              <span>Xác Nhận Đã Hoàn Cọc Thành Công → Hoàn Tất Đơn ({fmtVnd(finalRefund)})</span>
             </button>
           </div>
         </div>
@@ -2258,7 +2297,9 @@ export default function OrderRentalManagement() {
           ? true
           : statusFilter === 'disputed'
             ? isDisputed
-            : o.status === statusFilter;
+            : (statusFilter === 'waiting_refund' || statusFilter === 'returned')
+              ? (o.status === 'waiting_refund' || o.status === 'returned')
+              : o.status === statusFilter;
 
       // Khi người dùng đang tìm kiếm cụ thể: Hiển thị ngay kết quả kể cả đơn nằm ở Kho Lưu Trữ
       if (cleanQ) {
@@ -2757,16 +2798,27 @@ export default function OrderRentalManagement() {
                               <PhoneCall size={13} />
                               <span>Đàm Phán & Xử Lý</span>
                             </button>
-                          ) : order.status === 'returned' ? (
-                            <button
-                              type="button"
-                              onClick={() => setInspectionOrder(order)}
-                              title="Xem biên bản kiểm định hiện trạng"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF0EB] text-[#733F49] hover:bg-[#F3E2DB] border border-[#ECD9D3] text-[12px] font-bold transition-all cursor-pointer"
-                            >
-                              <Eye size={13} />
-                              <span>Xem Kiểm Định</span>
-                            </button>
+                          ) : (order.status === 'returned' || order.status === 'waiting_refund') ? (
+                            <div className="inline-flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setRefundOrder(order)}
+                                title="Bước 2: Hoàn tiền cọc qua chuyển khoản và chuyển đơn sang Hoàn Tất"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1E8347] hover:bg-[#166534] text-white text-[12px] font-bold shadow-xs transition-all cursor-pointer"
+                              >
+                                <Banknote size={14} />
+                                <span>Hoàn Cọc</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setInspectionOrder(order)}
+                                title="Xem biên bản kiểm định hiện trạng"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#FAF0EB] text-[#733F49] hover:bg-[#F3E2DB] border border-[#ECD9D3] text-[12px] font-semibold transition-all cursor-pointer"
+                              >
+                                <Eye size={13} />
+                                <span>Biên Bản</span>
+                              </button>
+                            </div>
                           ) : (
                             <UpdateStatusDropdown
                               order={order}
@@ -2856,7 +2908,7 @@ export default function OrderRentalManagement() {
             const updatedId = inspectionOrder._id;
             setInspectionOrder(null);
             setOrders((prev) => {
-              const next = prev.map((o) => (o._id === updatedId ? { ...o, status: 'returned' } : o));
+              const next = prev.map((o) => (o._id === updatedId ? { ...o, status: 'waiting_refund' } : o));
               try {
                 localStorage.setItem('unibridal_orders_local', JSON.stringify(next));
               } catch { }
