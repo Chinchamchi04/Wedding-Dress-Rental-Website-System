@@ -31,6 +31,9 @@ import {
   UserCheck,
   UserX,
   Crown,
+  PhoneCall,
+  Copy,
+  CheckCheck,
 } from 'lucide-react';
 import HangerIcon from '../../components/common/HangerIcon';
 import {
@@ -39,6 +42,7 @@ import {
   updateOrderStatus,
   submitReturnInspection,
   getReturnInspection,
+  settleInspectionAdmin,
 } from '../../services/orderService';
 import { formatCurrencyVND } from '../../utils/formatCurrency';
 import { DRESS_CATALOG } from '../../data/dressCatalog';
@@ -76,6 +80,7 @@ const STATUS_CONFIG = {
   delivered: { label: 'Đã Giao Váy', bg: 'bg-[#FFEDD5]', text: 'text-[#C2410C]' },
   renting: { label: 'Đang Thuê', bg: 'bg-[#EDE9FE]', text: 'text-[#6D28D9]' },
   returned: { label: 'Chờ Hoàn Cọc', bg: 'bg-[#FEF3C7]', text: 'text-[#B45309]' },
+  disputed: { label: 'Tạm giữ - Chờ Admin đàm phán', bg: 'bg-[#FEE2E2]', text: 'text-[#991B1B]' },
   complete: { label: 'Hoàn Tất', bg: 'bg-[#A7F3D0]', text: 'text-[#064E3B]' },
   completed: { label: 'Hoàn Tất', bg: 'bg-[#A7F3D0]', text: 'text-[#064E3B]' },
   cancelled: { label: 'Đã Hủy', bg: 'bg-[#F3F4F6]', text: 'text-[#6B7280]' },
@@ -145,15 +150,15 @@ function calcLate(rentalEndDate) {
 
 function StatusBadge({ status, order }) {
   const custStatus = order?.inspection?.customerStatus || order?.inspectionCustomerStatus;
-  if (status === 'returned' || status === 'disputed' || custStatus === 'disputed') {
-    if (custStatus === 'disputed' || status === 'disputed') {
-      return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#FEE2E2] text-[#991B1B] border border-[#FECACA] animate-pulse">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-600"></span>
-          Khách Khiếu Nại
-        </span>
-      );
-    }
+  if (status === 'disputed' || custStatus === 'disputed') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#FEE2E2] text-[#991B1B] border border-[#FECACA] animate-pulse">
+        <span className="w-1.5 h-1.5 rounded-full bg-red-600"></span>
+        Tạm Giữ - Chờ Admin Đàm Phán
+      </span>
+    );
+  }
+  if (status === 'returned') {
     if (custStatus === 'approved') {
       return (
         <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]">
@@ -431,8 +436,9 @@ function InspectionModal({ order, onClose, onSuccess }) {
   const [disputeReason, setDisputeReason] = useState('');
   const [refundBankDetails, setRefundBankDetails] = useState(null);
 
-  // Trực tiếp tại quầy dành cho Guest hoặc khách tại Showroom
-  const [confirmOnSite, setConfirmOnSite] = useState(isGuestOrder);
+  // 2. Ý kiến khách hàng về biên bản kiểm định (Trường hợp 1: Chốt tại chỗ | Trường hợp 2: Giữ đơn chuyển Admin)
+  const [customerDecision, setCustomerDecision] = useState('agreed'); // 'agreed' | 'disputed'
+  const [customerDisputeNote, setCustomerDisputeNote] = useState('');
   const [refundMethod, setRefundMethod] = useState('cash'); // 'cash' | 'bank_transfer'
   const [onSiteBankName, setOnSiteBankName] = useState('Vietcombank');
   const [onSiteAccountNum, setOnSiteAccountNum] = useState('');
@@ -586,6 +592,15 @@ function InspectionModal({ order, onClose, onSuccess }) {
       return;
     }
 
+    // 1. Kiểm tra tình trạng váy & BẮT BUỘC CHỤP ẢNH LỖI ĐẦY ĐỦ
+    const hasDamage = itemsCondition.some(
+      (ic) => ic.condition !== 'good' || Number(ic.compensation || 0) > 0
+    );
+    if (hasDamage && (!evidencePhotos || evidencePhotos.length === 0)) {
+      message.error('Quy định bắt buộc: Phải chụp hoặc tải ít nhất 1 ảnh bằng chứng lỗi hư hại của váy trước khi gửi!');
+      return;
+    }
+
     // Validate không được nhập số tiền lớn hơn tiền cọc
     for (const ic of itemsCondition) {
       const maxLimit = ic.maxDeposit || ic.depositAmount || order.totalDeposit || 0;
@@ -611,12 +626,17 @@ function InspectionModal({ order, onClose, onSuccess }) {
         compensation: Number(ic.compensation || 0),
       }));
 
+      const isDisputeCase = customerDecision === 'disputed';
+
       const body = {
         itemsCondition: payload,
         evidencePhotos,
-        confirmOnSite,
-        refundMethod,
-        refundBankDetails: confirmOnSite ? (
+        holdForAdmin: isDisputeCase,
+        customerAgreed: !isDisputeCase,
+        confirmOnSite: !isDisputeCase,
+        disputeReason: isDisputeCase ? (customerDisputeNote.trim() || 'Khách không đồng ý với mức phạt/biên bản kiểm định tại chỗ') : '',
+        refundMethod: !isDisputeCase ? refundMethod : undefined,
+        refundBankDetails: !isDisputeCase ? (
           refundMethod === 'cash' ? {
             bankName: 'Tiền mặt tại quầy',
             accountNumber: 'TIỀN MẶT',
@@ -633,15 +653,15 @@ function InspectionModal({ order, onClose, onSuccess }) {
 
       await submitReturnInspection(order._id, body);
 
-      if (confirmOnSite) {
-        message.success(`Đã xác nhận kiểm định và quyết toán hoàn cọc ${fmtVnd(finalRefund)} trực tiếp tại quầy thành công! Đơn hàng đã hoàn tất.`);
+      if (isDisputeCase) {
+        message.warning('Đã lưu ảnh lỗi & chuyển đơn sang [Tạm giữ - Chờ Admin đàm phán]. Nhân viên vui lòng gọi điện hoặc báo cho Admin xử lý!');
       } else {
-        message.success('Đã lưu biên bản kiểm định thành công! Hệ thống đã gửi email thông báo kèm liên kết xác nhận hoàn cọc tới khách hàng.');
+        message.success(`Đã xác nhận kiểm định và hoàn cọc ${fmtVnd(finalRefund)} thành công! Đơn hàng chuyển sang Hoàn tất và gửi email kèm biên lai.`);
       }
       setIsEditing(false);
       onSuccess();
-    } catch {
-      message.error('Gửi biên bản kiểm định thất bại. Vui lòng thử lại.');
+    } catch (err) {
+      message.error(err?.response?.data?.message || err.message || 'Gửi biên bản kiểm định thất bại. Vui lòng thử lại.');
     } finally {
       setSubmitting(false);
     }
@@ -846,14 +866,23 @@ function InspectionModal({ order, onClose, onSuccess }) {
             );
           })}
 
-          {/* CHỤP ẢNH VÀ LƯU BẰNG CHỨNG HIỆN TRẠNG VÁY - Thu gọn thanh mảnh */}
+          {/* CHỤP ẢNH VÀ LƯU BẰNG CHỨNG HIỆN TRẠNG VÁY - Bắt buộc khi có lỗi */}
           <div className="p-2 px-3 rounded-xl border border-[#EFE5E1] bg-[#FCF8F5] space-y-1.5">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <Camera size={14} className="text-[#733F49]" />
                 <span className="font-bold text-[12px] text-[#2C2523]">
-                  Ảnh Bằng Chứng Đối Soát ({evidencePhotos.length})
+                  Ảnh Bằng Chứng Lỗi ({evidencePhotos.length})
                 </span>
+                {itemsCondition.some((ic) => ic.condition !== 'good' || Number(ic.compensation || 0) > 0) && (
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                    evidencePhotos.length > 0
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                      : 'bg-red-100 text-red-700 border border-red-200 animate-pulse'
+                  }`}>
+                    {evidencePhotos.length > 0 ? '✓ Đã chụp đủ ảnh lỗi' : '⚠️ BẮT BUỘC CHỤP ẢNH LỖI'}
+                  </span>
+                )}
               </div>
               {!isReadOnly && (
                 <label className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#733F49] text-white text-[11px] font-bold cursor-pointer hover:bg-[#5C3038] transition-colors shadow-2xs">
@@ -909,32 +938,87 @@ function InspectionModal({ order, onClose, onSuccess }) {
             </div>
           </div>
 
-          {/* Tùy chọn xác nhận trực tiếp dành cho 2 hình thức: Trả tại Showroom hoặc Nhân viên đến thu hồi */}
+          {/* 2. Staff hỏi ý kiến khách về biên bản */}
           {!isReadOnly && (
-            <div className={`p-3 rounded-xl border transition-all ${confirmOnSite ? 'border-[#BCE2C5] bg-[#F3FAF5]' : 'border-[#EFE5E1] bg-[#FAF5F2]'}`}>
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={confirmOnSite}
-                    onChange={(e) => setConfirmOnSite(e.target.checked)}
-                    className="w-4 h-4 rounded text-[#1E8347] accent-[#1E8347] cursor-pointer"
-                  />
-                  <span className="font-bold text-[12px] text-[#1E6B37]">
-                    Đồng kiểm tra & xác nhận trực tiếp cùng khách (Tại Showroom / Tận nơi thu hồi)
+            <div className="p-3.5 rounded-xl border border-[#DDC6C0] bg-[#FAF5F2] space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-[#733F49] text-white flex items-center justify-center text-[11px] font-bold">2</span>
+                  <span className="font-bold text-[12.5px] text-[#5F2B36]">
+                    Ý Kiến Khách Hàng Về Biên Bản Kiểm Định
                   </span>
-                </label>
+                </div>
                 {isGuestOrder && (
                   <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full border border-amber-200">
-                    Khách vãng lai (Không có tài khoản)
+                    Khách vãng lai (Tại Showroom)
                   </span>
                 )}
               </div>
 
-              {confirmOnSite && (
-                <div className="pt-2.5 mt-2 border-t border-[#D5E8D8] space-y-2 text-[11.5px] animate-fadeIn">
+              {/* 2 Nhánh lựa chọn rõ ràng */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Lựa chọn 1: Khách ĐỒNG Ý */}
+                <div
+                  onClick={() => setCustomerDecision('agreed')}
+                  className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                    customerDecision === 'agreed'
+                      ? 'border-[#1E8347] bg-[#F3FAF5] shadow-xs'
+                      : 'border-[#E5D7D0] bg-white hover:border-[#BCE2C5]'
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    <input
+                      type="radio"
+                      name="customerDecisionRadio"
+                      checked={customerDecision === 'agreed'}
+                      onChange={() => setCustomerDecision('agreed')}
+                      className="mt-0.5 accent-[#1E8347] cursor-pointer"
+                    />
+                    <div>
+                      <div className="font-bold text-[12px] text-[#1E6B37]">
+                        TRƯỜNG HỢP 1: Khách ĐỒNG Ý
+                      </div>
+                      <p className="text-[10.5px] text-[#4A5D4E] mt-0.5 m-0 leading-tight">
+                        Chốt tại chỗ & hoàn cọc ngay. Đơn chuyển Hoàn tất, gửi email cảm ơn kèm biên lai.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lựa chọn 2: Khách KHÔNG ĐỒNG Ý */}
+                <div
+                  onClick={() => setCustomerDecision('disputed')}
+                  className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                    customerDecision === 'disputed'
+                      ? 'border-red-500 bg-red-50/70 shadow-xs'
+                      : 'border-[#E5D7D0] bg-white hover:border-red-300'
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    <input
+                      type="radio"
+                      name="customerDecisionRadio"
+                      checked={customerDecision === 'disputed'}
+                      onChange={() => setCustomerDecision('disputed')}
+                      className="mt-0.5 accent-red-600 cursor-pointer"
+                    />
+                    <div>
+                      <div className="font-bold text-[12px] text-red-800">
+                        TRƯỜNG HỢP 2: Khách KHÔNG ĐỒNG Ý
+                      </div>
+                      <p className="text-[10.5px] text-[#7F3A3A] mt-0.5 m-0 leading-tight">
+                        Giữ đơn chuyển Admin. Lưu đủ ảnh lỗi, không chốt phạt, chuyển trạng thái chờ đàm phán.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Chi tiết cho Lựa chọn 1: Khách ĐỒNG Ý */}
+              {customerDecision === 'agreed' && (
+                <div className="pt-2 border-t border-[#D5E8D8] space-y-2 text-[11.5px] animate-fadeIn">
                   <div className="flex items-center gap-4">
-                    <span className="text-[#3F5946] font-semibold">Hình thức hoàn cọc:</span>
+                    <span className="text-[#3F5946] font-semibold">Khách chọn nhận hoàn cọc qua:</span>
                     <label className="inline-flex items-center gap-1.5 cursor-pointer">
                       <input
                         type="radio"
@@ -944,7 +1028,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
                         onChange={() => setRefundMethod('cash')}
                         className="accent-[#1E8347]"
                       />
-                      <span className="font-medium text-[#2C2523]">Tiền mặt trực tiếp</span>
+                      <span className="font-medium text-[#2C2523]">Tiền mặt tại quầy</span>
                     </label>
                     <label className="inline-flex items-center gap-1.5 cursor-pointer">
                       <input
@@ -955,7 +1039,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
                         onChange={() => setRefundMethod('bank_transfer')}
                         className="accent-[#1E8347]"
                       />
-                      <span className="font-medium text-[#2C2523]">Chuyển khoản ngay</span>
+                      <span className="font-medium text-[#2C2523]">Chuyển khoản (STK)</span>
                     </label>
                   </div>
 
@@ -995,14 +1079,35 @@ function InspectionModal({ order, onClose, onSuccess }) {
                   )}
 
                   <p className="text-[11px] text-[#2E7D47] m-0">
-                    ✓ Sau khi xác nhận, hệ thống sẽ <strong>quyết toán hoàn cọc {fmtVnd(finalRefund)}</strong> và chuyển đơn sang <strong>Hoàn tất</strong> ngay lập tức.
+                    ✓ Bấm nút bên dưới để <strong>Xác Nhận & Hoàn Cọc {fmtVnd(finalRefund)}</strong>. Hệ thống sẽ hoàn tất đơn và tự động gửi email cảm ơn kèm biên lai.
                   </p>
+                </div>
+              )}
+
+              {/* Chi tiết cho Lựa chọn 2: Khách KHÔNG ĐỒNG Ý */}
+              {customerDecision === 'disputed' && (
+                <div className="pt-2 border-t border-red-200 space-y-2 text-[11.5px] animate-fadeIn">
+                  <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-900 text-[11px] leading-relaxed">
+                    ⚠️ <strong>Quy trình xử lý:</strong> Staff lưu đủ ảnh lỗi đã chụp, <strong>KHÔNG chốt phạt lúc này</strong>. Đơn hàng sẽ chuyển sang <strong>"Tạm giữ - Chờ Admin đàm phán"</strong>. Sau khi bấm, Staff vui lòng gọi điện hoặc thông báo cho Admin để vào cuộc đàm phán trực tiếp với khách.
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-semibold text-[#662020] block mb-1">
+                      Lý do khách không đồng ý / Phản ánh của khách:
+                    </span>
+                    <Input.TextArea
+                      rows={2}
+                      placeholder="Nhập ý kiến của khách (VD: Khách cho rằng vết bẩn có từ trước, mức phạt quá cao, muốn khiếu nại...)"
+                      value={customerDisputeNote}
+                      onChange={(e) => setCustomerDisputeNote(e.target.value)}
+                      className="text-xs"
+                    />
+                  </div>
                 </div>
               )}
             </div>
           )}
 
-          {/* Actions - Nút bấm thu gọn */}
+          {/* Actions - Nút bấm */}
           <div className="flex gap-2.5 pt-1">
             {isReadOnly ? (
               <div className="flex w-full gap-2.5">
@@ -1031,33 +1136,441 @@ function InspectionModal({ order, onClose, onSuccess }) {
                     if (isReturnedOrder) setIsEditing(false);
                     else onClose();
                   }}
-                  className="flex-1 py-2 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
+                  className="w-28 py-2.5 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
                 >
                   Hủy
                 </button>
-                <button
-                  type="button"
-                  disabled={submitting}
-                  onClick={handleSubmit}
-                  className={`flex-1 py-2 rounded-xl text-[12px] font-bold text-white transition-colors border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs ${confirmOnSite ? 'bg-[#1E8347] hover:bg-[#166534]' : 'bg-[#733F49] hover:bg-[#5C3038]'
-                    }`}
-                >
-                  {submitting ? (
-                    <RefreshCw size={13} className="animate-spin" />
-                  ) : confirmOnSite ? (
-                    <CheckCircle2 size={14} />
-                  ) : (
-                    <ShieldCheck size={14} />
-                  )}
-                  <span>
-                    {confirmOnSite ? 'Xác Nhận & Hoàn Cọc Cho Khách' : 'Lưu và Gửi Biên Bản Cho Khách Hàng'}
-                  </span>
-                </button>
+                {customerDecision === 'agreed' ? (
+                  <button
+                    type="button"
+                    disabled={submitting}
+                    onClick={handleSubmit}
+                    className="flex-1 py-2.5 rounded-xl bg-[#1E8347] hover:bg-[#166534] text-white text-[12.5px] font-bold transition-all border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
+                  >
+                    {submitting ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
+                    <span>XÁC NHẬN & HOÀN CỌC ({fmtVnd(finalRefund)})</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={submitting}
+                    onClick={handleSubmit}
+                    className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-[12.5px] font-bold transition-all border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
+                  >
+                    {submitting ? <RefreshCw size={14} className="animate-spin" /> : <AlertTriangle size={15} />}
+                    <span>GIỮ ĐƠN & BÁO ADMIN</span>
+                  </button>
+                )}
               </>
             )}
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function AdminNegotiationModal({ order, onClose, onSuccess }) {
+  const [inspection, setInspection] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [agreedPenalty, setAgreedPenalty] = useState(0);
+  const [refundMethod, setRefundMethod] = useState('bank_transfer'); // 'cash' | 'bank_transfer'
+  const [bankName, setBankName] = useState('Vietcombank');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [accountHolder, setAccountHolder] = useState(order.customerName || '');
+  const [negotiationNotes, setNegotiationNotes] = useState('');
+  const [previewPhoto, setPreviewPhoto] = useState(null);
+  const [copiedPhone, setCopiedPhone] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    getReturnInspection(order._id)
+      .then((res) => {
+        if (!active) return;
+        const insp = res?.data || res;
+        setInspection(insp);
+        if (insp) {
+          const initPenalty = insp.agreedPenaltyFee ?? insp.totalDeduction ?? 0;
+          setAgreedPenalty(initPenalty);
+          if (insp.refundBankDetails?.bankName) setBankName(insp.refundBankDetails.bankName);
+          if (insp.refundBankDetails?.accountNumber) setAccountNumber(insp.refundBankDetails.accountNumber);
+          if (insp.refundBankDetails?.accountHolder) setAccountHolder(insp.refundBankDetails.accountHolder);
+          if (insp.adminNegotiationNotes) setNegotiationNotes(insp.adminNegotiationNotes);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [order._id]);
+
+  const totalDeposit = Number(order.totalDeposit || 0);
+  const staffInitialDeduction = inspection?.totalDeduction ?? 0;
+  const finalRefund = Math.max(0, totalDeposit - agreedPenalty);
+  const phone = order.customerPhone || order.phone || order.customer?.phone || '';
+
+  const handleCopyPhone = () => {
+    if (!phone) return;
+    navigator.clipboard.writeText(phone);
+    setCopiedPhone(true);
+    message.success('Đã sao chép số điện thoại khách hàng!');
+    setTimeout(() => setCopiedPhone(false), 2000);
+  };
+
+  const handleSubmitAdminSettle = async () => {
+    if (agreedPenalty > totalDeposit) {
+      message.error(`Mức phạt không được vượt quá số tiền cọc (${fmtVnd(totalDeposit)})!`);
+      return;
+    }
+    if (refundMethod === 'bank_transfer' && finalRefund > 0 && !accountNumber.trim()) {
+      message.error('Vui lòng nhập số tài khoản ngân hàng để chuyển khoản hoàn tiền cho khách!');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await settleInspectionAdmin(order._id, {
+        agreedPenaltyFee: agreedPenalty,
+        refundMethod,
+        bankName,
+        accountNumber,
+        accountHolder: accountHolder || order.customerName,
+        negotiationNotes,
+        refundBankDetails: refundMethod === 'cash' ? {
+          bankName: 'Tiền mặt tại quầy',
+          accountNumber: 'TIỀN MẶT',
+          accountHolder: order.customerName,
+          notes: negotiationNotes || 'Admin đã đàm phán và hoàn tiền mặt trực tiếp cho khách',
+        } : {
+          bankName,
+          accountNumber,
+          accountHolder,
+          notes: negotiationNotes || 'Admin đã đàm phán và chuyển khoản hoàn tiền cho khách',
+        },
+      });
+
+      message.success(`Admin đã xác nhận đàm phán thành công! Đơn hàng đã chuyển sang Hoàn tất và gửi email kèm biên lai hoàn cọc.`);
+      onSuccess();
+    } catch (err) {
+      message.error(err?.response?.data?.message || err.message || 'Xác nhận đàm phán thất bại. Vui lòng thử lại.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[94vh] overflow-y-auto shadow-2xl border border-[#EFE5E1]">
+        {/* Header */}
+        <div className="flex items-center justify-between py-2.5 px-4 border-b border-red-200 bg-red-50/70 rounded-t-2xl">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-700">
+              <PhoneCall size={16} />
+            </div>
+            <div>
+              <h3 className="font-playfair text-[15px] font-bold text-red-950 m-0">
+                Admin Đàm Phán Mức Phạt & Hoàn Tất Đơn
+              </h3>
+              <p className="text-[10.5px] text-red-700 m-0 font-medium">
+                Đơn #{order.orderCode} • Trạng thái: Tạm giữ - Chờ Admin đàm phán
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-7 h-7 rounded-full bg-white text-stone-600 hover:text-red-900 flex items-center justify-center transition-colors cursor-pointer border border-red-100"
+          >
+            <X size={14} />
+          </button>
+        </div>
+
+        <div className="p-4 space-y-3.5 text-xs font-jakarta">
+          {/* Thông tin liên hệ khách hàng & Khiếu nại */}
+          <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200 space-y-2">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-[13px] text-stone-900">{order.customerName}</span>
+                {phone && (
+                  <span className="inline-flex items-center gap-1 font-mono font-bold text-red-700 bg-white px-2 py-0.5 rounded border border-red-200">
+                    <PhoneCall size={11} /> {phone}
+                  </span>
+                )}
+              </div>
+              {phone && (
+                <div className="flex items-center gap-1.5">
+                  <a
+                    href={`tel:${phone}`}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[11px] hover:bg-emerald-700 transition-colors no-underline"
+                  >
+                    <PhoneCall size={12} />
+                    <span>Gọi Khách</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={handleCopyPhone}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-stone-200 text-stone-700 font-bold text-[11px] hover:bg-stone-50 transition-colors cursor-pointer"
+                  >
+                    {copiedPhone ? <CheckCheck size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                    <span>{copiedPhone ? 'Đã sao chép' : 'Sao chép SĐT'}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="text-[11.5px] text-stone-800">
+              <span className="font-bold text-red-800">Lý do khách khiếu nại / Ghi chú từ Staff: </span>
+              <span className="italic">"{inspection?.disputeReason || 'Khách không đồng ý với biên bản kiểm định hoặc mức phạt do Staff đề xuất tại chỗ.'}"</span>
+            </div>
+          </div>
+
+          {/* BƯỚC 3: Admin xem ảnh lỗi Staff chụp & Đánh giá hiện trạng */}
+          <div className="p-3.5 rounded-xl border border-[#EFE5E1] bg-white space-y-2.5">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-stone-800 text-white flex items-center justify-center text-[10.5px] font-bold">3</span>
+                <span className="font-bold text-[12.5px] text-[#5F2B36]">
+                  Admin Xem Ảnh Lỗi Staff Đã Chụp & Đánh Giá
+                </span>
+              </div>
+              <span className="text-[11px] text-stone-600">
+                Mức phạt Staff đề xuất: <strong className="text-red-700">{fmtVnd(staffInitialDeduction)}</strong>
+              </span>
+            </div>
+
+            {/* Chi tiết từng váy */}
+            <div className="space-y-1.5">
+              {(inspection?.itemsCondition || order.items || []).map((it, idx) => (
+                <div key={idx} className="p-2 rounded-lg bg-[#FAF5F2] border border-[#F0E6E2] flex items-center justify-between text-[11.5px] flex-wrap gap-1">
+                  <div>
+                    <strong className="text-stone-900">{it.name || order.items?.[idx]?.name || `Váy ${idx + 1}`}</strong>
+                    <span className="text-stone-500 ml-1.5 font-medium">({it.condition || 'Tình trạng ghi nhận'})</span>
+                    {it.note && <span className="text-red-700 ml-1.5 italic">• {it.note}</span>}
+                  </div>
+                  <div className="text-right">
+                    <span className="text-stone-600">Phí Staff ghi: </span>
+                    <strong className="text-red-700">{fmtVnd(it.repairFee || it.compensation || 0)}</strong>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Bộ sưu tập ảnh lỗi Staff chụp */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] font-bold text-stone-700 flex items-center gap-1">
+                  <Camera size={13} className="text-red-600" />
+                  <span>Ảnh bằng chứng lỗi ({inspection?.evidencePhotos?.length || 0} ảnh) - Nhấn ảnh để phóng to:</span>
+                </span>
+              </div>
+              {inspection?.evidencePhotos && inspection.evidencePhotos.length > 0 ? (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {inspection.evidencePhotos.map((photo, pIdx) => (
+                    <div
+                      key={pIdx}
+                      onClick={() => setPreviewPhoto(photo)}
+                      className="w-16 h-16 rounded-lg overflow-hidden border-2 border-red-200 hover:border-red-500 cursor-pointer transition-all shadow-xs group relative"
+                    >
+                      <img src={photo} alt={`Lỗi ${pIdx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] font-bold transition-opacity">
+                        <Eye size={12} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-2 rounded-lg bg-stone-50 border border-stone-200 text-stone-500 italic text-[11px] text-center">
+                  Không tìm thấy ảnh lỗi lưu kèm đơn hàng.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* BƯỚC 4: Admin duyệt hoàn tất đơn & Chốt mức phạt đàm phán */}
+          <div className="p-3.5 rounded-xl border-2 border-[#1E8347]/30 bg-[#F6FAF7] space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full bg-[#1E8347] text-white flex items-center justify-center text-[10.5px] font-bold">4</span>
+              <span className="font-bold text-[12.5px] text-[#166534]">
+                Admin Duyệt Hoàn Tất Đơn & Chốt Mức Phạt Thống Nhất
+              </span>
+            </div>
+
+            <p className="text-[11px] text-[#2F6B42] m-0 leading-relaxed">
+              💡 <strong>Hướng dẫn:</strong> Admin trực tiếp trao đổi với khách, thống nhất "Mức phạt chung hợp lý" cả 2 bên cùng đồng thuận, sau đó nhập vào ô bên dưới.
+            </p>
+
+            {/* Nhập mức phạt */}
+            <div className="bg-white p-3 rounded-xl border border-[#D5E8D8] space-y-2">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="font-bold text-[11.5px] text-stone-900">
+                  Mức Phạt Thống Nhất Sau Đàm Phán (VND):
+                </span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setAgreedPenalty(0)}
+                    className="px-2 py-0.5 rounded text-[10.5px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 cursor-pointer"
+                  >
+                    Miễn phạt (0đ)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAgreedPenalty(Math.round(staffInitialDeduction * 0.5))}
+                    className="px-2 py-0.5 rounded text-[10.5px] font-bold bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 cursor-pointer"
+                  >
+                    Giảm 50% phạt ({fmtVnd(Math.round(staffInitialDeduction * 0.5))})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAgreedPenalty(staffInitialDeduction)}
+                    className="px-2 py-0.5 rounded text-[10.5px] font-bold bg-stone-100 text-stone-800 border border-stone-200 hover:bg-stone-200 cursor-pointer"
+                  >
+                    Giữ nguyên ({fmtVnd(staffInitialDeduction)})
+                  </button>
+                </div>
+              </div>
+
+              <Input
+                size="large"
+                placeholder="Nhập mức phạt đã thống nhất..."
+                value={agreedPenalty ? String(agreedPenalty).replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
+                onChange={(e) => {
+                  const rawDigits = e.target.value.replace(/\D/g, '');
+                  const num = rawDigits ? parseInt(rawDigits, 10) : 0;
+                  setAgreedPenalty(Math.min(totalDeposit, Math.max(0, num)));
+                }}
+                suffix={<span className="text-stone-500 font-bold text-xs">VND</span>}
+                className="text-sm font-bold text-red-700"
+              />
+
+              {/* Bảng tổng kết tiền hoàn cọc */}
+              <div className="p-2.5 rounded-lg bg-[#FAF5F2] border border-[#F0E6E2] flex items-center justify-between text-[11.5px] flex-wrap gap-2">
+                <div className="space-x-2 text-stone-600">
+                  <span>Tiền cọc: <strong className="text-stone-900">{fmtVnd(totalDeposit)}</strong></span>
+                  <span>• Mức phạt chốt: <strong className="text-red-700">-{fmtVnd(agreedPenalty)}</strong></span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-stone-800">Hoàn lại cho khách:</span>
+                  <span className="text-[16px] font-bold text-[#1E8347]">{fmtVnd(finalRefund)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Chọn Tiền mặt hoặc STK khách nhận */}
+            <div className="bg-white p-3 rounded-xl border border-[#D5E8D8] space-y-2 text-[11.5px]">
+              <div className="flex items-center gap-4">
+                <span className="text-stone-800 font-bold">Hình thức hoàn tiền:</span>
+                <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="adminRefundMethod"
+                    value="cash"
+                    checked={refundMethod === 'cash'}
+                    onChange={() => setRefundMethod('cash')}
+                    className="accent-[#1E8347]"
+                  />
+                  <span className="font-medium text-stone-800">Tiền mặt tại quầy</span>
+                </label>
+                <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="adminRefundMethod"
+                    value="bank_transfer"
+                    checked={refundMethod === 'bank_transfer'}
+                    onChange={() => setRefundMethod('bank_transfer')}
+                    className="accent-[#1E8347]"
+                  />
+                  <span className="font-medium text-stone-800">Chuyển khoản (STK)</span>
+                </label>
+              </div>
+
+              {refundMethod === 'bank_transfer' && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                  <div>
+                    <span className="text-[10.5px] text-stone-600 block mb-0.5 font-medium">Ngân hàng</span>
+                    <Input
+                      size="small"
+                      placeholder="VD: Vietcombank, MB..."
+                      value={bankName}
+                      onChange={(e) => setBankName(e.target.value)}
+                      className="text-xs"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[10.5px] text-stone-600 block mb-0.5 font-medium">Số tài khoản</span>
+                    <Input
+                      size="small"
+                      placeholder="Nhập STK nhận tiền..."
+                      value={accountNumber}
+                      onChange={(e) => setAccountNumber(e.target.value)}
+                      className="text-xs font-mono"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[10.5px] text-stone-600 block mb-0.5 font-medium">Chủ tài khoản</span>
+                    <Input
+                      size="small"
+                      placeholder="TÊN CHỦ TÀI KHOẢN"
+                      value={accountHolder}
+                      onChange={(e) => setAccountHolder(e.target.value.toUpperCase())}
+                      className="text-xs font-semibold"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Ghi chú kết quả đàm phán */}
+            <div className="bg-white p-3 rounded-xl border border-[#D5E8D8]">
+              <span className="text-[11px] font-bold text-stone-800 block mb-1">
+                Ghi chú nội dung đàm phán & đồng thuận:
+              </span>
+              <Input.TextArea
+                rows={2}
+                placeholder="VD: Admin đã gọi trao đổi với khách, thống nhất mức hỗ trợ phục chế 50% (300.000đ). Khách đã đồng thuận và nhận hoàn tiền cọc."
+                value={negotiationNotes}
+                onChange={(e) => setNegotiationNotes(e.target.value)}
+                className="text-xs"
+              />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2.5 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-28 py-2.5 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-stone-700 hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
+            >
+              Đóng
+            </button>
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={handleSubmitAdminSettle}
+              className="flex-1 py-2.5 rounded-xl bg-[#1E8347] hover:bg-[#166534] text-white text-[12.5px] font-bold transition-all border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
+            >
+              {submitting ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
+              <span>XÁC NHẬN ĐÀM PHÁN & HOÀN TIỀN ({fmtVnd(finalRefund)})</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Lightbox xem ảnh lỗi phóng to */}
+      {previewPhoto && (
+        <div
+          onClick={() => setPreviewPhoto(null)}
+          className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4 cursor-zoom-out animate-fadeIn"
+        >
+          <div className="max-w-2xl max-h-[85vh] bg-white rounded-2xl overflow-hidden shadow-2xl p-2">
+            <img src={previewPhoto} alt="Bằng chứng lỗi chi tiết" className="w-full h-full object-contain max-h-[80vh] rounded-xl" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1298,8 +1811,9 @@ export default function OrderRentalManagement() {
   const [viewMode, setViewMode] = useState('active'); // 'active' (Đơn Đang Xử Lý) | 'archived' (Kho Lưu Trữ)
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc': mới nhất -> cũ nhất, 'asc': cũ nhất -> mới nhất
 
-  const [inspectionOrder, setInspectionOrder] = useState(null); // for inspection modal (bước 1)
-  const [refundOrder, setRefundOrder] = useState(null); // for refund modal (bước 2)
+  const [inspectionOrder, setInspectionOrder] = useState(null); // for inspection modal (bước 1 & 2)
+  const [negotiationOrder, setNegotiationOrder] = useState(null); // for Admin Negotiation Modal (bước 3 & 4)
+  const [refundOrder, setRefundOrder] = useState(null); // for refund modal (bước 2 cũ)
   const [detailOrder, setDetailOrder] = useState(null); // for detail modal (chi tiết đơn thuê)
   const [statusMenuId, setStatusMenuId] = useState(null); // row dropdown open id
 
@@ -1668,11 +2182,11 @@ export default function OrderRentalManagement() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setInspectionOrder(ord)}
+                  onClick={() => setNegotiationOrder(ord)}
                   className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs transition-all flex items-center justify-center gap-1.5 border-0"
                 >
-                  <AlertCircle size={14} />
-                  <span>Xem và Xử Lý Khiếu Nại Ngay</span>
+                  <PhoneCall size={14} />
+                  <span>Admin Đàm Phán & Xử Lý Ngay</span>
                 </button>
               </div>
             ))}
@@ -2023,27 +2537,25 @@ export default function OrderRentalManagement() {
                               <ShieldCheck size={13} />
                               <span>Kiểm Định Trả Váy</span>
                             </button>
-                          ) : order.status === 'returned' || isDisputed ? (
+                          ) : (order.status === 'disputed' || isDisputed) ? (
+                            <button
+                              type="button"
+                              onClick={() => setNegotiationOrder(order)}
+                              title="Admin trực tiếp gọi điện đàm phán mức phạt & hoàn tất đơn"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 border border-red-600 shadow-xs text-[12px] font-bold transition-all cursor-pointer"
+                            >
+                              <PhoneCall size={13} />
+                              <span>Đàm Phán & Xử Lý</span>
+                            </button>
+                          ) : order.status === 'returned' ? (
                             <button
                               type="button"
                               onClick={() => setInspectionOrder(order)}
-                              title={isDisputed ? 'Khách đã gửi khiếu nại — Nhấn để xem và đối soát xử lý' : 'Xem biên bản kiểm định hiện trạng'}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all cursor-pointer border ${isDisputed
-                                  ? 'bg-red-600 text-white hover:bg-red-700 border-red-600 shadow-xs'
-                                  : 'bg-[#FAF0EB] text-[#733F49] hover:bg-[#F3E2DB] border-[#ECD9D3]'
-                                }`}
+                              title="Xem biên bản kiểm định hiện trạng"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF0EB] text-[#733F49] hover:bg-[#F3E2DB] border border-[#ECD9D3] text-[12px] font-bold transition-all cursor-pointer"
                             >
-                              {isDisputed ? (
-                                <>
-                                  <AlertTriangle size={13} />
-                                  <span>Xử Lý Khiếu Nại</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Eye size={13} />
-                                  <span>Xem Kiểm Định</span>
-                                </>
-                              )}
+                              <Eye size={13} />
+                              <span>Xem Kiểm Định</span>
                             </button>
                           ) : (
                             <UpdateStatusDropdown
@@ -2125,7 +2637,7 @@ export default function OrderRentalManagement() {
         </div>
       </div>
 
-      {/* Bước 1: Inspection Modal (Biên bản kiểm định trả váy) */}
+      {/* Bước 1 & 2: Inspection Modal (Biên bản kiểm định trả váy) */}
       {inspectionOrder && (
         <InspectionModal
           order={inspectionOrder}
@@ -2135,6 +2647,26 @@ export default function OrderRentalManagement() {
             setInspectionOrder(null);
             setOrders((prev) => {
               const next = prev.map((o) => (o._id === updatedId ? { ...o, status: 'returned' } : o));
+              try {
+                localStorage.setItem('unibridal_orders_local', JSON.stringify(next));
+              } catch { }
+              return next;
+            });
+            loadOrders();
+          }}
+        />
+      )}
+
+      {/* Bước 3 & 4: Admin Negotiation Modal (Admin trực tiếp đàm phán mức phạt & hoàn tất đơn) */}
+      {negotiationOrder && (
+        <AdminNegotiationModal
+          order={negotiationOrder}
+          onClose={() => setNegotiationOrder(null)}
+          onSuccess={() => {
+            const updatedId = negotiationOrder._id;
+            setNegotiationOrder(null);
+            setOrders((prev) => {
+              const next = prev.map((o) => (o._id === updatedId ? { ...o, status: 'completed' } : o));
               try {
                 localStorage.setItem('unibridal_orders_local', JSON.stringify(next));
               } catch { }

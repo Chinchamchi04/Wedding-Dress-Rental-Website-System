@@ -298,6 +298,7 @@ export async function sendRefundConfirmationEmail({
   orderCode,
   finalRefundAmount = 0,
   bankDetails = null,
+  negotiationNote = '',
 }) {
   const transporter = createTransporter();
   const formatMoney = (amount) => Number(amount || 0).toLocaleString('vi-VN') + ' đ';
@@ -305,11 +306,19 @@ export async function sendRefundConfirmationEmail({
   const bankHtml = bankDetails?.accountNumber
     ? `
       <div style="background: #F8F5F2; border: 1px dashed #D5C2B9; border-radius: 10px; padding: 14px 18px; margin: 18px 0; font-size: 13px; line-height: 1.6;">
-        <strong style="color: #5F2B36; display: block; margin-bottom: 6px; font-size: 13.5px;">Thông tin tài khoản nhận hoàn cọc:</strong>
-        <div>• Ngân hàng thụ hưởng: <strong>${bankDetails.bankName || 'Ngân hàng nội địa'}</strong></div>
-        <div>• Số tài khoản (STK): <strong style="letter-spacing: 1px;">${bankDetails.accountNumber}</strong></div>
-        <div>• Chủ tài khoản: <strong>${bankDetails.accountHolder || fullName}</strong></div>
+        <strong style="color: #5F2B36; display: block; margin-bottom: 6px; font-size: 13.5px;">Thông tin hoàn trả tiền cọc:</strong>
+        <div>• Phương thức: <strong>${bankDetails.bankName === 'Tiền mặt tại quầy' ? 'Tiền mặt trực tiếp tại quầy Showroom' : 'Chuyển khoản qua tài khoản ngân hàng'}</strong></div>
+        ${bankDetails.accountNumber && bankDetails.accountNumber !== 'TIỀN MẶT' ? `<div>• Ngân hàng thụ hưởng: <strong>${bankDetails.bankName || 'Ngân hàng nội địa'}</strong></div><div>• Số tài khoản (STK): <strong style="letter-spacing: 1px;">${bankDetails.accountNumber}</strong></div><div>• Chủ tài khoản: <strong>${bankDetails.accountHolder || fullName}</strong></div>` : ''}
         ${bankDetails.notes ? `<div>• Ghi chú: <em>${bankDetails.notes}</em></div>` : ''}
+      </div>
+    `
+    : '';
+
+  const negotiationHtml = negotiationNote
+    ? `
+      <div style="background: #FFFBEB; border-left: 3px solid #D97706; border-radius: 6px; padding: 12px 16px; margin: 18px 0; font-size: 13px; color: #78350F; line-height: 1.6;">
+        <strong style="display: block; margin-bottom: 4px;">✦ Biên bản đối soát thống nhất cùng Quản lý Showroom:</strong>
+        ${negotiationNote}
       </div>
     `
     : '';
@@ -324,7 +333,7 @@ export async function sendRefundConfirmationEmail({
       <div style="padding: 32px 28px;">
         <div style="background: #EDFBF2; border: 1px solid #C6F0D3; border-radius: 12px; padding: 18px; margin-bottom: 24px; text-align: center;">
           <h2 style="font-family: 'Times New Roman', Times, serif; font-size: 19px; color: #1E8347; margin: 0 0 8px 0;">
-            ✓ Xác Nhận Hoàn Cọc Thành Công
+            ✓ Xác Nhận Quyết Toán & Hoàn Cọc Thành Công
           </h2>
           <p style="font-size: 13.5px; color: #514344; margin: 0; line-height: 1.6;">
             Đơn thuê lễ phục mã: <strong style="color: #1E8347;">#${orderCode}</strong>
@@ -333,9 +342,10 @@ export async function sendRefundConfirmationEmail({
 
         <p style="font-size: 14px; line-height: 1.7; color: #514344;">
           Kính chào <strong>${fullName}</strong>,<br>
-          Cảm ơn nàng đã xác nhận biên bản kiểm định. Hệ thống UniBridal đã tiến hành quyết toán và hoàn trả khoản tiền cọc <strong>${formatMoney(finalRefundAmount)}</strong> theo đúng quy chuẩn hợp đồng thuê váy.
+          Hệ thống UniBridal xác nhận đã hoàn tất quy trình kiểm định thu hồi lễ phục cưới và quyết toán hoàn trả khoản tiền cọc bảo lãnh: <strong style="font-size: 17px; color: #1E8347;">${formatMoney(finalRefundAmount)}</strong>.
         </p>
 
+        ${negotiationHtml}
         ${bankHtml}
 
         <p style="font-size: 13.5px; line-height: 1.7; color: #514344;">

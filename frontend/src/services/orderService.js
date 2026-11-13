@@ -148,7 +148,21 @@ export async function submitReturnInspection(orderId, inspectionData) {
   try {
     return await axiosClient.post(`/orders/${orderId}/inspection`, inspectionData);
   } catch (error) {
-    return { success: true, message: 'Lập biên bản hoàn trả thành công (Offline Demo)' };
+    throw error;
+  }
+}
+
+/**
+ * Admin duyệt đàm phán mức phạt và hoàn tất đơn (Trường hợp 2)
+ * @param {string} orderId
+ * @param {Object} data - { agreedPenaltyFee, refundMethod, refundBankDetails, negotiationNotes }
+ */
+export async function settleInspectionAdmin(orderId, data) {
+  try {
+    const res = await axiosClient.post(`/orders/${orderId}/inspection/admin-settle`, data);
+    return res.data;
+  } catch (error) {
+    throw error;
   }
 }
 

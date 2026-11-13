@@ -96,6 +96,31 @@ const returnInspectionSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    negotiatedByAdmin: {
+      type: Boolean,
+      default: false,
+    },
+    adminNegotiatorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    adminNegotiatorName: {
+      type: String,
+      default: '',
+    },
+    adminNegotiationNotes: {
+      type: String,
+      default: '',
+    },
+    agreedPenaltyFee: {
+      type: Number,
+      default: 0,
+    },
+    adminSettledAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

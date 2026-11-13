@@ -146,6 +146,7 @@ const orderSchema = new mongoose.Schema(
         'returned',
         'complete',
         'completed',
+        'disputed',
         'cancelled',
       ],
       default: 'deposit_paid',
