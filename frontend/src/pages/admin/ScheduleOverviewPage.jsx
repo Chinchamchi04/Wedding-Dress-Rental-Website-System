@@ -1157,7 +1157,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200/80'
                     }`}
                   >
-                    Tất cả sự kiện ({calendarVisibleAppointments.length + calendarVisibleActiveOrders.length + calendarBranchOrders.length})
+                    Tất cả sự kiện ({calendarVisibleAppointments.length + calendarBranchOrders.length * 2})
                   </button>
                   <button
                     type="button"
@@ -1187,7 +1187,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     }`}
                   >
                     <PackageCheck className="w-3.5 h-3.5" />
-                    <span>Lịch giao váy ({calendarVisibleActiveOrders.length})</span>
+                    <span>Lịch giao váy ({calendarBranchOrders.length})</span>
                   </button>
                   <button
                     type="button"
@@ -1206,99 +1206,21 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                   </button>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3 text-xs">
-                  {/* Lọc phương thức giao váy (Khách đến lấy / Nhân viên ship) */}
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-gray-500 font-semibold flex items-center gap-1">
-                      <Truck className="w-3.5 h-3.5 text-[#733F49]" />
-                      <span>Hình thức giao:</span>
-                    </span>
-                    <select
-                      value={deliveryMethodFilter}
-                      onChange={(e) => setDeliveryMethodFilter(e.target.value)}
-                      className="px-3 py-1.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 font-bold outline-none cursor-pointer text-xs focus:border-[#733F49]"
-                    >
-                      <option value="all">Tất cả hình thức ({calendarBranchOrders.length})</option>
-                      <option value="showroom">🏛️ Khách đến lấy ({showroomDeliveriesCount})</option>
-                      <option value="express">🚚 Nhân viên ship ({expressDeliveriesCount})</option>
-                    </select>
-                  </div>
-
-                  {/* Lọc chi nhánh */}
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-gray-500 font-semibold flex items-center gap-1">
-                      <Building2 className="w-3.5 h-3.5 text-[#733F49]" />
-                      <span>Chi nhánh:</span>
-                    </span>
-                    <select
-                      value={calendarBranchFilter}
-                      onChange={(e) => setCalendarBranchFilter(e.target.value)}
-                      className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 font-bold outline-none cursor-pointer text-xs focus:border-[#733F49]"
-                    >
-                      <option value="hcm-q1">UniBridal Q.1 TP.HCM</option>
-                      <option value="hn-hoankiem">UniBridal Hoàn Kiếm, HN</option>
-                    </select>
-                  </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-gray-500 font-semibold flex items-center gap-1">
+                    <Building2 className="w-3.5 h-3.5 text-[#733F49]" />
+                    <span>Chi nhánh:</span>
+                  </span>
+                  <select
+                    value={calendarBranchFilter}
+                    onChange={(e) => setCalendarBranchFilter(e.target.value)}
+                    className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 font-bold outline-none cursor-pointer text-xs focus:border-[#733F49]"
+                  >
+                    <option value="hcm-q1">UniBridal Q.1 TP.HCM</option>
+                    <option value="hn-hoankiem">UniBridal Hoàn Kiếm, HN</option>
+                  </select>
                 </div>
               </div>
-
-              {/* Sub-bar chuyển đổi nhanh khi xem Lịch giao váy hoặc đã chọn lọc hình thức giao */}
-              {(calendarFilterType === 'delivery' || deliveryMethodFilter !== 'all') && (
-                <div className="-mt-3 bg-white/95 px-4 py-2.5 rounded-xl border border-[#EFE5E1] shadow-2xs flex flex-wrap items-center justify-between gap-2.5 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#733F49] font-bold text-[11px] uppercase tracking-wider flex items-center gap-1">
-                      <Truck className="w-3.5 h-3.5 text-[#733F49]" />
-                      <span>Phân loại giao nhận:</span>
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setDeliveryMethodFilter('all')}
-                        className={`px-3 py-1 rounded-lg font-bold text-[11px] transition cursor-pointer ${
-                          deliveryMethodFilter === 'all'
-                            ? 'bg-[#733F49] text-white shadow-2xs'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        Tất cả ({calendarBranchOrders.length})
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeliveryMethodFilter('showroom')}
-                        className={`px-3 py-1 rounded-lg font-bold text-[11px] transition cursor-pointer flex items-center gap-1.5 ${
-                          deliveryMethodFilter === 'showroom'
-                            ? 'bg-indigo-600 text-white shadow-2xs'
-                            : 'bg-indigo-50 text-indigo-900 hover:bg-indigo-100 border border-indigo-200'
-                        }`}
-                      >
-                        <span>🏛️ Khách đến lấy trực tiếp</span>
-                        <span className="font-mono font-bold">({showroomDeliveriesCount})</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeliveryMethodFilter('express')}
-                        className={`px-3 py-1 rounded-lg font-bold text-[11px] transition cursor-pointer flex items-center gap-1.5 ${
-                          deliveryMethodFilter === 'express'
-                            ? 'bg-sky-600 text-white shadow-2xs'
-                            : 'bg-sky-50 text-sky-900 hover:bg-sky-100 border border-sky-200'
-                        }`}
-                      >
-                        <span>🚚 Nhân viên ship tận nơi</span>
-                        <span className="font-mono font-bold">({expressDeliveriesCount})</span>
-                      </button>
-                    </div>
-                  </div>
-                  {deliveryMethodFilter !== 'all' && (
-                    <button
-                      type="button"
-                      onClick={() => setDeliveryMethodFilter('all')}
-                      className="text-[11px] text-gray-500 hover:text-[#733F49] underline cursor-pointer"
-                    >
-                      Bỏ lọc hình thức
-                    </button>
-                  )}
-                </div>
-              )}
 
               {/* Container 2 Cột: Lịch Tháng (Trái) + Thanh Kéo Co Giãn (Giữa) + Bảng Chi Tiết Ngày (Phải) */}
               <div ref={splitContainerRef} className="flex flex-col lg:flex-row items-stretch gap-0 relative">
@@ -1355,13 +1277,80 @@ export default function ScheduleOverviewPage({ defaultTab }) {
 
                         return (
                           <div className="flex flex-wrap items-center justify-between gap-3 pb-4 mb-3 border-b border-gray-100">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-lg bg-[#FAF0EC] border border-[#F2D8D4] flex items-center justify-center">
-                                <CalendarIcon className="w-4 h-4 text-[#733F49]" />
+                            <div className="flex flex-wrap items-center gap-3">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-lg bg-[#FAF0EC] border border-[#F2D8D4] flex items-center justify-center">
+                                  <CalendarIcon className="w-4 h-4 text-[#733F49]" />
+                                </div>
+                                <h2 className="text-lg font-bold text-gray-900 m-0 font-playfair tracking-wide">
+                                  {capitalized}
+                                </h2>
                               </div>
-                              <h2 className="text-lg font-bold text-gray-900 m-0 font-playfair tracking-wide">
-                                {capitalized}
-                              </h2>
+
+                              {/* 2 Ô Lọc: Khách đến lấy & Giao tận nơi đặt ngay bên cạnh Tháng 11, 2026 */}
+                              <div className="flex items-center gap-1.5 sm:gap-2 pl-2 sm:pl-3 border-l border-gray-200">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setDeliveryMethodFilter((prev) =>
+                                      prev === 'showroom' ? 'all' : 'showroom'
+                                    )
+                                  }
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border shadow-2xs ${
+                                    deliveryMethodFilter === 'showroom'
+                                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                                      : 'bg-indigo-50/80 text-indigo-900 border-indigo-200 hover:bg-indigo-100'
+                                  }`}
+                                  title={
+                                    deliveryMethodFilter === 'showroom'
+                                      ? 'Đang lọc: Khách đến lấy (Bấm để xem tất cả)'
+                                      : 'Lọc đơn khách đến showroom lấy trực tiếp'
+                                  }
+                                >
+                                  <Building2 className="w-3.5 h-3.5" />
+                                  <span>Khách đến lấy</span>
+                                  <span
+                                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                                      deliveryMethodFilter === 'showroom'
+                                        ? 'bg-white/20 text-white'
+                                        : 'bg-indigo-100 text-indigo-900'
+                                    }`}
+                                  >
+                                    {showroomDeliveriesCount}
+                                  </span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setDeliveryMethodFilter((prev) =>
+                                      prev === 'express' ? 'all' : 'express'
+                                    )
+                                  }
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border shadow-2xs ${
+                                    deliveryMethodFilter === 'express'
+                                      ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
+                                      : 'bg-sky-50/80 text-sky-900 border-sky-200 hover:bg-sky-100'
+                                  }`}
+                                  title={
+                                    deliveryMethodFilter === 'express'
+                                      ? 'Đang lọc: Giao tận nơi (Bấm để xem tất cả)'
+                                      : 'Lọc đơn nhân viên giao váy tận nơi'
+                                  }
+                                >
+                                  <Truck className="w-3.5 h-3.5" />
+                                  <span>Giao tận nơi</span>
+                                  <span
+                                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                                      deliveryMethodFilter === 'express'
+                                        ? 'bg-white/20 text-white'
+                                        : 'bg-sky-100 text-sky-900'
+                                    }`}
+                                  >
+                                    {expressDeliveriesCount}
+                                  </span>
+                                </button>
+                              </div>
                             </div>
 
                             <div className="flex items-center gap-1.5">
