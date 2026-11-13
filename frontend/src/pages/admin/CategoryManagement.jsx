@@ -160,7 +160,7 @@ export default function CategoryManagement() {
     setIsModalOpen(true);
   };
 
-  // Thay đổi tên danh mục (không tự động gõ slug theo)
+  // Cập nhật tên danh mục (không tự động gõ theo vào ô slug để người dùng tự do nhập)
   const handleNameChange = (val) => {
     setFormName(val);
     if (formErrors.name) {
@@ -477,12 +477,12 @@ export default function CategoryManagement() {
 
         {/* 4 Thẻ KPI Thông Số */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl border border-indigo-200/80 p-5 shadow-xs bg-radial from-indigo-50/60 to-transparent">
+          <div className="bg-white rounded-2xl border border-indigo-200 p-5 shadow-xs bg-radial from-indigo-50/60 to-transparent">
             <span className="text-[11px] font-bold tracking-wider text-indigo-900 uppercase">
               TỔNG SỐ PHOM DÁNG
             </span>
             <div className="text-3xl font-bold text-indigo-700 mt-1">{stats.total}</div>
-            <div className="text-xs text-indigo-600/80 mt-1">Phân loại váy cưới chuẩn</div>
+            <div className="text-xs text-indigo-800/80 mt-1">Phân loại váy cưới chuẩn</div>
           </div>
 
           <div className="bg-white rounded-2xl border border-emerald-200 p-5 shadow-xs bg-radial from-emerald-50/60 to-transparent">
@@ -504,7 +504,7 @@ export default function CategoryManagement() {
               <span className="w-2 h-2 rounded-full bg-amber-400"></span>
             </div>
             <div className="text-3xl font-bold text-amber-700 mt-1">{stats.inactive}</div>
-            <div className="text-xs text-amber-700/80 mt-1">Không xuất hiện trên trang chủ</div>
+            <div className="text-xs text-amber-800/80 mt-1">Không xuất hiện trên trang chủ</div>
           </div>
 
           <div className="bg-white rounded-2xl border border-[#F2D8D4] p-5 shadow-xs bg-radial from-[#FAF0EC] to-transparent">
@@ -735,16 +735,17 @@ export default function CategoryManagement() {
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
                   Slug nhận diện đường dẫn <span className="text-red-500">*</span>
                 </label>
-                {formName.trim() && (
+                {formName && (
                   <button
                     type="button"
                     onClick={() => {
                       setFormSlug(generateSlug(formName));
                       if (formErrors.slug) setFormErrors((p) => ({ ...p, slug: '' }));
                     }}
-                    className="text-[11px] text-[#733F49] hover:underline font-normal cursor-pointer"
+                    className="text-[11px] text-[#733F49] hover:underline font-semibold cursor-pointer"
+                    title="Tự động tạo slug chuẩn từ tên danh mục"
                   >
-                    Tự động tạo từ tên
+                    Gợi ý từ tên
                   </button>
                 )}
               </div>
