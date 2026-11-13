@@ -34,6 +34,9 @@ import {
   PhoneCall,
   Copy,
   CheckCheck,
+  Lock,
+  FileSpreadsheet,
+  BookOpen,
 } from 'lucide-react';
 import HangerIcon from '../../components/common/HangerIcon';
 import {
@@ -46,6 +49,11 @@ import {
 } from '../../services/orderService';
 import { formatCurrencyVND } from '../../utils/formatCurrency';
 import { DRESS_CATALOG } from '../../data/dressCatalog';
+import {
+  DAMAGE_PRICE_CATALOG,
+  getDamageCatalogItem,
+  computeCompensation,
+} from '../../data/damagePriceCatalog';
 import { recordCompletedOrderMaintenance } from '../../utils/maintenanceStorage';
 
 // Helper lấy mã sản phẩm (SKU) của váy cưới từ item hoặc fallback vào catalog
@@ -424,7 +432,100 @@ function OrderDetailModal({ order, onClose }) {
   );
 }
 
+function DamagePriceCatalogModal({ open, onClose }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-[#EFE5E1] overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#F0E6E2] bg-gradient-to-r from-[#FFF8F6] via-[#FCF4F0] to-[#FFF8F6]">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-[#FAF0EC] flex items-center justify-center text-[#733F49] border border-[#ECD9D3]">
+              <FileSpreadsheet size={18} />
+            </div>
+            <div>
+              <h3 className="font-playfair text-[17px] font-bold text-[#5F2B36] m-0">
+                Bảng Giá Đền Bù Thiệt Hại Niêm Yết
+              </h3>
+              <p className="text-[11px] text-[#8C7D7E] m-0 mt-0.5">
+                Quy định niêm yết Atelier Haute Couture • Nhân viên không được tự ý quyết định mức giá
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-white text-[#7A6B6C] hover:text-[#733F49] flex items-center justify-center transition-colors border border-[#EFE5E1] cursor-pointer"
+          >
+            <X size={15} />
+          </button>
+        </div>
+
+        {/* Table Body */}
+        <div className="p-4 sm:p-5 overflow-y-auto">
+          <div className="overflow-x-auto rounded-2xl border border-[#EFE5E1]">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-[#FAF5F2] text-[#5F2B36] border-b border-[#EFE5E1] text-[11.5px] font-bold">
+                  <th className="py-2.5 px-3 whitespace-nowrap">Nhóm Lỗi Hư Hại</th>
+                  <th className="py-2.5 px-3">Hiện Trạng Thực Tế</th>
+                  <th className="py-2.5 px-3 whitespace-nowrap">Mức Phí Đền Bù Niêm Yết</th>
+                  <th className="py-2.5 px-3 whitespace-nowrap">Thẩm Quyền Xử Lý</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F2E5E0] text-[11.5px]">
+                {DAMAGE_PRICE_CATALOG.map((row) => (
+                  <tr key={row.id} className="hover:bg-[#FFF9F6] transition-colors">
+                    <td className="py-2.5 px-3 font-bold text-[#2C2523] whitespace-nowrap">
+                      {row.name}
+                    </td>
+                    <td className="py-2.5 px-3 text-[#5C4D4D] leading-relaxed">
+                      {row.description}
+                    </td>
+                    <td className="py-2.5 px-3 font-bold whitespace-nowrap" style={{ color: row.color }}>
+                      {row.feeLabel}
+                    </td>
+                    <td className="py-2.5 px-3 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                        row.authority === 'admin_only'
+                          ? 'bg-rose-100 text-rose-800 border-rose-300'
+                          : row.authority === 'admin'
+                          ? 'bg-red-50 text-red-700 border-red-200'
+                          : row.authority === 'both'
+                          ? 'bg-purple-50 text-purple-700 border-purple-200'
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      }`}>
+                        {row.authorityLabel}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-3.5 p-3 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[11px] text-[#7A6B6C] leading-relaxed">
+            <strong className="text-[#5F2B36]">⚠️ Lưu ý bắt buộc:</strong> Toàn bộ chi phí phục chế được hệ thống khóa và tính tự động theo bảng giá niêm yết trên. Nhân viên có trách nhiệm ghi nhận đúng hiện trạng và chụp ảnh đối soát, tuyệt đối không được tự ý thương lượng hay điều chỉnh đơn giá đền bù với khách hàng.
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-3 border-t border-[#F0E6E2] bg-[#FAF5F2] flex justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-1.5 rounded-xl bg-[#733F49] text-white text-xs font-bold hover:bg-[#5C3038] transition-colors cursor-pointer"
+          >
+            Đã hiểu & Đóng bảng giá
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function InspectionModal({ order, onClose, onSuccess }) {
+  const [showPriceCatalogModal, setShowPriceCatalogModal] = useState(false);
   const isCompletedOrder = order.status === 'completed' || order.status === 'complete';
   const isReturnedOrder = order.status === 'returned';
   const isGuestOrder = !order.hasAccount && !order.customerId && !order.userId;
@@ -455,7 +556,8 @@ function InspectionModal({ order, onClose, onSuccess }) {
         return {
           dressId: item.dressId || item.id || item._id || 'item_default',
           name: item.name,
-          condition: 'good',
+          condition: 'normal_wear',
+          selectedOption: null,
           damageNotes: '',
           compensation: 0,
           rentPrice: itemRent,
@@ -491,14 +593,16 @@ function InspectionModal({ order, onClose, onSuccess }) {
                 const match =
                   insp.itemsCondition[idx] ||
                   insp.itemsCondition.find((c) => String(c.dressId) === String(it.dressId));
-                return match
-                  ? {
-                    ...it,
-                    condition: match.condition || it.condition,
-                    damageNotes: match.note || match.damageNotes || '',
-                    compensation: match.repairFee ?? match.compensation ?? 0,
-                  }
-                  : it;
+                if (!match) return it;
+                const matchedCond = match.condition === 'good' ? 'normal_wear' : (match.condition || 'normal_wear');
+                const catItem = getDamageCatalogItem(matchedCond);
+                return {
+                  ...it,
+                  condition: matchedCond,
+                  damageNotes: match.note || match.damageNotes || '',
+                  selectedOption: match.repairFee ?? match.compensation ?? catItem.defaultFee,
+                  compensation: match.repairFee ?? match.compensation ?? 0,
+                };
               })
             );
           }
@@ -562,26 +666,53 @@ function InspectionModal({ order, onClose, onSuccess }) {
   const totalDeduction = Math.min(totalDeposit, lateFee + totalCompensation);
   const finalRefund = Math.max(0, totalDeposit - totalDeduction);
 
-  const updateItem = (idx, field, value) => {
+  // Thay đổi nhóm lỗi theo Bảng giá niêm yết (Khóa giá, Staff không được tự ý sửa)
+  const updateCondition = (idx, newCondId) => {
+    if (isReadOnly) return;
+    const cat = getDamageCatalogItem(newCondId);
+    const maxLimit = itemsCondition[idx]?.maxDeposit || itemsCondition[idx]?.depositAmount || order.totalDeposit || 0;
+    const defaultOpt = cat.options ? (cat.defaultFee || cat.options[0]?.value) : null;
+    const comp = computeCompensation(newCondId, defaultOpt, maxLimit);
+
+    setItemsCondition((prev) => {
+      const next = [...prev];
+      next[idx] = {
+        ...next[idx],
+        condition: newCondId,
+        selectedOption: defaultOpt,
+        compensation: comp,
+        damageNotes: (newCondId === 'normal_wear' || newCondId === 'good') ? '' : next[idx].damageNotes,
+      };
+      return next;
+    });
+
+    if (cat.isAdminOnly) {
+      message.warning(`Lỗi "${cat.shortName}" theo bảng giá niêm yết cần [${cat.authorityLabel}]. Hệ thống tự động chuyển sang Phương án 2 (Bảo lưu & chuyển Quản lý).`);
+      setCustomerDecision('disputed');
+    }
+  };
+
+  const updateOption = (idx, optVal) => {
+    if (isReadOnly) return;
+    const curCond = itemsCondition[idx]?.condition || 'normal_wear';
+    const maxLimit = itemsCondition[idx]?.maxDeposit || itemsCondition[idx]?.depositAmount || order.totalDeposit || 0;
+    const comp = computeCompensation(curCond, optVal, maxLimit);
+    setItemsCondition((prev) => {
+      const next = [...prev];
+      next[idx] = {
+        ...next[idx],
+        selectedOption: optVal,
+        compensation: comp,
+      };
+      return next;
+    });
+  };
+
+  const updateNotes = (idx, noteText) => {
     if (isReadOnly) return;
     setItemsCondition((prev) => {
       const next = [...prev];
-      let val = value;
-      if (field === 'compensation') {
-        const numVal = Math.max(0, Number(val || 0));
-        const maxLimit = next[idx]?.maxDeposit || next[idx]?.depositAmount || order.totalDeposit || 0;
-        if (numVal > maxLimit && maxLimit > 0) {
-          message.warning(`Số tiền bồi thường không được vượt quá tiền cọc (Tối đa ${fmtVnd(maxLimit)})`);
-          val = maxLimit;
-        } else {
-          val = numVal;
-        }
-      }
-      next[idx] = { ...next[idx], [field]: val };
-      if (field === 'condition' && value === 'good') {
-        next[idx].damageNotes = '';
-        next[idx].compensation = 0;
-      }
+      next[idx] = { ...next[idx], damageNotes: noteText };
       return next;
     });
   };
@@ -594,14 +725,14 @@ function InspectionModal({ order, onClose, onSuccess }) {
 
     // 1. Kiểm tra tình trạng váy & BẮT BUỘC CHỤP ẢNH LỖI ĐẦY ĐỦ
     const hasDamage = itemsCondition.some(
-      (ic) => ic.condition !== 'good' || Number(ic.compensation || 0) > 0
+      (ic) => (ic.condition !== 'normal_wear' && ic.condition !== 'good') || Number(ic.compensation || 0) > 0
     );
     if (hasDamage && (!evidencePhotos || evidencePhotos.length === 0)) {
       message.error('Quy định bắt buộc: Phải chụp hoặc tải ít nhất 1 ảnh bằng chứng lỗi hư hại của váy trước khi gửi!');
       return;
     }
 
-    // Validate không được nhập số tiền lớn hơn tiền cọc
+    // Validate không được vượt quá tiền cọc
     for (const ic of itemsCondition) {
       const maxLimit = ic.maxDeposit || ic.depositAmount || order.totalDeposit || 0;
       if (Number(ic.compensation || 0) > maxLimit && maxLimit > 0) {
@@ -617,14 +748,19 @@ function InspectionModal({ order, onClose, onSuccess }) {
 
     setSubmitting(true);
     try {
-      const payload = itemsCondition.map((ic) => ({
-        dressId: ic.dressId,
-        condition: ic.condition,
-        note: ic.damageNotes || '',
-        damageNotes: ic.damageNotes || '',
-        repairFee: Number(ic.compensation || 0),
-        compensation: Number(ic.compensation || 0),
-      }));
+      const payload = itemsCondition.map((ic) => {
+        const cat = getDamageCatalogItem(ic.condition);
+        return {
+          dressId: ic.dressId,
+          condition: ic.condition,
+          damageName: cat.name,
+          feeLabel: cat.feeLabel,
+          note: ic.damageNotes || cat.description || '',
+          damageNotes: ic.damageNotes || cat.description || '',
+          repairFee: Number(ic.compensation || 0),
+          compensation: Number(ic.compensation || 0),
+        };
+      });
 
       const isDisputeCase = customerDecision === 'disputed';
 
@@ -654,7 +790,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
       await submitReturnInspection(order._id, body);
 
       if (isDisputeCase) {
-        message.warning('Đã lưu ảnh lỗi & chuyển đơn sang [Tạm giữ - Chờ Admin đàm phán]. Nhân viên vui lòng gọi điện hoặc báo cho Admin xử lý!');
+        message.warning('Đã lưu ảnh lỗi & chuyển đơn sang [Tạm giữ - Chờ Quản lý đàm phán]. Nhân viên vui lòng báo Quản lý xử lý!');
       } else {
         message.success(`Đã xác nhận kiểm định và hoàn cọc ${fmtVnd(finalRefund)} thành công! Đơn hàng chuyển sang Hoàn tất và gửi email kèm biên lai.`);
       }
@@ -693,13 +829,25 @@ function InspectionModal({ order, onClose, onSuccess }) {
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white text-[#7A6B6C] hover:text-[#733F49] hover:bg-[#FAF0EC] flex items-center justify-center transition-colors cursor-pointer border border-[#EFE5E1]"
-          >
-            <X size={15} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowPriceCatalogModal(true)}
+              className="px-2.5 py-1 rounded-xl bg-white border border-[#E0D0CA] text-[#733F49] hover:bg-[#FAF0EC] text-[11px] font-bold flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
+              title="Xem Bảng giá niêm yết đền bù thiệt hại"
+            >
+              <FileSpreadsheet size={13} className="text-[#B8737D]" />
+              <span className="hidden sm:inline">Bảng Giá Đền Bù Niêm Yết</span>
+              <span className="sm:hidden">Bảng Giá</span>
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-white text-[#7A6B6C] hover:text-[#733F49] hover:bg-[#FAF0EC] flex items-center justify-center transition-colors cursor-pointer border border-[#EFE5E1]"
+            >
+              <X size={15} />
+            </button>
+          </div>
         </div>
 
         <div className="p-4 sm:p-5 space-y-3.5 text-xs font-jakarta">
@@ -807,8 +955,9 @@ function InspectionModal({ order, onClose, onSuccess }) {
             {itemsCondition.map((ic, idx) => {
               const maxLimit = ic.maxDeposit || ic.depositAmount || order.totalDeposit || 0;
               const itemCode = getDressCode(ic) || getDressCode(order.items?.[idx]);
+              const catItem = getDamageCatalogItem(ic.condition);
               return (
-                <div key={idx} className="p-3 rounded-2xl border border-[#EFE5E1] bg-white space-y-2 shadow-2xs">
+                <div key={idx} className="p-3 rounded-2xl border border-[#EFE5E1] bg-white space-y-2.5 shadow-2xs">
                   <div className="flex items-center justify-between flex-wrap gap-2 pb-1.5 border-b border-[#F7EFEA]">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-playfair font-bold text-[13.5px] text-[#5F2B36]">
@@ -835,54 +984,114 @@ function InspectionModal({ order, onClose, onSuccess }) {
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2 flex-wrap pt-0.5">
-                    <span className="text-[11.5px] font-bold text-[#5F4E50]">Hiện trạng kiểm định:</span>
-                    <Radio.Group
+                  {/* Chọn nhóm lỗi hư hại theo Bảng giá niêm yết */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span className="text-[11.5px] font-bold text-[#5F4E50] flex items-center gap-1.5">
+                        <span>Nhóm lỗi theo Bảng Giá Niêm Yết:</span>
+                        <span className="text-[10px] text-[#8C7D7E] font-normal">(Staff không tự ý định giá)</span>
+                      </span>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                        catItem.authority === 'admin_only'
+                          ? 'bg-rose-100 text-rose-800 border-rose-300'
+                          : catItem.authority === 'admin'
+                          ? 'bg-red-50 text-red-700 border-red-200'
+                          : catItem.authority === 'both'
+                          ? 'bg-purple-50 text-purple-700 border-purple-200'
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      }`}>
+                        {catItem.authorityLabel}
+                      </span>
+                    </div>
+
+                    <select
                       disabled={isReadOnly}
                       value={ic.condition}
-                      onChange={(e) => updateItem(idx, 'condition', e.target.value)}
-                      className="flex flex-wrap gap-1.5 text-[11px]"
+                      onChange={(e) => updateCondition(idx, e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-[#DDC6C0] bg-white text-xs font-semibold text-[#2C2523] outline-none focus:border-[#733F49] cursor-pointer"
                     >
-                      {CONDITION_OPTIONS.map((opt) => (
-                        <Radio key={opt.value} value={opt.value}>
-                          <span className="text-[11.5px]">{opt.label}</span>
-                        </Radio>
+                      {DAMAGE_PRICE_CATALOG.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name} — Phí: {cat.feeLabel} [{cat.authorityLabel}]
+                        </option>
                       ))}
-                    </Radio.Group>
+                    </select>
                   </div>
 
-                  {ic.condition !== 'good' && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1.5 bg-[#FFF9F6] p-2.5 rounded-xl border border-[#F4E1D8] animate-fadeIn">
+                  {/* Chi tiết hiện trạng & Mức phí đền bù khóa cố định */}
+                  {ic.condition !== 'normal_wear' && ic.condition !== 'good' && (
+                    <div className="p-3 rounded-xl bg-[#FFF9F6] border border-[#F4E1D8] space-y-2.5 animate-fadeIn text-xs">
+                      {/* Hiện trạng niêm yết */}
+                      <div className="flex items-start gap-2 text-[11.5px] text-[#5C4D4D] bg-white p-2 rounded-lg border border-[#F0E0D8]">
+                        <span className="font-bold text-[#733F49] shrink-0">Hiện trạng thực tế:</span>
+                        <span className="leading-relaxed">{catItem.description}</span>
+                      </div>
+
+                      {/* Chọn phân mức giá niêm yết (nếu có options) */}
+                      {catItem.options && catItem.options.length > 0 && (
+                        <div className="space-y-1">
+                          <span className="text-[11px] font-bold text-[#4A3B3D] block">
+                            Khung mức bồi thường niêm yết:
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {catItem.options.map((opt) => {
+                              const isSelected = (ic.selectedOption === opt.value) || (!ic.selectedOption && opt.value === catItem.defaultFee);
+                              return (
+                                <button
+                                  key={opt.value}
+                                  type="button"
+                                  disabled={isReadOnly}
+                                  onClick={() => updateOption(idx, opt.value)}
+                                  className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-[#733F49] text-white border-[#733F49] shadow-xs'
+                                      : 'bg-white text-[#5F4E50] border-[#E5D7D0] hover:bg-[#FAF0EC]'
+                                  }`}
+                                >
+                                  {opt.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Hộp hiển thị mức bồi thường khóa cố định */}
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-white border border-[#EFE2DC] flex-wrap gap-2">
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <Lock size={13} className="text-[#8C7D7E]" />
+                          <span className="text-[#5F4E50] font-semibold">Chi phí đền bù áp dụng:</span>
+                          <span className="text-sm font-bold text-red-700">
+                            {catItem.feeType === 'deposit_100' ? `Tịch thu 100% Cọc (${fmtVnd(ic.compensation)})` : fmtVnd(ic.compensation)}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-[#8C7D7E] italic">
+                          🔒 Khóa tự động theo Bảng giá niêm yết
+                        </span>
+                      </div>
+
+                      {/* Ghi chú mô tả vị trí cụ thể */}
                       <div>
-                        <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">Chi tiết tổn thất phát sinh:</span>
+                        <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">
+                          Ghi chú vị trí cụ thể trên váy (tùy chọn):
+                        </span>
                         <Input
                           disabled={isReadOnly}
-                          placeholder="Mô tả cụ thể (vết ố ren, đứt hạt cườm, rách gấu...)"
+                          placeholder="Ví dụ: Vết son ở ngực áo bên phải, kẹt dây kéo đoạn eo..."
                           value={ic.damageNotes}
-                          onChange={(e) => updateItem(idx, 'damageNotes', e.target.value)}
+                          onChange={(e) => updateNotes(idx, e.target.value)}
                           className="text-xs"
                           size="middle"
                         />
                       </div>
-                      <div>
-                        <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">Chi phí phục chế dự kiến:</span>
-                        <Input
-                          disabled={isReadOnly}
-                          placeholder={`Nhập số tiền (tối đa ${fmtVnd(maxLimit)})`}
-                          value={ic.compensation ? String(ic.compensation).replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
-                          onChange={(e) => {
-                            const rawDigits = e.target.value.replace(/\D/g, '');
-                            const num = rawDigits ? parseInt(rawDigits, 10) : 0;
-                            updateItem(idx, 'compensation', num);
-                          }}
-                          suffix={<span className="text-[#8C7D7E] font-medium text-xs">VND</span>}
-                          className="text-xs font-semibold text-red-700"
-                          size="middle"
-                        />
-                        <span className="text-[9.5px] text-amber-800 block mt-0.5">
-                          * Mức bồi thường tối đa không vượt quá tiền cọc của lễ phục
-                        </span>
-                      </div>
+
+                      {/* Cảnh báo quyền phê duyệt Admin nếu là lỗi nặng */}
+                      {catItem.isAdminOnly && (
+                        <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-[11px] flex items-center gap-1.5">
+                          <AlertTriangle size={13} className="shrink-0 text-rose-600" />
+                          <span><strong>Quy chuẩn nghiêm ngặt:</strong> Nhóm lỗi này thuộc thẩm quyền <strong>{catItem.authorityLabel}</strong>. Vui lòng chọn Phương án 2 để chuyển Quản lý trực tiếp đàm phán và phê duyệt.</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1208,6 +1417,12 @@ function InspectionModal({ order, onClose, onSuccess }) {
           </div>
         </div>
       </div>
+
+      {/* Bảng Giá Đền Bù Thiệt Hại Niêm Yết Popup */}
+      <DamagePriceCatalogModal
+        open={showPriceCatalogModal}
+        onClose={() => setShowPriceCatalogModal(false)}
+      />
     </div>
   );
 }

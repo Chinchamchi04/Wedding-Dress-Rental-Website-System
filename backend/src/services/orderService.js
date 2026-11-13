@@ -579,6 +579,8 @@ export const submitReturnInspection = async (orderId, data, staffUser) => {
     return {
       dressId: item.dressId || item.id || null,
       condition: item.condition || 'good',
+      damageName: item.damageName || '',
+      feeLabel: item.feeLabel || '',
       note: item.note || item.damageNotes || '',
       repairFee: Math.max(0, fee),
     };
@@ -587,7 +589,7 @@ export const submitReturnInspection = async (orderId, data, staffUser) => {
   const evidencePhotos = Array.isArray(data.evidencePhotos) ? data.evidencePhotos : [];
 
   // BẮT BUỘC CHỤP ẢNH LỖI ĐẦY ĐỦ nếu có ghi nhận tình trạng váy bị bẩn, rách hoặc có phí bồi thường
-  const hasDamage = itemsCondition.some((it) => it.condition !== 'good' || it.repairFee > 0);
+  const hasDamage = itemsCondition.some((it) => it.condition !== 'good' && it.condition !== 'normal_wear' || it.repairFee > 0);
   if (hasDamage && evidencePhotos.length === 0) {
     throw new Error('Bắt buộc chụp hoặc tải ít nhất 1 ảnh bằng chứng lỗi hư hại của váy trước khi lập biên bản kiểm định!');
   }

@@ -7,8 +7,29 @@ const itemConditionSchema = new mongoose.Schema({
   },
   condition: {
     type: String,
-    enum: ['good', 'minor_stain', 'heavy_damage', 'torn_lace'],
+    enum: [
+      'good',
+      'normal_wear',
+      'minor_stain',
+      'loose_thread_button',
+      'stubborn_stain',
+      'minor_lace_tear',
+      'broken_zipper',
+      'major_tear',
+      'lost_accessories',
+      'total_damage',
+      'heavy_damage',
+      'torn_lace',
+    ],
     default: 'good',
+  },
+  damageName: {
+    type: String,
+    default: '',
+  },
+  feeLabel: {
+    type: String,
+    default: '',
   },
   note: {
     type: String,
