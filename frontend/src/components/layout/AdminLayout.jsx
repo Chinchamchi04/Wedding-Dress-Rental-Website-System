@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard,
   Crown,
@@ -14,11 +14,41 @@ import { LayoutDashboard,
   Layers,
   FileSignature,
   Users,
-  Tag } from 'lucide-react';
+  Tag,
+  Bell,
+  BellRing,
+  Sparkles,
+  CreditCard,
+  ChevronLeft,
+  ChevronRight,
+  CheckCheck,
+  Clock,
+  ArrowRight,
+  ExternalLink } from 'lucide-react';
 import logoImg from '../../assets/logo.png';
 import heroBride from '../../assets/hero_bride.jpg';
 import adminAvatarImg from '../../assets/admin_avatar.jpg';
 import { useAuth } from '../../contexts/AuthContext';
+import { getAllOrdersAdmin } from '../../services/orderService';
+import { getAppointmentsApi, getAppointments, APPOINTMENT_EVENT } from '../../services/appointmentService';
+import { formatCurrencyVND } from '../../utils/formatCurrency';
+
+const READ_NOTIFS_STORAGE_KEY = 'unibridal_read_notif_ids';
+
+function timeAgo(dateInput) {
+  if (!dateInput) return 'Vừa xong';
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return 'Gần đây';
+  const seconds = Math.floor((new Date() - date) / 1000);
+  if (seconds < 60) return 'Vừa xong';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} phút trước`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} giờ trước`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days} ngày trước`;
+  return date.toLocaleDateString('vi-VN');
+}
 
 export default function AdminLayout({
   children,
@@ -34,9 +64,161 @@ export default function AdminLayout({
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Live Notifications State for New Deposits & Appointments
+  const [liveNotifications, setLiveNotifications] = useState([]);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifFilter, setNotifFilter] = useState('all'); // 'all' | 'deposit' | 'appointment'
+  const [currentTickerIdx, setCurrentTickerIdx] = useState(0);
+  const [isTickerPaused, setIsTickerPaused] = useState(false);
+  const notifRef = useRef(null);
+
+  const [readNotifIds, setReadNotifIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem(READ_NOTIFS_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const markIdAsRead = (id) => {
+    setReadNotifIds((prev) => {
+      if (prev.includes(id)) return prev;
+      const updated = [id, ...prev].slice(0, 100);
+      try {
+        localStorage.setItem(READ_NOTIFS_STORAGE_KEY, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  const markAllAsRead = () => {
+    const allIds = liveNotifications.map((n) => n.id);
+    setReadNotifIds((prev) => {
+      const merged = Array.from(new Set([...allIds, ...prev])).slice(0, 100);
+      try {
+        localStorage.setItem(READ_NOTIFS_STORAGE_KEY, JSON.stringify(merged));
+      } catch {}
+      return merged;
+    });
+  };
+
   // Tự động nhận diện menu đang active nếu không truyền chủ động
   const currentPath = location.pathname;
   const isStaff = role === 'staff' || user?.role === 'staff' || currentPath.startsWith('/staff');
+
+  // Fetch Live Notifications from Orders & Appointments
+  const fetchLiveNotifications = async () => {
+    try {
+      const notifs = [];
+
+      // 1. Fetch Orders (Lọc các đơn mới cọc hoặc đang hoạt động)
+      try {
+        const ordersRes = await getAllOrdersAdmin({ limit: 15 });
+        const orders = ordersRes?.orders || [];
+        orders.forEach((o) => {
+          const rawSt = (o.rawStatus || o.status || '').toLowerCase();
+          const hasDeposit = (o.totalDeposit > 0 || o.depositAmount > 0) && rawSt !== 'cancelled';
+          const isDepositPaid = rawSt === 'deposit_paid' || rawSt === 'active' || (hasDeposit && !['pending_payment', 'cancelled'].includes(rawSt));
+          
+          if (isDepositPaid) {
+            notifs.push({
+              id: `order-${o._id || o.orderCode || Math.random()}`,
+              type: 'deposit',
+              orderCode: o.orderCode,
+              customerName: o.customerName || 'Khách Hàng',
+              amount: o.totalDeposit || o.depositAmount || 0,
+              time: o.createdAt || new Date(),
+              url: `${isStaff ? '/staff' : '/admin'}/don-thue?search=${encodeURIComponent(o.orderCode || '')}`,
+              badge: 'ĐÃ ĐẶT CỌC',
+            });
+          }
+        });
+      } catch (err) {
+        console.warn('Orders notification fetch error:', err);
+      }
+
+      // 2. Fetch Appointments (Lịch hẹn thử váy mới)
+      try {
+        const aptsRes = await getAppointmentsApi({ limit: 15 });
+        const apts = Array.isArray(aptsRes?.data) ? aptsRes.data : (Array.isArray(aptsRes) ? aptsRes : getAppointments());
+        if (Array.isArray(apts)) {
+          apts.forEach((a) => {
+            const aptDateStr = a.appointmentDate || a.date;
+            const timeSlotStr = a.timeSlot || '09:00 — 10:30';
+            notifs.push({
+              id: `apt-${a._id || a.id || a.appointmentCode || Math.random()}`,
+              type: 'appointment',
+              orderCode: a.appointmentCode || a.id || 'LỊCH HẸN',
+              customerName: a.customerName || a.fullName || 'Cô Dâu / Chú Rể',
+              timeSlot: timeSlotStr,
+              date: aptDateStr,
+              branchName: a.branchName || 'Showroom UniBridal',
+              time: a.createdAt || a.appointmentDate || new Date(),
+              url: `${isStaff ? '/staff' : '/admin'}/lich-tong-quan`,
+              badge: 'LỊCH THỬ VÁY',
+            });
+          });
+        }
+      } catch (err) {
+        console.warn('Appointments notification fetch error:', err);
+      }
+
+      // Sắp xếp thời gian mới nhất lên đầu
+      notifs.sort((a, b) => new Date(b.time || 0) - new Date(a.time || 0));
+      setLiveNotifications(notifs);
+    } catch (err) {
+      console.error('Error fetching live notifications:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchLiveNotifications();
+    const timer = setInterval(fetchLiveNotifications, 20000); // 20s polling
+    const handleUpdate = () => fetchLiveNotifications();
+    window.addEventListener(APPOINTMENT_EVENT, handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener(APPOINTMENT_EVENT, handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, [isStaff]);
+
+  // Click outside to close notification popover
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setNotifOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Ticker Auto-rotation every 4.5s
+  useEffect(() => {
+    if (isTickerPaused || liveNotifications.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentTickerIdx((prev) => (prev + 1) % liveNotifications.length);
+    }, 4500);
+    return () => clearInterval(interval);
+  }, [isTickerPaused, liveNotifications.length]);
+
+  const handleSelectNotification = (item) => {
+    markIdAsRead(item.id);
+    setNotifOpen(false);
+    navigate(item.url);
+  };
+
+  const unreadCount = liveNotifications.filter((n) => !readNotifIds.includes(n.id)).length;
+  const currentNotif = liveNotifications[currentTickerIdx % Math.max(liveNotifications.length, 1)];
+
+  const filteredNotifs = liveNotifications.filter((n) => {
+    if (notifFilter === 'deposit') return n.type === 'deposit';
+    if (notifFilter === 'appointment') return n.type === 'appointment';
+    return true;
+  });
 
   const getActiveKey = () => {
     if (activeMenu) {
@@ -241,8 +423,9 @@ export default function AdminLayout({
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 bg-[#FAF5F2]">
         {/* Top Header Bar */}
-        <header className="h-16 px-6 lg:px-8 bg-white border-b border-[#F0E6E2] flex items-center justify-between sticky top-0 z-20">
-          <div className="flex items-center gap-3">
+        <header className="h-16 px-4 sm:px-6 lg:px-8 bg-white border-b border-[#F0E6E2] flex items-center justify-between sticky top-0 z-30">
+          {/* Left: Sidebar toggle + Title */}
+          <div className="flex items-center gap-3 shrink-0">
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
@@ -254,16 +437,277 @@ export default function AdminLayout({
             <div className="flex items-center gap-2.5">
               <Crown size={20} className="text-[#8A797A] shrink-0" />
               {(headerTitle || (activeMenu === 'customer-care' ? 'Chăm Sóc Khách Hàng' : null)) && (
-                <span className="font-playfair text-[20px] sm:text-[22px] font-bold text-[#5F2B36] tracking-tight leading-none m-0 p-0 select-none">
+                <span className="font-playfair text-[18px] sm:text-[21px] font-bold text-[#5F2B36] tracking-tight leading-none m-0 p-0 select-none hidden sm:inline">
                   {headerTitle || 'Chăm Sóc Khách Hàng'}
                 </span>
               )}
             </div>
           </div>
 
-          {/* User Profile Widget */}
+          {/* Center: Live Notification Ticker Pill (Đơn mới cọc & Lịch thử váy mới) */}
+          <div
+            className="hidden md:flex items-center justify-center flex-1 max-w-xl lg:max-w-2xl mx-3"
+            onMouseEnter={() => setIsTickerPaused(true)}
+            onMouseLeave={() => setIsTickerPaused(false)}
+          >
+            {liveNotifications.length > 0 && currentNotif ? (
+              <div className="w-full flex items-center justify-between gap-2 bg-gradient-to-r from-[#FFFBF9] via-[#FAF3F0] to-[#FFFBF9] border border-[#F2DFD8] hover:border-[#D6A498] rounded-full py-1.5 px-3.5 shadow-xs transition-all duration-300">
+                <div
+                  onClick={() => handleSelectNotification(currentNotif)}
+                  className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer group"
+                  title="Nhấn để xem chi tiết ngay"
+                >
+                  {currentNotif.type === 'deposit' ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#EBF6EE] text-[#1E8347] border border-[#CDEBCE] shrink-0 tracking-wider">
+                      <CreditCard size={11} className="shrink-0" />
+                      <span>ĐƠN CỌC MỚI</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FDECEE] text-[#BE4B5E] border border-[#F9CFD7] shrink-0 tracking-wider">
+                      <CalendarCheck size={11} className="shrink-0" />
+                      <span>LỊCH THỬ MỚI</span>
+                    </span>
+                  )}
+
+                  <span className="text-[12.5px] font-medium text-[#4A3B32] truncate group-hover:text-[#733F49] transition-colors">
+                    <strong className="font-bold text-[#2C2523]">{currentNotif.customerName}</strong>
+                    {currentNotif.type === 'deposit' ? (
+                      <> • Cọc <span className="font-bold text-[#1E8347]">{formatCurrencyVND(currentNotif.amount)}</span> • Đơn <span className="font-mono font-medium text-[#733F49]">#{currentNotif.orderCode}</span></>
+                    ) : (
+                      <> • {currentNotif.timeSlot} • {currentNotif.date ? new Date(currentNotif.date).toLocaleDateString('vi-VN') : ''}</>
+                    )}
+                  </span>
+
+                  <span className="text-[11px] text-[#A89899] shrink-0 hidden lg:inline flex items-center gap-1 font-mono">
+                    <Clock size={11} />
+                    {timeAgo(currentNotif.time)}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-0.5 shrink-0 pl-1.5 border-l border-[#EFE2DC]">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentTickerIdx((prev) => (prev - 1 + liveNotifications.length) % liveNotifications.length);
+                    }}
+                    className="p-1 rounded-full text-[#8A797A] hover:bg-white hover:text-[#5F2B36] transition-colors cursor-pointer"
+                    title="Thông báo trước"
+                  >
+                    <ChevronLeft size={13} />
+                  </button>
+                  <span className="text-[10px] text-[#A89899] font-mono px-1">
+                    {currentTickerIdx + 1}/{liveNotifications.length}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentTickerIdx((prev) => (prev + 1) % liveNotifications.length);
+                    }}
+                    className="p-1 rounded-full text-[#8A797A] hover:bg-white hover:text-[#5F2B36] transition-colors cursor-pointer"
+                    title="Thông báo kế tiếp"
+                  >
+                    <ChevronRight size={13} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 py-1.5 px-4 rounded-full bg-[#FAF5F2] border border-[#EFE5E0] text-[12px] text-[#8A797A]">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span>Hệ thống trực tuyến • Sẵn sàng đón nhận đơn mới &amp; lịch thử váy</span>
+              </div>
+            )}
+          </div>
+
+          {/* Right Section: Bell Notification + User Profile Widget */}
           <div className="flex items-center">
-            <div className="h-8 w-px bg-[#EFE5E1] mr-5 hidden sm:block" />
+            {/* Bell Notification Button & Popover */}
+            <div className="relative mr-2 sm:mr-4" ref={notifRef}>
+              <button
+                type="button"
+                onClick={() => setNotifOpen(!notifOpen)}
+                className={`relative p-2 rounded-xl transition-all cursor-pointer ${
+                  notifOpen ? 'bg-[#F5E6E1] text-[#733F49]' : 'text-[#733F49] hover:bg-[#F8EFEA]'
+                }`}
+                aria-label="Thông báo hệ thống"
+                title="Thông báo đơn cọc & lịch thử mới"
+              >
+                {unreadCount > 0 ? (
+                  <BellRing size={20} className="text-[#8D3B4C] animate-pulse" />
+                ) : (
+                  <Bell size={20} className="text-[#8A797A]" />
+                )}
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-gradient-to-r from-[#C93B3B] to-[#9E2A2B] rounded-full ring-2 ring-white shadow-xs">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Popover Dropdown */}
+              {notifOpen && (
+                <div className="absolute right-0 mt-2 w-[340px] sm:w-[420px] max-w-[calc(100vw-24px)] bg-white rounded-2xl shadow-2xl border border-[#EFE2DC] z-50 overflow-hidden text-left">
+                  {/* Top Bar of Popover */}
+                  <div className="px-4 py-3 bg-[#FAF5F2] border-b border-[#EFE2DC] flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Sparkles size={16} className="text-[#BE807C]" />
+                      <span className="font-playfair text-[15px] font-bold text-[#5F2B36]">
+                        Thông Báo Trực Tuyến
+                      </span>
+                      {unreadCount > 0 && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#C93B3B] text-white">
+                          {unreadCount} mới
+                        </span>
+                      )}
+                    </div>
+                    {unreadCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={markAllAsRead}
+                        className="text-[11px] font-semibold text-[#733F49] hover:text-[#5F2B36] flex items-center gap-1 cursor-pointer hover:underline"
+                      >
+                        <CheckCheck size={13} />
+                        Đã đọc tất cả
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Filter Tabs */}
+                  <div className="flex border-b border-[#F0E6E2] bg-white px-2 pt-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setNotifFilter('all')}
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-t-lg transition-colors cursor-pointer ${
+                        notifFilter === 'all'
+                          ? 'border-b-2 border-[#733F49] text-[#733F49] bg-[#FAF5F2]'
+                          : 'text-[#8A797A] hover:text-[#5F2B36]'
+                      }`}
+                    >
+                      Tất cả ({liveNotifications.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNotifFilter('deposit')}
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-t-lg transition-colors cursor-pointer ${
+                        notifFilter === 'deposit'
+                          ? 'border-b-2 border-[#1E8347] text-[#1E8347] bg-[#FAF5F2]'
+                          : 'text-[#8A797A] hover:text-[#1E8347]'
+                      }`}
+                    >
+                      Đơn mới cọc ({liveNotifications.filter((n) => n.type === 'deposit').length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNotifFilter('appointment')}
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-t-lg transition-colors cursor-pointer ${
+                        notifFilter === 'appointment'
+                          ? 'border-b-2 border-[#BE4B5E] text-[#BE4B5E] bg-[#FAF5F2]'
+                          : 'text-[#8A797A] hover:text-[#BE4B5E]'
+                      }`}
+                    >
+                      Lịch thử váy ({liveNotifications.filter((n) => n.type === 'appointment').length})
+                    </button>
+                  </div>
+
+                  {/* Notification List Body */}
+                  <div className="max-h-[360px] overflow-y-auto divide-y divide-[#F5ECE8]">
+                    {filteredNotifs.length > 0 ? (
+                      filteredNotifs.map((item) => {
+                        const isRead = readNotifIds.includes(item.id);
+                        return (
+                          <div
+                            key={item.id}
+                            onClick={() => handleSelectNotification(item)}
+                            className={`p-3.5 hover:bg-[#FAF3F0] transition-colors cursor-pointer flex items-start gap-3 relative ${
+                              !isRead ? 'bg-[#FCF8F6]' : 'bg-white opacity-85'
+                            }`}
+                          >
+                            {!isRead && (
+                              <span className="absolute left-1 top-4 w-1.5 h-1.5 bg-[#C93B3B] rounded-full" />
+                            )}
+                            <div className="shrink-0 mt-0.5">
+                              {item.type === 'deposit' ? (
+                                <div className="w-8 h-8 rounded-full bg-[#EBF6EE] text-[#1E8347] border border-[#CDEBCE] flex items-center justify-center shadow-xs">
+                                  <CreditCard size={15} />
+                                </div>
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-[#FDECEE] text-[#BE4B5E] border border-[#F9CFD7] flex items-center justify-center shadow-xs">
+                                  <CalendarDays size={15} />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2 mb-0.5">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-[#A39192]">
+                                  {item.type === 'deposit' ? 'Đã đặt cọc lễ phục' : 'Lịch hẹn thử váy mới'}
+                                </span>
+                                <span className="text-[10px] text-[#A89899] font-mono shrink-0">
+                                  {timeAgo(item.time)}
+                                </span>
+                              </div>
+
+                              <div className="text-[13px] font-bold text-[#2C2523] truncate">
+                                {item.customerName}
+                              </div>
+
+                              {item.type === 'deposit' ? (
+                                <div className="text-xs text-[#5C4D4D] mt-0.5">
+                                  Tiền cọc: <span className="font-bold text-[#1E8347]">{formatCurrencyVND(item.amount)}</span> • Đơn <span className="font-mono text-[#733F49] font-semibold">#{item.orderCode}</span>
+                                </div>
+                              ) : (
+                                <div className="text-xs text-[#5C4D4D] mt-0.5">
+                                  Giờ thử: <span className="font-bold text-[#BE4B5E]">{item.timeSlot}</span>
+                                  {item.date && (
+                                    <> ngày <span className="font-medium text-[#2C2523]">{new Date(item.date).toLocaleDateString('vi-VN')}</span></>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="shrink-0 self-center text-[#A89899]">
+                              <ChevronRight size={15} />
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="py-8 text-center px-4">
+                        <div className="w-10 h-10 rounded-full bg-[#FAF5F2] text-[#A89899] mx-auto flex items-center justify-center mb-2">
+                          <Bell size={18} />
+                        </div>
+                        <p className="text-xs text-[#7A6B6C] font-medium">Chưa có thông báo nào trong mục này</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bottom Navigation Shortcuts */}
+                  <div className="p-2.5 bg-[#FAF5F2] border-t border-[#EFE2DC] flex items-center justify-between gap-2 text-xs">
+                    <Link
+                      to={isStaff ? '/staff/don-thue' : '/admin/don-thue'}
+                      onClick={() => setNotifOpen(false)}
+                      className="flex-1 py-1.5 px-2 rounded-lg bg-white border border-[#EFE2DC] text-center font-bold text-[#5F2B36] hover:bg-[#F3E7E3] transition-colors"
+                    >
+                      Quản lý đơn thuê →
+                    </Link>
+                    <Link
+                      to={isStaff ? '/staff/lich-tong-quan' : '/admin/lich-tong-quan'}
+                      onClick={() => setNotifOpen(false)}
+                      className="flex-1 py-1.5 px-2 rounded-lg bg-white border border-[#EFE2DC] text-center font-bold text-[#5F2B36] hover:bg-[#F3E7E3] transition-colors"
+                    >
+                      Lịch tổng quan →
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* User Profile Widget */}
+            <div className="h-8 w-px bg-[#EFE5E1] mr-3 sm:mr-5 hidden sm:block" />
             <div className="flex items-center gap-3">
               <div className="text-right">
                 <div className="text-[13.5px] font-bold text-[#2C2523] leading-tight">
