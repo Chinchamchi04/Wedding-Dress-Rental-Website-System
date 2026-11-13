@@ -158,6 +158,7 @@ export async function sendInspectionNotificationEmail({
   finalRefundAmount = 0,
   inspectionItems = [],
   inspectionDate,
+  bankDetails = null,
   returnUrl = 'http://localhost:3000/profile/orders',
 }) {
   const transporter = createTransporter();
@@ -171,6 +172,17 @@ export async function sendInspectionNotificationEmail({
       return dateStr;
     }
   };
+
+  const bankHtml = bankDetails?.accountNumber
+    ? `
+      <div style="background: #F8F5F2; border: 1px dashed #D5C2B9; border-radius: 10px; padding: 12px 16px; margin: 18px 0; font-size: 13px; line-height: 1.6;">
+        <strong style="color: #733F49; display: block; margin-bottom: 4px;">✦ Thông tin tài khoản nhận tiền hoàn cọc của nàng:</strong>
+        <div>• Ngân hàng: <strong>${bankDetails.bankName || 'Ngân hàng nội địa'}</strong></div>
+        <div>• Số tài khoản (STK): <strong style="color: #1E8347; font-size: 14px; letter-spacing: 1px;">${bankDetails.accountNumber}</strong></div>
+        <div>• Chủ tài khoản: <strong style="text-transform: uppercase;">${bankDetails.accountHolder || fullName}</strong></div>
+      </div>
+    `
+    : '';
 
   const checklistHtml = (inspectionItems && inspectionItems.length > 0)
     ? `
@@ -249,6 +261,8 @@ export async function sendInspectionNotificationEmail({
             </tr>
           </table>
         </div>
+
+        ${bankHtml}
 
         <!-- Nút hành động nổi bật -->
         <div style="text-align: center; margin: 32px 0 16px 0;">

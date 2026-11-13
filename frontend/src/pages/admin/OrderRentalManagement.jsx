@@ -786,9 +786,9 @@ function InspectionModal({ order, onClose, onSuccess }) {
       await submitReturnInspection(order._id, body);
 
       if (isDisputeCase) {
-        message.warning('Đã lưu ảnh lỗi & chuyển đơn sang [Tạm giữ - Chờ Quản lý đàm phán]. Nhân viên vui lòng báo Quản lý xử lý!');
+        message.warning('Đã lưu ảnh bằng chứng & chuyển đơn sang [Tạm giữ - Chờ Quản lý đàm phán]. Đã gửi email biên bản kiểm tra tới khách hàng!');
       } else {
-        message.success(`Đã hoàn tất kiểm định váy! Đơn hàng tự động chuyển sang [Chờ Hoàn Cọc].`);
+        message.success(`Đã hoàn tất kiểm định váy! Đơn chuyển sang [Chờ Hoàn Cọc] và hệ thống đã gửi email biên bản kiểm tra tới khách hàng.`);
       }
       setIsEditing(false);
       onSuccess();

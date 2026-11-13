@@ -696,47 +696,55 @@ export const submitReturnInspection = async (orderId, data, staffUser) => {
     await order.save();
   }
 
-  // Tự động gửi email nếu hoàn tất chốt tại chỗ (hoặc thông báo kiểm định nếu khách online)
-  if (!holdForAdmin) {
-    try {
-      let customerEmail = order.customerEmail || order.email;
-      let customerName = order.customerName || order.brideName || 'Quý khách';
+  // Tự động gửi email biên bản kiểm định lễ phục tới khách hàng ngay khi hoàn tất kiểm tra
+  try {
+    let customerEmail = order.customerEmail || order.email || data.customerEmail;
+    let customerName = order.customerName || order.brideName || 'Quý khách';
 
-      if (!customerEmail && order.customerId) {
-        const customer = await User.findById(order.customerId).lean();
-        if (customer) {
-          customerEmail = customer.email;
-          customerName = customer.fullName || customerName;
-        }
+    if (!customerEmail && order.customerId) {
+      const customer = await User.findById(order.customerId).lean();
+      if (customer) {
+        customerEmail = customer.email;
+        customerName = customer.fullName || customerName;
       }
-
-      if (customerEmail) {
-        if (confirmOnSite) {
-          sendRefundConfirmationEmail({
-            to: customerEmail,
-            fullName: customerName,
-            orderCode: order.orderCode,
-            finalRefundAmount: inspection.finalRefundAmount,
-            bankDetails: inspection.refundBankDetails,
-          }).catch((err) => console.error('[EMAIL REFUND SEND ERROR]', err.message));
-        } else {
-          const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
-          sendInspectionNotificationEmail({
-            to: customerEmail,
-            fullName: customerName,
-            orderCode: order.orderCode,
-            inspectorName: staffUser?.fullName || 'Chuyên Viên Atelier UniBridal',
-            inspectionDate: inspection.returnedAt,
-            totalDeposit: order.totalDeposit,
-            totalDeduction: inspection.totalDeduction,
-            finalRefundAmount: inspection.finalRefundAmount,
-            returnUrl: `${clientUrl}/profile/orders`,
-          }).catch((err) => console.error('[EMAIL INSPECTION SEND ERROR]', err.message));
-        }
-      }
-    } catch (err) {
-      console.error('[EMAIL NOTIFICATION ERROR]', err.message);
     }
+
+    if (!customerEmail) {
+      const contract = await Contract.findOne({
+        $or: [{ orderId: order._id }, { contractCode: order.contractCode }],
+      }).lean();
+      if (contract?.customerInfo?.email) {
+        customerEmail = contract.customerInfo.email;
+        customerName = contract.customerInfo.fullName || customerName;
+      }
+    }
+
+    if (customerEmail) {
+      const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+      const inspectionItems = (inspection.itemsCondition || []).map((it) => ({
+        name: `${it.damageName || 'Váy cưới'} (${it.note || it.condition || 'Hiện trạng'})`,
+        status: it.repairFee > 0 ? `Khấu trừ ${it.repairFee.toLocaleString('vi-VN')} đ` : '✓ Nguyên vẹn',
+        passed: !(it.repairFee > 0),
+      }));
+
+      sendInspectionNotificationEmail({
+        to: customerEmail,
+        fullName: customerName,
+        orderCode: order.orderCode,
+        inspectorName: staffUser?.fullName || 'Chuyên Viên Atelier UniBridal',
+        inspectionDate: inspection.returnedAt,
+        totalDeposit: order.totalDeposit,
+        totalDeduction: inspection.totalDeduction,
+        finalRefundAmount: inspection.finalRefundAmount,
+        inspectionItems,
+        bankDetails: inspection.refundBankDetails,
+        returnUrl: `${clientUrl}/profile/orders`,
+      }).catch((err) => console.error('[EMAIL INSPECTION SEND ERROR]', err.message));
+
+      console.log(`[INSPECTION EMAIL SENT] Đã gửi biên bản kiểm định đơn #${order.orderCode} tới email: ${customerEmail}`);
+    }
+  } catch (err) {
+    console.error('[EMAIL NOTIFICATION ERROR]', err.message);
   }
 
   return { order, inspection, heldForAdmin: holdForAdmin };
