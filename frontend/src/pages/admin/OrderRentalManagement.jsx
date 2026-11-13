@@ -168,17 +168,10 @@ function StatusBadge({ status, order }) {
       </span>
     );
   }
-  if (status === 'returned') {
-    if (custStatus === 'approved') {
-      return (
-        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]">
-          Khách Đã Duyệt
-        </span>
-      );
-    }
+  if (status === 'waiting_refund' || status === 'returned') {
     return (
-      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#FEF3C7] text-[#B45309]">
-        Chờ Khách Duyệt
+      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A]">
+        Chờ Hoàn Cọc
       </span>
     );
   }
