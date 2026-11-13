@@ -15,13 +15,9 @@ import { LayoutDashboard,
   FileSignature,
   Users,
   Tag,
-  Bell,
-  BellRing,
-  Sparkles,
   CreditCard,
   ChevronLeft,
   ChevronRight,
-  CheckCheck,
   Clock,
   ArrowRight,
   ExternalLink,
@@ -87,11 +83,8 @@ export default function AdminLayout({
 
   // Live Notifications State for New Deposits & Appointments
   const [liveNotifications, setLiveNotifications] = useState([]);
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [notifFilter, setNotifFilter] = useState('all'); // 'all' | 'deposit' | 'appointment'
   const [currentTickerIdx, setCurrentTickerIdx] = useState(0);
   const [isTickerPaused, setIsTickerPaused] = useState(false);
-  const notifRef = useRef(null);
 
   const [readNotifIds, setReadNotifIds] = useState(() => {
     try {
@@ -110,17 +103,6 @@ export default function AdminLayout({
         localStorage.setItem(READ_NOTIFS_STORAGE_KEY, JSON.stringify(updated));
       } catch {}
       return updated;
-    });
-  };
-
-  const markAllAsRead = () => {
-    const allIds = liveNotifications.map((n) => n.id);
-    setReadNotifIds((prev) => {
-      const merged = Array.from(new Set([...allIds, ...prev])).slice(0, 100);
-      try {
-        localStorage.setItem(READ_NOTIFS_STORAGE_KEY, JSON.stringify(merged));
-      } catch {}
-      return merged;
     });
   };
 
@@ -251,17 +233,6 @@ export default function AdminLayout({
     };
   }, [isStaff]);
 
-  // Click outside to close notification popover
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (notifRef.current && !notifRef.current.contains(event.target)) {
-        setNotifOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   // Ticker Auto-rotation every 4.5s
   useEffect(() => {
     if (isTickerPaused || liveNotifications.length <= 1) return;
@@ -273,19 +244,10 @@ export default function AdminLayout({
 
   const handleSelectNotification = (item) => {
     markIdAsRead(item.id);
-    setNotifOpen(false);
     navigate(item.url);
   };
 
-  const unreadCount = liveNotifications.filter((n) => !readNotifIds.includes(n.id)).length;
   const currentNotif = liveNotifications[currentTickerIdx % Math.max(liveNotifications.length, 1)];
-
-  const filteredNotifs = liveNotifications.filter((n) => {
-    if (notifFilter === 'deposit') return n.type === 'deposit';
-    if (notifFilter === 'schedule') return n.type === 'ship' || n.type === 'return';
-    if (notifFilter === 'appointment') return n.type === 'appointment';
-    return true;
-  });
 
   const getActiveKey = () => {
     if (activeMenu) {
@@ -604,224 +566,8 @@ export default function AdminLayout({
             )}
           </div>
 
-          {/* Right Section: Bell Notification + User Profile Widget */}
+          {/* Right Section: User Profile Widget */}
           <div className="flex items-center">
-            {/* Bell Notification Button & Popover */}
-            <div className="relative mr-2 sm:mr-4" ref={notifRef}>
-              <button
-                type="button"
-                onClick={() => setNotifOpen(!notifOpen)}
-                className={`relative p-2 rounded-xl transition-all cursor-pointer ${
-                  notifOpen ? 'bg-[#F5E6E1] text-[#733F49]' : 'text-[#733F49] hover:bg-[#F8EFEA]'
-                }`}
-                aria-label="Thông báo hệ thống"
-                title="Thông báo đơn cọc & lịch thử mới"
-              >
-                {unreadCount > 0 ? (
-                  <BellRing size={20} className="text-[#8D3B4C] animate-pulse" />
-                ) : (
-                  <Bell size={20} className="text-[#8A797A]" />
-                )}
-                {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-gradient-to-r from-[#C93B3B] to-[#9E2A2B] rounded-full ring-2 ring-white shadow-xs">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </button>
-
-              {/* Popover Dropdown */}
-              {notifOpen && (
-                <div className="absolute right-0 mt-2 w-[340px] sm:w-[420px] max-w-[calc(100vw-24px)] bg-white rounded-2xl shadow-2xl border border-[#EFE2DC] z-50 overflow-hidden text-left">
-                  {/* Top Bar of Popover */}
-                  <div className="px-4 py-3 bg-[#FAF5F2] border-b border-[#EFE2DC] flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Sparkles size={16} className="text-[#BE807C]" />
-                      <span className="font-playfair text-[15px] font-bold text-[#5F2B36]">
-                        Thông Báo Trực Tuyến
-                      </span>
-                      {unreadCount > 0 && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#C93B3B] text-white">
-                          {unreadCount} mới
-                        </span>
-                      )}
-                    </div>
-                    {unreadCount > 0 && (
-                      <button
-                        type="button"
-                        onClick={markAllAsRead}
-                        className="text-[11px] font-semibold text-[#733F49] hover:text-[#5F2B36] flex items-center gap-1 cursor-pointer hover:underline"
-                      >
-                        <CheckCheck size={13} />
-                        Đã đọc tất cả
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Filter Tabs */}
-                  <div className="flex border-b border-[#F0E6E2] bg-white px-2 pt-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setNotifFilter('all')}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-t-lg transition-colors cursor-pointer ${
-                        notifFilter === 'all'
-                          ? 'border-b-2 border-[#733F49] text-[#733F49] bg-[#FAF5F2]'
-                          : 'text-[#8A797A] hover:text-[#5F2B36]'
-                      }`}
-                    >
-                      Hôm nay ({liveNotifications.length})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setNotifFilter('deposit')}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-t-lg transition-colors cursor-pointer ${
-                        notifFilter === 'deposit'
-                          ? 'border-b-2 border-[#1E8347] text-[#1E8347] bg-[#FAF5F2]'
-                          : 'text-[#8A797A] hover:text-[#1E8347]'
-                      }`}
-                    >
-                      Đơn mới ({liveNotifications.filter((n) => n.type === 'deposit').length})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setNotifFilter('schedule')}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-t-lg transition-colors cursor-pointer ${
-                        notifFilter === 'schedule'
-                          ? 'border-b-2 border-[#C2410C] text-[#C2410C] bg-[#FAF5F2]'
-                          : 'text-[#8A797A] hover:text-[#C2410C]'
-                      }`}
-                    >
-                      Ship &amp; Trả ({liveNotifications.filter((n) => n.type === 'ship' || n.type === 'return').length})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setNotifFilter('appointment')}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-t-lg transition-colors cursor-pointer ${
-                        notifFilter === 'appointment'
-                          ? 'border-b-2 border-[#BE4B5E] text-[#BE4B5E] bg-[#FAF5F2]'
-                          : 'text-[#8A797A] hover:text-[#BE4B5E]'
-                      }`}
-                    >
-                      Lịch thử ({liveNotifications.filter((n) => n.type === 'appointment').length})
-                    </button>
-                  </div>
-
-                  {/* Notification List Body */}
-                  <div className="max-h-[360px] overflow-y-auto divide-y divide-[#F5ECE8]">
-                    {filteredNotifs.length > 0 ? (
-                      filteredNotifs.map((item) => {
-                        const isRead = readNotifIds.includes(item.id);
-                        return (
-                          <div
-                            key={item.id}
-                            onClick={() => handleSelectNotification(item)}
-                            className={`p-3.5 hover:bg-[#FAF3F0] transition-colors cursor-pointer flex items-start gap-3 relative ${
-                              !isRead ? 'bg-[#FCF8F6]' : 'bg-white opacity-85'
-                            }`}
-                          >
-                            {!isRead && (
-                              <span className="absolute left-1 top-4 w-1.5 h-1.5 bg-[#C93B3B] rounded-full" />
-                            )}
-                            <div className="shrink-0 mt-0.5">
-                              {item.type === 'deposit' ? (
-                                <div className="w-8 h-8 rounded-full bg-[#EBF6EE] text-[#1E8347] border border-[#CDEBCE] flex items-center justify-center shadow-xs">
-                                  <CreditCard size={15} />
-                                </div>
-                              ) : item.type === 'ship' ? (
-                                <div className="w-8 h-8 rounded-full bg-[#FFF7ED] text-[#C2410C] border border-[#FFEDD5] flex items-center justify-center shadow-xs">
-                                  <Truck size={15} />
-                                </div>
-                              ) : item.type === 'return' ? (
-                                <div className="w-8 h-8 rounded-full bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A] flex items-center justify-center shadow-xs">
-                                  <RotateCcw size={15} />
-                                </div>
-                              ) : (
-                                <div className="w-8 h-8 rounded-full bg-[#FDECEE] text-[#BE4B5E] border border-[#F9CFD7] flex items-center justify-center shadow-xs">
-                                  <CalendarDays size={15} />
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2 mb-0.5">
-                                <span className="text-[11px] font-bold uppercase tracking-wider text-[#A39192]">
-                                  {item.type === 'deposit'
-                                    ? 'Đơn vừa đặt hôm nay'
-                                    : item.type === 'ship'
-                                      ? 'Lịch giao váy hôm nay'
-                                      : item.type === 'return'
-                                        ? 'Hạn trả váy hôm nay'
-                                        : 'Lịch thử váy hôm nay'}
-                                </span>
-                                <span className="text-[10px] text-[#A89899] font-mono shrink-0">
-                                  {timeAgo(item.time)}
-                                </span>
-                              </div>
-
-                              <div className="text-[13px] font-bold text-[#2C2523] truncate">
-                                {item.customerName}
-                              </div>
-
-                              {item.type === 'deposit' ? (
-                                <div className="text-xs text-[#5C4D4D] mt-0.5">
-                                  Tiền cọc: <span className="font-bold text-[#1E8347]">{formatCurrencyVND(item.amount)}</span> • Đơn <span className="font-mono text-[#733F49] font-semibold">#{item.orderCode}</span>
-                                </div>
-                              ) : item.type === 'ship' ? (
-                                <div className="text-xs text-[#5C4D4D] mt-0.5">
-                                  Giao váy: <span className="font-bold text-[#C2410C]">{item.dressName}</span> • Đơn <span className="font-mono text-[#733F49] font-semibold">#{item.orderCode}</span>
-                                </div>
-                              ) : item.type === 'return' ? (
-                                <div className="text-xs text-[#5C4D4D] mt-0.5">
-                                  Thu hồi váy: <span className="font-bold text-[#B45309]">{item.dressName}</span> • Đơn <span className="font-mono text-[#733F49] font-semibold">#{item.orderCode}</span>
-                                </div>
-                              ) : (
-                                <div className="text-xs text-[#5C4D4D] mt-0.5">
-                                  Giờ thử: <span className="font-bold text-[#BE4B5E]">{item.timeSlot}</span>
-                                  {item.date && (
-                                    <> ngày <span className="font-medium text-[#2C2523]">{new Date(item.date).toLocaleDateString('vi-VN')}</span></>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="shrink-0 self-center text-[#A89899]">
-                              <ChevronRight size={15} />
-                            </div>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="py-8 text-center px-4">
-                        <div className="w-10 h-10 rounded-full bg-[#FAF5F2] text-[#A89899] mx-auto flex items-center justify-center mb-2">
-                          <Bell size={18} />
-                        </div>
-                        <p className="text-xs text-[#7A6B6C] font-medium">Chưa có thông báo nào trong mục này</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Bottom Navigation Shortcuts */}
-                  <div className="p-2.5 bg-[#FAF5F2] border-t border-[#EFE2DC] flex items-center justify-between gap-2 text-xs">
-                    <Link
-                      to={isStaff ? '/staff/don-thue' : '/admin/don-thue'}
-                      onClick={() => setNotifOpen(false)}
-                      className="flex-1 py-1.5 px-2 rounded-lg bg-white border border-[#EFE2DC] text-center font-bold text-[#5F2B36] hover:bg-[#F3E7E3] transition-colors"
-                    >
-                      Quản lý đơn thuê →
-                    </Link>
-                    <Link
-                      to={isStaff ? '/staff/lich-tong-quan' : '/admin/lich-tong-quan'}
-                      onClick={() => setNotifOpen(false)}
-                      className="flex-1 py-1.5 px-2 rounded-lg bg-white border border-[#EFE2DC] text-center font-bold text-[#5F2B36] hover:bg-[#F3E7E3] transition-colors"
-                    >
-                      Lịch tổng quan →
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* User Profile Widget */}
-            <div className="h-8 w-px bg-[#EFE5E1] mr-3 sm:mr-5 hidden sm:block" />
             <div className="flex items-center gap-3">
               <div className="text-right">
                 <div className="text-[13.5px] font-bold text-[#2C2523] leading-tight">
