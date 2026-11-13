@@ -17,6 +17,10 @@ const orderItemSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  color: {
+    type: String,
+    default: 'Trắng Sữa',
+  },
   rentPrice: {
     type: Number,
     required: true,
@@ -140,12 +144,15 @@ const orderSchema = new mongoose.Schema(
         'delivered',
         'renting',
         'returned',
-        'complete',
+        'waiting_refund',
         'completed',
+        'complete',
+        'disputed',
         'cancelled',
       ],
       default: 'deposit_paid',
       index: true,
+      set: (val) => (val === 'complete' ? 'completed' : val),
     },
     shippingAddress: {
       type: mongoose.Schema.Types.Mixed,

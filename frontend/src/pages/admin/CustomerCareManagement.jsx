@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
-import { message, Dropdown } from 'antd';
+import { message, Dropdown, Popconfirm } from 'antd';
 import {
   Search,
   Pin,
@@ -17,6 +17,7 @@ import {
   RotateCcw,
   Ban,
   Zap,
+  Trash2,
 } from 'lucide-react';
 import {
   getConversations,
@@ -27,6 +28,7 @@ import {
   recallMessage,
   togglePinMessage,
   unpinMessage,
+  deleteConversation,
 } from '../../services/chatService';
 
 import card1Elysian from '../../assets/card1_elysian.jpg';
@@ -129,11 +131,18 @@ export default function CustomerCareManagement() {
       });
 
       if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-        // Chỉ hiển thị tin nhắn của KHÁCH HÀNG thực tế (loại bỏ tài khoản Quản trị viên và Chuyên viên tư vấn)
+        // Chỉ hiển thị tin nhắn của KHÁCH HÀNG CÓ TÀI KHOẢN VÀ ĐẦY ĐỦ THÔNG TIN (loại bỏ hoàn toàn khách vãng lai và tài khoản admin/staff)
         const customerOnly = res.data.filter((c) => {
-          const roleCode = c.customerId?.roleId?.code;
+          // Bắt buộc phải có tài khoản customerId
+          if (!c.customerId || !c.customerId._id) return false;
+
+          const roleCode = (c.customerId?.roleId?.code || c.customerId?.role || '').toUpperCase();
           if (roleCode === 'ADMIN' || roleCode === 'STAFF') return false;
-          const name = (c.customerId?.fullName || c.customerName || '').toLowerCase();
+
+          const customerName = (c.customerId?.fullName || c.customerName || '').trim();
+          if (!customerName || customerName.toLowerCase() === 'khách hàng') return false;
+
+          const name = customerName.toLowerCase();
           return !(
             name.includes('quản trị') ||
             name.includes('administrator') ||
@@ -646,6 +655,23 @@ export default function CustomerCareManagement() {
     }
   };
 
+  // Xử lý Xóa vĩnh viễn cuộc trò chuyện (Staff / Admin)
+  const handleDeleteConversation = async (convId) => {
+    if (!convId) return;
+    try {
+      if (typeof convId === 'string' && !convId.startsWith?.('init_')) {
+        await deleteConversation(convId);
+      }
+      message.success('Đã xóa vĩnh viễn cuộc trò chuyện thành công');
+      setConversations((prev) => prev.filter((c) => c.id !== convId));
+      setSelectedId(null);
+      setActiveMessages([]);
+    } catch (err) {
+      console.warn('Lỗi xóa cuộc trò chuyện:', err);
+      message.error('Không thể xóa cuộc trò chuyện');
+    }
+  };
+
   // Xử lý Thu hồi tin nhắn
   const handleRecallMessage = async (msg) => {
     if (!msg) return;
@@ -903,6 +929,23 @@ export default function CustomerCareManagement() {
                     }`}
                   />
                 </button>
+
+                <Popconfirm
+                  title="Xóa cuộc trò chuyện"
+                  description="Bạn có chắc chắn muốn xóa vĩnh viễn cuộc trò chuyện này và toàn bộ tin nhắn?"
+                  okText="Xóa vĩnh viễn"
+                  cancelText="Hủy"
+                  okButtonProps={{ danger: true }}
+                  onConfirm={() => handleDeleteConversation(activeConv.id)}
+                >
+                  <button
+                    type="button"
+                    className="w-8 h-8 rounded-lg border border-[#E8DDD8] bg-white text-stone-500 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 flex items-center justify-center transition-all shadow-2xs cursor-pointer"
+                    title="Xóa vĩnh viễn cuộc trò chuyện này"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </Popconfirm>
               </div>
             </div>
 

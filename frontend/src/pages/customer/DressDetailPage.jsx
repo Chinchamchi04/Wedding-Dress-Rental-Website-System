@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Heart, Star, ShieldCheck, Crown, Scissors,
+import {
+  Heart, Star, ShieldCheck, Crown, Scissors,
   Ruler, Calendar, Clock, Phone, MessageCircle,
   ChevronRight, ChevronLeft, Check, CheckCircle2, Info, ArrowRight, Share2,
-  X, ShoppingBag, Headphones } from 'lucide-react';
+  X, ShoppingBag, Headphones, Sparkles
+} from 'lucide-react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import { useAuth } from '../../contexts/AuthContext';
 import { getDressById, getRelatedDresses, formatCurrencyVND } from '../../services/dressService';
-import { getDressBookedDates } from '../../services/orderService';
 import { addToCart } from '../../services/cartService';
 import { isWishlisted as checkWishlisted, toggleWishlist, WISHLIST_EVENT } from '../../services/wishlistService';
 import { formatShortDate } from '../../utils/formatDate';
@@ -131,47 +132,36 @@ export default function DressDetailPage() {
   const [feedbackPage, setFeedbackPage] = useState(1);
   const feedbacksPerPage = 6;
 
-  // Rental date calculations
-  const [bookedDates, setBookedDates] = useState([]);
-  const [startDate, setStartDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 5);
-    return d.toISOString().split('T')[0];
-  });
-  const [endDate, setEndDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 9);
-    return d.toISOString().split('T')[0];
-  });
-
   // Load dress data whenever URL parameter `id` changes
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
 
     const loadData = async () => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      const targetId = id || '1';
-      const result = await getDressById(targetId);
-      const related = await getRelatedDresses(result.data ? result.data.id : targetId);
-      const dressIdentifier = result.data?._id || result.data?.id || targetId;
-      const booked = await getDressBookedDates(dressIdentifier);
+      try {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const targetId = id || '1';
+        const result = await getDressById(targetId);
+        const related = await getRelatedDresses(result.data ? result.data.id : targetId);
 
-      if (isMounted) {
-        if (result.success && result.data) {
-          setDress(result.data);
-          setSelectedImageIndex(0);
-          setSelectedColor(result.data.colors?.[0] || null);
-          setSelectedSize(result.data.sizes?.[1]?.id || 'S');
-          setIsWishlisted(checkWishlisted(result.data.id));
+        if (isMounted) {
+          if (result.success && result.data) {
+            setDress(result.data);
+            setSelectedImageIndex(0);
+            setSelectedColor(result.data.colors?.[0] || null);
+            setSelectedSize(result.data.sizes?.[1]?.id || 'S');
+            setIsWishlisted(checkWishlisted(result.data.id));
+          }
+          if (related.success) {
+            setRelatedDresses(related.data);
+          }
         }
-        if (booked) {
-          setBookedDates(booked);
+      } catch (err) {
+        console.error('Lỗi khi tải chi tiết váy cưới:', err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
         }
-        if (related.success) {
-          setRelatedDresses(related.data);
-        }
-        setLoading(false);
       }
     };
 
@@ -197,34 +187,18 @@ export default function DressDetailPage() {
     };
   }, [dress?.id]);
 
-  // Calculate rental duration in days
-  const rentalDays = useMemo(() => {
-    if (!startDate || !endDate) return 4;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = end.getTime() - start.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : 1;
-  }, [startDate, endDate]);
-
-  // Calculate total price based on rental days and base price
+  // Giá thuê niêm yết 1 ngày và tiền cọc bảo lãnh
   const pricing = useMemo(() => {
     if (!dress) return { base: 0, deposit: 0, total: 0 };
-    const basePrice = dress.price || 5200000;
-    const deposit = dress.depositAmount || 15000000;
-
-    // Package 4 days = 100% base price. Additional days = 20% of base price per day
-    let rentalFee = basePrice;
-    if (rentalDays > 4) {
-      rentalFee = basePrice + (rentalDays - 4) * (basePrice * 0.2);
-    }
+    const basePrice = Number(dress.price || dress.rentPrice || dress.rentalPrice || 3900000);
+    const deposit = Number(dress.depositAmount || dress.depositPrice || 10000000);
 
     return {
-      base: rentalFee,
+      base: basePrice,
       deposit: deposit,
-      total: rentalFee + deposit,
+      total: basePrice + deposit,
     };
-  }, [dress, rentalDays]);
+  }, [dress]);
 
   // Chuẩn bị danh sách 48 phản hồi thực tế của các nàng dâu
   const allFeedbacks = useMemo(() => {
@@ -275,19 +249,30 @@ export default function DressDetailPage() {
   const handleDirectRent = () => {
     addToCart({
       ...dress,
+      selectedSize,
       size: selectedSize,
-      rentalDays: rentalDays,
-      startDate: startDate,
-      endDate: endDate,
+      selectedColor,
+      color: selectedColor?.name,
+      fabric: selectedColor?.name,
+      rentalDays: 1,
     });
-    navigate(`/checkout?dressId=${dress.id}&size=${selectedSize}&startDate=${startDate}&endDate=${endDate}&days=${rentalDays}`);
+    const colorQuery = selectedColor?.name ? `&color=${encodeURIComponent(selectedColor.name)}` : '';
+    navigate(`/checkout?dressId=${dress.id}&size=${selectedSize}${colorQuery}`);
   };
 
   const handleOnlineRent = () => {
-    const added = addToCart(dress);
+    const added = addToCart({
+      ...dress,
+      selectedSize,
+      size: selectedSize,
+      selectedColor,
+      color: selectedColor?.name,
+      fabric: selectedColor?.name,
+      rentalDays: 1,
+    });
     setRentNotification(
       added
-        ? `Đã thêm "${dress?.name}" vào giỏ thuê thành công! (Gói ${rentalDays} ngày từ ${startDate} đến ${endDate})`
+        ? `Đã thêm "${dress?.name}" vào giỏ thuê thành công!`
         : `"${dress?.name}" đã có trong giỏ thuê váy.`
     );
     setTimeout(() => {
@@ -519,19 +504,8 @@ export default function DressDetailPage() {
                 {dress.name}
               </h1>
 
-              {/* Rating and SKU row */}
+              {/* SKU row */}
               <div className="flex items-center justify-between pb-4 border-b border-[#EAE0DC] text-[13px]">
-                <div className="flex items-center gap-1.5 text-[#B26B74]">
-                  <div className="flex text-[#B26B74]">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-current" />
-                    ))}
-                  </div>
-                  <span className="font-bold ml-1 text-[#231A19]">
-                    {Number(dress.rating || 5).toFixed(1)}
-                  </span>
-                  <span className="text-[#8A7978]">({dress.rentCount})</span>
-                </div>
                 <div className="text-[#8A7978] tracking-wider text-[12px] font-medium">
                   MÃ SẢN PHẨM: <span className="text-[#231A19] font-bold">{dress.code}</span>
                 </div>
@@ -614,69 +588,24 @@ export default function DressDetailPage() {
               </div>
             </div>
 
-            {/* Rental Period Box */}
+            {/* Thông Tin Giá Thuê & Đặt Cọc */}
             <div className="border border-[#F2DDD9] bg-[#FFF8F6] rounded-[20px] p-5 sm:p-6 shadow-xs">
               <div className="flex items-center justify-between pb-3.5 border-b border-[#F0D5D0]">
                 <div>
                   <h3 className="font-playfair text-[18px] font-semibold text-[#231A19] m-0 flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-[#B8737D]" />
-                    Chọn Thời Gian Thuê Váy
+                    <Sparkles className="w-4 h-4 text-[#B8737D]" />
+                    Bảng Giá Thuê
                   </h3>
-                  <p className="text-[12px] text-[#7A6663] mt-0.5 m-0">
-                    Chọn ngày nhận và ngày hẹn trả váy cưới
-                  </p>
-                </div>
-                <span className="text-[12px] font-semibold text-[#B26B74] bg-[#FCEEE9] px-2.5 py-1 rounded-full whitespace-nowrap">
-                  Gói {rentalDays} ngày
-                </span>
-              </div>
-
-              {/* Date pickers row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-4">
-                <div className="bg-white border border-[#EAE0DC] rounded-[12px] p-2.5 sm:p-3 relative cursor-pointer group hover:border-[#733F49] transition-colors">
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8A7978] mb-1 pointer-events-none">
-                    NGÀY BẮT ĐẦU THUÊ (NHẬN VÁY)
-                  </label>
-                  <div className="relative flex items-center justify-between">
-                    <span className="text-[13.5px] font-bold text-[#231A19]">
-                      {formatShortDate(startDate) || 'Chọn ngày nhận'}
-                    </span>
-                    <Calendar className="w-4 h-4 text-[#8A7978] group-hover:text-[#733F49] transition-colors shrink-0" />
-                    <input
-                      type="date"
-                      value={startDate}
-                      min={new Date().toISOString().split('T')[0]}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                  </div>
-                </div>
-
-                <div className="bg-white border border-[#EAE0DC] rounded-[12px] p-2.5 sm:p-3 relative cursor-pointer group hover:border-[#733F49] transition-colors">
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8A7978] mb-1 pointer-events-none">
-                    NGÀY TRẢ DỰ KIẾN (TRẢ VÁY)
-                  </label>
-                  <div className="relative flex items-center justify-between">
-                    <span className="text-[13.5px] font-bold text-[#231A19]">
-                      {formatShortDate(endDate) || 'Chọn ngày trả'}
-                    </span>
-                    <Calendar className="w-4 h-4 text-[#8A7978] group-hover:text-[#733F49] transition-colors shrink-0" />
-                    <input
-                      type="date"
-                      value={endDate}
-                      min={startDate || new Date().toISOString().split('T')[0]}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                  </div>
                 </div>
               </div>
 
               {/* Price Breakdown items */}
-              <div className="flex flex-col gap-2.5 text-[12.5px] pt-1 pb-3">
+              <div className="flex flex-col gap-2.5 text-[12.5px] pt-4 pb-3">
                 <div className="flex items-center justify-between text-[#5A4848]">
-                  <span>Giá thuê cơ bản (gói {rentalDays} ngày):</span>
-                  <strong className="text-[#231A19] font-semibold">{formatCurrencyVND(pricing.base)}</strong>
+                  <span>Giá thuê váy (1 ngày):</span>
+                  <strong className="text-[#231A19] font-bold text-[14px]">
+                    {formatCurrencyVND(pricing.base)} <span className="text-[12px] font-normal text-[#8A7978]">/ ngày</span>
+                  </strong>
                 </div>
 
                 <div className="flex items-center justify-between text-[#5A4848]">

@@ -159,7 +159,11 @@ const COLOR_PALETTE = {
 };
 
 export async function createDress(data) {
-  if (!data?.name) fail(400, 'Tên váy cưới không được để trống.');
+  if (!data?.name?.trim()) fail(400, 'Tên váy cưới không được để trống.');
+  if (!data?.rentPrice || Number(data.rentPrice) <= 0) fail(400, 'Đơn giá thuê váy cưới không được để trống và phải lớn hơn 0.');
+  if (!data?.depositAmount || Number(data.depositAmount) <= 0) fail(400, 'Tiền đặt cọc váy cưới không được để trống và phải lớn hơn 0.');
+  if (!data?.color?.trim()) fail(400, 'Màu sắc váy cưới không được để trống.');
+  if (!Array.isArray(data?.images) || data.images.length === 0) fail(400, 'Váy cưới bắt buộc phải có ít nhất một hình ảnh sản phẩm.');
   const count = await Dress.countDocuments();
   const code = data.code || `UB-${(count + 1).toString().padStart(3, '0')}`;
   const slug = (data.slug || data.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now().toString().slice(-4);
@@ -265,9 +269,37 @@ export async function updateDress(id, data) {
 }
 
 export async function deleteDress(id) {
-  const dress = await Dress.findByIdAndUpdate(id, { $set: { status: 'retired' } }, { new: true });
+  const dress = await Dress.findById(id).lean();
   if (!dress) fail(404, 'Không tìm thấy mẫu váy cưới.');
-  return dress;
+
+  // 1. Kiểm tra trạng thái trực tiếp của váy
+  if (dress.status === 'renting') {
+    fail(400, `Không thể xóa mẫu váy "${dress.name}" (${dress.code}) vì đang trong trạng thái "Đang cho thuê".`);
+  }
+
+  // 2. Kiểm tra các đơn hàng đang thuê chưa hoàn tất liên quan đến mẫu váy này
+  const dressIdsToCheck = [
+    id,
+    String(id),
+    dress._id,
+    String(dress._id),
+    mongoose.isValidObjectId(id) ? new mongoose.Types.ObjectId(id) : null,
+  ].filter(Boolean);
+
+  const activeOrder = await Order.findOne({
+    $or: [
+      { 'items.dressId': { $in: dressIdsToCheck } },
+      { 'items.code': dress.code },
+    ],
+    status: { $nin: ['completed', 'complete', 'cancelled'] },
+  }).lean();
+
+  if (activeOrder) {
+    fail(400, `Không thể xóa mẫu váy "${dress.name}" (${dress.code}) vì đang có đơn thuê #${activeOrder.orderCode} chưa hoàn tất.`);
+  }
+
+  const updated = await Dress.findByIdAndUpdate(id, { $set: { status: 'retired' } }, { new: true });
+  return updated;
 }
 
 export async function getWishlist(user) {

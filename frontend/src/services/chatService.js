@@ -140,4 +140,17 @@ export async function unpinMessage(conversationId) {
   }
 }
 
+/**
+ * Xóa một cuộc hội thoại và toàn bộ tin nhắn bên trong (Admin/Staff)
+ * @param {string} conversationId
+ */
+export async function deleteConversation(conversationId) {
+  try {
+    return await axiosClient.delete(`/conversations/${conversationId}`);
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
+}
+
+
 

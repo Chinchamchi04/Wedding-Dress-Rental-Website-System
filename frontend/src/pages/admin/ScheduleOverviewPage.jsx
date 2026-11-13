@@ -1153,18 +1153,8 @@ export default function ScheduleOverviewPage({ defaultTab }) {
               </div>
             </div>
 
-            {/* Quick Stats Pill và Sync MongoDB */}
+            {/* Quick Stats Pill */}
             <div className="flex flex-wrap items-center gap-2.5 text-xs">
-              <button
-                type="button"
-                onClick={fetchData}
-                disabled={loading}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FAF0EC] hover:bg-[#F2D8D4] text-[#733F49] rounded-xl border border-[#F2D8D4] font-bold transition cursor-pointer shadow-2xs"
-                title="Đồng bộ dữ liệu thời gian thực từ MongoDB"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-                <span>Đồng bộ Database</span>
-              </button>
               <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 text-purple-900 rounded-lg border border-purple-200 font-semibold">
                 <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse"></span>
                 <span>Hôm nay: <strong>{stats.todayFittings} ca thử</strong></span>
@@ -1828,7 +1818,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                 <div className="space-y-0.5">
                                   {item.items.map((it, idx) => (
                                     <div key={idx} className="font-semibold text-gray-800">
-                                      • {it.name} (Size: {it.size || 'M'})
+                                      • {it.name} (Size: {it.size || 'M'}{it.color ? ` • Màu: ${it.color}` : ''})
                                     </div>
                                   ))}
                                 </div>

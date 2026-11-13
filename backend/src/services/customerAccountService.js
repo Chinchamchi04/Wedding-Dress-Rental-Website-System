@@ -50,7 +50,11 @@ export async function listOrders(userId) {
             status = 'completed';
             Order.updateOne({ _id: order._id }, { $set: { status: 'completed' } }).catch(() => {});
         }
-        return { ...order, status, inspection: insp };
+        const items = (order.items || []).map((it) => ({
+            ...it,
+            color: it.color || it.fabric || order.color || 'Trắng Sữa',
+        }));
+        return { ...order, items, status, inspection: insp };
     });
 }
 export async function orderDetail(userId, identifier) {
@@ -59,7 +63,7 @@ export async function orderDetail(userId, identifier) {
     const [inspection, contract] = await Promise.all([
         getInspection(userId, identifier),
         Contract.findOne({ orderId: order._id })
-            .select('contractCode templateName customerName phone idCard status signedAt signedMethod contractPdfUrl clauses')
+            .select('contractCode templateName customerName phone idCard status signedAt signedMethod contractPdfUrl clauses contractSignature')
             .lean(),
     ]);
     const orderObj = order.toObject();
@@ -68,7 +72,11 @@ export async function orderDetail(userId, identifier) {
         orderObj.status = 'completed';
         Order.updateOne({ _id: order._id }, { $set: { status: 'completed' } }).catch(() => {});
     }
-    return { ...orderObj, inspection, contract };
+    const items = (orderObj.items || []).map((it) => ({
+        ...it,
+        color: it.color || it.fabric || orderObj.color || 'Trắng Sữa',
+    }));
+    return { ...orderObj, items, inspection, contract };
 }
 export async function cancelOrder(userId, identifier) {
     const order = await ownOrder(userId, identifier);

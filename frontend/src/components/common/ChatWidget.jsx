@@ -8,7 +8,9 @@ import { X,
   CheckCheck,
   ShoppingBag,
   Smile,
-  Search } from 'lucide-react';
+  Search,
+  Lock,
+  LogIn } from 'lucide-react';
 import aboutFounderImg from '../../assets/about_founder_portrait.jpg';
 import chibiBrideImg from '../../assets/chibi_bride_chat.jpg';
 import chibiBride3DImg from '../../assets/chibi_bride_3d.png';
@@ -49,7 +51,7 @@ const QUICK_SUGGESTIONS = [
 
 export default function ChatWidget() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isLoggedIn } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [showGreetingBubble, setShowGreetingBubble] = useState(true);
   const [autoShowBubble, setAutoShowBubble] = useState(true);
@@ -57,10 +59,20 @@ export default function ChatWidget() {
   const [inputText, setInputText] = useState('');
   const [showProductPicker, setShowProductPicker] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [productSearchTerm, setProductSearchTerm] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [conversationId, setConversationId] = useState(null);
+
+  // Yêu cầu đăng nhập trước khi khách vãng lai nhắn tin
+  const requireAuth = () => {
+    if (!isLoggedIn) {
+      setShowLoginPrompt(true);
+      return false;
+    }
+    return true;
+  };
 
   const popularEmojis = ['👰', '👗', '✨', '💍', '💖', '💕', '🌸', '🥰', '🪄', '👑', '🥂', '💐', '💌', '😍', '👏'];
 
@@ -247,6 +259,7 @@ export default function ChatWidget() {
   }, [messages, isTyping]);
 
   const handleSendMessage = async (textToSend, isQuickSuggestion = false) => {
+    if (!requireAuth()) return;
     const content = (textToSend || inputText).trim();
     if (!content) return;
 
@@ -348,6 +361,7 @@ export default function ChatWidget() {
   };
 
   const handleSelectProductToConsult = (dress) => {
+    if (!requireAuth()) return;
     setShowProductPicker(false);
 
     const priceText = typeof dress.price === 'number'
@@ -576,7 +590,10 @@ export default function ChatWidget() {
               <button
                 key={item.id}
                 type="button"
-                onClick={() => handleSendMessage(item.text, true)}
+                onClick={() => {
+                  if (!requireAuth()) return;
+                  handleSendMessage(item.text, true);
+                }}
                 className="text-[10.5px] font-medium text-[#7D535B] bg-white hover:bg-[#FFF2F0] hover:border-[#D498A0] border border-[#EADBDE] rounded-full px-2 py-0.5 whitespace-nowrap transition-all shadow-xs cursor-pointer active:scale-95 shrink-0"
               >
                 {item.label}
@@ -587,16 +604,44 @@ export default function ChatWidget() {
           {/* Footer Input Area */}
           <div className="p-2 bg-white border-t border-[#EADBDE] shrink-0 relative">
             <div
-              onClick={() => inputRef.current?.focus()}
+              onClick={() => {
+                if (!isLoggedIn) {
+                  setShowLoginPrompt(true);
+                } else {
+                  inputRef.current?.focus();
+                }
+              }}
               className="flex items-center gap-1 bg-[#FAF8F7] border border-[#EADBDE] focus-within:border-[#B8737D] focus-within:ring-2 focus-within:ring-[#B8737D]/20 rounded-xl px-2 py-1 transition-all cursor-text"
             >
               <input
                 ref={inputRef}
                 type="text"
                 value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Nhập tin nhắn tư vấn..."
+                onFocus={(e) => {
+                  if (!isLoggedIn) {
+                    e.target.blur();
+                    setShowLoginPrompt(true);
+                  }
+                }}
+                onClick={(e) => {
+                  if (!isLoggedIn) {
+                    e.preventDefault();
+                    e.target.blur();
+                    setShowLoginPrompt(true);
+                  }
+                }}
+                onChange={(e) => {
+                  if (!requireAuth()) return;
+                  setInputText(e.target.value);
+                }}
+                onKeyDown={(e) => {
+                  if (!requireAuth()) {
+                    e.preventDefault();
+                    return;
+                  }
+                  handleKeyDown(e);
+                }}
+                placeholder={isLoggedIn ? "Nhập tin nhắn tư vấn..." : "Vui lòng đăng nhập để gửi tin nhắn..."}
                 className="flex-1 bg-transparent border-0 outline-none text-[12px] text-[#2C2523] placeholder-[#A69B97] min-w-0"
               />
 
@@ -605,6 +650,7 @@ export default function ChatWidget() {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
+                  if (!requireAuth()) return;
                   setShowEmojiPicker(!showEmojiPicker);
                 }}
                 className={`p-1 rounded-md transition-colors border-0 bg-transparent cursor-pointer shrink-0 ${
@@ -622,6 +668,7 @@ export default function ChatWidget() {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
+                  if (!requireAuth()) return;
                   handleSendMessage();
                 }}
                 disabled={!inputText.trim()}
@@ -661,6 +708,85 @@ export default function ChatWidget() {
               </div>
             )}
           </div>
+
+          {/* Modal / Dialog Yêu cầu Đăng nhập dành cho Khách vãng lai */}
+          {showLoginPrompt && (
+            <div
+              onClick={() => {
+                setShowLoginPrompt(false);
+                setIsOpen(false);
+              }}
+              className="absolute inset-0 z-50 bg-black/50 backdrop-blur-[2px] flex items-center justify-center p-3 animate-in fade-in duration-200"
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white rounded-2xl p-4 w-full max-w-[265px] shadow-2xl border border-[#F2D6D8] text-center relative animate-in zoom-in-95 duration-200"
+              >
+                {/* Nút đóng - Trả về lại nhân vật chibi nổi */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowLoginPrompt(false);
+                    setIsOpen(false);
+                  }}
+                  className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 border-0 bg-transparent cursor-pointer transition-colors"
+                  title="Đóng và thu nhỏ"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Biểu tượng ổ khóa */}
+                <div className="w-11 h-11 rounded-full bg-[#FFF2F0] border border-[#F7D4D7] flex items-center justify-center mx-auto mb-2 text-[#B8737D] shadow-xs">
+                  <Lock className="w-5 h-5 stroke-[2]" />
+                </div>
+
+                <h4 className="font-playfair text-[14px] font-bold text-[#2C2523] mb-1 leading-snug">
+                  Đăng Nhập Để Trò Chuyện
+                </h4>
+                <p className="text-[11px] text-[#6E6260] font-jakarta leading-relaxed mb-3">
+                  Nàng vui lòng đăng nhập để bắt đầu nhắn tin và nhận tư vấn riêng tư 1-1 từ Stylist UniBridal nhé! ✨
+                </p>
+
+                <div className="space-y-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowLoginPrompt(false);
+                      setIsOpen(false);
+                      navigate('/login', { state: { from: { pathname: window.location.pathname } } });
+                    }}
+                    className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-[#9B5C66] via-[#B8737D] to-[#A35D67] hover:opacity-95 text-white font-jakarta font-semibold text-[11.5px] flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer border-0"
+                  >
+                    <LogIn className="w-3.5 h-3.5" />
+                    <span>Đăng Nhập Ngay</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowLoginPrompt(false);
+                      setIsOpen(false);
+                      navigate('/register');
+                    }}
+                    className="w-full py-1.5 px-3 rounded-xl bg-[#FAF8F7] hover:bg-[#FFF2F0] text-[#7D535B] hover:text-[#B8737D] border border-[#EADBDE] hover:border-[#D498A0] font-jakarta font-medium text-[11px] active:scale-95 transition-all cursor-pointer"
+                  >
+                    Tạo Tài Khoản Mới
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowLoginPrompt(false);
+                      setIsOpen(false);
+                    }}
+                    className="text-[10.5px] text-[#A69B97] hover:text-[#5C504E] font-jakarta transition-colors cursor-pointer border-0 bg-transparent pt-0.5 block mx-auto"
+                  >
+                    Để sau
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </aside>
       )}
 

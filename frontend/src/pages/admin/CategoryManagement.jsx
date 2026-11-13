@@ -173,7 +173,12 @@ export default function CategoryManagement() {
     e.preventDefault();
     const errors = {};
     if (!formName.trim()) errors.name = 'Vui lòng nhập tên danh mục';
-    if (!formSlug.trim()) errors.slug = 'Vui lòng nhập đường dẫn (slug)';
+
+    let finalSlug = formSlug.trim();
+    if (!finalSlug && formName.trim()) {
+      finalSlug = generateSlug(formName.trim());
+    }
+    if (!finalSlug) errors.slug = 'Vui lòng nhập đường dẫn (slug)';
 
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
@@ -184,7 +189,7 @@ export default function CategoryManagement() {
     try {
       const payload = {
         name: formName.trim(),
-        slug: formSlug.trim(),
+        slug: finalSlug,
         description: formDesc.trim(),
         image: formImage.trim() || '/assets/dresses/dress_01.jpg',
         isActive: formIsActive,
@@ -492,9 +497,12 @@ export default function CategoryManagement() {
           </div>
 
           <div className="bg-white rounded-2xl border border-amber-200 p-5 shadow-xs bg-radial from-amber-50/60 to-transparent">
-            <span className="text-[11px] font-bold tracking-wider text-amber-900 uppercase">
-              TẠM ẨN
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold tracking-wider text-amber-900 uppercase">
+                TẠM ẨN
+              </span>
+              <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+            </div>
             <div className="text-3xl font-bold text-amber-700 mt-1">{stats.inactive}</div>
             <div className="text-xs text-amber-800/80 mt-1">Không xuất hiện trên trang chủ</div>
           </div>

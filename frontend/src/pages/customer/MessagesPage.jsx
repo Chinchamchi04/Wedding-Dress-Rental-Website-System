@@ -12,12 +12,15 @@ import { Search,
   ChevronLeft,
   ChevronDown,
   CheckCheck,
-  ShoppingBag } from 'lucide-react';
+  ShoppingBag,
+  Lock,
+  LogIn } from 'lucide-react';
 import { message } from 'antd';
 import Header from '../../components/layout/Header';
 import { addToCart } from '../../services/cartService';
 import { useAuth } from '../../contexts/AuthContext';
 import { getMyConversation, sendMessage, getMessages } from '../../services/chatService';
+import RentSelectionModal from '../../components/common/RentSelectionModal';
 import { DRESS_CATALOG } from '../../data/dressCatalog';
 
 // Assets
@@ -66,18 +69,30 @@ const popularEmojis = ['👰', '👗', '✨', '💍', '💖', '💕', '🌸', '�
 export default function MessagesPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isLoggedIn } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [inputText, setInputText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showProductPicker, setShowProductPicker] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [productSearchTerm, setProductSearchTerm] = useState('');
   const [showCallModal, setShowCallModal] = useState(false);
+  const [selectedDressForRent, setSelectedDressForRent] = useState(null);
+  const [isRentModalOpen, setIsRentModalOpen] = useState(false);
   const [attachedImage, setAttachedImage] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
   const [showMobileChat, setShowMobileChat] = useState(true);
   const [conversationId, setConversationId] = useState(null);
+
+  // Yêu cầu đăng nhập trước khi khách vãng lai nhắn tin
+  const requireAuth = () => {
+    if (!isLoggedIn) {
+      setShowLoginPrompt(true);
+      return false;
+    }
+    return true;
+  };
 
   // Danh sách mẫu váy để người dùng chọn hỏi tư vấn
   const filteredDresses = DRESS_CATALOG.filter((dress) => {
@@ -338,6 +353,7 @@ export default function MessagesPage() {
 
   // Xử lý gửi tin nhắn
   const handleSendMessage = async (customText = null, isQuickSuggestion = false) => {
+    if (!requireAuth()) return;
     const content = (customText !== null ? customText : inputText).trim();
     if (!content && !attachedImage) return;
 
@@ -460,6 +476,7 @@ export default function MessagesPage() {
 
   // Handle Image Upload Selection
   const handleImageUpload = (e) => {
+    if (!requireAuth()) return;
     const file = e.target.files?.[0];
     if (file) {
       const imageUrl = URL.createObjectURL(file);
@@ -468,22 +485,15 @@ export default function MessagesPage() {
     }
   };
 
-  // Handle Rent Now Click from Product Card
+  // Handle Rent Now Click from Product Card - Mở Popup chọn màu sắc & kích thước chuẩn Ảnh 3
   const handleRentNow = (product) => {
-    addToCart({
-      id: product.id || product._id || 1,
-      name: product.name,
-      price: product.price ? parseInt(String(product.price).replace(/[^0-9]/g, ''), 10) : 5200000,
-      image: product.image,
-      rentalDays: 1,
-      size: 'S',
-    });
-    message.success(`Đã thêm "${product.name}" vào giỏ thuê thành công!`);
-    navigate('/cart');
+    setSelectedDressForRent(product);
+    setIsRentModalOpen(true);
   };
 
   // Người dùng chọn 1 sản phẩm váy cưới từ icon giỏ hàng để hỏi tư vấn
   const handleSelectProductToConsult = (dress) => {
+    if (!requireAuth()) return;
     setShowProductPicker(false);
 
     const priceText = typeof dress.price === 'number'
@@ -972,7 +982,10 @@ export default function MessagesPage() {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => handleSendMessage(item.text, true)}
+                  onClick={() => {
+                    if (!requireAuth()) return;
+                    handleSendMessage(item.text, true);
+                  }}
                   className="whitespace-nowrap px-3 py-1 bg-white hover:bg-[#FFF2F0] hover:border-[#D498A0] border border-[#EADBDE] rounded-full text-[11.5px] font-medium text-[#7D535B] transition-all cursor-pointer flex items-center gap-1 flex-shrink-0 active:scale-95 shadow-xs"
                 >
                   <span>{item.label}</span>
@@ -1004,7 +1017,13 @@ export default function MessagesPage() {
               {/* Input Card Box */}
               <div className="relative">
                 <div
-                  onClick={() => inputRef.current?.focus()}
+                  onClick={() => {
+                    if (!isLoggedIn) {
+                      setShowLoginPrompt(true);
+                    } else {
+                      inputRef.current?.focus();
+                    }
+                  }}
                   className="flex items-center gap-2 bg-[#FAF8F7] border border-[#EADBDE] focus-within:border-[#B8737D] focus-within:ring-2 focus-within:ring-[#B8737D]/20 rounded-2xl px-3 sm:px-4 py-2 sm:py-2.5 shadow-2xs transition-all cursor-text"
                 >
                   {/* Main Text Input / Textarea */}
@@ -1013,10 +1032,30 @@ export default function MessagesPage() {
                     id="messages-chat-input"
                     name="chatMessage"
                     rows={1}
-                    placeholder="Nhập tin nhắn tư vấn..."
+                    placeholder={isLoggedIn ? "Nhập tin nhắn tư vấn..." : "Vui lòng đăng nhập để gửi tin nhắn..."}
                     value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
+                    onFocus={(e) => {
+                      if (!isLoggedIn) {
+                        e.target.blur();
+                        setShowLoginPrompt(true);
+                      }
+                    }}
+                    onClick={(e) => {
+                      if (!isLoggedIn) {
+                        e.preventDefault();
+                        e.target.blur();
+                        setShowLoginPrompt(true);
+                      }
+                    }}
+                    onChange={(e) => {
+                      if (!requireAuth()) return;
+                      setInputText(e.target.value);
+                    }}
                     onKeyDown={(e) => {
+                      if (!requireAuth()) {
+                        e.preventDefault();
+                        return;
+                      }
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
                         handleSendMessage();
@@ -1030,6 +1069,7 @@ export default function MessagesPage() {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
+                      if (!requireAuth()) return;
                       setShowProductPicker(!showProductPicker);
                       setShowEmojiPicker(false);
                     }}
@@ -1055,6 +1095,7 @@ export default function MessagesPage() {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
+                      if (!requireAuth()) return;
                       fileInputRef.current?.click();
                     }}
                     className="p-1.5 text-[#8C7E7E] hover:text-[#B8737D] hover:bg-[#FFF2F0] rounded-lg transition-colors border-0 bg-transparent cursor-pointer shrink-0"
@@ -1068,6 +1109,7 @@ export default function MessagesPage() {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
+                      if (!requireAuth()) return;
                       setShowEmojiPicker(!showEmojiPicker);
                       setShowProductPicker(false);
                     }}
@@ -1086,6 +1128,7 @@ export default function MessagesPage() {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
+                      if (!requireAuth()) return;
                       handleSendMessage();
                     }}
                     disabled={!inputText.trim() && !attachedImage}
@@ -1242,6 +1285,68 @@ export default function MessagesPage() {
               >
                 0908 123 888
               </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup chọn màu sắc & kích thước chuẩn Ảnh 3 khi bấm Thuê Ngay */}
+      <RentSelectionModal
+        isOpen={isRentModalOpen}
+        onClose={() => {
+          setIsRentModalOpen(false);
+          setSelectedDressForRent(null);
+        }}
+        dress={selectedDressForRent}
+      />
+
+      {/* Modal Yêu Cầu Đăng Nhập cho Khách Vãng Lai */}
+      {showLoginPrompt && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 w-full max-w-md shadow-2xl border border-[#F2D6D8] text-center relative animate-in zoom-in-95 duration-200">
+            <button
+              type="button"
+              onClick={() => setShowLoginPrompt(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 border-0 bg-transparent cursor-pointer transition-colors"
+              title="Đóng"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-16 h-16 rounded-full bg-[#FFF2F0] border-2 border-[#F7D4D7] flex items-center justify-center mx-auto mb-4 text-[#B8737D] shadow-sm">
+              <Lock className="w-8 h-8 stroke-[2]" />
+            </div>
+
+            <h3 className="font-playfair text-xl sm:text-2xl font-bold text-[#2C2523] mb-2">
+              Yêu Cầu Đăng Nhập
+            </h3>
+            <p className="text-sm text-[#6E6260] font-jakarta leading-relaxed mb-6 px-2">
+              Nàng vui lòng đăng nhập hoặc tạo tài khoản để có thể gửi tin nhắn, nhận phác đồ tư vấn may đo và bảo mật toàn bộ lịch sử tư vấn cùng Stylist UniBridal nhé! ✨
+            </p>
+
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLoginPrompt(false);
+                  navigate('/login', { state: { from: { pathname: '/tin-nhan' } } });
+                }}
+                className="w-full py-3 px-5 rounded-2xl bg-gradient-to-r from-[#9B5C66] via-[#B8737D] to-[#A35D67] hover:opacity-95 text-white font-jakarta font-semibold text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer border-0"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Đăng Nhập Ngay</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLoginPrompt(false);
+                  navigate('/register');
+                }}
+                className="w-full py-2.5 px-5 rounded-2xl bg-[#FAF8F7] hover:bg-[#FFF2F0] text-[#7D535B] hover:text-[#B8737D] border border-[#EADBDE] hover:border-[#D498A0] font-jakarta font-medium text-sm active:scale-95 transition-all cursor-pointer"
+              >
+                Tạo Tài Khoản Mới
+              </button>
             </div>
           </div>
         </div>
