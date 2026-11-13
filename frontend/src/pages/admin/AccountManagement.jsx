@@ -20,7 +20,9 @@ import { UserCheck,
   RefreshCw,
   Shield,
   CreditCard,
-  User } from 'lucide-react';
+  User,
+  ChevronLeft,
+  ChevronRight } from 'lucide-react';
 import {
   getAllUsers,
   getUserRoles,
@@ -30,7 +32,7 @@ import {
 } from '../../services/userService';
 import { useAuth } from '../../contexts/AuthContext';
 
-const PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 10;
 
 const ROLE_CONFIG = {
   ADMIN: {
@@ -60,6 +62,7 @@ export default function AccountManagement() {
   const [error, setError] = useState('');
   const [total, setTotal] = useState(0);
   const [activePage, setActivePage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   // Bộ lọc và tìm kiếm
   const [searchTerm, setSearchTerm] = useState('');
@@ -88,7 +91,7 @@ export default function AccountManagement() {
     try {
       const params = {
         page: activePage,
-        limit: PAGE_SIZE,
+        limit: pageSize,
       };
       if (roleFilter !== 'all') params.role = roleFilter;
       if (statusFilter !== 'all') params.status = statusFilter;
@@ -109,7 +112,7 @@ export default function AccountManagement() {
     } finally {
       setLoading(false);
     }
-  }, [activePage, roleFilter, statusFilter, searchTerm]);
+  }, [activePage, pageSize, roleFilter, statusFilter, searchTerm]);
 
   useEffect(() => {
     loadUsers();
@@ -179,7 +182,21 @@ export default function AccountManagement() {
     }
   };
 
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  // ── Pagination Helper ───────────────────────────────────────────────────────
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 6) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    if (activePage < 3) {
+      return [1, 2, 3, '...', totalPages - 1, totalPages];
+    }
+    if (activePage >= totalPages - 2) {
+      return [1, 2, '...', totalPages - 2, totalPages - 1, totalPages];
+    }
+    return [1, '...', activePage - 1, activePage, activePage + 1, '...', totalPages];
+  }, [totalPages, activePage]);
 
   return (
     <AdminLayout activeMenu="accounts">
@@ -408,44 +425,88 @@ export default function AccountManagement() {
             </table>
           </div>
 
-          {/* Phân trang */}
-          {totalPages > 1 && (
-            <div className="p-4 border-t border-[#F0E5DC] flex items-center justify-between text-xs text-[#7A6B6C]">
-              <span>Hiển thị trang {activePage} trên tổng số {totalPages} trang ({total} tài khoản)</span>
-              <div className="flex items-center gap-1">
+          {/* Phân trang chuẩn UniBridal */}
+          <div className="p-4 border-t border-[#F0E5DC] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#7A6B6C] bg-[#FFFBF9]">
+            <div className="flex items-center gap-3">
+              <span>
+                {total === 0
+                  ? 'Chưa có tài khoản nào'
+                  : `Hiển thị ${(activePage - 1) * pageSize + 1} – ${Math.min(activePage * pageSize, total)} trong tổng số ${total} tài khoản`}
+              </span>
+              <div className="flex items-center gap-1.5 border-l border-[#F0E5DC] pl-3">
+                <span className="text-[11.5px] text-[#8C7D7E]">Dòng/trang:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setActivePage(1);
+                  }}
+                  className="py-1 px-2 rounded-lg bg-white border border-[#EFE5E1] text-xs font-semibold text-[#2C2523] outline-none cursor-pointer focus:border-[#733F49]"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
-                  disabled={activePage <= 1}
-                  onClick={() => setActivePage((p) => p - 1)}
-                  className="px-3 py-1.5 rounded-lg border border-[#EFE2DC] bg-[#FAF5F2] hover:bg-[#F2E8E4] disabled:opacity-50 cursor-pointer"
+                  disabled={activePage === 1}
+                  onClick={() => setActivePage((p) => Math.max(1, p - 1))}
+                  className="w-8 h-8 rounded-lg bg-white border border-[#EFE5E1] shadow-2xs flex items-center justify-center text-[#7A6B6C] hover:bg-[#F5ECE8] disabled:opacity-40 transition-colors cursor-pointer"
+                  title="Trang trước"
                 >
-                  Trước
+                  <ChevronLeft size={16} />
                 </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setActivePage(p)}
-                    className={`px-3 py-1.5 rounded-lg font-bold cursor-pointer ${
-                      activePage === p
-                        ? 'bg-[#733F49] text-white'
-                        : 'border border-[#EFE2DC] bg-white text-[#554748] hover:bg-[#FAF5F2]'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                ))}
+
+                {pageNumbers.map((p, idx) => {
+                  if (p === '...') {
+                    return (
+                      <button
+                        key={`ellipsis-${idx}`}
+                        type="button"
+                        title={idx === 0 || p < activePage ? 'Về các trang trước' : 'Đến các trang sau'}
+                        onClick={() => {
+                          if (idx === 0 || p < activePage) setActivePage((prev) => Math.max(1, prev - 3));
+                          else setActivePage((prev) => Math.min(totalPages, prev + 3));
+                        }}
+                        className="w-8 h-8 rounded-lg bg-white border border-[#EFE5E1] shadow-2xs flex items-center justify-center text-[#8C7D7E] text-xs font-bold hover:bg-[#F5ECE8] hover:text-[#733F49] transition-colors cursor-pointer"
+                      >
+                        ...
+                      </button>
+                    );
+                  }
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setActivePage(p)}
+                      className={`w-8 h-8 rounded-lg font-bold flex items-center justify-center transition-colors cursor-pointer text-xs ${
+                        activePage === p
+                          ? 'bg-[#733F49] text-white shadow-xs'
+                          : 'bg-white border border-[#EFE5E1] shadow-2xs text-[#4A3B3D] hover:bg-[#F5ECE8]'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+
                 <button
                   type="button"
                   disabled={activePage >= totalPages}
-                  onClick={() => setActivePage((p) => p + 1)}
-                  className="px-3 py-1.5 rounded-lg border border-[#EFE2DC] bg-[#FAF5F2] hover:bg-[#F2E8E4] disabled:opacity-50 cursor-pointer"
+                  onClick={() => setActivePage((p) => Math.min(totalPages, p + 1))}
+                  className="w-8 h-8 rounded-lg bg-white border border-[#EFE5E1] shadow-2xs flex items-center justify-center text-[#7A6B6C] hover:bg-[#F5ECE8] disabled:opacity-40 transition-colors cursor-pointer"
+                  title="Trang sau"
                 >
-                  Sau
+                  <ChevronRight size={16} />
                 </button>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
