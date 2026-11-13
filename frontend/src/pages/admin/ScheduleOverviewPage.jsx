@@ -793,24 +793,42 @@ export default function ScheduleOverviewPage({ defaultTab }) {
     return map;
   }, [orders]);
 
-  // Thống kê nhanh toàn diện từ MongoDB
+  // Thống kê nhanh theo đúng cơ sở đang chọn từ MongoDB
   const stats = useMemo(() => {
-    const todayFittings = (appointmentsByDate[todayKey] || []).length;
-    const todayDeliveries = (deliveriesByDate[todayKey] || []).length;
-    const todayReturns = (returnsByDate[todayKey] || []).length;
-    const pendingAppointments = appointments.filter(
+    const branchAptsToday = (appointmentsByDate[todayKey] || []).filter(
+      (a) => (a.branch || a.branchId || 'hcm-q1') === calendarBranchFilter
+    );
+    const branchDeliveriesToday = (deliveriesByDate[todayKey] || []).filter(
+      (d) => (d.branch || d.branchId || 'hcm-q1') === calendarBranchFilter
+    );
+    const branchReturnsToday = (returnsByDate[todayKey] || []).filter(
+      (r) => (r.branch || r.branchId || 'hcm-q1') === calendarBranchFilter
+    );
+
+    const todayFittings = branchAptsToday.length;
+    const todayDeliveries = branchDeliveriesToday.length;
+    const todayReturns = branchReturnsToday.length;
+
+    const branchAppointments = appointments.filter(
+      (a) => (a.branch || a.branchId || 'hcm-q1') === calendarBranchFilter
+    );
+    const branchOrders = activeOrders.filter(
+      (o) => (o.branch || o.branchId || 'hcm-q1') === calendarBranchFilter
+    );
+
+    const pendingAppointments = branchAppointments.filter(
       (a) => (a.status || 'pending').toLowerCase() === 'pending'
     ).length;
-    const confirmedAppointments = appointments.filter(
+    const confirmedAppointments = branchAppointments.filter(
       (a) => (a.status || '').toLowerCase() === 'confirmed'
     ).length;
-    const completedAppointments = appointments.filter(
+    const completedAppointments = branchAppointments.filter(
       (a) => (a.status || '').toLowerCase() === 'completed'
     ).length;
-    const activeRentals = orders.filter((o) =>
+    const activeRentals = branchOrders.filter((o) =>
       ['renting', 'delivered', 'preparing', 'deposit_paid'].includes((o.status || '').toLowerCase())
     ).length;
-    const totalReturns = orders.filter((o) =>
+    const totalReturns = branchOrders.filter((o) =>
       ['renting', 'delivered', 'returned'].includes((o.status || '').toLowerCase())
     ).length;
 
@@ -821,12 +839,20 @@ export default function ScheduleOverviewPage({ defaultTab }) {
       pendingAppointments,
       confirmedAppointments,
       completedAppointments,
-      totalAppointments: appointments.length,
-      totalOrders: orders.length,
+      totalAppointments: branchAppointments.length,
+      totalOrders: branchOrders.length,
       activeRentals,
       totalReturns,
     };
-  }, [appointmentsByDate, deliveriesByDate, returnsByDate, todayKey, appointments, orders]);
+  }, [
+    appointmentsByDate,
+    deliveriesByDate,
+    returnsByDate,
+    todayKey,
+    appointments,
+    activeOrders,
+    calendarBranchFilter,
+  ]);
 
   // Sự kiện của ngày được chọn trên lịch (Lọc riêng từng cơ sở & hình thức giao)
   const currentDayEvents = useMemo(() => {
