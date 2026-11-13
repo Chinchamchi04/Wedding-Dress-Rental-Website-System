@@ -598,13 +598,13 @@ export const submitReturnInspection = async (orderId, data, staffUser) => {
   const finalRefundAmount = Math.max(0, totalDeposit - totalDeduction);
   const holdForAdmin = Boolean(data.holdForAdmin || data.customerAgreed === false);
   const confirmOnSite = !holdForAdmin && Boolean(data.confirmOnSite);
-  const refundMethod = data.refundMethod || 'cash';
-  const refundBankDetails = (!holdForAdmin && confirmOnSite) ? (data.refundBankDetails || (refundMethod === 'cash' ? {
-    bankName: 'Tiền mặt tại quầy',
-    accountNumber: 'TIỀN MẶT',
+  const refundMethod = data.refundMethod || 'bank_transfer';
+  const refundBankDetails = (!holdForAdmin && confirmOnSite) ? (data.refundBankDetails || {
+    bankName: data.bankName || 'Chuyển khoản ngân hàng',
+    accountNumber: data.accountNumber || '',
     accountHolder: order.customerName || order.brideName || 'Khách hàng',
-    notes: 'Đã hoàn tiền mặt trực tiếp cho khách tại quầy showroom',
-  } : null)) : null;
+    notes: 'Showroom chuyển khoản trực tiếp cho khách qua STK',
+  }) : null;
 
   // Upsert: nếu đã có biên bản kiểm định thì cập nhật lại biên bản và số tiền trừ
   let inspection = await ReturnInspection.findOne({ orderId });
@@ -842,18 +842,13 @@ export const settleInspectionAdmin = async (orderId, data, adminUser) => {
   const totalDeposit = Number(order.totalDeposit || 0);
   const agreedPenalty = Math.max(0, Math.min(totalDeposit, Number(data.agreedPenalty ?? data.agreedPenaltyFee ?? 0)));
   const finalRefund = Math.max(0, totalDeposit - agreedPenalty);
-  const refundMethod = data.refundMethod || 'cash';
-  const refundBankDetails = data.refundBankDetails || (refundMethod === 'cash' ? {
-    bankName: 'Tiền mặt tại quầy',
-    accountNumber: 'TIỀN MẶT',
-    accountHolder: order.customerName || order.brideName || 'Khách hàng',
-    notes: data.negotiationNotes || 'Admin đã đàm phán và hoàn tiền mặt trực tiếp cho khách',
-  } : {
-    bankName: data.bankName || 'Ngân hàng nội địa',
+  const refundMethod = data.refundMethod || 'bank_transfer';
+  const refundBankDetails = data.refundBankDetails || {
+    bankName: data.bankName || 'Chuyển khoản ngân hàng',
     accountNumber: data.accountNumber || '',
     accountHolder: data.accountHolder || order.customerName || '',
     notes: data.negotiationNotes || 'Admin đã đàm phán và chuyển khoản hoàn tiền cho khách',
-  });
+  };
 
   inspection.totalDeduction = agreedPenalty;
   inspection.agreedPenaltyFee = agreedPenalty;

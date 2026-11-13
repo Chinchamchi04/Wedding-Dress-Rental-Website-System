@@ -540,7 +540,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
   // 2. Ý kiến khách hàng về biên bản kiểm định (Trường hợp 1: Chốt tại chỗ | Trường hợp 2: Giữ đơn chuyển Admin)
   const [customerDecision, setCustomerDecision] = useState('agreed'); // 'agreed' | 'disputed'
   const [customerDisputeNote, setCustomerDisputeNote] = useState('');
-  const [refundMethod, setRefundMethod] = useState('cash'); // 'cash' | 'bank_transfer'
+  const [refundMethod] = useState('bank_transfer'); // Chỉ có 1 hình thức duy nhất là Chuyển khoản (STK)
   const [onSiteBankName, setOnSiteBankName] = useState('Vietcombank');
   const [onSiteAccountNum, setOnSiteAccountNum] = useState('');
   const [onSiteAccountHolder, setOnSiteAccountHolder] = useState(order.customerName || '');
@@ -746,6 +746,12 @@ function InspectionModal({ order, onClose, onSuccess }) {
       return;
     }
 
+    const isDisputeCase = customerDecision === 'disputed';
+    if (!isDisputeCase && finalRefund > 0 && !onSiteAccountNum.trim()) {
+      message.warning('Quy định: Vui lòng nhập Số tài khoản (STK) của khách để thực hiện chuyển khoản hoàn cọc.');
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload = itemsCondition.map((ic) => {
@@ -762,8 +768,6 @@ function InspectionModal({ order, onClose, onSuccess }) {
         };
       });
 
-      const isDisputeCase = customerDecision === 'disputed';
-
       const body = {
         itemsCondition: payload,
         evidencePhotos,
@@ -771,20 +775,13 @@ function InspectionModal({ order, onClose, onSuccess }) {
         customerAgreed: !isDisputeCase,
         confirmOnSite: !isDisputeCase,
         disputeReason: isDisputeCase ? (customerDisputeNote.trim() || 'Khách không đồng ý với mức phạt/biên bản kiểm định tại chỗ') : '',
-        refundMethod: !isDisputeCase ? refundMethod : undefined,
-        refundBankDetails: !isDisputeCase ? (
-          refundMethod === 'cash' ? {
-            bankName: 'Tiền mặt tại quầy',
-            accountNumber: 'TIỀN MẶT',
-            accountHolder: order.customerName || 'Khách hàng',
-            notes: onSiteNotes || 'Đã hoàn tiền mặt trực tiếp cho khách tại quầy showroom',
-          } : {
-            bankName: onSiteBankName || 'Ngân hàng nội địa',
-            accountNumber: onSiteAccountNum || '',
-            accountHolder: onSiteAccountHolder || order.customerName || '',
-            notes: onSiteNotes || 'Showroom chuyển khoản trực tiếp cho khách tại quầy',
-          }
-        ) : null,
+        refundMethod: 'bank_transfer',
+        refundBankDetails: !isDisputeCase ? {
+          bankName: onSiteBankName || 'Vietcombank',
+          accountNumber: onSiteAccountNum || '',
+          accountHolder: onSiteAccountHolder || order.customerName || '',
+          notes: onSiteNotes || 'Chuyển khoản trực tiếp cho khách qua STK',
+        } : null,
       };
 
       await submitReturnInspection(order._id, body);
@@ -1263,66 +1260,54 @@ function InspectionModal({ order, onClose, onSuccess }) {
               {/* Chi tiết Phương Án 1: Khách Đồng Thuận */}
               {customerDecision === 'agreed' && (
                 <div className="pt-2.5 border-t border-[#D5E8D8] space-y-2.5 text-[11.5px] animate-fadeIn">
-                  <div className="flex items-center gap-4">
-                    <span className="text-[#3F5946] font-semibold">Hình thức nhận hoàn cọc:</span>
-                    <label className="inline-flex items-center gap-1.5 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="refundMethod"
-                        value="cash"
-                        checked={refundMethod === 'cash'}
-                        onChange={() => setRefundMethod('cash')}
-                        className="accent-[#1E8347]"
-                      />
-                      <span className="font-medium text-[#2C2523]">Tiền mặt tại quầy</span>
-                    </label>
-                    <label className="inline-flex items-center gap-1.5 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="refundMethod"
-                        value="bank_transfer"
-                        checked={refundMethod === 'bank_transfer'}
-                        onChange={() => setRefundMethod('bank_transfer')}
-                        className="accent-[#1E8347]"
-                      />
-                      <span className="font-medium text-[#2C2523]">Chuyển khoản (STK)</span>
-                    </label>
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="text-[#3F5946] font-bold flex items-center gap-1.5 text-xs">
+                      <CreditCard size={14} className="text-[#1E8347]" />
+                      <span>Hình thức nhận hoàn cọc: <strong className="text-[#1E8347]">Chuyển khoản (STK)</strong></span>
+                    </span>
+                    <span className="text-[10px] text-emerald-800 font-semibold bg-emerald-100/80 px-2 py-0.5 rounded border border-emerald-200">
+                      Chính sách duy nhất: CK ngân hàng
+                    </span>
                   </div>
 
-                  {refundMethod === 'bank_transfer' && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1.5 bg-white p-3 rounded-xl border border-[#D5E8D8]">
-                      <div>
-                        <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">Ngân hàng</span>
-                        <Input
-                          size="small"
-                          placeholder="VD: Vietcombank, MB..."
-                          value={onSiteBankName}
-                          onChange={(e) => setOnSiteBankName(e.target.value)}
-                          className="text-xs"
-                        />
-                      </div>
-                      <div>
-                        <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">Số tài khoản (STK)</span>
-                        <Input
-                          size="small"
-                          placeholder="Nhập STK nhận tiền..."
-                          value={onSiteAccountNum}
-                          onChange={(e) => setOnSiteAccountNum(e.target.value)}
-                          className="text-xs font-mono"
-                        />
-                      </div>
-                      <div>
-                        <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">Tên chủ tài khoản</span>
-                        <Input
-                          size="small"
-                          placeholder="TÊN CHỦ TÀI KHOẢN"
-                          value={onSiteAccountHolder}
-                          onChange={(e) => setOnSiteAccountHolder(e.target.value.toUpperCase())}
-                          className="text-xs font-semibold"
-                        />
-                      </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1.5 bg-white p-3 rounded-xl border border-[#D5E8D8]">
+                    <div>
+                      <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">
+                        Ngân hàng <span className="text-red-600">*</span>
+                      </span>
+                      <Input
+                        size="small"
+                        placeholder="VD: Vietcombank, MB..."
+                        value={onSiteBankName}
+                        onChange={(e) => setOnSiteBankName(e.target.value)}
+                        className="text-xs"
+                      />
                     </div>
-                  )}
+                    <div>
+                      <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">
+                        Số tài khoản (STK) <span className="text-red-600">*</span>
+                      </span>
+                      <Input
+                        size="small"
+                        placeholder="Nhập STK nhận tiền..."
+                        value={onSiteAccountNum}
+                        onChange={(e) => setOnSiteAccountNum(e.target.value)}
+                        className="text-xs font-mono font-bold text-[#1E8347]"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">
+                        Tên chủ tài khoản <span className="text-red-600">*</span>
+                      </span>
+                      <Input
+                        size="small"
+                        placeholder="TÊN CHỦ TÀI KHOẢN"
+                        value={onSiteAccountHolder}
+                        onChange={(e) => setOnSiteAccountHolder(e.target.value.toUpperCase())}
+                        className="text-xs font-semibold"
+                      />
+                    </div>
+                  </div>
 
                   <p className="text-[11px] text-[#2E7D47] m-0 bg-emerald-50/70 p-2 rounded-xl border border-emerald-100 flex items-center gap-1.5">
                     <CheckCircle2 size={13} className="shrink-0" />
@@ -1716,68 +1701,50 @@ function AdminNegotiationModal({ order, onClose, onSuccess }) {
               </div>
             </div>
 
-            {/* Chọn Tiền mặt hoặc STK khách nhận */}
+            {/* Chuyển khoản ngân hàng (STK) duy nhất */}
             <div className="bg-white p-3 rounded-xl border border-[#D5E8D8] space-y-2 text-[11.5px]">
-              <div className="flex items-center gap-4">
-                <span className="text-stone-800 font-bold">Hình thức hoàn tiền:</span>
-                <label className="inline-flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="adminRefundMethod"
-                    value="cash"
-                    checked={refundMethod === 'cash'}
-                    onChange={() => setRefundMethod('cash')}
-                    className="accent-[#1E8347]"
-                  />
-                  <span className="font-medium text-stone-800">Tiền mặt tại quầy</span>
-                </label>
-                <label className="inline-flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="adminRefundMethod"
-                    value="bank_transfer"
-                    checked={refundMethod === 'bank_transfer'}
-                    onChange={() => setRefundMethod('bank_transfer')}
-                    className="accent-[#1E8347]"
-                  />
-                  <span className="font-medium text-stone-800">Chuyển khoản (STK)</span>
-                </label>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="text-stone-800 font-bold flex items-center gap-1.5 text-xs">
+                  <CreditCard size={14} className="text-[#1E8347]" />
+                  <span>Hình thức hoàn tiền: <strong className="text-[#1E8347]">Chuyển khoản (STK)</strong></span>
+                </span>
+                <span className="text-[10px] text-emerald-800 font-semibold bg-emerald-100/80 px-2 py-0.5 rounded border border-emerald-200">
+                  Chính sách duy nhất: CK ngân hàng
+                </span>
               </div>
 
-              {refundMethod === 'bank_transfer' && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
-                  <div>
-                    <span className="text-[10.5px] text-stone-600 block mb-0.5 font-medium">Ngân hàng</span>
-                    <Input
-                      size="small"
-                      placeholder="VD: Vietcombank, MB..."
-                      value={bankName}
-                      onChange={(e) => setBankName(e.target.value)}
-                      className="text-xs"
-                    />
-                  </div>
-                  <div>
-                    <span className="text-[10.5px] text-stone-600 block mb-0.5 font-medium">Số tài khoản</span>
-                    <Input
-                      size="small"
-                      placeholder="Nhập STK nhận tiền..."
-                      value={accountNumber}
-                      onChange={(e) => setAccountNumber(e.target.value)}
-                      className="text-xs font-mono"
-                    />
-                  </div>
-                  <div>
-                    <span className="text-[10.5px] text-stone-600 block mb-0.5 font-medium">Chủ tài khoản</span>
-                    <Input
-                      size="small"
-                      placeholder="TÊN CHỦ TÀI KHOẢN"
-                      value={accountHolder}
-                      onChange={(e) => setAccountHolder(e.target.value.toUpperCase())}
-                      className="text-xs font-semibold"
-                    />
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                <div>
+                  <span className="text-[10.5px] text-stone-600 block mb-0.5 font-medium">Ngân hàng <span className="text-red-600">*</span></span>
+                  <Input
+                    size="small"
+                    placeholder="VD: Vietcombank, MB..."
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                    className="text-xs"
+                  />
                 </div>
-              )}
+                <div>
+                  <span className="text-[10.5px] text-stone-600 block mb-0.5 font-medium">Số tài khoản <span className="text-red-600">*</span></span>
+                  <Input
+                    size="small"
+                    placeholder="Nhập STK nhận tiền..."
+                    value={accountNumber}
+                    onChange={(e) => setAccountNumber(e.target.value)}
+                    className="text-xs font-mono font-bold text-[#1E8347]"
+                  />
+                </div>
+                <div>
+                  <span className="text-[10.5px] text-stone-600 block mb-0.5 font-medium">Chủ tài khoản <span className="text-red-600">*</span></span>
+                  <Input
+                    size="small"
+                    placeholder="TÊN CHỦ TÀI KHOẢN"
+                    value={accountHolder}
+                    onChange={(e) => setAccountHolder(e.target.value.toUpperCase())}
+                    className="text-xs font-semibold"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Ghi chú kết quả đàm phán */}
@@ -1969,24 +1936,15 @@ function RefundModal({ order, onClose, onSuccess }) {
 
           {/* Lựa chọn phương thức hoàn tiền */}
           <div className="p-3.5 rounded-xl border border-[#EFE5E1] bg-white space-y-3">
-            <label className="font-bold text-[#2C2523] block">
-              Phương thức hoàn trả tiền cọc cho khách:
-            </label>
-            <Radio.Group
-              value={refundMethod}
-              onChange={(e) => setRefundMethod(e.target.value)}
-              className="flex flex-col gap-2"
-            >
-              <Radio value="bank_transfer">
-                <span className="font-medium text-[#2C2523]">Chuyển khoản trực tuyến (Internet Banking)</span>
-              </Radio>
-              <Radio value="cash">
-                <span className="font-medium text-[#2C2523]">Tiền mặt trực tiếp tại quầy Showroom</span>
-              </Radio>
-              <Radio value="card">
-                <span className="font-medium text-[#2C2523]">Hoàn trả vào thẻ ngân hàng / Cổng thanh toán</span>
-              </Radio>
-            </Radio.Group>
+            <div className="flex items-center justify-between">
+              <label className="font-bold text-[#2C2523] flex items-center gap-1.5 text-xs">
+                <CreditCard size={15} className="text-[#1E8347]" />
+                <span>Phương thức hoàn trả: <strong className="text-[#1E8347]">Chuyển khoản ngân hàng (STK)</strong></span>
+              </label>
+              <span className="text-[10px] text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                Chính sách duy nhất: CK ngân hàng
+              </span>
+            </div>
 
             <div>
               <label className="text-[11.5px] text-[#8C7D7E] block mb-1">
