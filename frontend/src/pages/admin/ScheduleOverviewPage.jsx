@@ -644,12 +644,21 @@ export default function ScheduleOverviewPage({ defaultTab }) {
   }, [activeHighlightOrder]);
   const highlightEndDateKey = activeHighlightOrder ? toDateKey(activeHighlightOrder.rentalEndDate) : null;
 
-  // Danh sách sự kiện thử váy map theo ngày
+  // Danh sách sự kiện thử váy map theo ngày:
+  // Nếu ca thử đã hoàn tất và ngày thử đã qua trong quá khứ (trước hôm nay), ẩn khỏi lịch biểu (chỉ hiện lịch thử từ hôm nay trở đi)
   const appointmentsByDate = useMemo(() => {
     const map = {};
     appointments.forEach((apt) => {
+      const st = (apt.status || '').toLowerCase();
+      // Bỏ qua ca hẹn đã hủy
+      if (st === 'cancelled') return;
+
       const key = toDateKey(apt.appointmentDate);
       if (!key) return;
+
+      // Nếu lịch thử đã hoàn tất và qua ngày hôm sau thì không cần hiện lịch sử thử váy
+      if (key < todayKey && st === 'completed') return;
+
       if (!map[key]) map[key] = [];
       map[key].push({
         type: 'fitting',
@@ -669,7 +678,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
       });
     });
     return map;
-  }, [appointments]);
+  }, [appointments, todayKey]);
 
   // Danh sách các đơn thuê còn hiệu lực (loại bỏ các đơn đã bị hủy trước khi thuê)
   const activeOrders = useMemo(
@@ -677,12 +686,24 @@ export default function ScheduleOverviewPage({ defaultTab }) {
     [orders]
   );
 
-  // Lọc danh sách lịch hẹn theo chi nhánh (Lọc riêng từng cơ sở)
+  // Lọc danh sách lịch hẹn theo chi nhánh (Lọc riêng từng cơ sở & loại bỏ các ca đã hoàn tất trong quá khứ)
   const calendarVisibleAppointments = useMemo(() => {
-    return appointments.filter(
-      (a) => (a.branch || a.branchId || 'hcm-q1') === calendarBranchFilter
-    );
-  }, [appointments, calendarBranchFilter]);
+    return appointments.filter((a) => {
+      const matchBranch = (a.branch || a.branchId || 'hcm-q1') === calendarBranchFilter;
+      if (!matchBranch) return false;
+
+      const st = (a.status || '').toLowerCase();
+      if (st === 'cancelled') return false;
+
+      const key = toDateKey(a.appointmentDate);
+      // Nếu lịch thử đã hoàn tất và qua ngày hôm sau thì không cần hiện lịch sử thử váy
+      if (key && key < todayKey && st === 'completed') {
+        return false;
+      }
+
+      return true;
+    });
+  }, [appointments, calendarBranchFilter, todayKey]);
 
   // Toàn bộ đơn thuê còn hiệu lực của chi nhánh hiện tại
   const calendarBranchOrders = useMemo(() => {
