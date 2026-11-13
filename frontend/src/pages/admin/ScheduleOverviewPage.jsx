@@ -49,6 +49,7 @@ import { CalendarDays,
   MessageSquare,
   RefreshCw,
   PackageCheck,
+  Truck,
 } from 'lucide-react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -227,6 +228,7 @@ function CalendarDateCellEvents({
           if (item.eventCategory === 'delivery') {
             const isHighlight = Boolean(activeOrderCode && (item.code === activeOrderCode || item.id === activeOrderCode));
             const returnDateStr = item.rentalEndDate ? formatShortDate(item.rentalEndDate) : '';
+            const isExpress = item.deliveryMethod === 'express';
 
             return (
               <Tooltip
@@ -234,10 +236,19 @@ function CalendarDateCellEvents({
                 title={
                   <div className="text-xs space-y-1">
                     <div className="font-bold flex items-center gap-1">
-                      <span>📦 Giao sớm / Lấy váy:</span>
+                      <span>{isExpress ? '🚚 Giao tận nơi (Ship):' : '🏛️ Khách đến lấy tại Showroom:'}</span>
                       <span className="font-mono text-amber-300">{item.code}</span>
                     </div>
                     <div>Khách hàng: <strong>{item.customerName}</strong></div>
+                    {isExpress ? (
+                      <div className="text-sky-200 text-[11px] truncate max-w-[220px]">
+                        📍 Ship đến: <strong>{item.shippingAddress || 'Theo yêu cầu khách'}</strong>
+                      </div>
+                    ) : (
+                      <div className="text-indigo-200 text-[11px]">
+                        📍 Địa điểm lấy: <strong>{item.branch === 'hn-hoankiem' ? 'Showroom Hoàn Kiếm, HN' : 'Flagship Showroom Q.1, TP.HCM'}</strong>
+                      </div>
+                    )}
                     {item.rentalStartDate && (
                       <div className="text-amber-200 text-[11px]">
                         Thuê chính thức: <strong>{formatShortDate(item.rentalStartDate)}</strong>
@@ -259,13 +270,33 @@ function CalendarDateCellEvents({
                   }}
                   className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[10.5px] font-medium border shadow-2xs transition-all cursor-pointer ${
                     isHighlight
-                      ? 'bg-sky-600 text-white border-sky-500 font-bold shadow-xs'
-                      : 'bg-sky-50/90 text-sky-900 border-sky-300 hover:bg-sky-100 hover:scale-[1.02]'
+                      ? isExpress
+                        ? 'bg-sky-600 text-white border-sky-500 font-bold shadow-xs'
+                        : 'bg-indigo-600 text-white border-indigo-500 font-bold shadow-xs'
+                      : isExpress
+                      ? 'bg-sky-50/90 text-sky-900 border-sky-300 hover:bg-sky-100 hover:scale-[1.02]'
+                      : 'bg-indigo-50/90 text-indigo-900 border-indigo-300 hover:bg-indigo-100 hover:scale-[1.02]'
                   }`}
                 >
-                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isHighlight ? 'bg-white' : 'bg-sky-600'}`} />
-                  <span className={`font-mono text-[9px] shrink-0 uppercase ${isHighlight ? 'font-extrabold text-white tracking-wider' : 'font-bold text-sky-950'}`}>
-                    {isHighlight ? '📦 GIAO' : 'GIAO'}
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                      isHighlight
+                        ? 'bg-white'
+                        : isExpress
+                        ? 'bg-sky-600'
+                        : 'bg-indigo-600'
+                    }`}
+                  />
+                  <span
+                    className={`font-mono text-[9px] shrink-0 uppercase tracking-tight flex items-center gap-0.5 ${
+                      isHighlight
+                        ? 'font-extrabold text-white'
+                        : isExpress
+                        ? 'font-bold text-sky-950'
+                        : 'font-bold text-indigo-950'
+                    }`}
+                  >
+                    {isExpress ? '🚚 SHIP' : '🏛️ KHÁCH LẤY'}
                   </span>
                 </div>
               </Tooltip>
@@ -394,6 +425,8 @@ export default function ScheduleOverviewPage({ defaultTab }) {
   // Sub-filter trong Tab Lịch Biểu: 'all' | 'fitting' (Thử váy) | 'delivery' (Giao váy) | 'return' (Trả váy)
   const [calendarFilterType, setCalendarFilterType] = useState('all');
   const [calendarBranchFilter, setCalendarBranchFilter] = useState('hcm-q1');
+  // Lọc hình thức giao váy: 'all' (Tất cả) | 'showroom' (Khách đến lấy) | 'express' (Nhân viên ship tận nơi)
+  const [deliveryMethodFilter, setDeliveryMethodFilter] = useState('all');
 
   // Bộ lọc cho Tab Danh Sách Lịch Hẹn (Merged từ AppointmentManagement)
   const [searchTerm, setSearchTerm] = useState('');
@@ -644,18 +677,41 @@ export default function ScheduleOverviewPage({ defaultTab }) {
     [orders]
   );
 
-  // Lọc danh sách lịch hẹn và đơn thuê theo chi nhánh hiển thị trên lịch (Lọc riêng từng cơ sở)
+  // Lọc danh sách lịch hẹn theo chi nhánh (Lọc riêng từng cơ sở)
   const calendarVisibleAppointments = useMemo(() => {
     return appointments.filter(
       (a) => (a.branch || a.branchId || 'hcm-q1') === calendarBranchFilter
     );
   }, [appointments, calendarBranchFilter]);
 
-  const calendarVisibleActiveOrders = useMemo(() => {
+  // Toàn bộ đơn thuê còn hiệu lực của chi nhánh hiện tại
+  const calendarBranchOrders = useMemo(() => {
     return activeOrders.filter(
       (o) => (o.branch || o.branchId || 'hcm-q1') === calendarBranchFilter
     );
   }, [activeOrders, calendarBranchFilter]);
+
+  // Đếm đơn khách đến lấy trực tiếp tại showroom
+  const showroomDeliveriesCount = useMemo(() => {
+    return calendarBranchOrders.filter(
+      (o) => (o.deliveryMethod || 'showroom') === 'showroom'
+    ).length;
+  }, [calendarBranchOrders]);
+
+  // Đếm đơn nhân viên giao váy tận nơi
+  const expressDeliveriesCount = useMemo(() => {
+    return calendarBranchOrders.filter(
+      (o) => (o.deliveryMethod || 'showroom') === 'express'
+    ).length;
+  }, [calendarBranchOrders]);
+
+  // Đơn giao hiển thị sau khi lọc theo hình thức nhận/giao
+  const calendarVisibleActiveOrders = useMemo(() => {
+    if (deliveryMethodFilter === 'all') return calendarBranchOrders;
+    return calendarBranchOrders.filter(
+      (o) => (o.deliveryMethod || 'showroom') === deliveryMethodFilter
+    );
+  }, [calendarBranchOrders, deliveryMethodFilter]);
 
   // Danh sách sự kiện bàn giao / nhận váy: LÙI 1 NGÀY trước ngày khách bắt đầu thuê
   // (Do showroom giao sớm 1 ngày hoặc khách đến showroom lấy sớm 1 ngày để thử và chuẩn bị)
@@ -786,7 +842,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
     });
   }, [appointments, searchTerm, branchFilter, statusFilter]);
 
-  // Sự kiện của ngày được chọn trên lịch (Lọc riêng từng cơ sở)
+  // Sự kiện của ngày được chọn trên lịch (Lọc riêng từng cơ sở & hình thức giao)
   const currentDayEvents = useMemo(() => {
     const apts = appointmentsByDate[selectedDateKey] || [];
     const deliveries = deliveriesByDate[selectedDateKey] || [];
@@ -796,9 +852,12 @@ export default function ScheduleOverviewPage({ defaultTab }) {
       (a) => (a.branch || a.branchId || 'hcm-q1') === calendarBranchFilter
     );
 
-    const filteredDeliveries = deliveries.filter(
-      (d) => (d.branch || d.branchId || 'hcm-q1') === calendarBranchFilter
-    );
+    const filteredDeliveries = deliveries.filter((d) => {
+      const matchBranch = (d.branch || d.branchId || 'hcm-q1') === calendarBranchFilter;
+      const matchMethod =
+        deliveryMethodFilter === 'all' || (d.deliveryMethod || 'showroom') === deliveryMethodFilter;
+      return matchBranch && matchMethod;
+    });
 
     const filteredReturns = returns.filter(
       (r) => (r.branch || r.branchId || 'hcm-q1') === calendarBranchFilter
@@ -816,9 +875,10 @@ export default function ScheduleOverviewPage({ defaultTab }) {
     selectedDateKey,
     calendarFilterType,
     calendarBranchFilter,
+    deliveryMethodFilter,
   ]);
 
-  // Render nội dung từng ô ngày trên lịch Ant Design (Lọc riêng từng cơ sở)
+  // Render nội dung từng ô ngày trên lịch Ant Design (Lọc riêng từng cơ sở & hình thức giao)
   const dateCellRender = (dateObj) => {
     const d = dateObj.toDate ? dateObj.toDate() : new Date(dateObj);
     const key = toDateKey(d);
@@ -835,9 +895,12 @@ export default function ScheduleOverviewPage({ defaultTab }) {
       (a) => (a.branch || a.branchId || 'hcm-q1') === calendarBranchFilter
     );
 
-    const visibleDeliveries = dayDeliveries.filter(
-      (d) => (d.branch || d.branchId || 'hcm-q1') === calendarBranchFilter
-    );
+    const visibleDeliveries = dayDeliveries.filter((d) => {
+      const matchBranch = (d.branch || d.branchId || 'hcm-q1') === calendarBranchFilter;
+      const matchMethod =
+        deliveryMethodFilter === 'all' || (d.deliveryMethod || 'showroom') === deliveryMethodFilter;
+      return matchBranch && matchMethod;
+    });
 
     const visibleReturns = dayReturns.filter(
       (r) => (r.branch || r.branchId || 'hcm-q1') === calendarBranchFilter
@@ -1094,7 +1157,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200/80'
                     }`}
                   >
-                    Tất cả sự kiện ({calendarVisibleAppointments.length + calendarVisibleActiveOrders.length * 2})
+                    Tất cả sự kiện ({calendarVisibleAppointments.length + calendarVisibleActiveOrders.length + calendarBranchOrders.length})
                   </button>
                   <button
                     type="button"
@@ -1139,25 +1202,103 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     }`}
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Hạn trả váy ({calendarVisibleActiveOrders.length})</span>
+                    <span>Hạn trả váy ({calendarBranchOrders.length})</span>
                   </button>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-gray-500 font-semibold flex items-center gap-1">
-                    <Building2 className="w-3.5 h-3.5 text-[#733F49]" />
-                    <span>Chi nhánh:</span>
-                  </span>
-                  <select
-                    value={calendarBranchFilter}
-                    onChange={(e) => setCalendarBranchFilter(e.target.value)}
-                    className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 font-bold outline-none cursor-pointer text-xs focus:border-[#733F49]"
-                  >
-                    <option value="hcm-q1">UniBridal Q.1 TP.HCM</option>
-                    <option value="hn-hoankiem">UniBridal Hoàn Kiếm, HN</option>
-                  </select>
+                <div className="flex flex-wrap items-center gap-3 text-xs">
+                  {/* Lọc phương thức giao váy (Khách đến lấy / Nhân viên ship) */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-gray-500 font-semibold flex items-center gap-1">
+                      <Truck className="w-3.5 h-3.5 text-[#733F49]" />
+                      <span>Hình thức giao:</span>
+                    </span>
+                    <select
+                      value={deliveryMethodFilter}
+                      onChange={(e) => setDeliveryMethodFilter(e.target.value)}
+                      className="px-3 py-1.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 font-bold outline-none cursor-pointer text-xs focus:border-[#733F49]"
+                    >
+                      <option value="all">Tất cả hình thức ({calendarBranchOrders.length})</option>
+                      <option value="showroom">🏛️ Khách đến lấy ({showroomDeliveriesCount})</option>
+                      <option value="express">🚚 Nhân viên ship ({expressDeliveriesCount})</option>
+                    </select>
+                  </div>
+
+                  {/* Lọc chi nhánh */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-gray-500 font-semibold flex items-center gap-1">
+                      <Building2 className="w-3.5 h-3.5 text-[#733F49]" />
+                      <span>Chi nhánh:</span>
+                    </span>
+                    <select
+                      value={calendarBranchFilter}
+                      onChange={(e) => setCalendarBranchFilter(e.target.value)}
+                      className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 font-bold outline-none cursor-pointer text-xs focus:border-[#733F49]"
+                    >
+                      <option value="hcm-q1">UniBridal Q.1 TP.HCM</option>
+                      <option value="hn-hoankiem">UniBridal Hoàn Kiếm, HN</option>
+                    </select>
+                  </div>
                 </div>
               </div>
+
+              {/* Sub-bar chuyển đổi nhanh khi xem Lịch giao váy hoặc đã chọn lọc hình thức giao */}
+              {(calendarFilterType === 'delivery' || deliveryMethodFilter !== 'all') && (
+                <div className="-mt-3 bg-white/95 px-4 py-2.5 rounded-xl border border-[#EFE5E1] shadow-2xs flex flex-wrap items-center justify-between gap-2.5 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#733F49] font-bold text-[11px] uppercase tracking-wider flex items-center gap-1">
+                      <Truck className="w-3.5 h-3.5 text-[#733F49]" />
+                      <span>Phân loại giao nhận:</span>
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setDeliveryMethodFilter('all')}
+                        className={`px-3 py-1 rounded-lg font-bold text-[11px] transition cursor-pointer ${
+                          deliveryMethodFilter === 'all'
+                            ? 'bg-[#733F49] text-white shadow-2xs'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        Tất cả ({calendarBranchOrders.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeliveryMethodFilter('showroom')}
+                        className={`px-3 py-1 rounded-lg font-bold text-[11px] transition cursor-pointer flex items-center gap-1.5 ${
+                          deliveryMethodFilter === 'showroom'
+                            ? 'bg-indigo-600 text-white shadow-2xs'
+                            : 'bg-indigo-50 text-indigo-900 hover:bg-indigo-100 border border-indigo-200'
+                        }`}
+                      >
+                        <span>🏛️ Khách đến lấy trực tiếp</span>
+                        <span className="font-mono font-bold">({showroomDeliveriesCount})</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeliveryMethodFilter('express')}
+                        className={`px-3 py-1 rounded-lg font-bold text-[11px] transition cursor-pointer flex items-center gap-1.5 ${
+                          deliveryMethodFilter === 'express'
+                            ? 'bg-sky-600 text-white shadow-2xs'
+                            : 'bg-sky-50 text-sky-900 hover:bg-sky-100 border border-sky-200'
+                        }`}
+                      >
+                        <span>🚚 Nhân viên ship tận nơi</span>
+                        <span className="font-mono font-bold">({expressDeliveriesCount})</span>
+                      </button>
+                    </div>
+                  </div>
+                  {deliveryMethodFilter !== 'all' && (
+                    <button
+                      type="button"
+                      onClick={() => setDeliveryMethodFilter('all')}
+                      className="text-[11px] text-gray-500 hover:text-[#733F49] underline cursor-pointer"
+                    >
+                      Bỏ lọc hình thức
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Container 2 Cột: Lịch Tháng (Trái) + Thanh Kéo Co Giãn (Giữa) + Bảng Chi Tiết Ngày (Phải) */}
               <div ref={splitContainerRef} className="flex flex-col lg:flex-row items-stretch gap-0 relative">
@@ -1388,10 +1529,21 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                   </>
                                 ) : isDelivery ? (
                                   <>
-                                    <PackageCheck className="w-3.5 h-3.5 text-sky-700" />
-                                    <span className="font-mono font-bold text-sky-900">
-                                      GIAO VÁY: {item.code}
-                                    </span>
+                                    {item.deliveryMethod === 'express' ? (
+                                      <>
+                                        <Truck className="w-3.5 h-3.5 text-sky-700" />
+                                        <span className="font-mono font-bold text-sky-900">
+                                          SHIP VÁY: {item.code}
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Building2 className="w-3.5 h-3.5 text-indigo-700" />
+                                        <span className="font-mono font-bold text-indigo-900">
+                                          KHÁCH LẤY: {item.code}
+                                        </span>
+                                      </>
+                                    )}
                                   </>
                                 ) : (
                                   <>
@@ -1407,6 +1559,17 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                   className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border ${badge.className}`}
                                 >
                                   {badge.label}
+                                </span>
+                              )}
+                              {isDelivery && (
+                                <span
+                                  className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border ${
+                                    item.deliveryMethod === 'express'
+                                      ? 'bg-sky-50 text-sky-800 border-sky-300'
+                                      : 'bg-indigo-50 text-indigo-800 border-indigo-300'
+                                  }`}
+                                >
+                                  {item.deliveryMethod === 'express' ? '🚚 Nhân viên ship' : '🏛️ Khách đến lấy'}
                                 </span>
                               )}
                             </div>
@@ -1449,8 +1612,8 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                     </>
                                   ) : (
                                     <>
-                                      <Building2 className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-                                      <span>Khách nhận tại Showroom:</span>
+                                      <Building2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                      <span>Khách đến lấy tại Showroom:</span>
                                     </>
                                   )}
                                 </div>
