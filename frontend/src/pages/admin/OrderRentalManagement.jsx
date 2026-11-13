@@ -668,66 +668,70 @@ function InspectionModal({ order, onClose, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[94vh] overflow-y-auto shadow-2xl border border-[#EFE5E1]">
-        {/* Header - Thu gọn chiều cao */}
-        <div className="flex items-center justify-between py-2.5 px-4 border-b border-[#F0E6E2] bg-[#FFF6F3] rounded-t-2xl">
-          <div className="flex items-center gap-2">
-            <ShieldCheck size={18} className="text-[#B8737D]" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[94vh] overflow-y-auto shadow-2xl border border-[#EFE5E1]">
+        {/* Header - Chuẩn Atelier Haute Couture sang trọng */}
+        <div className="flex items-center justify-between py-3 px-5 border-b border-[#F0E6E2] bg-gradient-to-r from-[#FFF8F6] via-[#FCF4F0] to-[#FFF8F6] rounded-t-3xl">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#FAF0EC] flex items-center justify-center text-[#733F49] border border-[#ECD9D3] shadow-2xs">
+              <ShieldCheck size={20} />
+            </div>
             <div>
-              <h3 className="font-playfair text-[15px] font-bold text-[#5F2B36] m-0">
+              <h3 className="font-playfair text-[16px] font-bold text-[#5F2B36] m-0 tracking-tight">
                 {isCompletedOrder
-                  ? 'Hồ Sơ Lưu Trữ Đơn Thuê và Quyết Toán Cọc'
+                  ? 'Hồ Sơ Lưu Trữ Đơn Thuê & Quyết Toán Cọc'
                   : isCustomerApproved
-                    ? 'Biên Bản Kiểm Định Trả Váy (Khách Đã Duyệt)'
+                    ? 'Biên Bản Giám Định Lễ Phục (Khách Đã Duyệt)'
                     : isReturnedOrder
-                      ? 'Biên Bản Kiểm Định Trả Váy (Đã Kiểm Định)'
-                      : 'Kiểm Định Trả Váy và Giám Định Hiện Trạng'}
+                      ? 'Biên Bản Giám Định Lễ Phục (Đã Hoàn Tất Kiểm Tra)'
+                      : 'Biên Bản Giám Định Hiện Trạng & Quyết Toán Cọc'}
               </h3>
-              <p className="text-[10.5px] text-[#8C7D7E] m-0">
-                Đơn #{order.orderCode}
+              <p className="text-[11px] text-[#8C7D7E] m-0 flex items-center gap-1.5 mt-0.5">
+                <span>Mã hồ sơ: <strong className="font-mono text-[#5F2B36]">#{order.orderCode}</strong></span>
+                <span>•</span>
+                <span>Atelier UniBridal Standard</span>
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-full bg-[#F2E3DC] text-[#7A6B6C] hover:text-[#733F49] flex items-center justify-center transition-colors cursor-pointer border-0"
+            className="w-8 h-8 rounded-full bg-white text-[#7A6B6C] hover:text-[#733F49] hover:bg-[#FAF0EC] flex items-center justify-center transition-colors cursor-pointer border border-[#EFE5E1]"
           >
-            <X size={14} />
+            <X size={15} />
           </button>
         </div>
 
-        <div className="p-3.5 space-y-2.5 text-xs">
+        <div className="p-4 sm:p-5 space-y-3.5 text-xs font-jakarta">
           {/* Status banner nếu khách đã phản hồi */}
           {customerStatus === 'disputed' && (
-            <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800 space-y-1">
-              <div className="font-bold flex items-center gap-1.5 text-red-900 text-[11.5px]">
-                <AlertTriangle size={13} />
-                <span>Khách hàng đã gửi khiếu nại về biên bản:</span>
+            <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 space-y-1 animate-fadeIn">
+              <div className="font-bold flex items-center gap-2 text-amber-950 text-[12px]">
+                <Clock size={14} className="text-amber-700" />
+                <span>Hồ sơ đang ở trạng thái Tạm Giữ — Chờ Quản lý trực tiếp đàm phán:</span>
               </div>
-              <p className="italic bg-white p-1.5 rounded-lg border border-red-100 text-[#4A3B3D] text-[11px] m-0">
-                "{disputeReason || 'Khách hàng không đồng ý với mức bồi thường khấu trừ cọc'}"
+              <p className="italic bg-white p-2 rounded-xl border border-amber-100 text-[#4A3B3D] text-[11.5px] m-0 leading-relaxed">
+                "{disputeReason || 'Khách hàng có ý kiến phản hồi về chi phí phục chế tổn thất'}"
               </p>
             </div>
           )}
 
           {customerStatus === 'approved' && (
-            <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 space-y-1">
-              <div className="flex items-center justify-between gap-1.5 text-[11.5px] flex-wrap">
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+            <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 space-y-1">
+              <div className="flex items-center justify-between gap-2 text-[12px] flex-wrap">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
                   <span>
-                    <strong>Khách hàng đã duyệt biên bản.</strong>
+                    <strong>Khách hàng đã đồng thuận biên bản giám định.</strong>
                   </span>
                 </div>
                 <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-300">
-                  Đã Khóa Chỉnh Sửa
+                  Hồ Sơ Đã Khóa
                 </span>
               </div>
               {refundBankDetails?.accountNumber && (
-                <div className="p-2 rounded-lg bg-white/90 border border-emerald-200 text-[11px] text-[#2C2523] space-y-0.5">
-                  <div>• Ngân hàng: <strong>{refundBankDetails.bankName || 'Ngân hàng nội địa'}</strong> • STK: <strong className="font-mono">{refundBankDetails.accountNumber}</strong> • Chủ TK: <strong>{refundBankDetails.accountHolder}</strong></div>
+                <div className="p-2.5 rounded-xl bg-white/90 border border-emerald-200 text-[11.5px] text-[#2C2523] space-y-0.5 mt-1">
+                  <div>• Ngân hàng thụ hưởng: <strong>{refundBankDetails.bankName || 'Ngân hàng nội địa'}</strong> • STK: <strong className="font-mono">{refundBankDetails.accountNumber}</strong> • Chủ TK: <strong>{refundBankDetails.accountHolder}</strong></div>
                   {refundBankDetails.notes && <div>• Ghi chú: <em>{refundBankDetails.notes}</em></div>}
                 </div>
               )}
@@ -735,159 +739,178 @@ function InspectionModal({ order, onClose, onSuccess }) {
           )}
 
           {customerStatus === 'pending' && isReturnedOrder && (
-            <div className="p-2 px-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800 flex items-center justify-between flex-wrap gap-2">
+            <div className="p-2.5 px-3 rounded-2xl bg-amber-50 border border-amber-200 text-[11.5px] text-amber-800 flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-1.5">
-                <Clock size={13} className="text-amber-600 shrink-0" />
+                <Clock size={14} className="text-amber-600 shrink-0" />
                 <span>
-                  <strong>Đang chờ khách duyệt:</strong> {isGuestOrder ? 'Khách vãng lai không có tài khoản online.' : 'Khách xác nhận thì hệ thống sẽ tự động hoàn cọc ngay.'}
+                  <strong>Đang chờ xác nhận từ khách:</strong> {isGuestOrder ? 'Khách trải nghiệm tại Showroom.' : 'Khách xác nhận trực tuyến hệ thống sẽ đối soát hoàn cọc ngay.'}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => {
                   setIsEditing(true);
-                  setConfirmOnSite(true);
+                  setCustomerDecision('agreed');
                 }}
-                className="px-2.5 py-1 rounded-lg bg-[#1E8347] text-white font-bold text-[10.5px] cursor-pointer hover:bg-[#166534] transition-colors border-0 flex items-center gap-1 shrink-0"
+                className="px-3 py-1 rounded-lg bg-[#1E8347] text-white font-bold text-[11px] cursor-pointer hover:bg-[#166534] transition-colors border-0 flex items-center gap-1 shrink-0 shadow-2xs"
               >
-                <CheckCircle2 size={12} />
+                <CheckCircle2 size={13} />
                 <span>Xác nhận tại quầy ngay</span>
               </button>
             </div>
           )}
 
-          {/* Dải thông tin tóm tắt đơn hàng gọn gàng 1 dòng */}
-          <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-lg bg-[#FAF5F2] border border-[#F0E6E2] text-[11.5px]">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[#8C7D7E]">Khách hàng: </span>
-              <strong className="text-[#2C2523]">{order.customerName}</strong>
-              {order.hasAccount || order.customerId ? (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#FAF0EC] text-[#733F49] border border-[#F2D8D4]">
-                  <UserCheck size={10} className="text-[#B8737D]" /> Thành Viên
+          {/* Dải thông tin khách hàng & lịch trình chuẩn Atelier */}
+          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-[#FAF5F2] to-[#FFFBF9] border border-[#EFE5E1] grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-[#FAF0EC] text-[#733F49] font-bold text-xs flex items-center justify-center border border-[#ECD9D3] shrink-0">
+                {order.customerName?.charAt(0) || 'K'}
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <strong className="text-[13px] text-[#2C2523]">{order.customerName}</strong>
+                  {order.hasAccount || order.customerId ? (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-[#FAF0EC] text-[#733F49] border border-[#F2D8D4]">
+                      <CircleUser size={10} className="text-[#B8737D]" /> Thành Viên VIP
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-[#F5F2F0] text-[#7A6A6B] border border-[#E8DFDC]">
+                      Khách Showroom
+                    </span>
+                  )}
+                </div>
+                {order.customerPhone && (
+                  <span className="text-[11px] text-[#8C7D7E] block mt-0.5 font-mono">{order.customerPhone}</span>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col sm:items-end justify-center text-xs">
+              <div className="text-[#7A6B6C]">
+                Thời gian thuê: <strong className="text-[#2C2523]">{fmtDate(order.rentalStartDate)} – {fmtDate(order.rentalEndDate)}</strong>
+              </div>
+              {lateDays > 0 ? (
+                <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10.5px] font-bold ${
+                  lateDays > 5 ? 'bg-red-100 text-red-800 border border-red-200' : 'bg-amber-100 text-amber-800 border border-amber-200'
+                }`}>
+                  {lateDays > 5 ? `Trễ hạn ${lateDays} ngày (Tịch thu 100% cọc: -${fmtVnd(lateFee)})` : `Trễ hạn ${lateDays} ngày (Phạt 50%/ngày: -${fmtVnd(lateFee)})`}
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-medium bg-[#F5F2F0] text-[#7A6A6B] border border-[#E8DFDC]">
-                  <UserX size={10} className="text-[#A39192]" /> Khách Vãng Lai
+                <span className="text-[11px] text-emerald-700 font-semibold mt-0.5 flex items-center gap-1">
+                  <CheckCircle2 size={12} /> Bàn giao đúng hạn hợp đồng
                 </span>
               )}
             </div>
-            <div>
-              <span className="text-[#8C7D7E]">Ngày thuê: </span>
-              <strong className="text-[#2C2523]">
-                {fmtDate(order.rentalStartDate)} – {fmtDate(order.rentalEndDate)}
-              </strong>
-            </div>
-            {lateDays > 0 && (
-              <span className={`font-bold px-2 py-0.5 rounded text-[11px] ${lateDays > 5 ? 'text-rose-900 bg-rose-100 border border-rose-300' : 'text-amber-800 bg-amber-100'}`}>
-                {lateDays > 5 ? `Trễ ${lateDays} ngày (Quá 5 ngày: Tịch thu 100% cọc -${fmtVnd(lateFee)})` : `Trễ ${lateDays} ngày (Phạt 50%/ngày: -${fmtVnd(lateFee)})`}
-              </span>
-            )}
           </div>
 
-          {/* Items inspection - Kiểm định váy */}
-          {itemsCondition.map((ic, idx) => {
-            const maxLimit = ic.maxDeposit || ic.depositAmount || order.totalDeposit || 0;
-            const itemCode = getDressCode(ic) || getDressCode(order.items?.[idx]);
-            return (
-              <div key={idx} className="p-2.5 px-3 rounded-xl border border-[#EFE5E1] bg-white space-y-1.5">
-                <div className="flex items-center justify-between flex-wrap gap-1">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="font-bold text-[12.5px] text-[#5F2B36]">
-                      {ic.name}
-                    </span>
-                    {itemCode && (
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#FAF0EC] text-[#733F49] font-mono text-[10px] font-bold border border-[#F2D8D4] leading-none">
-                        {itemCode}
+          {/* Danh sách lễ phục & Giám định tình trạng */}
+          <div className="space-y-2.5">
+            {itemsCondition.map((ic, idx) => {
+              const maxLimit = ic.maxDeposit || ic.depositAmount || order.totalDeposit || 0;
+              const itemCode = getDressCode(ic) || getDressCode(order.items?.[idx]);
+              return (
+                <div key={idx} className="p-3 rounded-2xl border border-[#EFE5E1] bg-white space-y-2 shadow-2xs">
+                  <div className="flex items-center justify-between flex-wrap gap-2 pb-1.5 border-b border-[#F7EFEA]">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-playfair font-bold text-[13.5px] text-[#5F2B36]">
+                        {ic.name}
                       </span>
-                    )}
-                    {(ic.size || order.items?.[idx]?.size) && (
-                      <span className="inline-block px-1.5 py-0.5 rounded bg-[#FCECE8] text-[#B8737D] text-[10px] font-bold leading-none">
-                        Size: {ic.size || order.items?.[idx]?.size}
-                      </span>
-                    )}
-                    {(ic.color || order.items?.[idx]?.color || order.color) && (
-                      <span className="inline-block px-1.5 py-0.5 rounded bg-[#FAF4EE] text-[#733F49] text-[10px] font-bold leading-none border border-[#F0E5DC]">
-                        Màu: {ic.color || order.items?.[idx]?.color || order.color || 'Trắng Sữa'}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[10.5px] text-[#8C7D7E]">
-                    (Tiền cọc: <strong className="text-[#5F2B36]">{fmtVnd(maxLimit)}</strong>)
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[11px] text-[#8C7D7E]">Tình trạng:</span>
-                  <Radio.Group
-                    disabled={isReadOnly}
-                    value={ic.condition}
-                    onChange={(e) => updateItem(idx, 'condition', e.target.value)}
-                    className="flex flex-wrap gap-1.5 text-[11px]"
-                  >
-                    {CONDITION_OPTIONS.map((opt) => (
-                      <Radio key={opt.value} value={opt.value}>
-                        <span className="text-[11.5px]">{opt.label}</span>
-                      </Radio>
-                    ))}
-                  </Radio.Group>
-                </div>
-
-                {ic.condition !== 'good' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 animate-fadeIn">
-                    <Input
-                      disabled={isReadOnly}
-                      placeholder="Ghi chú hư hỏng (ren, khóa, gấu...)"
-                      value={ic.damageNotes}
-                      onChange={(e) => updateItem(idx, 'damageNotes', e.target.value)}
-                      className="text-xs"
-                      size="middle"
-                    />
-                    <div>
-                      <Input
-                        disabled={isReadOnly}
-                        placeholder={`Số tiền bồi thường (tối đa ${fmtVnd(maxLimit)})`}
-                        value={ic.compensation ? String(ic.compensation).replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
-                        onChange={(e) => {
-                          const rawDigits = e.target.value.replace(/\D/g, '');
-                          const num = rawDigits ? parseInt(rawDigits, 10) : 0;
-                          updateItem(idx, 'compensation', num);
-                        }}
-                        suffix={<span className="text-[#8C7D7E] font-medium text-xs">đ</span>}
-                        className="text-xs"
-                        size="middle"
-                      />
-                      <span className="text-[10px] text-amber-800 block mt-0.5">
-                        * Tối đa không vượt quá tiền cọc: {fmtVnd(maxLimit)}
-                      </span>
+                      {itemCode && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#FAF0EC] text-[#733F49] font-mono text-[10px] font-bold border border-[#F2D8D4] leading-none">
+                          {itemCode}
+                        </span>
+                      )}
+                      {(ic.size || order.items?.[idx]?.size) && (
+                        <span className="inline-block px-1.5 py-0.5 rounded bg-[#FCECE8] text-[#B8737D] text-[10px] font-bold leading-none">
+                          Size {ic.size || order.items?.[idx]?.size}
+                        </span>
+                      )}
+                      {(ic.color || order.items?.[idx]?.color || order.color) && (
+                        <span className="inline-block px-1.5 py-0.5 rounded bg-[#FAF4EE] text-[#733F49] text-[10px] font-bold leading-none border border-[#F0E5DC]">
+                          Màu {ic.color || order.items?.[idx]?.color || order.color || 'Trắng Sữa'}
+                        </span>
+                      )}
                     </div>
+                    <span className="text-[11px] text-[#8C7D7E]">
+                      Giá trị bảo lãnh: <strong className="text-[#5F2B36]">{fmtVnd(maxLimit)}</strong>
+                    </span>
                   </div>
-                )}
-              </div>
-            );
-          })}
 
-          {/* CHỤP ẢNH VÀ LƯU BẰNG CHỨNG HIỆN TRẠNG VÁY - Bắt buộc khi có lỗi */}
-          <div className="p-2 px-3 rounded-xl border border-[#EFE5E1] bg-[#FCF8F5] space-y-1.5">
+                  <div className="flex items-center gap-2 flex-wrap pt-0.5">
+                    <span className="text-[11.5px] font-bold text-[#5F4E50]">Hiện trạng kiểm định:</span>
+                    <Radio.Group
+                      disabled={isReadOnly}
+                      value={ic.condition}
+                      onChange={(e) => updateItem(idx, 'condition', e.target.value)}
+                      className="flex flex-wrap gap-1.5 text-[11px]"
+                    >
+                      {CONDITION_OPTIONS.map((opt) => (
+                        <Radio key={opt.value} value={opt.value}>
+                          <span className="text-[11.5px]">{opt.label}</span>
+                        </Radio>
+                      ))}
+                    </Radio.Group>
+                  </div>
+
+                  {ic.condition !== 'good' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1.5 bg-[#FFF9F6] p-2.5 rounded-xl border border-[#F4E1D8] animate-fadeIn">
+                      <div>
+                        <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">Chi tiết tổn thất phát sinh:</span>
+                        <Input
+                          disabled={isReadOnly}
+                          placeholder="Mô tả cụ thể (vết ố ren, đứt hạt cườm, rách gấu...)"
+                          value={ic.damageNotes}
+                          onChange={(e) => updateItem(idx, 'damageNotes', e.target.value)}
+                          className="text-xs"
+                          size="middle"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">Chi phí phục chế dự kiến:</span>
+                        <Input
+                          disabled={isReadOnly}
+                          placeholder={`Nhập số tiền (tối đa ${fmtVnd(maxLimit)})`}
+                          value={ic.compensation ? String(ic.compensation).replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
+                          onChange={(e) => {
+                            const rawDigits = e.target.value.replace(/\D/g, '');
+                            const num = rawDigits ? parseInt(rawDigits, 10) : 0;
+                            updateItem(idx, 'compensation', num);
+                          }}
+                          suffix={<span className="text-[#8C7D7E] font-medium text-xs">VND</span>}
+                          className="text-xs font-semibold text-red-700"
+                          size="middle"
+                        />
+                        <span className="text-[9.5px] text-amber-800 block mt-0.5">
+                          * Mức bồi thường tối đa không vượt quá tiền cọc của lễ phục
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Hồ sơ ảnh giám định hiện trạng */}
+          <div className="p-3 rounded-2xl border border-[#EFE5E1] bg-[#FAF6F3] space-y-2">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <Camera size={14} className="text-[#733F49]" />
+              <div className="flex items-center gap-2 flex-wrap">
+                <Camera size={15} className="text-[#733F49]" />
                 <span className="font-bold text-[12px] text-[#2C2523]">
-                  Ảnh Bằng Chứng Lỗi ({evidencePhotos.length})
+                  Hồ Sơ Ảnh Giám Định Hiện Trạng ({evidencePhotos.length})
                 </span>
                 {itemsCondition.some((ic) => ic.condition !== 'good' || Number(ic.compensation || 0) > 0) && (
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                    evidencePhotos.length > 0
-                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                      : 'bg-red-100 text-red-700 border border-red-200 animate-pulse'
-                  }`}>
-                    {evidencePhotos.length > 0 ? '✓ Đã chụp đủ ảnh lỗi' : '⚠️ BẮT BUỘC CHỤP ẢNH LỖI'}
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${evidencePhotos.length > 0
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                    : 'bg-red-100 text-red-700 border border-red-200 animate-pulse'
+                    }`}>
+                    {evidencePhotos.length > 0 ? '✓ Đã đính kèm ảnh đối soát' : '⚠️ Bắt buộc chụp ảnh lỗi'}
                   </span>
                 )}
               </div>
               {!isReadOnly && (
-                <label className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#733F49] text-white text-[11px] font-bold cursor-pointer hover:bg-[#5C3038] transition-colors shadow-2xs">
-                  <Camera size={12} />
-                  <span>+ Chụp / Tải ảnh</span>
+                <label className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#733F49] text-white text-[11px] font-bold cursor-pointer hover:bg-[#5C3038] transition-colors shadow-2xs">
+                  <Camera size={13} />
+                  <span>+ Thêm Ảnh Giám Định</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -901,20 +924,20 @@ function InspectionModal({ order, onClose, onSuccess }) {
             </div>
 
             {evidencePhotos.length === 0 ? (
-              <div className="py-1.5 px-3 rounded-lg border border-dashed border-[#DDC6C0] text-center bg-white text-[11px] text-[#8C7D7E] flex items-center justify-center gap-1.5">
-                <Camera size={13} className="text-[#A38D91]" />
-                <span>Chưa có ảnh bằng chứng (nhấn nút "+ Chụp / Tải ảnh" để thêm ảnh đối soát)</span>
+              <div className="py-2.5 px-3 rounded-xl border border-dashed border-[#DDC6C0] text-center bg-white text-[11px] text-[#8C7D7E] flex items-center justify-center gap-2">
+                <Camera size={14} className="text-[#A38D91]" />
+                <span>Chưa có ảnh giám định hiện trạng (nhấn nút "+ Thêm Ảnh Giám Định" để tải ảnh)</span>
               </div>
             ) : (
               <div className="flex flex-wrap gap-2 pt-0.5">
                 {evidencePhotos.map((photo, pIdx) => (
-                  <div key={pIdx} className="relative w-12 h-12 rounded-lg overflow-hidden border border-[#E5D7D0] group">
-                    <img src={photo} alt={`Bằng chứng ${pIdx + 1}`} className="w-full h-full object-cover" />
+                  <div key={pIdx} className="relative w-14 h-14 rounded-xl overflow-hidden border border-[#E5D7D0] group shadow-2xs">
+                    <img src={photo} alt={`Bằng chứng ${pIdx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                     {!isReadOnly && (
                       <button
                         type="button"
                         onClick={() => removePhoto(pIdx)}
-                        className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-red-600 transition-colors cursor-pointer border-0"
+                        className="absolute top-1 right-1 w-4 h-4 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-red-600 transition-colors cursor-pointer border-0"
                       >
                         <X size={10} />
                       </button>
@@ -925,48 +948,62 @@ function InspectionModal({ order, onClose, onSuccess }) {
             )}
           </div>
 
-          {/* Summary - Bảng quyết toán thu gọn 1 hàng */}
-          <div className="p-2.5 px-3.5 rounded-xl bg-[#FFF6F3] border border-[#EFE5E1] text-[11.5px] flex items-center justify-between flex-wrap gap-2">
-            <div className="space-x-2 text-[#7A6B6C]">
-              <span>Cọc ban đầu: <strong className="text-[#2C2523]">{fmtVnd(order.totalDeposit)}</strong></span>
-              {lateDays > 0 && <span className="text-[#92400E]">• Trễ: <strong>-{fmtVnd(lateFee)}</strong></span>}
-              {totalCompensation > 0 && <span className="text-[#B84E5D]">• Bồi thường: <strong>-{fmtVnd(totalCompensation)}</strong></span>}
+          {/* Bảng Quyết Toán Tài Chính Chuẩn Showroom */}
+          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-[#FFF8F6] via-[#FAF3F0] to-[#FFF8F6] border border-[#EFE5E1] text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pb-2.5 border-b border-[#F0E4DE]">
+              <div>
+                <span className="text-[#8C7D7E] text-[10px] uppercase font-bold tracking-wider block">Cọc Ban Đầu</span>
+                <strong className="text-[13.5px] text-[#2C2523]">{fmtVnd(order.totalDeposit)}</strong>
+              </div>
+              <div>
+                <span className="text-[#8C7D7E] text-[10px] uppercase font-bold tracking-wider block">Phạt Trễ Hạn</span>
+                <strong className={`text-[13.5px] ${lateFee > 0 ? 'text-amber-700' : 'text-[#8C7D7E]'}`}>
+                  {lateFee > 0 ? `-${fmtVnd(lateFee)}` : '0 đ'}
+                </strong>
+              </div>
+              <div>
+                <span className="text-[#8C7D7E] text-[10px] uppercase font-bold tracking-wider block">Chi Phí Phục Chế</span>
+                <strong className={`text-[13.5px] ${totalCompensation > 0 ? 'text-red-700' : 'text-[#8C7D7E]'}`}>
+                  {totalCompensation > 0 ? `-${fmtVnd(totalCompensation)}` : '0 đ'}
+                </strong>
+              </div>
+              <div className="text-right sm:text-right">
+                <span className="text-[#1E8347] text-[10px] uppercase font-bold tracking-wider block">Dự Kiến Hoàn Trả</span>
+                <strong className="text-[16px] text-[#1E8347] font-playfair font-bold">{fmtVnd(finalRefund)}</strong>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-[#5F2B36]">Dự kiến hoàn trả:</span>
-              <span className="text-[15px] font-bold text-[#1E8347]">{fmtVnd(finalRefund)}</span>
-            </div>
+            <p className="text-[10.5px] text-[#8C7D7E] m-0 mt-2 italic text-center sm:text-left">
+              * Số tiền hoàn cọc thực tế sẽ được quyết toán sau khi thống nhất biên bản giám định hiện trạng.
+            </p>
           </div>
 
-          {/* 2. Staff hỏi ý kiến khách về biên bản */}
+          {/* Xác nhận & Ý kiến phản hồi của Khách Hàng */}
           {!isReadOnly && (
-            <div className="p-3.5 rounded-xl border border-[#DDC6C0] bg-[#FAF5F2] space-y-3">
+            <div className="p-4 rounded-2xl border border-[#DDC6C0] bg-[#FAF5F2] space-y-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-[#733F49] text-white flex items-center justify-center text-[11px] font-bold">2</span>
-                  <span className="font-bold text-[12.5px] text-[#5F2B36]">
-                    Ý Kiến Khách Hàng Về Biên Bản Kiểm Định
-                  </span>
-                </div>
+                <span className="font-bold text-[13px] text-[#5F2B36] flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-[#733F49] text-white flex items-center justify-center text-[10.5px] font-bold">✓</span>
+                  Ý Kiến Xác Nhận Của Khách Hàng
+                </span>
                 {isGuestOrder && (
                   <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full border border-amber-200">
-                    Khách vãng lai (Tại Showroom)
+                    Khách trải nghiệm tại Showroom
                   </span>
                 )}
               </div>
 
-              {/* 2 Nhánh lựa chọn rõ ràng */}
+              {/* 2 Thẻ lựa chọn phương án đối soát */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Lựa chọn 1: Khách ĐỒNG Ý */}
+                {/* Phương Án 1: Khách Đồng Thuận */}
                 <div
                   onClick={() => setCustomerDecision('agreed')}
-                  className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                  className={`p-3 rounded-2xl border-2 cursor-pointer transition-all ${
                     customerDecision === 'agreed'
                       ? 'border-[#1E8347] bg-[#F3FAF5] shadow-xs'
                       : 'border-[#E5D7D0] bg-white hover:border-[#BCE2C5]'
                   }`}
                 >
-                  <div className="flex items-start gap-2">
+                  <div className="flex items-start gap-2.5">
                     <input
                       type="radio"
                       name="customerDecisionRadio"
@@ -975,50 +1012,50 @@ function InspectionModal({ order, onClose, onSuccess }) {
                       className="mt-0.5 accent-[#1E8347] cursor-pointer"
                     />
                     <div>
-                      <div className="font-bold text-[12px] text-[#1E6B37]">
-                        TRƯỜNG HỢP 1: Khách ĐỒNG Ý
+                      <div className="font-bold text-[12.5px] text-[#1E6B37]">
+                        Đồng Thuận Quyết Toán (Tại Chỗ)
                       </div>
                       <p className="text-[10.5px] text-[#4A5D4E] mt-0.5 m-0 leading-tight">
-                        Chốt tại chỗ & hoàn cọc ngay. Đơn chuyển Hoàn tất, gửi email cảm ơn kèm biên lai.
+                        Khách hàng đồng ý với kết quả kiểm định. Showroom tiến hành hoàn cọc và hoàn tất hợp đồng.
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Lựa chọn 2: Khách KHÔNG ĐỒNG Ý */}
+                {/* Phương Án 2: Khách Bảo Lưu Ý Kiến */}
                 <div
                   onClick={() => setCustomerDecision('disputed')}
-                  className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                  className={`p-3 rounded-2xl border-2 cursor-pointer transition-all ${
                     customerDecision === 'disputed'
-                      ? 'border-red-500 bg-red-50/70 shadow-xs'
+                      ? 'border-[#8B2635] bg-red-50/60 shadow-xs'
                       : 'border-[#E5D7D0] bg-white hover:border-red-300'
                   }`}
                 >
-                  <div className="flex items-start gap-2">
+                  <div className="flex items-start gap-2.5">
                     <input
                       type="radio"
                       name="customerDecisionRadio"
                       checked={customerDecision === 'disputed'}
                       onChange={() => setCustomerDecision('disputed')}
-                      className="mt-0.5 accent-red-600 cursor-pointer"
+                      className="mt-0.5 accent-[#8B2635] cursor-pointer"
                     />
                     <div>
-                      <div className="font-bold text-[12px] text-red-800">
-                        TRƯỜNG HỢP 2: Khách KHÔNG ĐỒNG Ý
+                      <div className="font-bold text-[12.5px] text-[#8B2635]">
+                        Bảo Lưu Ý Kiến (Chuyển Quản Lý)
                       </div>
                       <p className="text-[10.5px] text-[#7F3A3A] mt-0.5 m-0 leading-tight">
-                        Giữ đơn chuyển Admin. Lưu đủ ảnh lỗi, không chốt phạt, chuyển trạng thái chờ đàm phán.
+                        Khách cần trao đổi thêm về mức khấu trừ. Chuyển hồ sơ để Quản lý showroom trực tiếp liên hệ hỗ trợ.
                       </p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Chi tiết cho Lựa chọn 1: Khách ĐỒNG Ý */}
+              {/* Chi tiết Phương Án 1: Khách Đồng Thuận */}
               {customerDecision === 'agreed' && (
-                <div className="pt-2 border-t border-[#D5E8D8] space-y-2 text-[11.5px] animate-fadeIn">
+                <div className="pt-2.5 border-t border-[#D5E8D8] space-y-2.5 text-[11.5px] animate-fadeIn">
                   <div className="flex items-center gap-4">
-                    <span className="text-[#3F5946] font-semibold">Khách chọn nhận hoàn cọc qua:</span>
+                    <span className="text-[#3F5946] font-semibold">Hình thức nhận hoàn cọc:</span>
                     <label className="inline-flex items-center gap-1.5 cursor-pointer">
                       <input
                         type="radio"
@@ -1044,9 +1081,9 @@ function InspectionModal({ order, onClose, onSuccess }) {
                   </div>
 
                   {refundMethod === 'bank_transfer' && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1.5 bg-white p-2.5 rounded-lg border border-[#D5E8D8]">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1.5 bg-white p-3 rounded-xl border border-[#D5E8D8]">
                       <div>
-                        <span className="text-[10.5px] text-[#7A6A6B] block mb-0.5">Ngân hàng</span>
+                        <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">Ngân hàng</span>
                         <Input
                           size="small"
                           placeholder="VD: Vietcombank, MB..."
@@ -1056,17 +1093,17 @@ function InspectionModal({ order, onClose, onSuccess }) {
                         />
                       </div>
                       <div>
-                        <span className="text-[10.5px] text-[#7A6A6B] block mb-0.5">Số tài khoản (STK)</span>
+                        <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">Số tài khoản (STK)</span>
                         <Input
                           size="small"
-                          placeholder="Nhập STK của khách..."
+                          placeholder="Nhập STK nhận tiền..."
                           value={onSiteAccountNum}
                           onChange={(e) => setOnSiteAccountNum(e.target.value)}
                           className="text-xs font-mono"
                         />
                       </div>
                       <div>
-                        <span className="text-[10.5px] text-[#7A6A6B] block mb-0.5">Chủ tài khoản</span>
+                        <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">Tên chủ tài khoản</span>
                         <Input
                           size="small"
                           placeholder="TÊN CHỦ TÀI KHOẢN"
@@ -1078,25 +1115,30 @@ function InspectionModal({ order, onClose, onSuccess }) {
                     </div>
                   )}
 
-                  <p className="text-[11px] text-[#2E7D47] m-0">
-                    ✓ Bấm nút bên dưới để <strong>Xác Nhận & Hoàn Cọc {fmtVnd(finalRefund)}</strong>. Hệ thống sẽ hoàn tất đơn và tự động gửi email cảm ơn kèm biên lai.
+                  <p className="text-[11px] text-[#2E7D47] m-0 bg-emerald-50/70 p-2 rounded-xl border border-emerald-100 flex items-center gap-1.5">
+                    <CheckCircle2 size={13} className="shrink-0" />
+                    <span>Sau khi xác nhận, showroom sẽ quyết toán hoàn cọc <strong>{fmtVnd(finalRefund)}</strong> và gửi thông báo điện tử kèm biên lai tới khách hàng.</span>
                   </p>
                 </div>
               )}
 
-              {/* Chi tiết cho Lựa chọn 2: Khách KHÔNG ĐỒNG Ý */}
+              {/* Chi tiết Phương Án 2: Khách Bảo Lưu Ý Kiến */}
               {customerDecision === 'disputed' && (
-                <div className="pt-2 border-t border-red-200 space-y-2 text-[11.5px] animate-fadeIn">
-                  <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-900 text-[11px] leading-relaxed">
-                    ⚠️ <strong>Quy trình xử lý:</strong> Staff lưu đủ ảnh lỗi đã chụp, <strong>KHÔNG chốt phạt lúc này</strong>. Đơn hàng sẽ chuyển sang <strong>"Tạm giữ - Chờ Admin đàm phán"</strong>. Sau khi bấm, Staff vui lòng gọi điện hoặc thông báo cho Admin để vào cuộc đàm phán trực tiếp với khách.
+                <div className="pt-2.5 border-t border-red-200 space-y-2.5 text-[11.5px] animate-fadeIn">
+                  <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-amber-900 text-[11.5px] leading-relaxed">
+                    <div className="font-bold flex items-center gap-1.5 text-amber-950 mb-0.5">
+                      <Clock size={13} className="text-amber-700" />
+                      <span>Quy trình bảo lưu hồ sơ:</span>
+                    </div>
+                    <span>Toàn bộ hình ảnh đối soát và ghi chú hiện trạng sẽ được bảo lưu nguyên vẹn trên hệ thống. Đơn hàng chuyển sang trạng thái <strong>"Tạm giữ - Chờ Quản lý đàm phán"</strong> để Quản lý showroom trực tiếp liên hệ và thống nhất phương án hỗ trợ tối ưu cùng khách hàng.</span>
                   </div>
                   <div>
                     <span className="text-[11px] font-semibold text-[#662020] block mb-1">
-                      Lý do khách không đồng ý / Phản ánh của khách:
+                      Nội dung phản hồi / Nguyện vọng của khách hàng:
                     </span>
                     <Input.TextArea
                       rows={2}
-                      placeholder="Nhập ý kiến của khách (VD: Khách cho rằng vết bẩn có từ trước, mức phạt quá cao, muốn khiếu nại...)"
+                      placeholder="Ghi nhận chi tiết ý kiến phản hồi của khách hàng để Quản lý nắm thông tin khi liên hệ đàm phán..."
                       value={customerDisputeNote}
                       onChange={(e) => setCustomerDisputeNote(e.target.value)}
                       className="text-xs"
@@ -1107,14 +1149,14 @@ function InspectionModal({ order, onClose, onSuccess }) {
             </div>
           )}
 
-          {/* Actions - Nút bấm */}
-          <div className="flex gap-2.5 pt-1">
+          {/* Actions - Nút bấm hoàn tất chuẩn mực */}
+          <div className="flex gap-2.5 pt-1.5">
             {isReadOnly ? (
               <div className="flex w-full gap-2.5">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 py-2 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
+                  className="flex-1 py-2.5 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
                 >
                   {isCompletedOrder ? 'Đóng Hồ Sơ Lưu Trữ' : isCustomerApproved ? 'Đóng (Khách Đã Duyệt - Hồ Sơ Đã Khóa)' : 'Đóng'}
                 </button>
@@ -1122,9 +1164,9 @@ function InspectionModal({ order, onClose, onSuccess }) {
                   <button
                     type="button"
                     onClick={() => setIsEditing(true)}
-                    className="flex-1 py-2 rounded-xl bg-[#733F49] text-[12px] font-bold text-white hover:bg-[#5C3038] transition-colors border-0 cursor-pointer shadow-xs"
+                    className="flex-1 py-2.5 rounded-xl bg-[#733F49] text-[12px] font-bold text-white hover:bg-[#5C3038] transition-colors border-0 cursor-pointer shadow-xs"
                   >
-                    Chỉnh Sửa Số Tiền Trừ / Bồi Thường
+                    Chỉnh Sửa Chi Phí Khấu Trừ
                   </button>
                 )}
               </div>
@@ -1148,17 +1190,17 @@ function InspectionModal({ order, onClose, onSuccess }) {
                     className="flex-1 py-2.5 rounded-xl bg-[#1E8347] hover:bg-[#166534] text-white text-[12.5px] font-bold transition-all border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
                   >
                     {submitting ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
-                    <span>XÁC NHẬN & HOÀN CỌC ({fmtVnd(finalRefund)})</span>
+                    <span>Xác Nhận Hoàn Cọc & Hoàn Tất Đơn ({fmtVnd(finalRefund)})</span>
                   </button>
                 ) : (
                   <button
                     type="button"
                     disabled={submitting}
                     onClick={handleSubmit}
-                    className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-[12.5px] font-bold transition-all border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
+                    className="flex-1 py-2.5 rounded-xl bg-[#8B2635] hover:bg-[#701E2A] text-white text-[12.5px] font-bold transition-all border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
                   >
-                    {submitting ? <RefreshCw size={14} className="animate-spin" /> : <AlertTriangle size={15} />}
-                    <span>GIỮ ĐƠN & BÁO ADMIN</span>
+                    {submitting ? <RefreshCw size={14} className="animate-spin" /> : <PhoneCall size={14} />}
+                    <span>Bảo Lưu Đơn & Chuyển Quản Lý</span>
                   </button>
                 )}
               </>
@@ -1199,7 +1241,7 @@ function AdminNegotiationModal({ order, onClose, onSuccess }) {
           if (insp.adminNegotiationNotes) setNegotiationNotes(insp.adminNegotiationNotes);
         }
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => {
         if (active) setLoading(false);
       });
@@ -2316,8 +2358,8 @@ export default function OrderRentalManagement() {
             type="button"
             onClick={() => { setViewMode('active'); setStatusFilter('all'); setActivePage(1); }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer border-0 ${viewMode === 'active'
-                ? 'bg-[#733F49] text-white shadow-xs'
-                : 'bg-[#FCF7F4] text-[#7A6B6C] hover:bg-[#FAF0EC] hover:text-[#733F49]'
+              ? 'bg-[#733F49] text-white shadow-xs'
+              : 'bg-[#FCF7F4] text-[#7A6B6C] hover:bg-[#FAF0EC] hover:text-[#733F49]'
               }`}
           >
             <SlidersHorizontal size={14} />
@@ -2334,8 +2376,8 @@ export default function OrderRentalManagement() {
             type="button"
             onClick={() => { setViewMode('archived'); setStatusFilter('all'); setActivePage(1); }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer border-0 ${viewMode === 'archived'
-                ? 'bg-[#1E8347] text-white shadow-xs'
-                : 'bg-[#FCF7F4] text-[#7A6B6C] hover:bg-[#FAF0EC] hover:text-[#733F49]'
+              ? 'bg-[#1E8347] text-white shadow-xs'
+              : 'bg-[#FCF7F4] text-[#7A6B6C] hover:bg-[#FAF0EC] hover:text-[#733F49]'
               }`}
           >
             <Archive size={14} />
@@ -2430,10 +2472,10 @@ export default function OrderRentalManagement() {
                       id={`order-row-${order.orderCode || order._id}`}
                       key={order._id || order.orderCode}
                       className={`transition-all duration-300 ${isHighlighted
-                          ? 'bg-amber-100/80 border-l-4 border-l-amber-500 ring-2 ring-amber-400 ring-inset shadow-md'
-                          : isDisputed
-                            ? 'bg-red-50/40 hover:bg-red-50/70 border-l-4 border-l-red-500'
-                            : 'hover:bg-[#FCF9F7]'
+                        ? 'bg-amber-100/80 border-l-4 border-l-amber-500 ring-2 ring-amber-400 ring-inset shadow-md'
+                        : isDisputed
+                          ? 'bg-red-50/40 hover:bg-red-50/70 border-l-4 border-l-red-500'
+                          : 'hover:bg-[#FCF9F7]'
                         }`}
                     >
                       {/* Mã đơn */}
