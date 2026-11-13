@@ -430,19 +430,19 @@ function OrderDetailModal({ order, onClose }) {
 function DamagePriceCatalogModal({ open, onClose }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-[#EFE5E1] overflow-hidden">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white rounded-3xl max-w-5xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-[#EFE5E1] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#F0E6E2] bg-gradient-to-r from-[#FFF8F6] via-[#FCF4F0] to-[#FFF8F6]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#FAF0EC] flex items-center justify-center text-[#733F49] border border-[#ECD9D3]">
-              <FileSpreadsheet size={18} />
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#F0E6E2] bg-gradient-to-r from-[#FFF8F6] via-[#FCF4F0] to-[#FFF8F6]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#FAF0EC] flex items-center justify-center text-[#733F49] border border-[#ECD9D3] shadow-2xs">
+              <FileSpreadsheet size={20} />
             </div>
             <div>
-              <h3 className="font-playfair text-[17px] font-bold text-[#5F2B36] m-0">
+              <h3 className="font-playfair text-[18px] font-bold text-[#5F2B36] m-0">
                 Bảng Giá Đền Bù Thiệt Hại Niêm Yết
               </h3>
-              <p className="text-[11px] text-[#8C7D7E] m-0 mt-0.5">
+              <p className="text-[11.5px] text-[#8C7D7E] m-0 mt-0.5">
                 Quy định niêm yết Atelier Haute Couture • Nhân viên không được tự ý quyết định mức giá
               </p>
             </div>
@@ -452,42 +452,42 @@ function DamagePriceCatalogModal({ open, onClose }) {
             onClick={onClose}
             className="w-8 h-8 rounded-full bg-white text-[#7A6B6C] hover:text-[#733F49] flex items-center justify-center transition-colors border border-[#EFE5E1] cursor-pointer"
           >
-            <X size={15} />
+            <X size={16} />
           </button>
         </div>
 
         {/* Table Body */}
-        <div className="p-4 sm:p-5 overflow-y-auto">
-          <div className="overflow-x-auto rounded-2xl border border-[#EFE5E1]">
-            <table className="w-full text-left text-xs border-collapse">
+        <div className="p-5 overflow-y-auto flex-1">
+          <div className="overflow-x-auto rounded-2xl border border-[#EFE5E1] shadow-2xs">
+            <table className="w-full min-w-[780px] text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-[#FAF5F2] text-[#5F2B36] border-b border-[#EFE5E1] text-[11.5px] font-bold">
-                  <th className="py-2.5 px-3 whitespace-nowrap">Nhóm Lỗi Hư Hại</th>
-                  <th className="py-2.5 px-3">Hiện Trạng Thực Tế</th>
-                  <th className="py-2.5 px-3 whitespace-nowrap">Mức Phí Đền Bù Niêm Yết</th>
-                  <th className="py-2.5 px-3 whitespace-nowrap">Thẩm Quyền Xử Lý</th>
+                <tr className="bg-[#FAF5F2] text-[#5F2B36] border-b border-[#EFE5E1] text-[12px] font-bold">
+                  <th className="py-3 px-4 w-[22%] whitespace-nowrap">Nhóm Lỗi Hư Hại</th>
+                  <th className="py-3 px-4 w-[34%]">Hiện Trạng Thực Tế</th>
+                  <th className="py-3 px-4 w-[24%] whitespace-nowrap">Mức Phí Đền Bù Niêm Yết</th>
+                  <th className="py-3 px-4 w-[20%] whitespace-nowrap text-center">Thẩm Quyền Xử Lý</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#F2E5E0] text-[11.5px]">
+              <tbody className="divide-y divide-[#F2E5E0] text-[12px]">
                 {DAMAGE_PRICE_CATALOG.map((row) => (
                   <tr key={row.id} className="hover:bg-[#FFF9F6] transition-colors">
-                    <td className="py-2.5 px-3 font-bold text-[#2C2523] whitespace-nowrap">
+                    <td className="py-3 px-4 font-bold text-[#2C2523] align-middle">
                       {row.name}
                     </td>
-                    <td className="py-2.5 px-3 text-[#5C4D4D] leading-relaxed">
+                    <td className="py-3 px-4 text-[#5C4D4D] leading-relaxed align-middle">
                       {row.description}
                     </td>
-                    <td className="py-2.5 px-3 font-bold whitespace-nowrap" style={{ color: row.color }}>
+                    <td className="py-3 px-4 font-bold align-middle whitespace-nowrap" style={{ color: row.color }}>
                       {row.feeLabel}
                     </td>
-                    <td className="py-2.5 px-3 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${row.authority === 'admin_only'
-                          ? 'bg-rose-100 text-rose-800 border-rose-300'
-                          : row.authority === 'admin'
-                            ? 'bg-red-50 text-red-700 border-red-200'
-                            : row.authority === 'both'
-                              ? 'bg-purple-50 text-purple-700 border-purple-200'
-                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    <td className="py-3 px-4 align-middle whitespace-nowrap text-center">
+                      <span className={`inline-flex items-center justify-center px-3 py-1 rounded-lg text-[11px] font-bold border ${row.authority === 'admin_only'
+                        ? 'bg-rose-100 text-rose-800 border-rose-300'
+                        : row.authority === 'admin'
+                          ? 'bg-red-50 text-red-700 border-red-200'
+                          : row.authority === 'both'
+                            ? 'bg-purple-50 text-purple-700 border-purple-200'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                         }`}>
                         {row.authorityLabel}
                       </span>
@@ -498,17 +498,20 @@ function DamagePriceCatalogModal({ open, onClose }) {
             </table>
           </div>
 
-          <div className="mt-3.5 p-3 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[11px] text-[#7A6B6C] leading-relaxed">
-            <strong className="text-[#5F2B36]">⚠️ Lưu ý bắt buộc:</strong> Toàn bộ chi phí phục chế được hệ thống khóa và tính tự động theo bảng giá niêm yết trên. Nhân viên có trách nhiệm ghi nhận đúng hiện trạng và chụp ảnh đối soát, tuyệt đối không được tự ý thương lượng hay điều chỉnh đơn giá đền bù với khách hàng.
+          <div className="mt-4 p-3.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[11.5px] text-[#7A6B6C] leading-relaxed flex items-start gap-2">
+            <span className="text-amber-600 font-bold shrink-0 text-sm">⚠️</span>
+            <span>
+              <strong className="text-[#5F2B36]">Lưu ý bắt buộc:</strong> Toàn bộ chi phí phục chế được hệ thống khóa và tính tự động theo bảng giá niêm yết trên. Nhân viên có trách nhiệm ghi nhận đúng hiện trạng và chụp ảnh đối soát, tuyệt đối không được tự ý thương lượng hay điều chỉnh đơn giá đền bù với khách hàng.
+            </span>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-[#F0E6E2] bg-[#FAF5F2] flex justify-end">
+        <div className="px-6 py-3.5 border-t border-[#F0E6E2] bg-[#FAF5F2] flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 rounded-xl bg-[#733F49] text-white text-xs font-bold hover:bg-[#5C3038] transition-colors cursor-pointer"
+            className="px-5 py-2 rounded-xl bg-[#733F49] text-white text-xs font-bold hover:bg-[#5C3038] shadow-xs transition-colors cursor-pointer"
           >
             Đã hiểu & Đóng bảng giá
           </button>
@@ -534,6 +537,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
   // 2. Ý kiến khách hàng về biên bản kiểm định (Trường hợp 1: Chốt tại chỗ | Trường hợp 2: Giữ đơn chuyển Admin)
   const [customerDecision, setCustomerDecision] = useState('agreed'); // 'agreed' | 'disputed'
   const [customerDisputeNote, setCustomerDisputeNote] = useState('');
+  const [refundMethod, setRefundMethod] = useState('cash'); // 'cash' | 'bank_transfer'
   const [refundMethod] = useState('bank_transfer'); // Chỉ có 1 hình thức duy nhất là Chuyển khoản (STK)
   const [onSiteBankName, setOnSiteBankName] = useState('Vietcombank');
   const [onSiteAccountNum, setOnSiteAccountNum] = useState('');
@@ -771,6 +775,20 @@ function InspectionModal({ order, onClose, onSuccess }) {
         customerAgreed: !isDisputeCase,
         confirmOnSite: !isDisputeCase,
         disputeReason: isDisputeCase ? (customerDisputeNote.trim() || 'Khách không đồng ý với mức phạt/biên bản kiểm định tại chỗ') : '',
+        refundMethod: !isDisputeCase ? refundMethod : undefined,
+        refundBankDetails: !isDisputeCase ? (
+          refundMethod === 'cash' ? {
+            bankName: 'Tiền mặt tại quầy',
+            accountNumber: 'TIỀN MẶT',
+            accountHolder: order.customerName || 'Khách hàng',
+            notes: onSiteNotes || 'Đã hoàn tiền mặt trực tiếp cho khách tại quầy showroom',
+          } : {
+            bankName: onSiteBankName || 'Ngân hàng nội địa',
+            accountNumber: onSiteAccountNum || '',
+            accountHolder: onSiteAccountHolder || order.customerName || '',
+            notes: onSiteNotes || 'Showroom chuyển khoản trực tiếp cho khách tại quầy',
+          }
+        ) : null,
         refundMethod: 'bank_transfer',
         refundBankDetails: !isDisputeCase ? {
           bankName: onSiteBankName || 'Vietcombank',
@@ -984,12 +1002,12 @@ function InspectionModal({ order, onClose, onSuccess }) {
                         <span className="text-[10px] text-[#8C7D7E] font-normal">(Staff không tự ý định giá)</span>
                       </span>
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${catItem.authority === 'admin_only'
-                          ? 'bg-rose-100 text-rose-800 border-rose-300'
-                          : catItem.authority === 'admin'
-                            ? 'bg-red-50 text-red-700 border-red-200'
-                            : catItem.authority === 'both'
-                              ? 'bg-purple-50 text-purple-700 border-purple-200'
-                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        ? 'bg-rose-100 text-rose-800 border-rose-300'
+                        : catItem.authority === 'admin'
+                          ? 'bg-red-50 text-red-700 border-red-200'
+                          : catItem.authority === 'both'
+                            ? 'bg-purple-50 text-purple-700 border-purple-200'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                         }`}>
                         {catItem.authorityLabel}
                       </span>
@@ -1034,8 +1052,8 @@ function InspectionModal({ order, onClose, onSuccess }) {
                                   disabled={isReadOnly}
                                   onClick={() => updateOption(idx, opt.value)}
                                   className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${isSelected
-                                      ? 'bg-[#733F49] text-white border-[#733F49] shadow-xs'
-                                      : 'bg-white text-[#5F4E50] border-[#E5D7D0] hover:bg-[#FAF0EC]'
+                                    ? 'bg-[#733F49] text-white border-[#733F49] shadow-xs'
+                                    : 'bg-white text-[#5F4E50] border-[#E5D7D0] hover:bg-[#FAF0EC]'
                                     }`}
                                 >
                                   {opt.label}
@@ -1197,8 +1215,8 @@ function InspectionModal({ order, onClose, onSuccess }) {
                 <div
                   onClick={() => setCustomerDecision('agreed')}
                   className={`p-3 rounded-2xl border-2 cursor-pointer transition-all ${customerDecision === 'agreed'
-                      ? 'border-[#1E8347] bg-[#F3FAF5] shadow-xs'
-                      : 'border-[#E5D7D0] bg-white hover:border-[#BCE2C5]'
+                    ? 'border-[#1E8347] bg-[#F3FAF5] shadow-xs'
+                    : 'border-[#E5D7D0] bg-white hover:border-[#BCE2C5]'
                     }`}
                 >
                   <div className="flex items-start gap-2.5">
@@ -1224,8 +1242,8 @@ function InspectionModal({ order, onClose, onSuccess }) {
                 <div
                   onClick={() => setCustomerDecision('disputed')}
                   className={`p-3 rounded-2xl border-2 cursor-pointer transition-all ${customerDecision === 'disputed'
-                      ? 'border-[#8B2635] bg-red-50/60 shadow-xs'
-                      : 'border-[#E5D7D0] bg-white hover:border-red-300'
+                    ? 'border-[#8B2635] bg-red-50/60 shadow-xs'
+                    : 'border-[#E5D7D0] bg-white hover:border-red-300'
                     }`}
                 >
                   <div className="flex items-start gap-2.5">
@@ -1251,61 +1269,118 @@ function InspectionModal({ order, onClose, onSuccess }) {
               {/* Chi tiết Phương Án 1: Khách Đồng Thuận */}
               {customerDecision === 'agreed' && (
                 <div className="pt-2.5 border-t border-[#D5E8D8] space-y-2.5 text-[11.5px] animate-fadeIn">
+                  <div className="flex items-center gap-4">
+                    <span className="text-[#3F5946] font-semibold">Hình thức nhận hoàn cọc:</span>
+                    <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="refundMethod"
+                        value="cash"
+                        checked={refundMethod === 'cash'}
+                        onChange={() => setRefundMethod('cash')}
+                        className="accent-[#1E8347]"
                   <div className="flex items-center justify-between flex-wrap gap-2">
-                    <span className="text-[#3F5946] font-bold flex items-center gap-1.5 text-xs">
-                      <CreditCard size={14} className="text-[#1E8347]" />
-                      <span>Hình thức nhận hoàn cọc: <strong className="text-[#1E8347]">Chuyển khoản (STK)</strong></span>
-                    </span>
-                    <span className="text-[10px] text-emerald-800 font-semibold bg-emerald-100/80 px-2 py-0.5 rounded border border-emerald-200">
-                      Chính sách duy nhất: CK ngân hàng
-                    </span>
-                  </div>
+                        <span className="text-[#3F5946] font-bold flex items-center gap-1.5 text-xs">
+                          <CreditCard size={14} className="text-[#1E8347]" />
+                          <span>Hình thức nhận hoàn cọc: <strong className="text-[#1E8347]">Chuyển khoản (STK)</strong></span>
+                        </span>
+                        <span className="text-[10px] text-emerald-800 font-semibold bg-emerald-100/80 px-2 py-0.5 rounded border border-emerald-200">
+                          Chính sách duy nhất: CK ngân hàng
+                        </span>
+                      </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1.5 bg-white p-3 rounded-xl border border-[#D5E8D8]">
-                    <div>
-                      <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">
-                        Ngân hàng <span className="text-red-600">*</span>
-                      </span>
-                      <Input
-                        size="small"
-                        placeholder="VD: Vietcombank, MB..."
-                        value={onSiteBankName}
-                        onChange={(e) => setOnSiteBankName(e.target.value)}
-                        className="text-xs"
-                      />
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1.5 bg-white p-3 rounded-xl border border-[#D5E8D8]">
+                        <div>
+                          <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">
+                            Ngân hàng <span className="text-red-600">*</span>
+                          </span>
+                          <Input
+                            size="small"
+                            placeholder="VD: Vietcombank, MB..."
+                            value={onSiteBankName}
+                            onChange={(e) => setOnSiteBankName(e.target.value)}
+                            className="text-xs"
+                          />
+                          <span className="font-medium text-[#2C2523]">Tiền mặt tại quầy</span>
+                        </label>
+                        <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="refundMethod"
+                            value="bank_transfer"
+                            checked={refundMethod === 'bank_transfer'}
+                            onChange={() => setRefundMethod('bank_transfer')}
+                            className="accent-[#1E8347]"
                     </div>
-                    <div>
-                      <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">
-                        Số tài khoản (STK) <span className="text-red-600">*</span>
-                      </span>
-                      <Input
-                        size="small"
-                        placeholder="Nhập STK nhận tiền..."
-                        value={onSiteAccountNum}
-                        onChange={(e) => setOnSiteAccountNum(e.target.value)}
-                        className="text-xs font-mono font-bold text-[#1E8347]"
-                      />
-                    </div>
-                    <div>
-                      <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">
-                        Tên chủ tài khoản <span className="text-red-600">*</span>
-                      </span>
-                      <Input
-                        size="small"
-                        placeholder="TÊN CHỦ TÀI KHOẢN"
-                        value={onSiteAccountHolder}
-                        onChange={(e) => setOnSiteAccountHolder(e.target.value.toUpperCase())}
-                        className="text-xs font-semibold"
-                      />
-                    </div>
+                      <div>
+                        <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">
+                          Số tài khoản (STK) <span className="text-red-600">*</span>
+                        </span>
+                        <Input
+                          size="small"
+                          placeholder="Nhập STK nhận tiền..."
+                          value={onSiteAccountNum}
+                          onChange={(e) => setOnSiteAccountNum(e.target.value)}
+                          className="text-xs font-mono font-bold text-[#1E8347]"
+                        />
+                        <span className="font-medium text-[#2C2523]">Chuyển khoản (STK)</span>
+                    </label>
                   </div>
+                  <div>
+                    <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">
+                      Tên chủ tài khoản <span className="text-red-600">*</span>
+                    </span>
+                    <Input
+                      size="small"
+                      placeholder="TÊN CHỦ TÀI KHOẢN"
+                      value={onSiteAccountHolder}
+                      onChange={(e) => setOnSiteAccountHolder(e.target.value.toUpperCase())}
+                      className="text-xs font-semibold"
+                    />
+                  </div>
+                </div>
 
-                  <p className="text-[11px] text-[#2E7D47] m-0 bg-emerald-50/70 p-2 rounded-xl border border-emerald-100 flex items-center gap-1.5">
-                    <CheckCircle2 size={13} className="shrink-0" />
-                    <span>Sau khi hoàn tất kiểm định, đơn sẽ tự động chuyển sang <strong>Chờ hoàn cọc</strong> ({fmtVnd(finalRefund)}).</span>
-                  </p>
+                  {refundMethod === 'bank_transfer' && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1.5 bg-white p-3 rounded-xl border border-[#D5E8D8]">
+                  <div>
+                    <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">Ngân hàng</span>
+                    <Input
+                      size="small"
+                      placeholder="VD: Vietcombank, MB..."
+                      value={onSiteBankName}
+                      onChange={(e) => setOnSiteBankName(e.target.value)}
+                      className="text-xs"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">Số tài khoản (STK)</span>
+                    <Input
+                      size="small"
+                      placeholder="Nhập STK nhận tiền..."
+                      value={onSiteAccountNum}
+                      onChange={(e) => setOnSiteAccountNum(e.target.value)}
+                      className="text-xs font-mono"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">Tên chủ tài khoản</span>
+                    <Input
+                      size="small"
+                      placeholder="TÊN CHỦ TÀI KHOẢN"
+                      value={onSiteAccountHolder}
+                      onChange={(e) => setOnSiteAccountHolder(e.target.value.toUpperCase())}
+                      className="text-xs font-semibold"
+                    />
+                  </div>
                 </div>
               )}
+
+              <p className="text-[11px] text-[#2E7D47] m-0 bg-emerald-50/70 p-2 rounded-xl border border-emerald-100 flex items-center gap-1.5">
+                <CheckCircle2 size={13} className="shrink-0" />
+                <span>Sau khi xác nhận, showroom sẽ quyết toán hoàn cọc <strong>{fmtVnd(finalRefund)}</strong> và gửi thông báo điện tử kèm biên lai tới khách hàng.</span>
+              </p>
+            </div>
+          )}
 
           {/* Chi tiết Phương Án 2: Khách Bảo Lưu Ý Kiến */}
           {customerDecision === 'disputed' && (
@@ -1375,6 +1450,16 @@ function InspectionModal({ order, onClose, onSuccess }) {
                   className="flex-1 py-2.5 rounded-xl bg-[#1E8347] hover:bg-[#166534] text-white text-[12.5px] font-bold transition-all border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
                 >
                   {submitting ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
+                  <span>Xác Nhận Hoàn Cọc & Hoàn Tất Đơn ({fmtVnd(finalRefund)})</span>
+                </button>
+                {customerDecision === 'agreed' ? (
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={handleSubmit}
+                  className="flex-1 py-2.5 rounded-xl bg-[#1E8347] hover:bg-[#166534] text-white text-[12.5px] font-bold transition-all border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
+                >
+                  {submitting ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
                   <span>Hoàn Tất Kiểm Định Váy → Chuyển [Chờ Hoàn Cọc] ({fmtVnd(finalRefund)})</span>
                 </button>
               ) : (
@@ -1393,13 +1478,15 @@ function InspectionModal({ order, onClose, onSuccess }) {
         </div>
       </div>
     </div>
+    </div >
 
-    {/* Bảng Giá Đền Bù Thiệt Hại Niêm Yết Popup */}
-    <DamagePriceCatalogModal
-      open={showPriceCatalogModal}
-      onClose={() => setShowPriceCatalogModal(false)}
-    />
-  </div>
+    {/* Bảng Giá Đền Bù Thiệt Hại Niêm Yết Popup */ }
+    < DamagePriceCatalogModal
+  open = { showPriceCatalogModal }
+  onClose = {() => setShowPriceCatalogModal(false)
+}
+  />
+    </div >
   );
 }
 
@@ -1692,21 +1779,78 @@ function AdminNegotiationModal({ order, onClose, onSuccess }) {
               </div>
             </div>
 
+            {/* Chọn Tiền mặt hoặc STK khách nhận */}
             {/* Chuyển khoản ngân hàng (STK) duy nhất */}
             <div className="bg-white p-3 rounded-xl border border-[#D5E8D8] space-y-2 text-[11.5px]">
+              <div className="flex items-center gap-4">
+                <span className="text-stone-800 font-bold">Hình thức hoàn tiền:</span>
+                <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="adminRefundMethod"
+                    value="cash"
+                    checked={refundMethod === 'cash'}
+                    onChange={() => setRefundMethod('cash')}
+                    className="accent-[#1E8347]"
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <span className="text-stone-800 font-bold flex items-center gap-1.5 text-xs">
-                  <CreditCard size={14} className="text-[#1E8347]" />
-                  <span>Hình thức hoàn tiền: <strong className="text-[#1E8347]">Chuyển khoản (STK)</strong></span>
-                </span>
-                <span className="text-[10px] text-emerald-800 font-semibold bg-emerald-100/80 px-2 py-0.5 rounded border border-emerald-200">
-                  Chính sách duy nhất: CK ngân hàng
-                </span>
-              </div>
+                    <span className="text-stone-800 font-bold flex items-center gap-1.5 text-xs">
+                      <CreditCard size={14} className="text-[#1E8347]" />
+                      <span>Hình thức hoàn tiền: <strong className="text-[#1E8347]">Chuyển khoản (STK)</strong></span>
+                    </span>
+                    <span className="text-[10px] text-emerald-800 font-semibold bg-emerald-100/80 px-2 py-0.5 rounded border border-emerald-200">
+                      Chính sách duy nhất: CK ngân hàng
+                    </span>
+                  </div>
 
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                    <div>
+                      <span className="text-[10.5px] text-stone-600 block mb-0.5 font-medium">Ngân hàng <span className="text-red-600">*</span></span>
+                      <Input
+                        size="small"
+                        placeholder="VD: Vietcombank, MB..."
+                        value={bankName}
+                        onChange={(e) => setBankName(e.target.value)}
+                        className="text-xs"
+                      />
+                      <span className="font-medium text-stone-800">Tiền mặt tại quầy</span>
+                    </label>
+                    <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="adminRefundMethod"
+                        value="bank_transfer"
+                        checked={refundMethod === 'bank_transfer'}
+                        onChange={() => setRefundMethod('bank_transfer')}
+                        className="accent-[#1E8347]"
+                </div>
+                  <div>
+                    <span className="text-[10.5px] text-stone-600 block mb-0.5 font-medium">Số tài khoản <span className="text-red-600">*</span></span>
+                    <Input
+                      size="small"
+                      placeholder="Nhập STK nhận tiền..."
+                      value={accountNumber}
+                      onChange={(e) => setAccountNumber(e.target.value)}
+                      className="text-xs font-mono font-bold text-[#1E8347]"
+                    />
+                    <span className="font-medium text-stone-800">Chuyển khoản (STK)</span>
+                </label>
+              </div>
+              <div>
+                <span className="text-[10.5px] text-stone-600 block mb-0.5 font-medium">Chủ tài khoản <span className="text-red-600">*</span></span>
+                <Input
+                  size="small"
+                  placeholder="TÊN CHỦ TÀI KHOẢN"
+                  value={accountHolder}
+                  onChange={(e) => setAccountHolder(e.target.value.toUpperCase())}
+                  className="text-xs font-semibold"
+                />
+              </div>
+            </div>
+
+            {refundMethod === 'bank_transfer' && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
                 <div>
-                  <span className="text-[10.5px] text-stone-600 block mb-0.5 font-medium">Ngân hàng <span className="text-red-600">*</span></span>
+                  <span className="text-[10.5px] text-stone-600 block mb-0.5 font-medium">Ngân hàng</span>
                   <Input
                     size="small"
                     placeholder="VD: Vietcombank, MB..."
@@ -1716,17 +1860,17 @@ function AdminNegotiationModal({ order, onClose, onSuccess }) {
                   />
                 </div>
                 <div>
-                  <span className="text-[10.5px] text-stone-600 block mb-0.5 font-medium">Số tài khoản <span className="text-red-600">*</span></span>
+                  <span className="text-[10.5px] text-stone-600 block mb-0.5 font-medium">Số tài khoản</span>
                   <Input
                     size="small"
                     placeholder="Nhập STK nhận tiền..."
                     value={accountNumber}
                     onChange={(e) => setAccountNumber(e.target.value)}
-                    className="text-xs font-mono font-bold text-[#1E8347]"
+                    className="text-xs font-mono"
                   />
                 </div>
                 <div>
-                  <span className="text-[10.5px] text-stone-600 block mb-0.5 font-medium">Chủ tài khoản <span className="text-red-600">*</span></span>
+                  <span className="text-[10.5px] text-stone-600 block mb-0.5 font-medium">Chủ tài khoản</span>
                   <Input
                     size="small"
                     placeholder="TÊN CHỦ TÀI KHOẢN"
@@ -1736,7 +1880,8 @@ function AdminNegotiationModal({ order, onClose, onSuccess }) {
                   />
                 </div>
               </div>
-            </div>
+            )}
+          </div>
 
           {/* Ghi chú kết quả đàm phán */}
           <div className="bg-white p-3 rounded-xl border border-[#D5E8D8]">
