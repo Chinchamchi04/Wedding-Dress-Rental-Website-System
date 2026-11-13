@@ -88,6 +88,17 @@ const normalizeAptStatus = (st) => {
   return 'confirmed';
 };
 
+// Định dạng địa chỉ khách hàng (hỗ trợ cả dạng string và object)
+const formatAddress = (addr) => {
+  if (!addr) return '';
+  if (typeof addr === 'string') return addr.trim();
+  if (typeof addr === 'object') {
+    const parts = [addr.street, addr.ward, addr.district, addr.city].filter(Boolean);
+    if (parts.length > 0) return parts.join(', ');
+  }
+  return String(addr);
+};
+
 
 
 // Trợ giúp định dạng nhãn trạng thái chính xác theo nghiệp vụ database
@@ -240,12 +251,12 @@ function CalendarDateCellEvents({
                     </div>
                     <div>Khách hàng: <strong>{item.customerName}</strong></div>
                     {isExpress ? (
-                      <div className="text-sky-200 text-[11px] truncate max-w-[220px]">
-                        📍 Ship đến: <strong>{item.shippingAddress || 'Theo yêu cầu khách'}</strong>
+                      <div className="text-sky-200 text-[11px] truncate max-w-[240px]">
+                        📍 Ship đến: <strong>{formatAddress(item.shippingAddress) || 'Theo yêu cầu khách'}</strong>
                       </div>
                     ) : (
                       <div className="text-indigo-200 text-[11px]">
-                        📍 Địa điểm lấy: <strong>{item.branch === 'hn-hoankiem' ? 'Showroom Hoàn Kiếm, HN' : 'Flagship Showroom Q.1, TP.HCM'}</strong>
+                        📍 Lấy tại: <strong>{item.branch === 'hn-hoankiem' ? '26 Lý Thường Kiệt, Hoàn Kiếm, HN' : '88 Nam Kỳ Khởi Nghĩa, Q.1, TP.HCM'}</strong>
                       </div>
                     )}
                     {item.rentalStartDate && (
@@ -323,12 +334,12 @@ function CalendarDateCellEvents({
                   </div>
                   <div>Khách hàng: <strong>{item.customerName}</strong></div>
                   {isExpress ? (
-                    <div className="text-sky-200 text-[11px] truncate max-w-[220px]">
-                      📍 Thu hồi tại: <strong>{item.shippingAddress || 'Theo yêu cầu khách'}</strong>
+                    <div className="text-sky-200 text-[11px] truncate max-w-[240px]">
+                      📍 Thu hồi tại: <strong>{formatAddress(item.shippingAddress) || 'Theo yêu cầu khách'}</strong>
                     </div>
                   ) : (
                     <div className="text-indigo-200 text-[11px]">
-                      📍 Trả tại: <strong>{item.branch === 'hn-hoankiem' ? 'Showroom Hoàn Kiếm, HN' : 'Flagship Showroom Q.1, TP.HCM'}</strong>
+                      📍 Trả tại: <strong>{item.branch === 'hn-hoankiem' ? '26 Lý Thường Kiệt, Hoàn Kiếm, HN' : '88 Nam Kỳ Khởi Nghĩa, Q.1, TP.HCM'}</strong>
                     </div>
                   )}
                   {deliveryDateStr && (
@@ -790,7 +801,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
         rentalStartDate: ord.rentalStartDate,
         rentalEndDate: ord.rentalEndDate,
         deliveryMethod: ord.deliveryMethod || 'showroom',
-        shippingAddress: ord.shippingAddress,
+        shippingAddress: ord.shippingAddress || ord.customerAddress || ord.address || '',
         notes: ord.notes,
         date: key,
         branch: ord.branch || ord.branchId || 'hcm-q1',
@@ -824,7 +835,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
         actualReturnDate: ord.actualReturnDate,
         inspection: ord.inspection,
         deliveryMethod: ord.deliveryMethod || 'showroom',
-        shippingAddress: ord.shippingAddress,
+        shippingAddress: ord.shippingAddress || ord.customerAddress || ord.address || '',
         notes: ord.notes,
         date: key,
         branch: ord.branch || ord.branchId || 'hcm-q1',
@@ -1557,22 +1568,17 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                           <Crown className="w-3.5 h-3.5" />
                           <span>Chi tiết ngày được chọn</span>
                         </span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
-                            {currentDayEvents.length} lượt hẹn
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleRightPanel();
-                            }}
-                            className="hidden lg:flex items-center justify-center w-6 h-6 rounded-lg text-gray-400 hover:text-[#733F49] hover:bg-[#FAF0EC] transition cursor-pointer"
-                            title="Thu gọn bảng chi tiết"
-                          >
-                            <ChevronRight className="w-4 h-4" />
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleRightPanel();
+                          }}
+                          className="flex items-center justify-center w-6 h-6 rounded-lg text-gray-400 hover:text-[#733F49] hover:bg-[#FAF0EC] transition cursor-pointer"
+                          title="Thu gọn bảng chi tiết"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
                       </div>
 
                     <div className="text-xl font-bold text-gray-900 mt-1.5 capitalize font-playfair">
@@ -1671,6 +1677,17 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                   {item.deliveryMethod === 'express' ? '🚚 Nhân viên ship' : '🏛️ Khách đến lấy'}
                                 </span>
                               )}
+                              {isReturn && (
+                                <span
+                                  className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border ${
+                                    item.deliveryMethod === 'express'
+                                      ? 'bg-sky-50 text-sky-800 border-sky-300'
+                                      : 'bg-indigo-50 text-indigo-800 border-indigo-300'
+                                  }`}
+                                >
+                                  {item.deliveryMethod === 'express' ? '🚚 Thu hồi tận nơi' : '🏛️ Trả tại Showroom'}
+                                </span>
+                              )}
                             </div>
 
                             {/* Tên khách hàng */}
@@ -1691,19 +1708,25 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                               </div>
                             )}
 
-                            {/* Chi nhánh Showroom / Phương thức & Địa chỉ giao */}
+                            {/* Chi nhánh Showroom / Phương thức & Địa chỉ giao hoặc trả */}
                             {isFitting ? (
                               <div className="text-[11px] text-gray-500 flex items-center gap-1.5 mt-2 font-medium">
                                 <Building2 size={12} className="text-[#BA7A83]" />
                                 <span>
                                   {item.branch === 'hn-hoankiem'
-                                    ? 'Showroom Hoàn Kiếm, Hà Nội'
-                                    : 'Flagship Showroom Q.1, TP. HCM'}
+                                    ? 'Showroom Hoàn Kiếm, Hà Nội (26 Lý Thường Kiệt)'
+                                    : 'Flagship Showroom Q.1, TP. HCM (88 Nam Kỳ Khởi Nghĩa)'}
                                 </span>
                               </div>
                             ) : isDelivery ? (
-                              <div className="mt-2.5 text-[11px] text-gray-700 bg-sky-50/80 p-2.5 rounded-xl border border-sky-200 font-medium space-y-1">
-                                <div className="flex items-center gap-1.5 font-bold text-sky-900">
+                              <div
+                                className={`mt-2.5 text-[11px] p-2.5 rounded-xl border font-medium space-y-1 ${
+                                  item.deliveryMethod === 'express'
+                                    ? 'bg-sky-50/80 text-sky-900 border-sky-200'
+                                    : 'bg-indigo-50/80 text-indigo-900 border-indigo-200'
+                                }`}
+                              >
+                                <div className="flex items-center gap-1.5 font-bold">
                                   {item.deliveryMethod === 'express' ? (
                                     <>
                                       <MapPin className="w-3.5 h-3.5 text-sky-600 shrink-0" />
@@ -1717,18 +1740,67 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                   )}
                                 </div>
                                 <div className="text-gray-800 font-semibold pl-5 text-xs">
-                                  {item.deliveryMethod === 'express'
-                                    ? (item.shippingAddress || 'Địa chỉ khách hàng đã đăng ký')
-                                    : (item.branch === 'hn-hoankiem'
-                                        ? 'UniBridal Showroom Hoàn Kiếm, Hà Nội'
-                                        : 'UniBridal Flagship Showroom Q.1, TP.HCM')}
+                                  {item.deliveryMethod === 'express' ? (
+                                    <div>
+                                      📍 {formatAddress(item.shippingAddress) || 'Địa chỉ khách hàng đã đăng ký'}
+                                    </div>
+                                  ) : (
+                                    <div>
+                                      <div className="font-bold text-indigo-950">
+                                        {item.branch === 'hn-hoankiem'
+                                          ? 'UniBridal Showroom Hoàn Kiếm, Hà Nội'
+                                          : 'UniBridal Flagship Showroom Q.1, TP.HCM'}
+                                      </div>
+                                      <div className="text-[11.5px] text-gray-600 mt-0.5 font-normal">
+                                        📍 {item.branch === 'hn-hoankiem'
+                                          ? '26 Lý Thường Kiệt, Phường Hàng Bài, Quận Hoàn Kiếm, Hà Nội'
+                                          : '88 Nam Kỳ Khởi Nghĩa, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh'}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             ) : (
-                              <div className="text-[11px] text-gray-600 flex items-center gap-1.5 mt-2 font-medium">
-                                <span className="px-2 py-0.5 rounded bg-gray-100 font-bold text-gray-700">
-                                  {item.deliveryMethod === 'express' ? '🚚 Thu hồi tận nơi' : '🏛️ Trả tại Showroom'}
-                                </span>
+                              <div
+                                className={`mt-2.5 text-[11px] p-2.5 rounded-xl border font-medium space-y-1 ${
+                                  item.deliveryMethod === 'express'
+                                    ? 'bg-sky-50/80 text-sky-900 border-sky-200'
+                                    : 'bg-indigo-50/80 text-indigo-900 border-indigo-200'
+                                }`}
+                              >
+                                <div className="flex items-center gap-1.5 font-bold">
+                                  {item.deliveryMethod === 'express' ? (
+                                    <>
+                                      <Truck className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                                      <span>Nhân viên đến thu hồi tận nơi:</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Building2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                      <span>Khách đến trả tại Showroom:</span>
+                                    </>
+                                  )}
+                                </div>
+                                <div className="text-gray-800 font-semibold pl-5 text-xs">
+                                  {item.deliveryMethod === 'express' ? (
+                                    <div>
+                                      📍 {formatAddress(item.shippingAddress) || 'Địa chỉ khách hàng đã đăng ký'}
+                                    </div>
+                                  ) : (
+                                    <div>
+                                      <div className="font-bold text-indigo-950">
+                                        {item.branch === 'hn-hoankiem'
+                                          ? 'UniBridal Showroom Hoàn Kiếm, Hà Nội'
+                                          : 'UniBridal Flagship Showroom Q.1, TP.HCM'}
+                                      </div>
+                                      <div className="text-[11.5px] text-gray-600 mt-0.5 font-normal">
+                                        📍 {item.branch === 'hn-hoankiem'
+                                          ? '26 Lý Thường Kiệt, Phường Hàng Bài, Quận Hoàn Kiếm, Hà Nội'
+                                          : '88 Nam Kỳ Khởi Nghĩa, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh'}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             )}
 
@@ -1763,8 +1835,8 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                               </div>
                             )}
 
-                            {/* Ghi chú */}
-                            {item.notes && (
+                            {/* Ghi chú (ẩn ở phần trả váy theo yêu cầu) */}
+                            {!isReturn && item.notes && (
                               <div className="p-2.5 bg-white/70 rounded-xl text-xs text-gray-600 border border-gray-200/80 italic mt-2.5 leading-relaxed">
                                 &ldquo;{item.notes}&rdquo;
                               </div>
@@ -1927,13 +1999,69 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                   )}
                   <div className="flex justify-between items-center">
                     <span className="text-gray-500 font-medium">
-                      {selectedEvent.type === 'fitting' ? 'Khung giờ thử:' : 'Hạn hoàn trả:'}
+                      {selectedEvent.type === 'fitting'
+                        ? 'Khung giờ thử:'
+                        : selectedEvent.type === 'delivery'
+                        ? 'Ngày bàn giao:'
+                        : 'Hạn hoàn trả:'}
                     </span>
                     <span className="font-bold text-[#733F49]">
                       {selectedEvent.type === 'fitting'
                         ? `${selectedEvent.timeSlot} (${selectedEvent.date})`
                         : `Ngày ${selectedEvent.date}`}
                     </span>
+                  </div>
+
+                  {/* Địa điểm bàn giao / hoàn trả / thử váy */}
+                  <div className="flex justify-between items-start pt-2 border-t border-gray-200">
+                    <span className="text-gray-500 font-medium shrink-0">
+                      {selectedEvent.type === 'fitting'
+                        ? 'Địa điểm thử:'
+                        : selectedEvent.type === 'delivery'
+                        ? 'Hình thức & Địa chỉ giao:'
+                        : 'Hình thức & Địa chỉ trả:'}
+                    </span>
+                    <div className="text-right text-xs font-semibold text-gray-800 max-w-[280px]">
+                      {selectedEvent.type === 'fitting' ? (
+                        <div>
+                          <div className="font-bold text-gray-900">
+                            {selectedEvent.branch === 'hn-hoankiem'
+                              ? 'UniBridal Showroom Hoàn Kiếm, HN'
+                              : 'UniBridal Flagship Showroom Q.1, TP.HCM'}
+                          </div>
+                          <div className="text-[11px] text-gray-600 font-normal">
+                            📍 {selectedEvent.branch === 'hn-hoankiem'
+                              ? '26 Lý Thường Kiệt, P. Hàng Bài, Q. Hoàn Kiếm, Hà Nội'
+                              : '88 Nam Kỳ Khởi Nghĩa, P. Bến Nghé, Q.1, TP. Hồ Chí Minh'}
+                          </div>
+                        </div>
+                      ) : selectedEvent.deliveryMethod === 'express' ? (
+                        <div>
+                          <span className="inline-block px-2 py-0.5 rounded bg-sky-100 text-sky-800 font-bold text-[10px] mb-1">
+                            {selectedEvent.type === 'delivery' ? '🚚 Giao tận nơi' : '🚚 Thu hồi tận nơi'}
+                          </span>
+                          <div className="text-gray-800">
+                            📍 {formatAddress(selectedEvent.shippingAddress) || 'Địa chỉ khách hàng đã đăng ký'}
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <span className="inline-block px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 font-bold text-[10px] mb-1">
+                            {selectedEvent.type === 'delivery' ? '🏛️ Khách đến lấy' : '🏛️ Khách đến trả'}
+                          </span>
+                          <div className="font-bold text-indigo-950">
+                            {selectedEvent.branch === 'hn-hoankiem'
+                              ? 'UniBridal Showroom Hoàn Kiếm, HN'
+                              : 'UniBridal Flagship Showroom Q.1, TP.HCM'}
+                          </div>
+                          <div className="text-[11px] text-gray-600 font-normal">
+                            📍 {selectedEvent.branch === 'hn-hoankiem'
+                              ? '26 Lý Thường Kiệt, P. Hàng Bài, Q. Hoàn Kiếm, Hà Nội'
+                              : '88 Nam Kỳ Khởi Nghĩa, P. Bến Nghé, Q.1, TP. Hồ Chí Minh'}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-500 font-medium">Trạng thái hiện tại:</span>
