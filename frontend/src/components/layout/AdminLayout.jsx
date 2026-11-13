@@ -18,7 +18,6 @@ import { LayoutDashboard,
   CreditCard,
   ChevronLeft,
   ChevronRight,
-  Clock,
   ArrowRight,
   ExternalLink,
   Truck,
@@ -65,21 +64,6 @@ function isSameDayVietnam(dateInput) {
     const now = new Date();
     return d.toDateString() === now.toDateString();
   }
-}
-
-function timeAgo(dateInput) {
-  if (!dateInput) return 'Vừa xong';
-  const date = new Date(dateInput);
-  if (isNaN(date.getTime())) return 'Gần đây';
-  const seconds = Math.floor((new Date() - date) / 1000);
-  if (seconds < 60) return 'Vừa xong';
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes} phút trước`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} giờ trước`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days} ngày trước`;
-  return date.toLocaleDateString('vi-VN');
 }
 
 export default function AdminLayout({
@@ -574,11 +558,6 @@ export default function AdminLayout({
                     ) : (
                       <> • {currentNotif.timeSlot} • Lịch hẹn #{currentNotif.orderCode}</>
                     )}
-                  </span>
-
-                  <span className="text-[11px] text-[#A89899] shrink-0 hidden lg:inline flex items-center gap-1 font-mono">
-                    <Clock size={11} />
-                    {timeAgo(currentNotif.time)}
                   </span>
                 </div>
 
