@@ -720,46 +720,6 @@ export const submitReturnInspection = async (orderId, data, staffUser) => {
   }
 
   return { order, inspection, heldForAdmin: holdForAdmin };
-    let customerEmail = order.customerEmail || order.email;
-    let customerName = order.customerName || order.brideName || 'Quý khách';
-
-    if (!customerEmail && order.customerId) {
-      const customer = await User.findById(order.customerId).lean();
-      if (customer) {
-        customerEmail = customer.email;
-        customerName = customer.fullName || customerName;
-      }
-    }
-
-    if (customerEmail) {
-      if (confirmOnSite) {
-        sendRefundConfirmationEmail({
-          to: customerEmail,
-          fullName: customerName,
-          orderCode: order.orderCode,
-          finalRefundAmount: inspection.finalRefundAmount,
-          bankDetails: inspection.refundBankDetails,
-        }).catch((err) => console.error('[EMAIL REFUND SEND ERROR]', err.message));
-      } else {
-        const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
-        sendInspectionNotificationEmail({
-          to: customerEmail,
-          fullName: customerName,
-          orderCode: order.orderCode,
-          inspectorName: staffUser?.fullName || 'Chuyên Viên Atelier UniBridal',
-          inspectionDate: inspection.returnedAt,
-          totalDeposit: order.totalDeposit,
-          totalDeduction: inspection.totalDeduction,
-          finalRefundAmount: inspection.finalRefundAmount,
-          returnUrl: `${clientUrl}/profile/orders`,
-        }).catch((err) => console.error('[EMAIL INSPECTION SEND ERROR]', err.message));
-      }
-    }
-  } catch (err) {
-    console.error('[EMAIL NOTIFICATION ERROR]', err.message);
-  }
-
-  return { order, inspection };
 };
 
 /**
