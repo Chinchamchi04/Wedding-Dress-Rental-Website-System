@@ -371,6 +371,12 @@ function OrderDetailModal({ order, onClose }) {
                           Size {sizeStr}
                         </span>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[#8C7D7E] shrink-0">Màu sắc:</span>
+                        <span className="font-semibold text-[#2C2523] text-[12px]">
+                          {it.color || it.fabric || order.color || 'Trắng Sữa'}
+                        </span>
+                      </div>
                     </div>
                   );
                 })}
@@ -777,6 +783,11 @@ function InspectionModal({ order, onClose, onSuccess }) {
                     {(ic.size || order.items?.[idx]?.size) && (
                       <span className="inline-block px-1.5 py-0.5 rounded bg-[#FCECE8] text-[#B8737D] text-[10px] font-bold leading-none">
                         Size: {ic.size || order.items?.[idx]?.size}
+                      </span>
+                    )}
+                    {(ic.color || order.items?.[idx]?.color || order.color) && (
+                      <span className="inline-block px-1.5 py-0.5 rounded bg-[#FAF4EE] text-[#733F49] text-[10px] font-bold leading-none border border-[#F0E5DC]">
+                        Màu: {ic.color || order.items?.[idx]?.color || order.color || 'Trắng Sữa'}
                       </span>
                     )}
                   </div>

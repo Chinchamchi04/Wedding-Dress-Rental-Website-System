@@ -17,6 +17,10 @@ const orderItemSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  color: {
+    type: String,
+    default: 'Trắng Sữa',
+  },
   rentPrice: {
     type: Number,
     required: true,

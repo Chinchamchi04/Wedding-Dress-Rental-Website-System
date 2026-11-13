@@ -193,6 +193,7 @@ export default function SignedContractModal({ orderId, order: propOrder, contrac
           name,
           code: it.dressCode || it.code || it.dressId?.code || cData.dressCode || 'UB-HC-2026',
           size: it.size ? (String(it.size).startsWith('Size') ? it.size : `Size ${it.size}`) : (cData.dressSize || 'Size S'),
+          color: it.color || it.fabric || rawOrder.color || 'Trắng Sữa',
           rentPrice: Number(it.rentPrice || it.price || cData.rentalPrice || 0),
           depositAmount: Number(it.depositAmount || it.deposit || cData.depositAmount || 0)
         };
@@ -456,7 +457,10 @@ export default function SignedContractModal({ orderId, order: propOrder, contrac
                           <tr key={idx} className="hover:bg-[#FCFAF8]">
                             <td className="p-3 font-semibold text-[#2C2523]">{it.name}</td>
                             <td className="p-3 font-mono font-bold text-[#733F49]">{it.code}</td>
-                            <td className="p-3 font-bold text-[#87565C]">{it.size}</td>
+                            <td className="p-3 font-bold text-[#87565C]">
+                              {it.size}
+                              {it.color && <span className="block text-[11px] font-normal text-[#6B5C5D] mt-0.5">Màu: {it.color}</span>}
+                            </td>
                             <td className="p-3 text-center whitespace-nowrap">
                               <span className="block text-[11.5px] text-[#8C4654] font-semibold mb-0.5">
                                 {effectiveData.rentalDays} ngày

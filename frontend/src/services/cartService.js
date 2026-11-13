@@ -106,8 +106,26 @@ function parseMoney(value) {
 export function addToCart(dress) {
   const id = String(dress._id ?? dress.id);
   const current = getCart();
-  if (current.some((item) => String(item.id) === id || (item.code && item.code === dress.code) ||
-    (!isDatabaseId(item.id) && (item.name || CART_CATALOG[item.id]?.name) === dress.name))) return false;
+  const selectedSize = dress.selectedSize || dress.size || dress.sizes?.[0]?.label || 'Theo tư vấn';
+  const selectedColor = dress.selectedColor?.name || (typeof dress.selectedColor === 'string' ? dress.selectedColor : null) || dress.color || 'Trắng Sữa';
+
+  const existingIndex = current.findIndex(
+    (item) => String(item.id) === id || (item.code && item.code === dress.code) ||
+      (!isDatabaseId(item.id) && (item.name || CART_CATALOG[item.id]?.name) === dress.name)
+  );
+
+  if (existingIndex >= 0) {
+    const updated = [...current];
+    updated[existingIndex] = {
+      ...updated[existingIndex],
+      size: selectedSize,
+      color: selectedColor,
+      fabric: selectedColor,
+    };
+    saveCart(updated);
+    return true;
+  }
+
   const item = {
     id,
     days: 1,
@@ -116,7 +134,9 @@ export function addToCart(dress) {
     deposit: parseMoney(dress.depositAmount ?? dress.deposit),
     image: dressImage(dress),
     code: dress.code,
-    size: dress.size ?? dress.sizes?.[0]?.label ?? 'Theo tư vấn',
+    size: selectedSize,
+    color: selectedColor,
+    fabric: selectedColor,
     collection: dress.collectionTag ?? dress.collection ?? 'HAUTE COUTURE',
     detailHref: Object.hasOwn(dress, 'detailHref') ? dress.detailHref : `/dresses/${id}`,
   };

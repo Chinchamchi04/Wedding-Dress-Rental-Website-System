@@ -1393,7 +1393,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                 <div className="space-y-0.5">
                                   {item.items.map((it, idx) => (
                                     <div key={idx} className="font-semibold text-gray-800">
-                                      • {it.name} (Size: {it.size || 'M'})
+                                      • {it.name} (Size: {it.size || 'M'}{it.color ? ` • Màu: ${it.color}` : ''})
                                     </div>
                                   ))}
                                 </div>

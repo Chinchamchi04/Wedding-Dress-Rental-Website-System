@@ -236,6 +236,23 @@ class ChatController {
       next(error);
     }
   }
+
+  /**
+   * Xóa một cuộc hội thoại và toàn bộ tin nhắn
+   */
+  async deleteConversation(req, res, next) {
+    try {
+      const { id } = req.params;
+      await chatService.deleteConversation(id);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Đã xóa cuộc hội thoại thành công',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new ChatController();

@@ -158,14 +158,14 @@ export default function InventoryManagement() {
   const [newName, setNewName] = useState('');
   const [newSilhouette, setNewSilhouette] = useState(DEFAULT_CATEGORIES[0].name);
   const [newMaterial, setNewMaterial] = useState(DEFAULT_MATERIALS[0]);
-  const [newRentPrice, setNewRentPrice] = useState('5.000.000');
-  const [newDepositAmount, setNewDepositAmount] = useState('15.000.000');
+  const [newRentPrice, setNewRentPrice] = useState('');
+  const [newDepositAmount, setNewDepositAmount] = useState('');
   const [newDescription, setNewDescription] = useState('');
-  const [newSizeXS, setNewSizeXS] = useState(1);
-  const [newSizeS, setNewSizeS] = useState(2);
-  const [newSizeM, setNewSizeM] = useState(2);
-  const [newSizeL, setNewSizeL] = useState(1);
-  const [newColor, setNewColor] = useState('Trắng Tinh Khôi');
+  const [newSizeXS, setNewSizeXS] = useState('');
+  const [newSizeS, setNewSizeS] = useState('');
+  const [newSizeM, setNewSizeM] = useState('');
+  const [newSizeL, setNewSizeL] = useState('');
+  const [newColor, setNewColor] = useState('');
   const [newImages, setNewImages] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -1120,11 +1120,72 @@ export default function InventoryManagement() {
     setNewImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
+  // Mở modal Thêm Váy Cưới: toàn bộ thông tin để trống, chỉ có Phom Dáng và Chất Liệu lấy từ MongoDB Atlas
+  const handleOpenAddModal = () => {
+    setNewName('');
+    setNewRentPrice('');
+    setNewDepositAmount('');
+    setNewSizeXS('');
+    setNewSizeS('');
+    setNewSizeM('');
+    setNewSizeL('');
+    setNewColor('');
+    setNewImages([]);
+    setNewDescription('');
+    if (categoriesList && categoriesList.length > 0) {
+      setNewSilhouette(categoriesList[0]?.name || categoriesList[0]?.slug || DEFAULT_CATEGORIES[0].name);
+    } else {
+      setNewSilhouette(DEFAULT_CATEGORIES[0].name);
+    }
+    if (materialsList && materialsList.length > 0) {
+      setNewMaterial(materialsList[0] || DEFAULT_MATERIALS[0]);
+    } else {
+      setNewMaterial(DEFAULT_MATERIALS[0]);
+    }
+    setIsAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false);
+    setNewName('');
+    setNewRentPrice('');
+    setNewDepositAmount('');
+    setNewSizeXS('');
+    setNewSizeS('');
+    setNewSizeM('');
+    setNewSizeL('');
+    setNewColor('');
+    setNewImages([]);
+    setNewDescription('');
+  };
+
   // Xử lý nộp phiếu nhập kho mới - Lưu trực tiếp vào MongoDB Atlas bảng dresses
   const handleAddNewItem = async (e) => {
     e.preventDefault();
-    if (!newName.trim()) {
-      showToast('Vui lòng nhập Tên Váy Cưới.');
+
+    // Kiểm tra đầy đủ thông tin bắt buộc: Tên váy, Đơn giá thuê, Tiền cọc, Màu sắc, Ảnh sản phẩm
+    const missingFields = [];
+    if (!newName.trim()) missingFields.push('Tên Váy Cưới');
+    const parsedRentPrice = parseNum(newRentPrice, 0);
+    if (!newRentPrice || parsedRentPrice <= 0) missingFields.push('Đơn Giá Thuê');
+    const parsedDeposit = parseNum(newDepositAmount, 0);
+    if (!newDepositAmount || parsedDeposit <= 0) missingFields.push('Tiền Đặt Cọc');
+    if (!newColor.trim()) missingFields.push('Màu Sắc');
+    if (!newImages || newImages.length === 0) missingFields.push('Ảnh Sản Phẩm (tải lên ít nhất 1 ảnh)');
+
+    if (missingFields.length > 0) {
+      showToast(`Chưa đủ thông tin: Vui lòng nhập ${missingFields.join(', ')} trước khi lưu và nhập kho!`);
+      return;
+    }
+
+    const qtyXS = Math.max(0, Number(newSizeXS || 0));
+    const qtyS = Math.max(0, Number(newSizeS || 0));
+    const qtyM = Math.max(0, Number(newSizeM || 0));
+    const qtyL = Math.max(0, Number(newSizeL || 0));
+    const totalCount = qtyXS + qtyS + qtyM + qtyL;
+
+    if (totalCount <= 0) {
+      showToast('Chưa đủ thông tin: Vui lòng nhập số lượng tồn kho ban đầu cho ít nhất một kích cỡ (XS, S, M, L)!');
       return;
     }
 
@@ -1135,19 +1196,12 @@ export default function InventoryManagement() {
         (c) => c.name === newSilhouette || c.slug === newSilhouette || c._id === newSilhouette || c.id === newSilhouette
       );
 
-      // 2. Tính toán tồn kho 4 size XS, S, M, L
-      const qtyXS = Math.max(0, Number(newSizeXS || 0));
-      const qtyS = Math.max(0, Number(newSizeS || 0));
-      const qtyM = Math.max(0, Number(newSizeM || 0));
-      const qtyL = Math.max(0, Number(newSizeL || 0));
-      const totalCount = qtyXS + qtyS + qtyM + qtyL;
-
+      // 2. Tính toán các size khả dụng
       const activeSizes = [];
       if (qtyXS > 0) activeSizes.push('XS');
       if (qtyS > 0) activeSizes.push('S');
       if (qtyM > 0) activeSizes.push('M');
       if (qtyL > 0) activeSizes.push('L');
-      if (activeSizes.length === 0) activeSizes.push('S', 'M');
 
       const payload = {
         name: newName.trim(),
@@ -1155,12 +1209,12 @@ export default function InventoryManagement() {
         category: selectedCatObj?.name || newSilhouette,
         silhouette: selectedCatObj?.slug || selectedCatObj?.silhouette || newSilhouette,
         material: newMaterial.trim() || 'Lụa Mikado Ý',
-        color: newColor.trim() || 'Trắng Tinh Khôi',
-        rentPrice: parseNum(newRentPrice, 5000000),
-        depositAmount: parseNum(newDepositAmount, 15000000),
+        color: newColor.trim(),
+        rentPrice: parsedRentPrice,
+        depositAmount: parsedDeposit,
         description: newDescription.trim() || 'Lễ phục cưới cao cấp bảo quản tiêu chuẩn vi khí hậu.',
         sizes: activeSizes,
-        images: newImages.length > 0 ? newImages : [card1Elysian],
+        images: newImages,
         status: 'available',
         collectionTag: 'ATELIER COUTURE 2026',
       };
@@ -1184,8 +1238,8 @@ export default function InventoryManagement() {
         color: newColor.trim(),
         silhouette: selectedCatObj?.name || newSilhouette,
         sizes: sizeList,
-        rentPrice: parseNum(newRentPrice, 5000000),
-        depositAmount: parseNum(newDepositAmount, 15000000),
+        rentPrice: parsedRentPrice,
+        depositAmount: parsedDeposit,
         description: newDescription.trim(),
         location: 'A1',
       };
@@ -1205,18 +1259,8 @@ export default function InventoryManagement() {
       // 5. Tải lại toàn bộ dữ liệu kho hàng từ MongoDB Atlas
       await loadInventory();
 
-      // Đóng modal và reset form
-      setIsAddModalOpen(false);
-      setNewName('');
-      setNewImages([]);
-      setNewColor('Trắng Tinh Khôi');
-      setNewDescription('');
-      setNewRentPrice('5.000.000');
-      setNewDepositAmount('15.000.000');
-      setNewSizeXS(1);
-      setNewSizeS(2);
-      setNewSizeM(2);
-      setNewSizeL(1);
+      // Đóng modal và reset form hoàn toàn
+      handleCloseAddModal();
 
       showToast(`Đã lưu và nhập kho thành công váy cưới "${payload.name}" vào MongoDB Atlas!`);
     } catch (err) {
@@ -1367,7 +1411,7 @@ export default function InventoryManagement() {
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-playfair text-[32px] sm:text-[38px] font-normal text-[#5F2B36] tracking-tight leading-tight mb-2">
-            Quản Lý Sản Phẩm Kho
+            Quản Lý Sản Phẩm
           </h1>
           <p className="text-[14px] text-[#7A6B6C] font-normal max-w-3xl leading-relaxed">
             Theo dõi số lượng váy cưới thực tế, vị trí lưu trữ, kiểm định và bảo dưỡng lễ phục showroom UniBridal.
@@ -1403,7 +1447,7 @@ export default function InventoryManagement() {
 
           <button
             type="button"
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={handleOpenAddModal}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#733F49] to-[#8C4654] hover:from-[#5A2D35] hover:to-[#733F49] text-white text-xs font-bold transition-all cursor-pointer shadow-xs border-0"
           >
             <Plus size={15} />
@@ -2725,14 +2769,14 @@ export default function InventoryManagement() {
               </div>
               <button
                 type="button"
-                onClick={() => setIsAddModalOpen(false)}
+                onClick={handleCloseAddModal}
                 className="text-[#9A8B8C] hover:text-[#5F333B] cursor-pointer border-0 bg-transparent"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleAddNewItem} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <form onSubmit={handleAddNewItem} noValidate className="flex flex-col flex-1 min-h-0 overflow-hidden">
               <div
                 className="flex-1 overflow-y-auto px-6 py-4 space-y-4 text-xs no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
@@ -2740,11 +2784,10 @@ export default function InventoryManagement() {
               {/* 1. Tên Váy Cưới */}
               <div>
                 <label className="block font-bold text-[#5F4E50] mb-1">
-                  Tên Váy Cưới *
+                  Tên Váy Cưới <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
-                  required
                   placeholder="VD: Juliette Royal Velvet"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
@@ -2756,7 +2799,7 @@ export default function InventoryManagement() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-[#5F4E50] mb-1">
-                    Phom Dáng *
+                    Phom Dáng <span className="text-rose-500">*</span>
                   </label>
                   <select
                     value={newSilhouette}
@@ -2772,7 +2815,7 @@ export default function InventoryManagement() {
                 </div>
                 <div>
                   <label className="block font-bold text-[#5F4E50] mb-1">
-                    Chất Liệu *
+                    Chất Liệu <span className="text-rose-500">*</span>
                   </label>
                   <select
                     value={newMaterial}
@@ -2792,12 +2835,11 @@ export default function InventoryManagement() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-[#5F4E50] mb-1">
-                    Đơn Giá Thuê (VNĐ) *
+                    Đơn Giá Thuê (VNĐ) <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
                     inputMode="numeric"
-                    required
                     placeholder="VD: 5.000.000"
                     value={formatNumberWithDots(newRentPrice)}
                     onChange={(e) => setNewRentPrice(formatNumberWithDots(e.target.value))}
@@ -2806,12 +2848,11 @@ export default function InventoryManagement() {
                 </div>
                 <div>
                   <label className="block font-bold text-[#5F4E50] mb-1">
-                    Tiền Đặt Cọc (VNĐ) *
+                    Tiền Đặt Cọc (VNĐ) <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
                     inputMode="numeric"
-                    required
                     placeholder="VD: 15.000.000"
                     value={formatNumberWithDots(newDepositAmount)}
                     onChange={(e) => setNewDepositAmount(formatNumberWithDots(e.target.value))}
@@ -2836,6 +2877,7 @@ export default function InventoryManagement() {
                     <input
                       type="number"
                       min="0"
+                      placeholder="0"
                       value={newSizeXS}
                       onChange={(e) => setNewSizeXS(e.target.value)}
                       className="w-full px-2 py-1.5 rounded-lg bg-white border border-[#EFE5E1] font-bold text-center text-xs outline-none focus:border-[#B8737D]"
@@ -2846,6 +2888,7 @@ export default function InventoryManagement() {
                     <input
                       type="number"
                       min="0"
+                      placeholder="0"
                       value={newSizeS}
                       onChange={(e) => setNewSizeS(e.target.value)}
                       className="w-full px-2 py-1.5 rounded-lg bg-white border border-[#EFE5E1] font-bold text-center text-xs outline-none focus:border-[#B8737D]"
@@ -2856,6 +2899,7 @@ export default function InventoryManagement() {
                     <input
                       type="number"
                       min="0"
+                      placeholder="0"
                       value={newSizeM}
                       onChange={(e) => setNewSizeM(e.target.value)}
                       className="w-full px-2 py-1.5 rounded-lg bg-white border border-[#EFE5E1] font-bold text-center text-xs outline-none focus:border-[#B8737D]"
@@ -2866,6 +2910,7 @@ export default function InventoryManagement() {
                     <input
                       type="number"
                       min="0"
+                      placeholder="0"
                       value={newSizeL}
                       onChange={(e) => setNewSizeL(e.target.value)}
                       className="w-full px-2 py-1.5 rounded-lg bg-white border border-[#EFE5E1] font-bold text-center text-xs outline-none focus:border-[#B8737D]"
@@ -2877,15 +2922,14 @@ export default function InventoryManagement() {
               {/* 5. Màu Sắc (Người dùng tự điền hoặc chọn nhanh) */}
               <div>
                 <label className="block font-bold text-[#5F4E50] mb-1">
-                  Màu Sắc *
+                  Màu Sắc <span className="text-rose-500">*</span>
                   <span className="text-[11px] font-normal text-[#8C7A7C] ml-2">
-                    (Gõ trực tiếp hoặc bấm chọn nhanh bên dưới, hỗ trợ nhiều màu)
+                    (Gõ trực tiếp hoặc bấm chọn nhanh bên dưới)
                   </span>
                 </label>
                 <input
                   type="text"
-                  required
-                  placeholder="VD: Trắng Tinh Khôi, Trắng Kem, Champagne, Hồng Pastel..."
+                  placeholder="VD: Trắng Tinh Khôi, Trắng Kem (Ivory), Champagne..."
                   value={newColor}
                   onChange={(e) => setNewColor(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[#2C2523] outline-none focus:border-[#B8737D]"
@@ -2922,11 +2966,11 @@ export default function InventoryManagement() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block font-bold text-[#5F4E50]">
-                    Ảnh Sản Phẩm * (Tải lên từ máy, chọn được nhiều ảnh)
+                    Ảnh Sản Phẩm <span className="text-rose-500">* (Bắt buộc tải lên từ máy tính)</span>
                   </label>
                   <div className="flex items-center gap-2">
                     {newImages.length > 0 && (
-                      <span className="text-[11px] text-[#8C6C72]">
+                      <span className="text-[11px] text-[#8C6C72] font-semibold">
                         Đã chọn {newImages.length} ảnh
                       </span>
                     )}
@@ -2996,7 +3040,7 @@ export default function InventoryManagement() {
                       <Upload size={18} />
                     </div>
                     <div className="font-bold text-[#5F2B36] text-xs">
-                      Click để chọn ảnh từ máy tính (hỗ trợ nhiều ảnh)
+                      Click để chọn ảnh từ máy tính (Bắt buộc)
                     </div>
                     <div className="text-[10.5px] text-[#9A8B8C] mt-0.5">
                       Định dạng JPG, PNG, WEBP (Ảnh đầu tiên sẽ là ảnh bìa chính)
@@ -3025,7 +3069,7 @@ export default function InventoryManagement() {
                 <button
                   type="button"
                   disabled={isSubmitting}
-                  onClick={() => setIsAddModalOpen(false)}
+                  onClick={handleCloseAddModal}
                   className="px-5 py-2.5 rounded-xl border border-[#EFE2DC] bg-white text-[#7A6B6C] font-bold hover:bg-[#FAF2EE] cursor-pointer transition-colors"
                 >
                   Hủy

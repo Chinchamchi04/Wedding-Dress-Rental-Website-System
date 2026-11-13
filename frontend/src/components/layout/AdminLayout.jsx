@@ -17,6 +17,7 @@ import { LayoutDashboard,
   Tag } from 'lucide-react';
 import logoImg from '../../assets/logo.png';
 import heroBride from '../../assets/hero_bride.jpg';
+import adminAvatarImg from '../../assets/admin_avatar.jpg';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function AdminLayout({
@@ -47,7 +48,7 @@ export default function AdminLayout({
       if (lower.includes('hợp đồng') || lower === 'contracts') return 'contracts';
       if (lower.includes('danh mục') || lower === 'categories' || lower === 'danh-muc') return 'categories';
       if (lower.includes('tài khoản') || lower.includes('account') || lower.includes('user')) return 'accounts';
-      if (lower.includes('kho hàng') || lower === 'inventory') return 'inventory';
+      if (lower.includes('kho hàng') || lower.includes('sản phẩm') || lower === 'inventory' || lower === 'san-pham') return 'inventory';
       if (lower.includes('chăm sóc') || lower === 'customer-care') return 'customer-care';
       if (lower.includes('doanh thu') || lower === 'revenue') return 'revenue';
     }
@@ -93,7 +94,7 @@ export default function AdminLayout({
     },
     {
       key: 'inventory',
-      label: 'Quản Lý Kho Hàng',
+      label: 'Quản Lý Sản Phẩm',
       icon: Package,
       to: isStaff ? '/staff/kho-hang' : '/admin/kho-hang'
     },
@@ -125,8 +126,10 @@ export default function AdminLayout({
     ] : [])
   ];
 
-  const userName = user?.fullName || user?.name || (isStaff ? 'Chuyên Viên Atelier' : 'Quản Trị Viên');
-  const userAvatar = user?.avatar || heroBride;
+  const userName = user?.fullName || user?.name || (isStaff ? 'Chuyên Viên Atelier' : 'Quản Trị Viên UniBridal');
+  const userAvatar = (!isStaff || user?.role === 'admin')
+    ? adminAvatarImg
+    : (user?.avatar || adminAvatarImg || heroBride);
   const userRoleText = isStaff ? 'STAFF MODE' : 'ADMIN MODE';
 
   const handleLogout = () => {

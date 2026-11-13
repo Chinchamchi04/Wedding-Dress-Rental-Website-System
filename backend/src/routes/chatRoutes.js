@@ -28,4 +28,7 @@ router.patch('/:conversationId/messages/:messageId/pin', optionalAuthenticate, c
 // Bỏ ghim tin nhắn của hội thoại
 router.patch('/:conversationId/unpin-message', optionalAuthenticate, chatController.unpinMessage);
 
+// Xóa cuộc hội thoại và toàn bộ tin nhắn bên trong (Admin / Staff)
+router.delete('/:id', optionalAuthenticate, chatController.deleteConversation);
+
 export default router;
