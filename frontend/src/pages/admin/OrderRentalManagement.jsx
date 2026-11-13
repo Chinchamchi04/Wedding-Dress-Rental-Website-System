@@ -1797,7 +1797,6 @@ function AdminNegotiationModal({ order, onClose, onSuccess }) {
 
 function RefundModal({ order, onClose, onSuccess }) {
   const [submitting, setSubmitting] = useState(false);
-  const [refundMethod, setRefundMethod] = useState('bank_transfer');
   const [refundNote, setRefundNote] = useState('');
   const [inspectionData, setInspectionData] = useState(null);
 
@@ -1930,70 +1929,41 @@ function RefundModal({ order, onClose, onSuccess }) {
             </div>
           </div>
 
-          {/* Lựa chọn phương thức hoàn tiền */}
-          <div className="p-3.5 rounded-xl border border-[#EFE5E1] bg-white space-y-3">
-            <label className="font-bold text-[#2C2523] block">
-              Phương thức hoàn trả tiền cọc cho khách:
-            </label>
-            <Radio.Group
-              value={refundMethod}
-              onChange={(e) => setRefundMethod(e.target.value)}
-              className="flex flex-col gap-2"
-            >
-              <Radio value="bank_transfer">
-                <span className="font-medium text-[#2C2523]">Chuyển khoản trực tuyến (Internet Banking)</span>
-              </Radio>
-              <Radio value="cash">
-                <span className="font-medium text-[#2C2523]">Tiền mặt trực tiếp tại quầy Showroom</span>
-              </Radio>
-              <Radio value="card">
-                <span className="font-medium text-[#2C2523]">Hoàn trả vào thẻ ngân hàng / Cổng thanh toán</span>
-              </Radio>
-            </Radio.Group>
-            <div className="flex items-center justify-between">
-              <label className="font-bold text-[#2C2523] flex items-center gap-1.5 text-xs">
-                <CreditCard size={15} className="text-[#1E8347]" />
-                <span>Phương thức hoàn trả: <strong className="text-[#1E8347]">Chuyển khoản ngân hàng (STK)</strong></span>
-              </label>
-              <span className="text-[10px] text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                Chính sách duy nhất: CK ngân hàng
-              </span>
-            </div>
-
-            {inspectionData?.refundBankDetails && (
-              <div className="p-3 rounded-xl bg-[#F0FDF4] border border-[#BBF7D0] space-y-1.5">
-                <div className="font-bold text-[#166534] text-[11.5px] flex items-center gap-1.5">
-                  <CreditCard size={13} />
-                  <span>Tài khoản thụ hưởng của khách (theo biên bản kiểm định):</span>
+          {/* Thông tin tài khoản ngân hàng thụ hưởng của khách */}
+          {inspectionData?.refundBankDetails && (
+            <div className="p-3.5 rounded-xl bg-[#F0FDF4] border border-[#BBF7D0] space-y-1.5">
+              <div className="font-bold text-[#166534] text-[12px] flex items-center gap-1.5">
+                <CreditCard size={14} />
+                <span>Tài khoản ngân hàng nhận hoàn cọc của khách:</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-[12px] text-[#2C2523] pt-1">
+                <div>
+                  <span className="text-[#6E8276] block text-[11px]">Ngân hàng:</span>
+                  <strong>{inspectionData.refundBankDetails.bankName || 'Ngân hàng nội địa'}</strong>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-[12px] text-[#2C2523]">
-                  <div>
-                    <span className="text-[#6E8276] block text-[11px]">Ngân hàng:</span>
-                    <strong>{inspectionData.refundBankDetails.bankName || 'Ngân hàng nội địa'}</strong>
-                  </div>
-                  <div>
-                    <span className="text-[#6E8276] block text-[11px]">Số tài khoản (STK):</span>
-                    <strong className="font-mono text-[#166534] text-[13px]">{inspectionData.refundBankDetails.accountNumber}</strong>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-[#6E8276] block text-[11px]">Chủ tài khoản:</span>
-                    <strong className="uppercase">{inspectionData.refundBankDetails.accountHolder}</strong>
-                  </div>
+                <div>
+                  <span className="text-[#6E8276] block text-[11px]">Số tài khoản (STK):</span>
+                  <strong className="font-mono text-[#166534] text-[13px]">{inspectionData.refundBankDetails.accountNumber}</strong>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-[#6E8276] block text-[11px]">Chủ tài khoản:</span>
+                  <strong className="uppercase">{inspectionData.refundBankDetails.accountHolder}</strong>
                 </div>
               </div>
-            )}
-
-            <div>
-              <label className="text-[11.5px] text-[#8C7D7E] block mb-1">
-                Ghi chú đối soát / Mã giao dịch ngân hàng (Tùy chọn):
-              </label>
-              <Input
-                placeholder="VD: Đã chuyển khoản qua STK Vietcombank lúc 15:30, mã GD: FT26001..."
-                value={refundNote}
-                onChange={(e) => setRefundNote(e.target.value)}
-                className="text-[12px] rounded-lg"
-              />
             </div>
+          )}
+
+          {/* Ghi chú đối soát */}
+          <div className="p-3 rounded-xl border border-[#EFE5E1] bg-white">
+            <label className="text-[11.5px] text-[#8C7D7E] block mb-1">
+              Ghi chú đối soát / Mã giao dịch ngân hàng (Tùy chọn):
+            </label>
+            <Input
+              placeholder="VD: Đã chuyển khoản qua STK Vietcombank lúc 15:30, mã GD: FT26001..."
+              value={refundNote}
+              onChange={(e) => setRefundNote(e.target.value)}
+              className="text-[12px] rounded-lg"
+            />
           </div>
 
           {/* Buttons */}
@@ -2009,14 +1979,14 @@ function RefundModal({ order, onClose, onSuccess }) {
               type="button"
               disabled={submitting}
               onClick={handleConfirmRefund}
-              className="flex-1 py-2.5 rounded-xl bg-[#1E8347] text-[12px] font-bold text-white hover:bg-[#166534] transition-colors border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
+              className="flex-1 py-2.5 rounded-xl bg-[#1E8347] text-[12.5px] font-bold text-white hover:bg-[#166534] transition-colors border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
             >
               {submitting ? (
                 <RefreshCw size={14} className="animate-spin" />
               ) : (
                 <CheckCircle2 size={15} />
               )}
-              <span>Xác Nhận Đã Hoàn Cọc Thành Công → Hoàn Tất Đơn ({fmtVnd(finalRefund)})</span>
+              <span>Xác Nhận Đã Hoàn Cọc</span>
             </button>
           </div>
         </div>
