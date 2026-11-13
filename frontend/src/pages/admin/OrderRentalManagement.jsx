@@ -88,6 +88,7 @@ const STATUS_CONFIG = {
   delivered: { label: 'Đã Giao Váy', bg: 'bg-[#FFEDD5]', text: 'text-[#C2410C]' },
   renting: { label: 'Đang Thuê', bg: 'bg-[#EDE9FE]', text: 'text-[#6D28D9]' },
   returned: { label: 'Chờ Hoàn Cọc', bg: 'bg-[#FEF3C7]', text: 'text-[#B45309]' },
+  waiting_refund: { label: 'Chờ Hoàn Cọc', bg: 'bg-[#FEF3C7]', text: 'text-[#B45309]' },
   disputed: { label: 'Tạm giữ - Chờ Admin đàm phán', bg: 'bg-[#FEE2E2]', text: 'text-[#991B1B]' },
   complete: { label: 'Hoàn Tất', bg: 'bg-[#A7F3D0]', text: 'text-[#064E3B]' },
   completed: { label: 'Hoàn Tất', bg: 'bg-[#A7F3D0]', text: 'text-[#064E3B]' },
@@ -104,6 +105,7 @@ const NEXT_STATUSES = {
   delivered: ['renting', 'cancelled'],
   renting: [], // Bắt buộc nhân viên bấm nút [Kiểm Định], không dùng dropdown tùy ý
   returned: ['completed'],
+  waiting_refund: ['completed'],
   complete: [],
   completed: [],
   cancelled: [],
@@ -115,7 +117,7 @@ const FILTER_OPTIONS = [
   { value: 'deposit_paid', label: 'Đã Đặt Cọc' },
   { value: 'delivered', label: 'Đã Giao Váy' },
   { value: 'renting', label: 'Đang Thuê' },
-  { value: 'returned', label: 'Chờ Hoàn Cọc' },
+  { value: 'waiting_refund', label: 'Chờ Hoàn Cọc' },
   { value: 'completed', label: 'Hoàn Tất' },
   { value: 'cancelled', label: 'Đã Hủy' },
 ];
