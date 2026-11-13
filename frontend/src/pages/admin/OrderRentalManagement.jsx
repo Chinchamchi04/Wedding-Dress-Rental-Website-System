@@ -431,12 +431,28 @@ function OrderDetailModal({ order, onClose }) {
 }
 
 function DamagePriceCatalogModal({ open, onClose }) {
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
+
   if (!open) return null;
+
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white rounded-2xl max-w-4xl w-full flex flex-col shadow-2xl border border-[#EFE5E1] overflow-hidden">
-        {/* Header gọn gàng trong 1 trang */}
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#F0E6E2] bg-gradient-to-r from-[#FFF8F6] via-[#FCF4F0] to-[#FFF8F6]">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-2xl max-w-4xl w-full max-h-[88vh] flex flex-col shadow-2xl border border-[#EFE5E1] overflow-hidden"
+      >
+        {/* Header - Luôn ghim cố định trên cùng */}
+        <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-[#F0E6E2] bg-gradient-to-r from-[#FFF8F6] via-[#FCF4F0] to-[#FFF8F6]">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-[#FAF0EC] flex items-center justify-center text-[#733F49] border border-[#ECD9D3] shadow-2xs">
               <FileSpreadsheet size={15} />
@@ -450,37 +466,38 @@ function DamagePriceCatalogModal({ open, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-full bg-white text-[#7A6B6C] hover:text-[#733F49] flex items-center justify-center transition-colors border border-[#EFE5E1] cursor-pointer"
+            className="w-7 h-7 rounded-full bg-white text-[#7A6B6C] hover:text-[#733F49] hover:bg-[#FAF0EC] flex items-center justify-center transition-colors border border-[#EFE5E1] cursor-pointer"
+            title="Đóng bảng giá (Esc)"
           >
-            <X size={14} />
+            <X size={15} />
           </button>
         </div>
 
-        {/* Table Body - Tối ưu hiển thị vừa khít trong 1 trang màn hình */}
-        <div className="p-3">
+        {/* Table Body - Hiển thị gọn gàng, tự co dãn và không bao giờ đẩy mất nút đóng */}
+        <div className="p-3 overflow-y-auto flex-1 min-h-0">
           <div className="overflow-x-auto rounded-xl border border-[#EFE5E1] shadow-2xs">
-            <table className="w-full min-w-[700px] text-left text-xs border-collapse">
+            <table className="w-full min-w-[650px] text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-[#FAF5F2] text-[#5F2B36] border-b border-[#EFE5E1] text-[11px] font-bold uppercase tracking-wider">
-                  <th className="py-2 px-3 w-[22%] whitespace-nowrap">Nhóm Lỗi Hư Hại</th>
-                  <th className="py-2 px-3 w-[36%]">Hiện Trạng Thực Tế</th>
-                  <th className="py-2 px-3 w-[22%] whitespace-nowrap">Mức Phí Niêm Yết</th>
-                  <th className="py-2 px-3 w-[20%] whitespace-nowrap text-center">Thẩm Quyền Xử Lý</th>
+                <tr className="bg-[#FAF5F2] text-[#5F2B36] border-b border-[#EFE5E1] text-[10.5px] font-bold uppercase tracking-wider sticky top-0 z-10">
+                  <th className="py-2 px-3 w-[22%] whitespace-nowrap bg-[#FAF5F2]">Nhóm Lỗi Hư Hại</th>
+                  <th className="py-2 px-3 w-[36%] bg-[#FAF5F2]">Hiện Trạng Thực Tế</th>
+                  <th className="py-2 px-3 w-[22%] whitespace-nowrap bg-[#FAF5F2]">Mức Phí Niêm Yết</th>
+                  <th className="py-2 px-3 w-[20%] whitespace-nowrap text-center bg-[#FAF5F2]">Thẩm Quyền Xử Lý</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F2E5E0] text-[11px]">
                 {DAMAGE_PRICE_CATALOG.map((row) => (
                   <tr key={row.id} className="hover:bg-[#FFF9F6] transition-colors">
-                    <td className="py-1.5 px-3 font-bold text-[#2C2523] align-middle whitespace-nowrap">
+                    <td className="py-1 px-3 font-bold text-[#2C2523] align-middle whitespace-nowrap">
                       {row.name}
                     </td>
-                    <td className="py-1.5 px-3 text-[#5C4D4D] leading-snug align-middle">
+                    <td className="py-1 px-3 text-[#5C4D4D] leading-snug align-middle">
                       {row.description}
                     </td>
-                    <td className="py-1.5 px-3 font-bold align-middle whitespace-nowrap" style={{ color: row.color }}>
+                    <td className="py-1 px-3 font-bold align-middle whitespace-nowrap" style={{ color: row.color }}>
                       {row.feeLabel}
                     </td>
-                    <td className="py-1.5 px-3 align-middle whitespace-nowrap text-center">
+                    <td className="py-1 px-3 align-middle whitespace-nowrap text-center">
                       <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded text-[10px] font-bold border ${row.authority === 'admin_only'
                         ? 'bg-rose-100 text-rose-800 border-rose-300'
                         : row.authority === 'admin'
@@ -499,12 +516,12 @@ function DamagePriceCatalogModal({ open, onClose }) {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="px-4 py-2 border-t border-[#F0E6E2] bg-[#FAF5F2] flex justify-end">
+        {/* Footer - Luôn ghim cố định ở đáy modal */}
+        <div className="shrink-0 px-4 py-2 border-t border-[#F0E6E2] bg-[#FAF5F2] flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-[#733F49] text-white text-[11.5px] font-bold hover:bg-[#5C3038] shadow-xs transition-colors cursor-pointer"
+            className="px-5 py-1.5 rounded-lg bg-[#733F49] text-white text-[12px] font-bold hover:bg-[#5C3038] shadow-xs transition-colors cursor-pointer"
           >
             Đã hiểu & Đóng bảng giá
           </button>
