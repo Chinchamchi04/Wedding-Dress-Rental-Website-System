@@ -98,8 +98,8 @@ export default function App() {
               <Route path="/staff/schedule" element={<Navigate to="/staff/lich-tong-quan" replace />} />
               <Route path="/staff/don-thue" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><OrderRentalManagement /></ProtectedRoute>} />
               <Route path="/staff/orders" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><OrderRentalManagement /></ProtectedRoute>} />
-              <Route path="/staff/lich-hen" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><ScheduleOverviewPage defaultTab="appointments" /></ProtectedRoute>} />
-              <Route path="/staff/appointments" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><ScheduleOverviewPage defaultTab="appointments" /></ProtectedRoute>} />
+              <Route path="/staff/lich-hen" element={<Navigate to="/staff/lich-tong-quan" replace />} />
+              <Route path="/staff/appointments" element={<Navigate to="/staff/lich-tong-quan" replace />} />
               <Route path="/staff/kho-hang" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><InventoryManagement /></ProtectedRoute>} />
               <Route path="/staff/inventory" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><InventoryManagement /></ProtectedRoute>} />
               <Route path="/staff/cham-soc-khach-hang" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><CustomerCareManagement /></ProtectedRoute>} />
@@ -117,8 +117,8 @@ export default function App() {
               <Route path="/admin/revenue" element={<Navigate to="/admin/reports/revenue" replace />} />
               <Route path="/admin/don-thue" element={<ProtectedRoute allowedRoles={['admin']}><OrderRentalManagement /></ProtectedRoute>} />
               <Route path="/admin/orders" element={<ProtectedRoute allowedRoles={['admin']}><OrderRentalManagement /></ProtectedRoute>} />
-              <Route path="/admin/lich-hen" element={<ProtectedRoute allowedRoles={['admin']}><ScheduleOverviewPage defaultTab="appointments" /></ProtectedRoute>} />
-              <Route path="/admin/appointments" element={<ProtectedRoute allowedRoles={['admin']}><ScheduleOverviewPage defaultTab="appointments" /></ProtectedRoute>} />
+              <Route path="/admin/lich-hen" element={<Navigate to="/admin/lich-tong-quan" replace />} />
+              <Route path="/admin/appointments" element={<Navigate to="/admin/lich-tong-quan" replace />} />
               <Route path="/admin/kho-hang" element={<ProtectedRoute allowedRoles={['admin']}><InventoryManagement /></ProtectedRoute>} />
               <Route path="/admin/inventory" element={<ProtectedRoute allowedRoles={['admin']}><InventoryManagement /></ProtectedRoute>} />
               <Route path="/admin/dresses" element={<Navigate to="/admin/kho-hang" replace />} />
