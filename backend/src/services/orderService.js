@@ -212,6 +212,16 @@ export const createOrder = async (orderData, currentUser = null) => {
       customerName: newOrder.customerName || 'Cô Dâu UniBridal',
       phone: newOrder.customerPhone || '0908123888',
       idCard: newOrder.customerCccd || '',
+      items: (newOrder.items || []).map((it) => ({
+        dressId: it.dressId || null,
+        name: it.name || '',
+        code: it.code || '',
+        size: it.size || 'S',
+        color: it.color || 'Trắng Sữa',
+        rentPrice: it.rentPrice || 0,
+        depositAmount: it.depositAmount || 0,
+        image: it.image || '',
+      })),
       dressInfo: {
         dressId: (firstItem.dressId && mongoose.Types.ObjectId.isValid(firstItem.dressId)) ? firstItem.dressId : null,
         name: firstItem.name || 'Váy Cưới Haute Couture',

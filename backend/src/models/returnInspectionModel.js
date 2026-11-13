@@ -21,7 +21,16 @@ const itemConditionSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  damageNotes: {
+    type: String,
+    default: '',
+  },
   repairFee: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  compensation: {
     type: Number,
     default: 0,
     min: 0,
