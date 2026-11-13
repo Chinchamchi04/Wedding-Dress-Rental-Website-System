@@ -43,6 +43,7 @@ import {
 import HangerIcon from '../../components/common/HangerIcon';
 import {
   getAllOrdersAdmin,
+  getCachedAdminOrders,
   getOrder,
   updateOrderStatus,
   submitReturnInspection,
@@ -1987,15 +1988,19 @@ export default function OrderRentalManagement() {
   const queryOrderCode = searchParams.get('orderCode') || searchParams.get('search') || '';
   const queryAction = searchParams.get('action') || '';
 
-  const [orders, setOrders] = useState([]);
+  const initialCached = useMemo(() => {
+    return getCachedAdminOrders({ page: 1, limit: PAGE_SIZE, viewMode: 'active' });
+  }, []);
+
+  const [orders, setOrders] = useState(() => initialCached?.orders || []);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(() => !initialCached);
+  const [total, setTotal] = useState(() => initialCached?.total || 0);
+  const [totalPages, setTotalPages] = useState(() => initialCached?.totalPages || 1);
   const [activePage, setActivePage] = useState(1);
 
   // Lưu trữ chỉ số thống kê toàn hệ thống showroom (không bị nhảy về 0 khi tìm kiếm)
-  const [globalStats, setGlobalStats] = useState({
+  const [globalStats, setGlobalStats] = useState(() => initialCached?.stats || {
     total: 0,
     renting: 0,
     completed: 0,
@@ -2028,8 +2033,8 @@ export default function OrderRentalManagement() {
   }, [globalStats]);
 
   // ── Load orders ──────────────────────────────────────────────────────────
-  const loadOrders = useCallback(async () => {
-    setLoading(true);
+  const loadOrders = useCallback(async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
       const params = { page: activePage, limit: PAGE_SIZE };
       if (statusFilter !== 'all') params.status = statusFilter;
@@ -2050,10 +2055,12 @@ export default function OrderRentalManagement() {
       setError('');
     } catch (err) {
       console.error('Database connection error in OrderRentalManagement:', err);
-      setOrders([]);
-      setTotal(0);
-      setTotalPages(1);
-      setError('Lỗi kết nối cơ sở dữ liệu: Không thể lấy danh sách đơn thuê từ máy chủ MongoDB.');
+      if (!isSilent) {
+        setOrders([]);
+        setTotal(0);
+        setTotalPages(1);
+        setError('Lỗi kết nối cơ sở dữ liệu: Không thể lấy danh sách đơn thuê từ máy chủ MongoDB.');
+      }
     } finally {
       setLoading(false);
     }
@@ -2074,7 +2081,7 @@ export default function OrderRentalManagement() {
   };
 
   useEffect(() => {
-    loadOrders();
+    loadOrders(Boolean(initialCached));
   }, [loadOrders]);
 
   // ── Tự động nhảy vào chính đơn và mở quy trình kiểm định nếu điều hướng từ Lịch Tổng Quan ──

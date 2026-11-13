@@ -4,6 +4,23 @@ import auroraImage from '../assets/card3_lumiere.jpg';
 import { formatCurrencyVND } from '../utils/formatCurrency';
 import { dressImage } from './dressApiService';
 
+// Module-level in-memory cache for admin orders
+const adminOrdersCache = new Map();
+const ADMIN_ORDERS_CACHE_TTL = 15000; // 15s cache
+
+export function clearAdminOrdersCache() {
+  adminOrdersCache.clear();
+}
+
+export function getCachedAdminOrders(params = {}) {
+  const key = JSON.stringify(params);
+  const entry = adminOrdersCache.get(key);
+  if (entry && (Date.now() - entry.timestamp < ADMIN_ORDERS_CACHE_TTL)) {
+    return entry.data;
+  }
+  return null;
+}
+
 const STATUS = {
   pending_payment: ['active', 'Chờ thanh toán cọc'],
   deposit_paid: ['active', 'Đã đặt cọc'],
@@ -135,6 +152,7 @@ export async function createOrder(orderData) {
  * @param {string} status - 'confirmed' | 'preparing' | 'handover' | 'renting' | 'returned' | 'completed' | 'cancelled'
  */
 export async function updateOrderStatus(orderId, status) {
+  clearAdminOrdersCache();
   try {
     return await axiosClient.patch(`/orders/${orderId}/status`, { status });
   } catch (error) {
@@ -148,6 +166,7 @@ export async function updateOrderStatus(orderId, status) {
  * @param {Object} inspectionData - { itemsCondition, evidencePhotos }
  */
 export async function submitReturnInspection(orderId, inspectionData) {
+  clearAdminOrdersCache();
   try {
     return await axiosClient.post(`/orders/${orderId}/inspection`, inspectionData);
   } catch (error) {
@@ -161,6 +180,7 @@ export async function submitReturnInspection(orderId, inspectionData) {
  * @param {Object} data - { agreedPenaltyFee, refundMethod, refundBankDetails, negotiationNotes }
  */
 export async function settleInspectionAdmin(orderId, data) {
+  clearAdminOrdersCache();
   try {
     const res = await axiosClient.post(`/orders/${orderId}/inspection/admin-settle`, data);
     return res.data;
@@ -175,6 +195,7 @@ export async function settleInspectionAdmin(orderId, data) {
  * @param {Object} bankData - { bankName, accountNumber, accountHolder, notes }
  */
 export async function approveReturnInspection(orderId, bankData = {}) {
+  clearAdminOrdersCache();
   try {
     const res = await axiosClient.post(`/orders/${orderId}/inspection/approve`, bankData);
     return res.data;
@@ -189,6 +210,7 @@ export async function approveReturnInspection(orderId, bankData = {}) {
  * @param {Object} data - { reason }
  */
 export async function disputeReturnInspection(orderId, data) {
+  clearAdminOrdersCache();
   try {
     const res = await axiosClient.post(`/orders/${orderId}/inspection/dispute`, data);
     return res.data;
@@ -219,10 +241,19 @@ export async function getDressBookedDates(dressId) {
 }
 
 /**
- * Lấy toàn bộ danh sách đơn thuê (Admin)
+ * Lấy toàn bộ danh sách đơn thuê (Admin) - Có cơ chế Memory Caching chống lag khi chuyển trang
  * @param {Object} params - { status, search, page, limit }
+ * @param {boolean} forceRefresh - Bỏ qua cache để lấy mới
  */
-export async function getAllOrdersAdmin(params = {}) {
+export async function getAllOrdersAdmin(params = {}, forceRefresh = false) {
+  const key = JSON.stringify(params);
+  if (!forceRefresh) {
+    const cached = adminOrdersCache.get(key);
+    if (cached && (Date.now() - cached.timestamp < ADMIN_ORDERS_CACHE_TTL)) {
+      return cached.data;
+    }
+  }
+
   try {
     const res = await axiosClient.get('/orders', { params });
     const list = Array.isArray(res.data) ? res.data : (Array.isArray(res) ? res : res.data?.data || []);
@@ -230,13 +261,15 @@ export async function getAllOrdersAdmin(params = {}) {
     const page = res.pagination?.page ?? res.page ?? 1;
     const totalPages = res.pagination?.totalPages ?? res.totalPages ?? 1;
     const stats = res.stats || null;
-    return {
+    const result = {
       orders: list,
       total,
       page,
       totalPages,
       stats,
     };
+    adminOrdersCache.set(key, { data: result, timestamp: Date.now() });
+    return result;
   } catch (error) {
     return { orders: [], total: 0, page: 1, totalPages: 1, stats: null };
   }

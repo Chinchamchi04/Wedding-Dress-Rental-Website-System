@@ -33,6 +33,21 @@ import { formatCurrencyVND } from '../../utils/formatCurrency';
 
 const READ_NOTIFS_STORAGE_KEY = 'unibridal_read_notif_ids';
 
+// Module-level cache to keep live notifications persistent across page transitions (0ms latency)
+let cachedLiveNotifications = null;
+let lastLiveNotificationsFetch = 0;
+let inFlightNotificationsPromise = null;
+const NOTIFICATIONS_CACHE_TTL = 15000; // 15 seconds cache
+
+/**
+ * Xóa cache thông báo trực tiếp khi có sự kiện thay đổi đơn hàng
+ */
+export function invalidateLiveNotificationsCache() {
+  cachedLiveNotifications = null;
+  lastLiveNotificationsFetch = 0;
+  inFlightNotificationsPromise = null;
+}
+
 /**
  * Kiểm tra xem một mốc thời gian có rơi vào đúng ngày hôm nay (theo múi giờ Việt Nam) hay không
  */
@@ -81,8 +96,9 @@ export default function AdminLayout({
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Live Notifications State for New Deposits & Appointments
-  const [liveNotifications, setLiveNotifications] = useState([]);
+  // Live Notifications State for New Deposits & Appointments (Tận dụng Module-level cache để chuyển trang tức thì 0ms)
+  const [liveNotifications, setLiveNotifications] = useState(() => cachedLiveNotifications || []);
+  const [isInitialLoading, setIsInitialLoading] = useState(() => cachedLiveNotifications === null);
   const [currentTickerIdx, setCurrentTickerIdx] = useState(0);
   const [isTickerPaused, setIsTickerPaused] = useState(false);
 
@@ -115,115 +131,149 @@ export default function AdminLayout({
   // 2. Lịch ship váy / giao váy cho khách hôm nay (rentalStartDate là hôm nay)
   // 3. Lịch khách hẹn trả váy hôm nay (rentalEndDate là hôm nay)
   // 4. Lịch hẹn thử váy hôm nay (appointmentDate là hôm nay)
-  const fetchLiveNotifications = async () => {
-    try {
-      const notifs = [];
+  const fetchLiveNotifications = async (force = false) => {
+    const now = Date.now();
+    // 1. Nếu cache còn mới (dưới 15s) và không bị ép buộc reload: Dùng ngay cache mà không gọi network
+    if (!force && cachedLiveNotifications !== null && (now - lastLiveNotificationsFetch < NOTIFICATIONS_CACHE_TTL)) {
+      setLiveNotifications(cachedLiveNotifications);
+      setIsInitialLoading(false);
+      return;
+    }
 
-      // 1. Fetch Orders (Lọc đơn vừa đặt, lịch ship váy và lịch trả váy trong ngày hôm nay)
+    // 2. Nếu đang có một promise fetch ngầm chạy: Chờ promise đó hoàn tất
+    if (inFlightNotificationsPromise) {
       try {
-        const ordersRes = await getAllOrdersAdmin({ limit: 100 });
-        const orders = ordersRes?.orders || [];
-        orders.forEach((o) => {
-          const rawSt = (o.rawStatus || o.status || '').toLowerCase();
-          if (rawSt === 'cancelled') return;
+        const sharedData = await inFlightNotificationsPromise;
+        if (Array.isArray(sharedData)) {
+          setLiveNotifications(sharedData);
+          setIsInitialLoading(false);
+        }
+      } catch {}
+      return;
+    }
 
-          const orderIdStr = o._id || o.orderCode || Math.random();
-          const customerName = o.customerName || 'Khách Hàng';
-          const dressName = o.items?.[0]?.name || o.dress || 'Lễ phục cưới';
-
-          // A. Đơn vừa đặt / vừa cọc trong ngày hôm nay
-          if (isSameDayVietnam(o.createdAt)) {
-            const hasDeposit = (o.totalDeposit > 0 || o.depositAmount > 0);
-            notifs.push({
-              id: `order-created-${orderIdStr}`,
-              type: 'deposit',
-              orderCode: o.orderCode,
-              customerName,
-              amount: o.totalDeposit || o.depositAmount || 0,
-              time: o.createdAt,
-              url: `${isStaff ? '/staff' : '/admin'}/don-thue?search=${encodeURIComponent(o.orderCode || '')}`,
-              badge: hasDeposit ? 'ĐƠN CỌC MỚI' : 'ĐƠN VỪA ĐẶT',
-            });
-          }
-
-          // B. Lịch ship váy / giao váy cho khách trong ngày hôm nay
-          if (isSameDayVietnam(o.rentalStartDate) && !['completed', 'complete'].includes(rawSt)) {
-            notifs.push({
-              id: `order-ship-${orderIdStr}`,
-              type: 'ship',
-              orderCode: o.orderCode,
-              customerName,
-              dressName,
-              time: o.rentalStartDate || new Date(),
-              url: `${isStaff ? '/staff' : '/admin'}/don-thue?search=${encodeURIComponent(o.orderCode || '')}`,
-              badge: 'LỊCH SHIP VÁY',
-            });
-          }
-
-          // C. Lịch khách hẹn trả váy trong ngày hôm nay
-          if (isSameDayVietnam(o.rentalEndDate) && !['completed', 'complete'].includes(rawSt)) {
-            notifs.push({
-              id: `order-return-${orderIdStr}`,
-              type: 'return',
-              orderCode: o.orderCode,
-              customerName,
-              dressName,
-              time: o.rentalEndDate || new Date(),
-              url: `${isStaff ? '/staff' : '/admin'}/don-thue?search=${encodeURIComponent(o.orderCode || '')}`,
-              badge: 'LỊCH TRẢ VÁY',
-            });
-          }
-        });
-      } catch (err) {
-        console.warn('Orders notification fetch error:', err);
-      }
-
-      // 2. Fetch Appointments (Lịch hẹn thử váy trong ngày hôm nay)
+    // 3. Khởi tạo request fetch ngầm (Stale-While-Revalidate)
+    inFlightNotificationsPromise = (async () => {
       try {
-        const aptsRes = await getAppointmentsApi({ limit: 100 });
-        const apts = Array.isArray(aptsRes?.data) ? aptsRes.data : (Array.isArray(aptsRes) ? aptsRes : getAppointments());
-        if (Array.isArray(apts)) {
-          apts.forEach((a) => {
-            const aptDateStr = a.appointmentDate || a.date;
-            if (a.status === 'cancelled') return;
+        const notifs = [];
 
-            // Chỉ hiển thị lịch thử váy có ngày hẹn đúng hôm nay hoặc vừa đặt hôm nay
-            const isForToday = isSameDayVietnam(aptDateStr);
-            const isCreatedToday = isSameDayVietnam(a.createdAt);
+        // 1. Fetch Orders (Tối ưu limit: 50 để tải siêu nhanh)
+        try {
+          const ordersRes = await getAllOrdersAdmin({ limit: 50 });
+          const orders = ordersRes?.orders || [];
+          orders.forEach((o) => {
+            const rawSt = (o.rawStatus || o.status || '').toLowerCase();
+            if (rawSt === 'cancelled') return;
 
-            if (isForToday || isCreatedToday) {
-              const timeSlotStr = a.timeSlot || '09:00 — 10:30';
+            const orderIdStr = o._id || o.orderCode || Math.random();
+            const customerName = o.customerName || 'Khách Hàng';
+            const dressName = o.items?.[0]?.name || o.dress || 'Lễ phục cưới';
+
+            // A. Đơn vừa đặt / vừa cọc trong ngày hôm nay
+            if (isSameDayVietnam(o.createdAt)) {
+              const hasDeposit = (o.totalDeposit > 0 || o.depositAmount > 0);
               notifs.push({
-                id: `apt-${a._id || a.id || a.appointmentCode || Math.random()}`,
-                type: 'appointment',
-                orderCode: a.appointmentCode || a.id || 'LỊCH HẸN',
-                customerName: a.customerName || a.fullName || 'Cô Dâu / Chú Rể',
-                timeSlot: timeSlotStr,
-                date: aptDateStr,
-                branchName: a.branchName || 'Showroom UniBridal',
-                time: a.createdAt || a.appointmentDate || new Date(),
-                url: `${isStaff ? '/staff' : '/admin'}/lich-tong-quan`,
-                badge: isForToday ? 'LỊCH THỬ HÔM NAY' : 'LỊCH THỬ MỚI',
+                id: `order-created-${orderIdStr}`,
+                type: 'deposit',
+                orderCode: o.orderCode,
+                customerName,
+                amount: o.totalDeposit || o.depositAmount || 0,
+                time: o.createdAt,
+                url: `${isStaff ? '/staff' : '/admin'}/don-thue?search=${encodeURIComponent(o.orderCode || '')}`,
+                badge: hasDeposit ? 'ĐƠN CỌC MỚI' : 'ĐƠN VỪA ĐẶT',
+              });
+            }
+
+            // B. Lịch ship váy / giao váy cho khách trong ngày hôm nay
+            if (isSameDayVietnam(o.rentalStartDate) && !['completed', 'complete'].includes(rawSt)) {
+              notifs.push({
+                id: `order-ship-${orderIdStr}`,
+                type: 'ship',
+                orderCode: o.orderCode,
+                customerName,
+                dressName,
+                time: o.rentalStartDate || new Date(),
+                url: `${isStaff ? '/staff' : '/admin'}/don-thue?search=${encodeURIComponent(o.orderCode || '')}`,
+                badge: 'LỊCH SHIP VÁY',
+              });
+            }
+
+            // C. Lịch khách hẹn trả váy trong ngày hôm nay
+            if (isSameDayVietnam(o.rentalEndDate) && !['completed', 'complete'].includes(rawSt)) {
+              notifs.push({
+                id: `order-return-${orderIdStr}`,
+                type: 'return',
+                orderCode: o.orderCode,
+                customerName,
+                dressName,
+                time: o.rentalEndDate || new Date(),
+                url: `${isStaff ? '/staff' : '/admin'}/don-thue?search=${encodeURIComponent(o.orderCode || '')}`,
+                badge: 'LỊCH TRẢ VÁY',
               });
             }
           });
+        } catch (err) {
+          console.warn('Orders notification fetch error:', err);
         }
-      } catch (err) {
-        console.warn('Appointments notification fetch error:', err);
-      }
 
-      // Sắp xếp thời gian mới nhất lên đầu
-      notifs.sort((a, b) => new Date(b.time || 0) - new Date(a.time || 0));
-      setLiveNotifications(notifs);
-    } catch (err) {
-      console.error('Error fetching live notifications:', err);
+        // 2. Fetch Appointments (Lịch hẹn thử váy trong ngày hôm nay)
+        try {
+          const aptsRes = await getAppointmentsApi({ limit: 50 });
+          const apts = Array.isArray(aptsRes?.data) ? aptsRes.data : (Array.isArray(aptsRes) ? aptsRes : getAppointments());
+          if (Array.isArray(apts)) {
+            apts.forEach((a) => {
+              const aptDateStr = a.appointmentDate || a.date;
+              if (a.status === 'cancelled') return;
+
+              // Chỉ hiển thị lịch thử váy có ngày hẹn đúng hôm nay hoặc vừa đặt hôm nay
+              const isForToday = isSameDayVietnam(aptDateStr);
+              const isCreatedToday = isSameDayVietnam(a.createdAt);
+
+              if (isForToday || isCreatedToday) {
+                const timeSlotStr = a.timeSlot || '09:00 — 10:30';
+                notifs.push({
+                  id: `apt-${a._id || a.id || a.appointmentCode || Math.random()}`,
+                  type: 'appointment',
+                  orderCode: a.appointmentCode || a.id || 'LỊCH HẸN',
+                  customerName: a.customerName || a.fullName || 'Cô Dâu / Chú Rể',
+                  timeSlot: timeSlotStr,
+                  date: aptDateStr,
+                  branchName: a.branchName || 'Showroom UniBridal',
+                  time: a.createdAt || a.appointmentDate || new Date(),
+                  url: `${isStaff ? '/staff' : '/admin'}/lich-tong-quan`,
+                  badge: isForToday ? 'LỊCH THỬ HÔM NAY' : 'LỊCH THỬ MỚI',
+                });
+              }
+            });
+          }
+        } catch (err) {
+          console.warn('Appointments notification fetch error:', err);
+        }
+
+        // Sắp xếp thời gian mới nhất lên đầu
+        notifs.sort((a, b) => new Date(b.time || 0) - new Date(a.time || 0));
+        cachedLiveNotifications = notifs;
+        lastLiveNotificationsFetch = Date.now();
+        return notifs;
+      } catch (err) {
+        console.error('Error fetching live notifications:', err);
+        return [];
+      } finally {
+        inFlightNotificationsPromise = null;
+      }
+    })();
+
+    const result = await inFlightNotificationsPromise;
+    if (Array.isArray(result)) {
+      setLiveNotifications(result);
     }
+    setIsInitialLoading(false);
   };
 
   useEffect(() => {
     fetchLiveNotifications();
-    const timer = setInterval(fetchLiveNotifications, 20000); // 20s polling
-    const handleUpdate = () => fetchLiveNotifications();
+    const timer = setInterval(() => fetchLiveNotifications(true), 25000); // 25s polling ngầm
+    const handleUpdate = () => fetchLiveNotifications(true);
     window.addEventListener(APPOINTMENT_EVENT, handleUpdate);
     window.addEventListener('storage', handleUpdate);
     return () => {
@@ -479,7 +529,12 @@ export default function AdminLayout({
             onMouseEnter={() => setIsTickerPaused(true)}
             onMouseLeave={() => setIsTickerPaused(false)}
           >
-            {liveNotifications.length > 0 && currentNotif ? (
+            {isInitialLoading && !cachedLiveNotifications ? (
+              <div className="flex items-center gap-2 py-1.5 px-4 rounded-full bg-[#FAF5F2]/80 border border-[#EFE5E0] text-[12px] text-[#A89899] animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-[#D6A498] shrink-0"></span>
+                <span className="w-48 h-3 bg-[#EFE5E0] rounded inline-block"></span>
+              </div>
+            ) : liveNotifications.length > 0 && currentNotif ? (
               <div className="w-full flex items-center justify-between gap-2 bg-gradient-to-r from-[#FFFBF9] via-[#FAF3F0] to-[#FFFBF9] border border-[#F2DFD8] hover:border-[#D6A498] rounded-full py-1.5 px-3.5 shadow-xs transition-all duration-300">
                 <div
                   onClick={() => handleSelectNotification(currentNotif)}

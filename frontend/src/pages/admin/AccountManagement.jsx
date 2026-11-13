@@ -25,6 +25,7 @@ import { UserCheck,
   ChevronRight } from 'lucide-react';
 import {
   getAllUsers,
+  getCachedUsers,
   getUserRoles,
   createUser,
   toggleUserStatus,
@@ -56,11 +57,15 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('vi-VN') : '—');
 
 export default function AccountManagement() {
   const { user: currentUser } = useAuth();
-  const [users, setUsers] = useState([]);
+  const initialCached = useMemo(() => {
+    return getCachedUsers({ page: 1, limit: DEFAULT_PAGE_SIZE });
+  }, []);
+
+  const [users, setUsers] = useState(() => initialCached?.users || []);
   const [roles, setRoles] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !initialCached);
   const [error, setError] = useState('');
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState(() => initialCached?.total || 0);
   const [activePage, setActivePage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
@@ -86,8 +91,8 @@ export default function AccountManagement() {
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   // ── Load dữ liệu tài khoản từ API ──────────────────────────────────────────
-  const loadUsers = useCallback(async () => {
-    setLoading(true);
+  const loadUsers = useCallback(async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
       const params = {
         page: activePage,
@@ -108,14 +113,16 @@ export default function AccountManagement() {
       setError('');
     } catch (err) {
       console.error('Lỗi khi tải danh sách người dùng:', err);
-      setError('Không thể kết nối đến máy chủ để tải danh sách tài khoản.');
+      if (!isSilent) {
+        setError('Không thể kết nối đến máy chủ để tải danh sách tài khoản.');
+      }
     } finally {
       setLoading(false);
     }
   }, [activePage, pageSize, roleFilter, statusFilter, searchTerm]);
 
   useEffect(() => {
-    loadUsers();
+    loadUsers(Boolean(initialCached));
   }, [loadUsers]);
 
   // ── Xử lý tạo mới tài khoản ────────────────────────────────────────────────
