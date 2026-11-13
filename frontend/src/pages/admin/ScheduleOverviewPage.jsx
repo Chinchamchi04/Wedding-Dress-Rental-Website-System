@@ -1150,7 +1150,11 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                   </span>
                   <button
                     type="button"
-                    onClick={() => setCalendarFilterType('all')}
+                    onClick={() => {
+                      setCalendarFilterType('all');
+                      setDeliveryMethodFilter('all');
+                      setHighlightedOrderCode(null);
+                    }}
                     className={`px-3.5 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
                       calendarFilterType === 'all'
                         ? 'bg-[#733F49] text-white shadow-xs'
@@ -1163,6 +1167,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     type="button"
                     onClick={() => {
                       setCalendarFilterType('fitting');
+                      setDeliveryMethodFilter('all');
                       setHighlightedOrderCode(null);
                     }}
                     className={`px-3.5 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
@@ -1193,6 +1198,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     type="button"
                     onClick={() => {
                       setCalendarFilterType('return');
+                      setDeliveryMethodFilter('all');
                       setHighlightedOrderCode(null);
                     }}
                     className={`px-3.5 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
@@ -1287,70 +1293,72 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                 </h2>
                               </div>
 
-                              {/* 2 Ô Lọc: Khách đến lấy & Giao tận nơi đặt ngay bên cạnh Tháng 11, 2026 */}
-                              <div className="flex items-center gap-1.5 sm:gap-2 pl-2 sm:pl-3 border-l border-gray-200">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setDeliveryMethodFilter((prev) =>
-                                      prev === 'showroom' ? 'all' : 'showroom'
-                                    )
-                                  }
-                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border shadow-2xs ${
-                                    deliveryMethodFilter === 'showroom'
-                                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                                      : 'bg-indigo-50/80 text-indigo-900 border-indigo-200 hover:bg-indigo-100'
-                                  }`}
-                                  title={
-                                    deliveryMethodFilter === 'showroom'
-                                      ? 'Đang lọc: Khách đến lấy (Bấm để xem tất cả)'
-                                      : 'Lọc đơn khách đến showroom lấy trực tiếp'
-                                  }
-                                >
-                                  <Building2 className="w-3.5 h-3.5" />
-                                  <span>Khách đến lấy</span>
-                                  <span
-                                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                              {/* 2 Ô Lọc: Khách đến lấy & Giao tận nơi CHỈ HIỂN THỊ KHI ĐANG XEM LỊCH GIAO VÁY */}
+                              {calendarFilterType === 'delivery' && (
+                                <div className="flex items-center gap-1.5 sm:gap-2 pl-2 sm:pl-3 border-l border-gray-200">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setDeliveryMethodFilter((prev) =>
+                                        prev === 'showroom' ? 'all' : 'showroom'
+                                      )
+                                    }
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border shadow-2xs ${
                                       deliveryMethodFilter === 'showroom'
-                                        ? 'bg-white/20 text-white'
-                                        : 'bg-indigo-100 text-indigo-900'
+                                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                                        : 'bg-indigo-50/80 text-indigo-900 border-indigo-200 hover:bg-indigo-100'
                                     }`}
+                                    title={
+                                      deliveryMethodFilter === 'showroom'
+                                        ? 'Đang lọc: Khách đến lấy (Bấm để xem tất cả)'
+                                        : 'Lọc đơn khách đến showroom lấy trực tiếp'
+                                    }
                                   >
-                                    {showroomDeliveriesCount}
-                                  </span>
-                                </button>
+                                    <Building2 className="w-3.5 h-3.5" />
+                                    <span>Khách đến lấy</span>
+                                    <span
+                                      className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                                        deliveryMethodFilter === 'showroom'
+                                          ? 'bg-white/20 text-white'
+                                          : 'bg-indigo-100 text-indigo-900'
+                                      }`}
+                                    >
+                                      {showroomDeliveriesCount}
+                                    </span>
+                                  </button>
 
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setDeliveryMethodFilter((prev) =>
-                                      prev === 'express' ? 'all' : 'express'
-                                    )
-                                  }
-                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border shadow-2xs ${
-                                    deliveryMethodFilter === 'express'
-                                      ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
-                                      : 'bg-sky-50/80 text-sky-900 border-sky-200 hover:bg-sky-100'
-                                  }`}
-                                  title={
-                                    deliveryMethodFilter === 'express'
-                                      ? 'Đang lọc: Giao tận nơi (Bấm để xem tất cả)'
-                                      : 'Lọc đơn nhân viên giao váy tận nơi'
-                                  }
-                                >
-                                  <Truck className="w-3.5 h-3.5" />
-                                  <span>Giao tận nơi</span>
-                                  <span
-                                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setDeliveryMethodFilter((prev) =>
+                                        prev === 'express' ? 'all' : 'express'
+                                      )
+                                    }
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border shadow-2xs ${
                                       deliveryMethodFilter === 'express'
-                                        ? 'bg-white/20 text-white'
-                                        : 'bg-sky-100 text-sky-900'
+                                        ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
+                                        : 'bg-sky-50/80 text-sky-900 border-sky-200 hover:bg-sky-100'
                                     }`}
+                                    title={
+                                      deliveryMethodFilter === 'express'
+                                        ? 'Đang lọc: Giao tận nơi (Bấm để xem tất cả)'
+                                        : 'Lọc đơn nhân viên giao váy tận nơi'
+                                    }
                                   >
-                                    {expressDeliveriesCount}
-                                  </span>
-                                </button>
-                              </div>
+                                    <Truck className="w-3.5 h-3.5" />
+                                    <span>Giao tận nơi</span>
+                                    <span
+                                      className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                                        deliveryMethodFilter === 'express'
+                                          ? 'bg-white/20 text-white'
+                                          : 'bg-sky-100 text-sky-900'
+                                      }`}
+                                    >
+                                      {expressDeliveriesCount}
+                                    </span>
+                                  </button>
+                                </div>
+                              )}
                             </div>
 
                             <div className="flex items-center gap-1.5">
