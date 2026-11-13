@@ -237,8 +237,11 @@ export async function sendInspectionNotificationEmail({
         ${checklistHtml}
 
         <div style="background: #FFF8F6; border-left: 4px solid #B8737D; padding: 12px 16px; margin: 20px 0; border-radius: 0 10px 10px 0;">
-          <p style="font-size: 13.5px; line-height: 1.6; color: #733F49; margin: 0; font-weight: 600;">
-            Nàng vui lòng xem bảng quyết toán dưới đây. Khi nàng bấm xác nhận đồng ý, hệ thống sẽ giải ngân tiền cọc hoàn lại ngay lập tức về tài khoản ngân hàng của nàng.
+          <p style="font-size: 13px; line-height: 1.6; color: #733F49; margin: 0 0 6px 0; font-weight: 600;">
+            ✦ Đối chiếu Hợp đồng: Toàn bộ chi phí phục chế được áp dụng theo mức cố định niêm yết tại <strong>Điều 5 & Phụ lục Hợp đồng thuê váy</strong> đã ký kết, đảm bảo tính minh bạch tuyệt đối.
+          </p>
+          <p style="font-size: 13px; line-height: 1.6; color: #514344; margin: 0;">
+            Nàng vui lòng xem bảng quyết toán dưới đây. Khi nàng xác nhận đồng ý, hệ thống sẽ tiến hành giải ngân hoàn cọc về tài khoản ngân hàng của nàng.
           </p>
         </div>
 

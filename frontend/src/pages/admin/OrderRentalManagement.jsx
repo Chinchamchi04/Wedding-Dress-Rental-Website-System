@@ -37,6 +37,8 @@ import {
   Lock,
   FileSpreadsheet,
   BookOpen,
+  FileEdit,
+  FileCheck,
 } from 'lucide-react';
 import HangerIcon from '../../components/common/HangerIcon';
 import {
@@ -663,22 +665,21 @@ function InspectionModal({ order, onClose, onSuccess }) {
   const totalDeduction = Math.min(totalDeposit, lateFee + totalCompensation);
   const finalRefund = Math.max(0, totalDeposit - totalDeduction);
 
-  // Thay đổi nhóm lỗi theo Bảng giá niêm yết (Khóa giá, Staff không được tự ý sửa)
+  // Thay đổi nhóm lỗi theo Bảng giá niêm yết (Khóa giá cố định, Staff không được tự ý sửa)
   const updateCondition = (idx, newCondId) => {
     if (isReadOnly) return;
     const cat = getDamageCatalogItem(newCondId);
     const maxLimit = itemsCondition[idx]?.maxDeposit || itemsCondition[idx]?.depositAmount || order.totalDeposit || 0;
-    const defaultOpt = cat.options ? (cat.defaultFee || cat.options[0]?.value) : null;
-    const comp = computeCompensation(newCondId, defaultOpt, maxLimit);
+    const comp = computeCompensation(newCondId, null, maxLimit);
 
     setItemsCondition((prev) => {
       const next = [...prev];
       next[idx] = {
         ...next[idx],
         condition: newCondId,
-        selectedOption: defaultOpt,
         compensation: comp,
-        damageNotes: (newCondId === 'normal_wear' || newCondId === 'good') ? '' : next[idx].damageNotes,
+        // Khi chọn lỗi, mặc định điền mô tả hiện trạng để nhân viên có thể sửa đổi hoặc bổ sung chi tiết
+        damageNotes: (newCondId === 'normal_wear' || newCondId === 'good') ? '' : (cat.description || ''),
       };
       return next;
     });
@@ -1015,67 +1016,45 @@ function InspectionModal({ order, onClose, onSuccess }) {
                   {/* Chi tiết hiện trạng & Mức phí đền bù khóa cố định */}
                   {ic.condition !== 'normal_wear' && ic.condition !== 'good' && (
                     <div className="p-3 rounded-xl bg-[#FFF9F6] border border-[#F4E1D8] space-y-2.5 animate-fadeIn text-xs">
-                      {/* Hiện trạng niêm yết */}
-                      <div className="flex items-start gap-2 text-[11.5px] text-[#5C4D4D] bg-white p-2 rounded-lg border border-[#F0E0D8]">
-                        <span className="font-bold text-[#733F49] shrink-0">Hiện trạng thực tế:</span>
-                        <span className="leading-relaxed">{catItem.description}</span>
+                      {/* Hiện trạng thực tế (Cho phép nhân viên trực tiếp điền / chỉnh sửa) */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-[11.5px] font-bold text-[#733F49] flex items-center gap-1.5">
+                            <FileEdit size={13} className="text-[#8D3B4C]" />
+                            Hiện trạng thực tế:
+                          </label>
+                          <span className="text-[10px] text-[#8C7D7E] italic">
+                            * Có thể chỉnh sửa hoặc điền chi tiết vị trí lỗi trên váy
+                          </span>
+                        </div>
+                        <Input.TextArea
+                          rows={2}
+                          disabled={isReadOnly}
+                          placeholder="Mô tả hiện trạng thực tế, vị trí vết bẩn hoặc lỗi hư hại trên váy..."
+                          value={ic.damageNotes !== undefined && ic.damageNotes !== '' ? ic.damageNotes : catItem.description}
+                          onChange={(e) => updateNotes(idx, e.target.value)}
+                          className="text-xs rounded-xl border-[#E5D7D0] focus:border-[#733F49]"
+                        />
                       </div>
 
-                      {/* Chọn phân mức giá niêm yết (nếu có options) */}
-                      {catItem.options && catItem.options.length > 0 && (
-                        <div className="space-y-1">
-                          <span className="text-[11px] font-bold text-[#4A3B3D] block">
-                            Khung mức bồi thường niêm yết:
-                          </span>
-                          <div className="flex flex-wrap gap-1.5">
-                            {catItem.options.map((opt) => {
-                              const isSelected = (ic.selectedOption === opt.value) || (!ic.selectedOption && opt.value === catItem.defaultFee);
-                              return (
-                                <button
-                                  key={opt.value}
-                                  type="button"
-                                  disabled={isReadOnly}
-                                  onClick={() => updateOption(idx, opt.value)}
-                                  className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${isSelected
-                                      ? 'bg-[#733F49] text-white border-[#733F49] shadow-xs'
-                                      : 'bg-white text-[#5F4E50] border-[#E5D7D0] hover:bg-[#FAF0EC]'
-                                    }`}
-                                >
-                                  {opt.label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-
                       {/* Hộp hiển thị mức bồi thường khóa cố định */}
-                      <div className="flex items-center justify-between p-2 rounded-lg bg-white border border-[#EFE2DC] flex-wrap gap-2">
+                      <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[#EFE2DC] flex-wrap gap-2">
                         <div className="flex items-center gap-1.5 text-xs">
                           <Lock size={13} className="text-[#8C7D7E]" />
-                          <span className="text-[#5F4E50] font-semibold">Chi phí đền bù áp dụng:</span>
+                          <span className="text-[#5F4E50] font-semibold">Mức phí đền bù niêm yết:</span>
                           <span className="text-sm font-bold text-red-700">
                             {catItem.feeType === 'deposit_100' ? `Tịch thu 100% Cọc (${fmtVnd(ic.compensation)})` : fmtVnd(ic.compensation)}
                           </span>
                         </div>
                         <span className="text-[10px] text-[#8C7D7E] italic">
-                          🔒 Khóa tự động theo Bảng giá niêm yết
+                          🔒 Khóa cố định 1 mức theo Bảng giá niêm yết
                         </span>
                       </div>
 
-                      {/* Ghi chú mô tả vị trí cụ thể */}
-                      <div>
-                        <span className="text-[10.5px] text-[#7A6A6B] block mb-1 font-semibold">
-                          Ghi chú vị trí cụ thể trên váy (tùy chọn):
-                        </span>
-                        <Input
-                          disabled={isReadOnly}
-                          placeholder="Ví dụ: Vết son ở ngực áo bên phải, kẹt dây kéo đoạn eo..."
-                          value={ic.damageNotes}
-                          onChange={(e) => updateNotes(idx, e.target.value)}
-                          className="text-xs"
-                          size="middle"
-                        />
+                      {/* Đối chiếu hợp đồng */}
+                      <div className="text-[11px] text-[#5C4D4D] bg-[#F7F2EF] p-2 rounded-lg border border-[#EDE0D8] flex items-center gap-1.5">
+                        <FileCheck size={13} className="text-[#1E8347] shrink-0" />
+                        <span>Đối chiếu: Mức phí được quy định cố định tại <strong>Điều 5 & Phụ lục Hợp đồng thuê váy</strong> để đối soát cùng khách hàng.</span>
                       </div>
 
                       {/* Cảnh báo quyền phê duyệt Admin nếu là lỗi nặng */}
