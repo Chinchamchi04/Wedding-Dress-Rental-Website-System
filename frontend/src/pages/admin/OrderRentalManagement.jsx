@@ -538,8 +538,9 @@ function InspectionModal({ order, onClose, onSuccess }) {
   const isGuestOrder = !order.hasAccount && !order.customerId && !order.userId;
   const [customerStatus, setCustomerStatus] = useState(order.inspectionCustomerStatus || order.inspection?.customerStatus || 'pending');
   const isCustomerApproved = customerStatus === 'approved';
-  const [isEditing, setIsEditing] = useState(!isReturnedOrder && !isCustomerApproved);
-  const isReadOnly = isCompletedOrder || isCustomerApproved || (!isEditing && isReturnedOrder);
+  // Luôn cho phép Staff/Admin kiểm định và chọn lỗi cho các đơn chưa hoàn tất lưu kho
+  const [isEditing, setIsEditing] = useState(true);
+  const isReadOnly = isCompletedOrder;
 
   const [disputeReason, setDisputeReason] = useState('');
   const [refundBankDetails, setRefundBankDetails] = useState(null);
@@ -585,9 +586,6 @@ function InspectionModal({ order, onClose, onSuccess }) {
         if (insp && (insp.itemsCondition || insp.totalDeduction !== undefined)) {
           if (insp.customerStatus) {
             setCustomerStatus(insp.customerStatus);
-            if (insp.customerStatus === 'approved') {
-              setIsEditing(false);
-            }
           }
           if (insp.disputeReason) setDisputeReason(insp.disputeReason);
           if (insp.refundBankDetails) setRefundBankDetails(insp.refundBankDetails);
@@ -1011,7 +1009,7 @@ function InspectionModal({ order, onClose, onSuccess }) {
                       disabled={isReadOnly}
                       value={ic.condition}
                       onChange={(e) => updateCondition(idx, e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-[#DDC6C0] bg-white text-xs font-semibold text-[#2C2523] outline-none focus:border-[#733F49] cursor-pointer"
+                      className="w-full px-3 py-2 rounded-xl border border-[#DDC6C0] bg-white text-xs font-semibold text-[#2C2523] outline-none focus:border-[#733F49] cursor-pointer disabled:bg-stone-100 disabled:text-stone-400 disabled:cursor-not-allowed transition-colors"
                     >
                       {DAMAGE_PRICE_CATALOG.map((cat) => (
                         <option key={cat.id} value={cat.id}>
