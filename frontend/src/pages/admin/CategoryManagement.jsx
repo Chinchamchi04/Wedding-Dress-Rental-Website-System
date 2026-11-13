@@ -160,12 +160,9 @@ export default function CategoryManagement() {
     setIsModalOpen(true);
   };
 
-  // Tự động gợi ý slug khi người dùng gõ tên danh mục (chỉ khi tạo mới hoặc chưa sửa slug thủ công)
+  // Thay đổi tên danh mục (không tự động gõ slug theo)
   const handleNameChange = (val) => {
     setFormName(val);
-    if (!editingCategory) {
-      setFormSlug(generateSlug(val));
-    }
     if (formErrors.name) {
       setFormErrors((prev) => ({ ...prev, name: '' }));
     }
@@ -176,7 +173,12 @@ export default function CategoryManagement() {
     e.preventDefault();
     const errors = {};
     if (!formName.trim()) errors.name = 'Vui lòng nhập tên danh mục';
-    if (!formSlug.trim()) errors.slug = 'Vui lòng nhập đường dẫn (slug)';
+
+    let finalSlug = formSlug.trim();
+    if (!finalSlug && formName.trim()) {
+      finalSlug = generateSlug(formName.trim());
+    }
+    if (!finalSlug) errors.slug = 'Vui lòng nhập đường dẫn (slug)';
 
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
@@ -187,7 +189,7 @@ export default function CategoryManagement() {
     try {
       const payload = {
         name: formName.trim(),
-        slug: formSlug.trim(),
+        slug: finalSlug,
         description: formDesc.trim(),
         image: formImage.trim() || '/assets/dresses/dress_01.jpg',
         isActive: formIsActive,
@@ -475,12 +477,12 @@ export default function CategoryManagement() {
 
         {/* 4 Thẻ KPI Thông Số */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl border border-[#EFE5E1] p-5 shadow-xs">
-            <span className="text-[11px] font-bold tracking-wider text-gray-500 uppercase">
+          <div className="bg-white rounded-2xl border border-indigo-200/80 p-5 shadow-xs bg-radial from-indigo-50/60 to-transparent">
+            <span className="text-[11px] font-bold tracking-wider text-indigo-900 uppercase">
               TỔNG SỐ PHOM DÁNG
             </span>
-            <div className="text-3xl font-bold text-gray-900 mt-1">{stats.total}</div>
-            <div className="text-xs text-gray-500 mt-1">Phân loại váy cưới chuẩn</div>
+            <div className="text-3xl font-bold text-indigo-700 mt-1">{stats.total}</div>
+            <div className="text-xs text-indigo-600/80 mt-1">Phân loại váy cưới chuẩn</div>
           </div>
 
           <div className="bg-white rounded-2xl border border-emerald-200 p-5 shadow-xs bg-radial from-emerald-50/60 to-transparent">
@@ -494,12 +496,15 @@ export default function CategoryManagement() {
             <div className="text-xs text-emerald-800 mt-1">Hiển thị trong bộ lọc khách hàng</div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-xs bg-gray-50/40">
-            <span className="text-[11px] font-bold tracking-wider text-gray-500 uppercase">
-              TẠM ẨN
-            </span>
-            <div className="text-3xl font-bold text-gray-600 mt-1">{stats.inactive}</div>
-            <div className="text-xs text-gray-500 mt-1">Không xuất hiện trên trang chủ</div>
+          <div className="bg-white rounded-2xl border border-amber-200 p-5 shadow-xs bg-radial from-amber-50/60 to-transparent">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold tracking-wider text-amber-900 uppercase">
+                TẠM ẨN
+              </span>
+              <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+            </div>
+            <div className="text-3xl font-bold text-amber-700 mt-1">{stats.inactive}</div>
+            <div className="text-xs text-amber-700/80 mt-1">Không xuất hiện trên trang chủ</div>
           </div>
 
           <div className="bg-white rounded-2xl border border-[#F2D8D4] p-5 shadow-xs bg-radial from-[#FAF0EC] to-transparent">
@@ -726,9 +731,23 @@ export default function CategoryManagement() {
 
             {/* Slug URL */}
             <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                Slug nhận diện đường dẫn <span className="text-red-500">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  Slug nhận diện đường dẫn <span className="text-red-500">*</span>
+                </label>
+                {formName.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormSlug(generateSlug(formName));
+                      if (formErrors.slug) setFormErrors((p) => ({ ...p, slug: '' }));
+                    }}
+                    className="text-[11px] text-[#733F49] hover:underline font-normal cursor-pointer"
+                  >
+                    Tự động tạo từ tên
+                  </button>
+                )}
+              </div>
               <input
                 type="text"
                 value={formSlug}
