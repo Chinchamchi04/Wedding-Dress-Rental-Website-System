@@ -433,64 +433,61 @@ function OrderDetailModal({ order, onClose }) {
 function DamagePriceCatalogModal({ open, onClose }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white rounded-3xl max-w-5xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-[#EFE5E1] overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#F0E6E2] bg-gradient-to-r from-[#FFF8F6] via-[#FCF4F0] to-[#FFF8F6]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#FAF0EC] flex items-center justify-center text-[#733F49] border border-[#ECD9D3] shadow-2xs">
-              <FileSpreadsheet size={20} />
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white rounded-2xl max-w-4xl w-full flex flex-col shadow-2xl border border-[#EFE5E1] overflow-hidden">
+        {/* Header gọn gàng trong 1 trang */}
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#F0E6E2] bg-gradient-to-r from-[#FFF8F6] via-[#FCF4F0] to-[#FFF8F6]">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-[#FAF0EC] flex items-center justify-center text-[#733F49] border border-[#ECD9D3] shadow-2xs">
+              <FileSpreadsheet size={15} />
             </div>
             <div>
-              <h3 className="font-playfair text-[18px] font-bold text-[#5F2B36] m-0">
+              <h3 className="font-playfair text-[15px] font-bold text-[#5F2B36] m-0 leading-tight">
                 Bảng Giá Đền Bù Thiệt Hại Niêm Yết
               </h3>
-              <p className="text-[11.5px] text-[#8C7D7E] m-0 mt-0.5">
-                Quy định niêm yết Atelier Haute Couture • Nhân viên không được tự ý quyết định mức giá
-              </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white text-[#7A6B6C] hover:text-[#733F49] flex items-center justify-center transition-colors border border-[#EFE5E1] cursor-pointer"
+            className="w-7 h-7 rounded-full bg-white text-[#7A6B6C] hover:text-[#733F49] flex items-center justify-center transition-colors border border-[#EFE5E1] cursor-pointer"
           >
-            <X size={16} />
+            <X size={14} />
           </button>
         </div>
 
-        {/* Table Body */}
-        <div className="p-5 overflow-y-auto flex-1">
-          <div className="overflow-x-auto rounded-2xl border border-[#EFE5E1] shadow-2xs">
-            <table className="w-full min-w-[780px] text-left text-xs border-collapse">
+        {/* Table Body - Tối ưu hiển thị vừa khít trong 1 trang màn hình */}
+        <div className="p-3">
+          <div className="overflow-x-auto rounded-xl border border-[#EFE5E1] shadow-2xs">
+            <table className="w-full min-w-[700px] text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-[#FAF5F2] text-[#5F2B36] border-b border-[#EFE5E1] text-[12px] font-bold">
-                  <th className="py-3 px-4 w-[22%] whitespace-nowrap">Nhóm Lỗi Hư Hại</th>
-                  <th className="py-3 px-4 w-[34%]">Hiện Trạng Thực Tế</th>
-                  <th className="py-3 px-4 w-[24%] whitespace-nowrap">Mức Phí Đền Bù Niêm Yết</th>
-                  <th className="py-3 px-4 w-[20%] whitespace-nowrap text-center">Thẩm Quyền Xử Lý</th>
+                <tr className="bg-[#FAF5F2] text-[#5F2B36] border-b border-[#EFE5E1] text-[11px] font-bold uppercase tracking-wider">
+                  <th className="py-2 px-3 w-[22%] whitespace-nowrap">Nhóm Lỗi Hư Hại</th>
+                  <th className="py-2 px-3 w-[36%]">Hiện Trạng Thực Tế</th>
+                  <th className="py-2 px-3 w-[22%] whitespace-nowrap">Mức Phí Niêm Yết</th>
+                  <th className="py-2 px-3 w-[20%] whitespace-nowrap text-center">Thẩm Quyền Xử Lý</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#F2E5E0] text-[12px]">
+              <tbody className="divide-y divide-[#F2E5E0] text-[11px]">
                 {DAMAGE_PRICE_CATALOG.map((row) => (
                   <tr key={row.id} className="hover:bg-[#FFF9F6] transition-colors">
-                    <td className="py-3 px-4 font-bold text-[#2C2523] align-middle">
+                    <td className="py-1.5 px-3 font-bold text-[#2C2523] align-middle whitespace-nowrap">
                       {row.name}
                     </td>
-                    <td className="py-3 px-4 text-[#5C4D4D] leading-relaxed align-middle">
+                    <td className="py-1.5 px-3 text-[#5C4D4D] leading-snug align-middle">
                       {row.description}
                     </td>
-                    <td className="py-3 px-4 font-bold align-middle whitespace-nowrap" style={{ color: row.color }}>
+                    <td className="py-1.5 px-3 font-bold align-middle whitespace-nowrap" style={{ color: row.color }}>
                       {row.feeLabel}
                     </td>
-                    <td className="py-3 px-4 align-middle whitespace-nowrap text-center">
-                      <span className={`inline-flex items-center justify-center px-3 py-1 rounded-lg text-[11px] font-bold border ${row.authority === 'admin_only'
-                          ? 'bg-rose-100 text-rose-800 border-rose-300'
-                          : row.authority === 'admin'
-                            ? 'bg-red-50 text-red-700 border-red-200'
-                            : row.authority === 'both'
-                              ? 'bg-purple-50 text-purple-700 border-purple-200'
-                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    <td className="py-1.5 px-3 align-middle whitespace-nowrap text-center">
+                      <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded text-[10px] font-bold border ${row.authority === 'admin_only'
+                        ? 'bg-rose-100 text-rose-800 border-rose-300'
+                        : row.authority === 'admin'
+                          ? 'bg-red-50 text-red-700 border-red-200'
+                          : row.authority === 'both'
+                            ? 'bg-purple-50 text-purple-700 border-purple-200'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                         }`}>
                         {row.authorityLabel}
                       </span>
@@ -500,21 +497,14 @@ function DamagePriceCatalogModal({ open, onClose }) {
               </tbody>
             </table>
           </div>
-
-          <div className="mt-4 p-3.5 rounded-xl bg-[#FAF5F2] border border-[#EFE5E1] text-[11.5px] text-[#7A6B6C] leading-relaxed flex items-start gap-2">
-            <span className="text-amber-600 font-bold shrink-0 text-sm">⚠️</span>
-            <span>
-              <strong className="text-[#5F2B36]">Lưu ý bắt buộc:</strong> Toàn bộ chi phí phục chế được hệ thống khóa và tính tự động theo bảng giá niêm yết trên. Nhân viên có trách nhiệm ghi nhận đúng hiện trạng và chụp ảnh đối soát, tuyệt đối không được tự ý thương lượng hay điều chỉnh đơn giá đền bù với khách hàng.
-            </span>
-          </div>
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 border-t border-[#F0E6E2] bg-[#FAF5F2] flex justify-end">
+        <div className="px-4 py-2 border-t border-[#F0E6E2] bg-[#FAF5F2] flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-[#733F49] text-white text-xs font-bold hover:bg-[#5C3038] shadow-xs transition-colors cursor-pointer"
+            className="px-4 py-1.5 rounded-lg bg-[#733F49] text-white text-[11.5px] font-bold hover:bg-[#5C3038] shadow-xs transition-colors cursor-pointer"
           >
             Đã hiểu & Đóng bảng giá
           </button>
@@ -989,12 +979,12 @@ function InspectionModal({ order, onClose, onSuccess }) {
                         <span className="text-[10px] text-[#8C7D7E] font-normal">(Staff không tự ý định giá)</span>
                       </span>
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${catItem.authority === 'admin_only'
-                          ? 'bg-rose-100 text-rose-800 border-rose-300'
-                          : catItem.authority === 'admin'
-                            ? 'bg-red-50 text-red-700 border-red-200'
-                            : catItem.authority === 'both'
-                              ? 'bg-purple-50 text-purple-700 border-purple-200'
-                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        ? 'bg-rose-100 text-rose-800 border-rose-300'
+                        : catItem.authority === 'admin'
+                          ? 'bg-red-50 text-red-700 border-red-200'
+                          : catItem.authority === 'both'
+                            ? 'bg-purple-50 text-purple-700 border-purple-200'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                         }`}>
                         {catItem.authorityLabel}
                       </span>
@@ -1180,8 +1170,8 @@ function InspectionModal({ order, onClose, onSuccess }) {
                 <div
                   onClick={() => setCustomerDecision('agreed')}
                   className={`p-3 rounded-2xl border-2 cursor-pointer transition-all ${customerDecision === 'agreed'
-                      ? 'border-[#1E8347] bg-[#F3FAF5] shadow-xs'
-                      : 'border-[#E5D7D0] bg-white hover:border-[#BCE2C5]'
+                    ? 'border-[#1E8347] bg-[#F3FAF5] shadow-xs'
+                    : 'border-[#E5D7D0] bg-white hover:border-[#BCE2C5]'
                     }`}
                 >
                   <div className="flex items-start gap-2.5">
@@ -1207,8 +1197,8 @@ function InspectionModal({ order, onClose, onSuccess }) {
                 <div
                   onClick={() => setCustomerDecision('disputed')}
                   className={`p-3 rounded-2xl border-2 cursor-pointer transition-all ${customerDecision === 'disputed'
-                      ? 'border-[#8B2635] bg-red-50/60 shadow-xs'
-                      : 'border-[#E5D7D0] bg-white hover:border-red-300'
+                    ? 'border-[#8B2635] bg-red-50/60 shadow-xs'
+                    : 'border-[#E5D7D0] bg-white hover:border-red-300'
                     }`}
                 >
                   <div className="flex items-start gap-2.5">
@@ -1290,99 +1280,99 @@ function InspectionModal({ order, onClose, onSuccess }) {
                 </div>
               )}
 
-          {/* Chi tiết Phương Án 2: Khách Bảo Lưu Ý Kiến */}
-          {customerDecision === 'disputed' && (
-            <div className="pt-2.5 border-t border-red-200 space-y-2.5 text-[11.5px] animate-fadeIn">
-              <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-amber-900 text-[11.5px] leading-relaxed">
-                <div className="font-bold flex items-center gap-1.5 text-amber-950 mb-0.5">
-                  <Clock size={13} className="text-amber-700" />
-                  <span>Quy trình bảo lưu hồ sơ:</span>
+              {/* Chi tiết Phương Án 2: Khách Bảo Lưu Ý Kiến */}
+              {customerDecision === 'disputed' && (
+                <div className="pt-2.5 border-t border-red-200 space-y-2.5 text-[11.5px] animate-fadeIn">
+                  <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-amber-900 text-[11.5px] leading-relaxed">
+                    <div className="font-bold flex items-center gap-1.5 text-amber-950 mb-0.5">
+                      <Clock size={13} className="text-amber-700" />
+                      <span>Quy trình bảo lưu hồ sơ:</span>
+                    </div>
+                    <span>Toàn bộ hình ảnh đối soát và ghi chú hiện trạng sẽ được bảo lưu nguyên vẹn trên hệ thống. Đơn hàng chuyển sang trạng thái <strong>"Tạm giữ - Chờ Quản lý đàm phán"</strong> để Quản lý showroom trực tiếp liên hệ và thống nhất phương án hỗ trợ tối ưu cùng khách hàng.</span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-semibold text-[#662020] block mb-1">
+                      Nội dung phản hồi / Nguyện vọng của khách hàng:
+                    </span>
+                    <Input.TextArea
+                      rows={2}
+                      placeholder="Ghi nhận chi tiết ý kiến phản hồi của khách hàng để Quản lý nắm thông tin khi liên hệ đàm phán..."
+                      value={customerDisputeNote}
+                      onChange={(e) => setCustomerDisputeNote(e.target.value)}
+                      className="text-xs"
+                    />
+                  </div>
                 </div>
-                <span>Toàn bộ hình ảnh đối soát và ghi chú hiện trạng sẽ được bảo lưu nguyên vẹn trên hệ thống. Đơn hàng chuyển sang trạng thái <strong>"Tạm giữ - Chờ Quản lý đàm phán"</strong> để Quản lý showroom trực tiếp liên hệ và thống nhất phương án hỗ trợ tối ưu cùng khách hàng.</span>
-              </div>
-              <div>
-                <span className="text-[11px] font-semibold text-[#662020] block mb-1">
-                  Nội dung phản hồi / Nguyện vọng của khách hàng:
-                </span>
-                <Input.TextArea
-                  rows={2}
-                  placeholder="Ghi nhận chi tiết ý kiến phản hồi của khách hàng để Quản lý nắm thông tin khi liên hệ đàm phán..."
-                  value={customerDisputeNote}
-                  onChange={(e) => setCustomerDisputeNote(e.target.value)}
-                  className="text-xs"
-                />
-              </div>
+              )}
             </div>
-          )}
-        </div>
           )}
 
-        {/* Actions - Nút bấm hoàn tất chuẩn mực */}
-        <div className="flex gap-2.5 pt-1.5">
-          {isReadOnly ? (
-            <div className="flex w-full gap-2.5">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 py-2.5 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
-              >
-                {isCompletedOrder ? 'Đóng Hồ Sơ Lưu Trữ' : isCustomerApproved ? 'Đóng (Khách Đã Duyệt - Hồ Sơ Đã Khóa)' : 'Đóng'}
-              </button>
-              {!isCompletedOrder && !isCustomerApproved && (
+          {/* Actions - Nút bấm hoàn tất chuẩn mực */}
+          <div className="flex gap-2.5 pt-1.5">
+            {isReadOnly ? (
+              <div className="flex w-full gap-2.5">
                 <button
                   type="button"
-                  onClick={() => setIsEditing(true)}
-                  className="flex-1 py-2.5 rounded-xl bg-[#733F49] text-[12px] font-bold text-white hover:bg-[#5C3038] transition-colors border-0 cursor-pointer shadow-xs"
+                  onClick={onClose}
+                  className="flex-1 py-2.5 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
                 >
-                  Chỉnh Sửa Chi Phí Khấu Trừ
+                  {isCompletedOrder ? 'Đóng Hồ Sơ Lưu Trữ' : isCustomerApproved ? 'Đóng (Khách Đã Duyệt - Hồ Sơ Đã Khóa)' : 'Đóng'}
                 </button>
-              )}
-            </div>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => {
-                  if (isReturnedOrder) setIsEditing(false);
-                  else onClose();
-                }}
-                className="w-28 py-2.5 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
-              >
-                Hủy
-              </button>
-              {customerDecision === 'agreed' ? (
+                {!isCompletedOrder && !isCustomerApproved && (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    className="flex-1 py-2.5 rounded-xl bg-[#733F49] text-[12px] font-bold text-white hover:bg-[#5C3038] transition-colors border-0 cursor-pointer shadow-xs"
+                  >
+                    Chỉnh Sửa Chi Phí Khấu Trừ
+                  </button>
+                )}
+              </div>
+            ) : (
+              <>
                 <button
                   type="button"
-                  disabled={submitting}
-                  onClick={handleSubmit}
-                  className="flex-1 py-2.5 rounded-xl bg-[#1E8347] hover:bg-[#166534] text-white text-[12.5px] font-bold transition-all border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
+                  onClick={() => {
+                    if (isReturnedOrder) setIsEditing(false);
+                    else onClose();
+                  }}
+                  className="w-28 py-2.5 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-[#5F4E50] hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
                 >
-                  {submitting ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
-                  <span>Hoàn Tất Kiểm Định Váy → Chuyển [Chờ Hoàn Cọc] ({fmtVnd(finalRefund)})</span>
+                  Hủy
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  disabled={submitting}
-                  onClick={handleSubmit}
-                  className="flex-1 py-2.5 rounded-xl bg-[#8B2635] hover:bg-[#701E2A] text-white text-[12.5px] font-bold transition-all border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
-                >
-                  {submitting ? <RefreshCw size={14} className="animate-spin" /> : <PhoneCall size={14} />}
-                  <span>Bảo Lưu Đơn & Chuyển Quản Lý</span>
-                </button>
-              )}
-            </>
-          )}
+                {customerDecision === 'agreed' ? (
+                  <button
+                    type="button"
+                    disabled={submitting}
+                    onClick={handleSubmit}
+                    className="flex-1 py-2.5 rounded-xl bg-[#1E8347] hover:bg-[#166534] text-white text-[12.5px] font-bold transition-all border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
+                  >
+                    {submitting ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
+                    <span>Hoàn Tất Kiểm Định Váy → Chuyển [Chờ Hoàn Cọc] ({fmtVnd(finalRefund)})</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={submitting}
+                    onClick={handleSubmit}
+                    className="flex-1 py-2.5 rounded-xl bg-[#8B2635] hover:bg-[#701E2A] text-white text-[12.5px] font-bold transition-all border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
+                  >
+                    {submitting ? <RefreshCw size={14} className="animate-spin" /> : <PhoneCall size={14} />}
+                    <span>Bảo Lưu Đơn & Chuyển Quản Lý</span>
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
-    </div>
 
-    {/* Bảng Giá Đền Bù Thiệt Hại Niêm Yết Popup */}
-    <DamagePriceCatalogModal
-      open={showPriceCatalogModal}
-      onClose={() => setShowPriceCatalogModal(false)}
-    />
-  </div>
+      {/* Bảng Giá Đền Bù Thiệt Hại Niêm Yết Popup */}
+      <DamagePriceCatalogModal
+        open={showPriceCatalogModal}
+        onClose={() => setShowPriceCatalogModal(false)}
+      />
+    </div>
   );
 }
 
@@ -1721,56 +1711,56 @@ function AdminNegotiationModal({ order, onClose, onSuccess }) {
               </div>
             </div>
 
-          {/* Ghi chú kết quả đàm phán */}
-          <div className="bg-white p-3 rounded-xl border border-[#D5E8D8]">
-            <span className="text-[11px] font-bold text-stone-800 block mb-1">
-              Ghi chú nội dung đàm phán & đồng thuận:
-            </span>
-            <Input.TextArea
-              rows={2}
-              placeholder="VD: Admin đã gọi trao đổi với khách, thống nhất mức hỗ trợ phục chế 50% (300.000đ). Khách đã đồng thuận và nhận hoàn tiền cọc."
-              value={negotiationNotes}
-              onChange={(e) => setNegotiationNotes(e.target.value)}
-              className="text-xs"
-            />
+            {/* Ghi chú kết quả đàm phán */}
+            <div className="bg-white p-3 rounded-xl border border-[#D5E8D8]">
+              <span className="text-[11px] font-bold text-stone-800 block mb-1">
+                Ghi chú nội dung đàm phán & đồng thuận:
+              </span>
+              <Input.TextArea
+                rows={2}
+                placeholder="VD: Admin đã gọi trao đổi với khách, thống nhất mức hỗ trợ phục chế 50% (300.000đ). Khách đã đồng thuận và nhận hoàn tiền cọc."
+                value={negotiationNotes}
+                onChange={(e) => setNegotiationNotes(e.target.value)}
+                className="text-xs"
+              />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2.5 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-28 py-2.5 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-stone-700 hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
+            >
+              Đóng
+            </button>
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={handleSubmitAdminSettle}
+              className="flex-1 py-2.5 rounded-xl bg-[#1E8347] hover:bg-[#166534] text-white text-[12.5px] font-bold transition-all border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
+            >
+              {submitting ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
+              <span>XÁC NHẬN ĐÀM PHÁN & HOÀN TIỀN ({fmtVnd(finalRefund)})</span>
+            </button>
           </div>
         </div>
-
-        {/* Actions */}
-        <div className="flex gap-2.5 pt-1">
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-28 py-2.5 rounded-xl border border-[#EFE5E1] text-[12px] font-bold text-stone-700 hover:bg-[#FAF5F2] transition-colors bg-transparent cursor-pointer"
-          >
-            Đóng
-          </button>
-          <button
-            type="button"
-            disabled={submitting}
-            onClick={handleSubmitAdminSettle}
-            className="flex-1 py-2.5 rounded-xl bg-[#1E8347] hover:bg-[#166534] text-white text-[12.5px] font-bold transition-all border-0 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shadow-xs"
-          >
-            {submitting ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
-            <span>XÁC NHẬN ĐÀM PHÁN & HOÀN TIỀN ({fmtVnd(finalRefund)})</span>
-          </button>
-        </div>
       </div>
-    </div>
 
-      {/* Lightbox xem ảnh lỗi phóng to */ }
-  {
-    previewPhoto && (
-      <div
-        onClick={() => setPreviewPhoto(null)}
-        className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4 cursor-zoom-out animate-fadeIn"
-      >
-        <div className="max-w-2xl max-h-[85vh] bg-white rounded-2xl overflow-hidden shadow-2xl p-2">
-          <img src={previewPhoto} alt="Bằng chứng lỗi chi tiết" className="w-full h-full object-contain max-h-[80vh] rounded-xl" />
-        </div>
-      </div>
-    )
-  }
+      {/* Lightbox xem ảnh lỗi phóng to */}
+      {
+        previewPhoto && (
+          <div
+            onClick={() => setPreviewPhoto(null)}
+            className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4 cursor-zoom-out animate-fadeIn"
+          >
+            <div className="max-w-2xl max-h-[85vh] bg-white rounded-2xl overflow-hidden shadow-2xl p-2">
+              <img src={previewPhoto} alt="Bằng chứng lỗi chi tiết" className="w-full h-full object-contain max-h-[80vh] rounded-xl" />
+            </div>
+          </div>
+        )
+      }
     </div >
   );
 }
