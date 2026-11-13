@@ -30,7 +30,7 @@ import {
   CreditCard,
   UserCheck,
   UserX,
-  Crown,
+  CircleUser,
   PhoneCall,
   Copy,
   CheckCheck,
@@ -324,7 +324,7 @@ function OrderDetailModal({ order, onClose }) {
                   <span className="font-bold text-[#2C2523] inline-flex items-center gap-1.5 truncate" title={order.customerName}>
                     {order.customerName || '—'}
                     {(order.hasAccount || order.customerId) && (
-                      <Crown size={13} className="text-[#D4AF37] fill-[#FDF3D6] shrink-0" title="Khách hàng thành viên" />
+                      <CircleUser size={15} className="text-[#733F49] shrink-0" title="Khách hàng thành viên" />
                     )}
                   </span>
                 </div>
@@ -2462,7 +2462,7 @@ export default function OrderRentalManagement() {
                             {order.customerName || '—'}
                           </span>
                           {(order.hasAccount || order.customerId) && (
-                            <Crown size={14} className="text-[#D4AF37] fill-[#FDF3D6] shrink-0" title="Khách hàng thành viên" />
+                            <CircleUser size={15} className="text-[#733F49] shrink-0" title="Khách hàng thành viên" />
                           )}
                         </div>
                       </td>
