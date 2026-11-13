@@ -66,10 +66,10 @@ async function seedData() {
       'deposit_paid',
       'preparing',
       'renting',
-      'returned',
-      'completed',
+      'renting',
+      'renting',
       'deposit_paid',
-      'completed',
+      'renting',
       'preparing',
     ];
 
