@@ -305,6 +305,7 @@ function CalendarDateCellEvents({
           // Trả Váy (return)
           const isDone = item.status === 'completed' || item.status === 'returned';
           const isHighlight = Boolean(activeOrderCode && (item.code === activeOrderCode || item.id === activeOrderCode));
+          const isExpress = item.deliveryMethod === 'express';
           
           // Ngày giao sớm lùi 1 ngày so với rentalStartDate
           const deliveryDateObj = item.rentalStartDate ? new Date(item.rentalStartDate) : null;
@@ -317,10 +318,19 @@ function CalendarDateCellEvents({
               title={
                 <div className="text-xs space-y-1">
                   <div className="font-bold flex items-center gap-1">
-                    <span>🔄 Lịch Hạn trả váy:</span>
+                    <span>{isExpress ? '🚚 Nhân viên đến lấy (Thu hồi):' : '🏛️ Khách đến trả tại Showroom:'}</span>
                     <span className="font-mono text-amber-300">{item.code}</span>
                   </div>
                   <div>Khách hàng: <strong>{item.customerName}</strong></div>
+                  {isExpress ? (
+                    <div className="text-sky-200 text-[11px] truncate max-w-[220px]">
+                      📍 Thu hồi tại: <strong>{item.shippingAddress || 'Theo yêu cầu khách'}</strong>
+                    </div>
+                  ) : (
+                    <div className="text-indigo-200 text-[11px]">
+                      📍 Trả tại: <strong>{item.branch === 'hn-hoankiem' ? 'Showroom Hoàn Kiếm, HN' : 'Flagship Showroom Q.1, TP.HCM'}</strong>
+                    </div>
+                  )}
                   {deliveryDateStr && (
                     <div className="text-sky-300 font-bold border-t border-white/20 pt-1 flex items-center gap-1">
                       <span>📦 Ngày giao/lấy:</span>
@@ -337,10 +347,14 @@ function CalendarDateCellEvents({
                 }}
                 className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[10.5px] font-medium border shadow-2xs transition-all cursor-pointer ${
                   isHighlight
-                    ? 'bg-rose-500 text-white border-rose-400 font-bold shadow-xs'
+                    ? isExpress
+                      ? 'bg-sky-600 text-white border-sky-500 font-bold shadow-xs'
+                      : 'bg-indigo-600 text-white border-indigo-500 font-bold shadow-xs'
                     : isDone
                     ? 'bg-emerald-50/90 text-emerald-800 border-emerald-300 hover:bg-emerald-100 hover:scale-[1.02]'
-                    : 'bg-rose-50/90 text-rose-800 border-rose-300 hover:bg-rose-100 hover:scale-[1.02]'
+                    : isExpress
+                    ? 'bg-sky-50/90 text-sky-900 border-sky-300 hover:bg-sky-100 hover:scale-[1.02]'
+                    : 'bg-indigo-50/90 text-indigo-900 border-indigo-300 hover:bg-indigo-100 hover:scale-[1.02]'
                 }`}
               >
                 <span
@@ -349,11 +363,21 @@ function CalendarDateCellEvents({
                       ? 'bg-white'
                       : isDone
                       ? 'bg-emerald-500'
-                      : 'bg-rose-500'
+                      : isExpress
+                      ? 'bg-sky-600'
+                      : 'bg-indigo-600'
                   }`}
                 />
-                <span className={`font-mono text-[9px] shrink-0 uppercase ${isHighlight ? 'font-extrabold text-white tracking-wider' : 'font-bold text-rose-950'}`}>
-                  {isHighlight ? '🔄 TRẢ' : 'TRẢ'}
+                <span
+                  className={`font-mono text-[9px] shrink-0 uppercase tracking-tight flex items-center gap-0.5 ${
+                    isHighlight
+                      ? 'font-extrabold text-white'
+                      : isExpress
+                      ? 'font-bold text-sky-950'
+                      : 'font-bold text-indigo-950'
+                  }`}
+                >
+                  {isExpress ? '🚚 NV LẤY' : '🏛️ KHÁCH TRẢ'}
                 </span>
               </div>
             </Tooltip>
@@ -416,6 +440,8 @@ export default function ScheduleOverviewPage({ defaultTab }) {
   const [calendarBranchFilter, setCalendarBranchFilter] = useState('hcm-q1');
   // Lọc hình thức giao váy: 'all' (Tất cả) | 'showroom' (Khách đến lấy) | 'express' (Nhân viên ship tận nơi)
   const [deliveryMethodFilter, setDeliveryMethodFilter] = useState('all');
+  // Lọc hình thức trả váy: 'all' (Tất cả) | 'showroom' (Khách đến trả) | 'express' (Nhân viên đến lấy)
+  const [returnMethodFilter, setReturnMethodFilter] = useState('all');
 
   // Dữ liệu
   const [appointments, setAppointments] = useState([]);
@@ -710,6 +736,20 @@ export default function ScheduleOverviewPage({ defaultTab }) {
     ).length;
   }, [calendarBranchOrders]);
 
+  // Đếm đơn khách đến trả trực tiếp tại showroom
+  const showroomReturnsCount = useMemo(() => {
+    return calendarBranchOrders.filter(
+      (o) => (o.deliveryMethod || 'showroom') === 'showroom'
+    ).length;
+  }, [calendarBranchOrders]);
+
+  // Đếm đơn nhân viên đến lấy (thu hồi tận nơi)
+  const expressReturnsCount = useMemo(() => {
+    return calendarBranchOrders.filter(
+      (o) => (o.deliveryMethod || 'showroom') === 'express'
+    ).length;
+  }, [calendarBranchOrders]);
+
   // Đơn giao hiển thị sau khi lọc theo hình thức nhận/giao
   const calendarVisibleActiveOrders = useMemo(() => {
     if (deliveryMethodFilter === 'all') return calendarBranchOrders;
@@ -871,9 +911,12 @@ export default function ScheduleOverviewPage({ defaultTab }) {
       return matchBranch && matchMethod;
     });
 
-    const filteredReturns = returns.filter(
-      (r) => (r.branch || r.branchId || 'hcm-q1') === calendarBranchFilter
-    );
+    const filteredReturns = returns.filter((r) => {
+      const matchBranch = (r.branch || r.branchId || 'hcm-q1') === calendarBranchFilter;
+      const matchMethod =
+        returnMethodFilter === 'all' || (r.deliveryMethod || 'showroom') === returnMethodFilter;
+      return matchBranch && matchMethod;
+    });
 
     if (calendarFilterType === 'fitting') return filteredApts;
     if (calendarFilterType === 'delivery') return filteredDeliveries;
@@ -888,6 +931,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
     calendarFilterType,
     calendarBranchFilter,
     deliveryMethodFilter,
+    returnMethodFilter,
   ]);
 
   // Render nội dung từng ô ngày trên lịch Ant Design (Lọc riêng từng cơ sở & hình thức giao)
@@ -914,9 +958,12 @@ export default function ScheduleOverviewPage({ defaultTab }) {
       return matchBranch && matchMethod;
     });
 
-    const visibleReturns = dayReturns.filter(
-      (r) => (r.branch || r.branchId || 'hcm-q1') === calendarBranchFilter
-    );
+    const visibleReturns = dayReturns.filter((r) => {
+      const matchBranch = (r.branch || r.branchId || 'hcm-q1') === calendarBranchFilter;
+      const matchMethod =
+        returnMethodFilter === 'all' || (r.deliveryMethod || 'showroom') === returnMethodFilter;
+      return matchBranch && matchMethod;
+    });
 
     const totalEvents =
       (showApts ? visibleApts.length : 0) +
@@ -1138,6 +1185,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     onClick={() => {
                       setCalendarFilterType('all');
                       setDeliveryMethodFilter('all');
+                      setReturnMethodFilter('all');
                       setHighlightedOrderCode(null);
                     }}
                     className={`px-3.5 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
@@ -1153,6 +1201,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     onClick={() => {
                       setCalendarFilterType('fitting');
                       setDeliveryMethodFilter('all');
+                      setReturnMethodFilter('all');
                       setHighlightedOrderCode(null);
                     }}
                     className={`px-3.5 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
@@ -1168,6 +1217,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                     type="button"
                     onClick={() => {
                       setCalendarFilterType('delivery');
+                      setReturnMethodFilter('all');
                       setHighlightedOrderCode(null);
                     }}
                     className={`px-3.5 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
@@ -1340,6 +1390,73 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                       }`}
                                     >
                                       {expressDeliveriesCount}
+                                    </span>
+                                  </button>
+                                </div>
+                              )}
+
+                              {/* 2 Ô Lọc: Khách đến trả & Nhân viên đến lấy CHỈ HIỂN THỊ KHI ĐANG XEM HẠN TRẢ VÁY */}
+                              {calendarFilterType === 'return' && (
+                                <div className="flex items-center gap-1.5 sm:gap-2 pl-2 sm:pl-3 border-l border-gray-200">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setReturnMethodFilter((prev) =>
+                                        prev === 'showroom' ? 'all' : 'showroom'
+                                      )
+                                    }
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border shadow-2xs ${
+                                      returnMethodFilter === 'showroom'
+                                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                                        : 'bg-indigo-50/80 text-indigo-900 border-indigo-200 hover:bg-indigo-100'
+                                    }`}
+                                    title={
+                                      returnMethodFilter === 'showroom'
+                                        ? 'Đang lọc: Khách đến trả (Bấm để xem tất cả)'
+                                        : 'Lọc đơn khách đến showroom trả trực tiếp'
+                                    }
+                                  >
+                                    <Building2 className="w-3.5 h-3.5" />
+                                    <span>Khách đến trả</span>
+                                    <span
+                                      className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                                        returnMethodFilter === 'showroom'
+                                          ? 'bg-white/20 text-white'
+                                          : 'bg-indigo-100 text-indigo-900'
+                                      }`}
+                                    >
+                                      {showroomReturnsCount}
+                                    </span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setReturnMethodFilter((prev) =>
+                                        prev === 'express' ? 'all' : 'express'
+                                      )
+                                    }
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border shadow-2xs ${
+                                      returnMethodFilter === 'express'
+                                        ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
+                                        : 'bg-sky-50/80 text-sky-900 border-sky-200 hover:bg-sky-100'
+                                    }`}
+                                    title={
+                                      returnMethodFilter === 'express'
+                                        ? 'Đang lọc: Nhân viên đến lấy (Bấm để xem tất cả)'
+                                        : 'Lọc đơn nhân viên đến thu hồi váy tận nơi'
+                                    }
+                                  >
+                                    <Truck className="w-3.5 h-3.5" />
+                                    <span>Nhân viên đến lấy</span>
+                                    <span
+                                      className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                                        returnMethodFilter === 'express'
+                                          ? 'bg-white/20 text-white'
+                                          : 'bg-sky-100 text-sky-900'
+                                      }`}
+                                    >
+                                      {expressReturnsCount}
                                     </span>
                                   </button>
                                 </div>
