@@ -144,6 +144,7 @@ const orderSchema = new mongoose.Schema(
         'delivered',
         'renting',
         'returned',
+        'waiting_refund',
         'complete',
         'completed',
         'disputed',

@@ -43,9 +43,9 @@ const TIMELINE_STEPS = [
     Icon: Clock,
   },
   {
-    key: 'returned',
-    label: 'Đang Kiểm Định',
-    subLabel: 'Kiểm định và hoàn cọc',
+    key: 'waiting_refund',
+    label: 'Chờ Hoàn Cọc',
+    subLabel: 'Đã kiểm định, chờ hoàn cọc',
     Icon: RefreshCcw,
   },
   {
@@ -64,6 +64,7 @@ const STATUS_STEP_MAP = {
   delivered: 1,
   renting: 2,
   returned: 3,
+  waiting_refund: 3,
   completed: 4,
   complete: 4,
 };

@@ -485,15 +485,42 @@ export const updateOrderStatus = async (idOrCode, status) => {
   await order.save();
 
   if (status === 'completed' || status === 'complete') {
-    await ReturnInspection.findOneAndUpdate(
+    const insp = await ReturnInspection.findOneAndUpdate(
       { orderId: order._id },
-      { isRefunded: true, refundedAt: new Date(), customerStatus: 'approved', customerConfirmedAt: new Date() }
+      { isRefunded: true, refundedAt: new Date(), customerStatus: 'approved', customerConfirmedAt: new Date() },
+      { new: true }
     );
     // Tự động đồng bộ hợp đồng pháp lý sang trạng thái hoàn thành
     await Contract.findOneAndUpdate(
       { $or: [{ orderId: order._id }, { contractCode: order.contractCode }] },
       { status: 'completed' }
     ).catch(() => {});
+
+    // Gửi email biên lai hoàn cọc khi hoàn cọc thành công
+    if (insp) {
+      try {
+        let customerEmail = order.customerEmail || order.email;
+        let customerName = order.customerName || order.brideName || 'Quý khách';
+        if (!customerEmail && order.customerId) {
+          const customer = await User.findById(order.customerId).lean();
+          if (customer) {
+            customerEmail = customer.email;
+            customerName = customer.fullName || customerName;
+          }
+        }
+        if (customerEmail) {
+          sendRefundConfirmationEmail({
+            to: customerEmail,
+            fullName: customerName,
+            orderCode: order.orderCode,
+            finalRefundAmount: insp.finalRefundAmount,
+            bankDetails: insp.refundBankDetails,
+          }).catch((err) => console.error('[EMAIL REFUND SEND ERROR]', err.message));
+        }
+      } catch (err) {
+        console.error('[EMAIL REFUND NOTIFICATION ERROR]', err.message);
+      }
+    }
   } else if (status === 'cancelled') {
     await Contract.findOneAndUpdate(
       { $or: [{ orderId: order._id }, { contractCode: order.contractCode }] },
@@ -662,19 +689,10 @@ export const submitReturnInspection = async (orderId, data, staffUser) => {
     // TRƯỜNG HỢP 2: Giữ đơn chuyển Admin đàm phán
     order.status = 'disputed';
     await order.save();
-  } else if (confirmOnSite) {
-    // TRƯỜNG HỢP 1: Chốt tại chỗ & hoàn cọc
-    order.status = 'completed';
-    order.completedAt = new Date();
-    order.maintenanceUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    await order.save();
-
-    await Contract.findOneAndUpdate(
-      { $or: [{ orderId: order._id }, { contractCode: order.contractCode }] },
-      { status: 'completed' }
-    ).catch(() => {});
   } else {
-    order.status = 'returned';
+    // Hoàn tất kiểm định -> Tự động chuyển sang trạng thái "Chờ hoàn cọc"
+    // Chỉ khi hệ thống/nhân viên hoàn cọc thành công thì đơn hàng mới chuyển sang "Hoàn tất"
+    order.status = 'waiting_refund';
     await order.save();
   }
 
