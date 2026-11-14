@@ -133,10 +133,15 @@ const getEventBadge = (item) => {
 
   // Sự kiện Giao Váy: Vàng (khách sắp lấy / sắp giao), Xanh (khách đã lấy / ship đã giao), Đỏ (chưa đến lấy / chưa giao)
   if (item.type === 'delivery') {
-    const isDone = ['delivered', 'renting', 'returned', 'completed', 'waiting_refund'].includes((item.status || '').toLowerCase()) || Boolean(item.actualDeliveryDate);
     const deliveryDateKey = item.deliveryDate || item.date;
     const todayKey = toDateKey(new Date());
     const isExpress = item.deliveryMethod === 'express';
+    const isFuture = Boolean(deliveryDateKey && deliveryDateKey > todayKey);
+    const isPast = Boolean(deliveryDateKey && deliveryDateKey < todayKey);
+    const isDeliveredRaw = ['delivered', 'renting', 'returned', 'completed', 'waiting_refund'].includes((item.status || '').toLowerCase()) || Boolean(item.actualDeliveryDate);
+
+    // Chưa đến ngày lấy (isFuture): tuyệt đối KHÔNG thể xanh, BẮT BUỘC là màu vàng
+    const isDone = !isFuture && isDeliveredRaw;
 
     if (isDone) {
       return {
@@ -144,7 +149,7 @@ const getEventBadge = (item) => {
         className: 'bg-emerald-100 text-emerald-800 border-emerald-300',
       };
     }
-    if (deliveryDateKey && deliveryDateKey < todayKey) {
+    if (isPast) {
       return {
         label: isExpress ? 'CHƯA GIAO' : 'CHƯA ĐẾN LẤY',
         className: 'bg-rose-100 text-rose-800 border-rose-300',
@@ -158,9 +163,14 @@ const getEventBadge = (item) => {
 
   // Sự kiện Trả Váy: Vàng (sắp đến hạn / tương lai), Xanh (đã trả), Đỏ (quá hạn chưa trả)
   if (item.type === 'return') {
-    const isDone = item.status === 'completed' || item.status === 'returned' || item.status === 'waiting_refund' || Boolean(item.actualReturnDate);
     const returnDateKey = item.date || toDateKey(item.rentalEndDate);
     const todayKey = toDateKey(new Date());
+    const isFuture = Boolean(returnDateKey && returnDateKey > todayKey);
+    const isPast = Boolean(returnDateKey && returnDateKey < todayKey);
+    const isReturnDoneRaw = item.status === 'completed' || item.status === 'returned' || item.status === 'waiting_refund' || Boolean(item.actualReturnDate);
+
+    // Chưa đến hạn trả (isFuture): tuyệt đối KHÔNG thể xanh, BẮT BUỘC là màu vàng
+    const isDone = !isFuture && isReturnDoneRaw;
 
     if (isDone) {
       return {
@@ -168,7 +178,7 @@ const getEventBadge = (item) => {
         className: 'bg-emerald-100 text-emerald-800 border-emerald-300',
       };
     }
-    if (returnDateKey && returnDateKey < todayKey) {
+    if (isPast) {
       return {
         label: 'CHƯA TRẢ',
         className: 'bg-rose-100 text-rose-800 border-rose-300',
@@ -304,14 +314,19 @@ function CalendarDateCellEvents({
           }
 
           if (item.eventCategory === 'delivery') {
-            const isDone = ['delivered', 'renting', 'returned', 'completed', 'waiting_refund'].includes((item.status || '').toLowerCase()) || Boolean(item.actualDeliveryDate);
             const isHighlight = Boolean(activeOrderCode && (item.code === activeOrderCode || item.id === activeOrderCode));
             const isExpress = item.deliveryMethod === 'express';
             const deliveryDateKey = item.deliveryDate || item.date;
             const currentTodayKey = toDateKey(new Date());
 
-            const isOverdue = !isDone && Boolean(deliveryDateKey && deliveryDateKey < currentTodayKey);
-            const isFutureOrToday = !isDone && (!deliveryDateKey || deliveryDateKey >= currentTodayKey);
+            const isFuture = Boolean(deliveryDateKey && deliveryDateKey > currentTodayKey);
+            const isPast = Boolean(deliveryDateKey && deliveryDateKey < currentTodayKey);
+            const isDeliveredRaw = ['delivered', 'renting', 'returned', 'completed', 'waiting_refund'].includes((item.status || '').toLowerCase()) || Boolean(item.actualDeliveryDate);
+
+            // Chưa đến ngày lấy (isFuture): chưa đến ngày thì ship không thể giao trước hoặc khách đến lấy nên tuyệt đối KHÔNG thể xanh, CHỈ ĐƯỢC để màu vàng
+            const isDone = !isFuture && isDeliveredRaw;
+            const isOverdue = !isFuture && isPast && !isDeliveredRaw;
+            const isFutureOrToday = isFuture || (!isDone && !isPast);
 
             let deliveryBadgeBg = '';
             let deliveryDotBg = '';
@@ -384,14 +399,19 @@ function CalendarDateCellEvents({
           }
 
           // Trả Váy (return)
-          const isDone = item.status === 'completed' || item.status === 'returned' || item.status === 'waiting_refund' || Boolean(item.actualReturnDate);
           const isHighlight = Boolean(activeOrderCode && (item.code === activeOrderCode || item.id === activeOrderCode));
           const isExpress = item.deliveryMethod === 'express';
           const returnDateKey = item.date || toDateKey(item.rentalEndDate);
           const currentTodayKey = toDateKey(new Date());
 
-          const isOverdue = !isDone && Boolean(returnDateKey && returnDateKey < currentTodayKey);
-          const isFutureOrToday = !isDone && (!returnDateKey || returnDateKey >= currentTodayKey);
+          const isFuture = Boolean(returnDateKey && returnDateKey > currentTodayKey);
+          const isPast = Boolean(returnDateKey && returnDateKey < currentTodayKey);
+          const isReturnDoneRaw = item.status === 'completed' || item.status === 'returned' || item.status === 'waiting_refund' || Boolean(item.actualReturnDate);
+
+          // Chưa đến hạn trả (isFuture): tuyệt đối KHÔNG thể xanh, BẮT BUỘC là màu vàng
+          const isDone = !isFuture && isReturnDoneRaw;
+          const isOverdue = !isFuture && isPast && !isReturnDoneRaw;
+          const isFutureOrToday = isFuture || (!isDone && !isPast);
 
           let returnBadgeBg = '';
           let returnDotBg = '';
@@ -1919,16 +1939,26 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                         const badge = getEventBadge(item);
 
                         // Trạng thái Giao Váy: Vàng (khách sắp lấy), Xanh (khách đã lấy/ship đã giao), Đỏ (chưa đến lấy/chưa giao)
-                        const isDeliveryDone = isDelivery && (['delivered', 'renting', 'returned', 'completed', 'waiting_refund'].includes((item.status || '').toLowerCase()) || Boolean(item.actualDeliveryDate));
                         const deliveryDateKey = isDelivery ? (item.deliveryDate || item.date) : '';
-                        const isDeliveryOverdue = isDelivery && !isDeliveryDone && Boolean(deliveryDateKey && deliveryDateKey < todayKey);
-                        const isDeliveryFutureOrToday = isDelivery && !isDeliveryDone && (!deliveryDateKey || deliveryDateKey >= todayKey);
+                        const isDeliveryFuture = Boolean(deliveryDateKey && deliveryDateKey > todayKey);
+                        const isDeliveryPast = Boolean(deliveryDateKey && deliveryDateKey < todayKey);
+                        const isDeliveryDoneRaw = isDelivery && (['delivered', 'renting', 'returned', 'completed', 'waiting_refund'].includes((item.status || '').toLowerCase()) || Boolean(item.actualDeliveryDate));
+
+                        // Chưa đến ngày lấy (isDeliveryFuture): tuyệt đối KHÔNG thể xanh, CHỈ ĐƯỢC để màu vàng
+                        const isDeliveryDone = !isDeliveryFuture && isDeliveryDoneRaw;
+                        const isDeliveryOverdue = isDelivery && !isDeliveryFuture && isDeliveryPast && !isDeliveryDoneRaw;
+                        const isDeliveryFutureOrToday = isDelivery && (isDeliveryFuture || (!isDeliveryDone && !isDeliveryPast));
 
                         // Trạng thái Trả Váy: Vàng (sắp đến hạn/tương lai), Xanh (đã trả), Đỏ (chưa trả)
-                        const isReturnDone = isReturn && (item.status === 'completed' || item.status === 'returned' || item.status === 'waiting_refund' || Boolean(item.actualReturnDate));
                         const returnDateKey = isReturn ? (item.date || toDateKey(item.rentalEndDate)) : '';
-                        const isReturnOverdue = isReturn && !isReturnDone && Boolean(returnDateKey && returnDateKey < todayKey);
-                        const isReturnFutureOrToday = isReturn && !isReturnDone && (!returnDateKey || returnDateKey >= todayKey);
+                        const isReturnFuture = Boolean(returnDateKey && returnDateKey > todayKey);
+                        const isReturnPast = Boolean(returnDateKey && returnDateKey < todayKey);
+                        const isReturnDoneRaw = isReturn && (item.status === 'completed' || item.status === 'returned' || item.status === 'waiting_refund' || Boolean(item.actualReturnDate));
+
+                        // Chưa đến hạn trả (isReturnFuture): tuyệt đối KHÔNG thể xanh, CHỈ ĐƯỢC để màu vàng
+                        const isReturnDone = !isReturnFuture && isReturnDoneRaw;
+                        const isReturnOverdue = isReturn && !isReturnFuture && isReturnPast && !isReturnDoneRaw;
+                        const isReturnFutureOrToday = isReturn && (isReturnFuture || (!isReturnDone && !isReturnPast));
 
                         return (
                           <div
