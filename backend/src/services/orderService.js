@@ -481,13 +481,16 @@ export const getOrderByIdOrCode = async (idOrCode) => {
   };
 };
 
-export const updateOrderStatus = async (idOrCode, status) => {
+export const updateOrderStatus = async (idOrCode, status, extraData = {}) => {
   const isObjectId = idOrCode.match(/^[0-9a-fA-F]{24}$/);
   const query = isObjectId ? { _id: idOrCode } : { orderCode: idOrCode.toUpperCase() };
   const order = await Order.findOne(query);
   if (!order) throw new Error('Không tìm thấy đơn hàng.');
 
-  order.status = status;
+  if (status) order.status = status;
+  if (extraData?.handoverStatus) {
+    order.handoverStatus = extraData.handoverStatus;
+  }
   if (status === 'completed' || status === 'complete') {
     order.completedAt = order.completedAt || new Date();
     order.maintenanceUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);

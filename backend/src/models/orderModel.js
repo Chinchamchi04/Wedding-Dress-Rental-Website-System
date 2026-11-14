@@ -162,6 +162,11 @@ const orderSchema = new mongoose.Schema(
       type: String,
       default: 'showroom',
     },
+    handoverStatus: {
+      type: String,
+      enum: ['pending', 'delivered', 'not_delivered'],
+      default: 'pending',
+    },
     rentalAgreementAccepted: {
       type: Boolean,
       default: true,

@@ -49,6 +49,9 @@ import {
   submitReturnInspection,
   getReturnInspection,
   settleInspectionAdmin,
+  getStoredHandoverStatus,
+  setStoredHandoverStatus,
+  HANDOVER_UPDATED_EVENT,
 } from '../../services/orderService';
 import { formatCurrencyVND } from '../../utils/formatCurrency';
 import { DRESS_CATALOG } from '../../data/dressCatalog';
@@ -178,6 +181,44 @@ function StatusBadge({ status, order }) {
       </span>
     );
   }
+  if (status === 'cancelled') {
+    return (
+      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#F3F4F6] text-[#6B7280]">
+        Đã Hủy
+      </span>
+    );
+  }
+  if (status === 'completed' || status === 'complete') {
+    return (
+      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#A7F3D0] text-[#064E3B]">
+        Hoàn Tất
+      </span>
+    );
+  }
+
+  const explicitHandover = order?.handoverStatus || getStoredHandoverStatus(order);
+  const isExpress =
+    order?.deliveryMethod === 'express' ||
+    order?.shippingMethod === 'express' ||
+    Boolean(order?.shippingAddress && String(order.shippingAddress).trim().length > 5);
+
+  if (explicitHandover === 'delivered') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#D1FAE5] text-[#065F46] border border-[#A7F3D0]">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+        {isExpress ? 'Nhân Viên Đã Giao' : 'Khách Đã Đến Lấy'}
+      </span>
+    );
+  }
+
+  if (explicitHandover === 'not_delivered') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#FEE2E2] text-[#991B1B] border border-[#FECACA]">
+        <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+        {isExpress ? 'Nhân Viên Chưa Giao' : 'Khách Chưa Đến Lấy'}
+      </span>
+    );
+  }
 
   const cfg = STATUS_CONFIG[status] || { label: status, bg: 'bg-gray-100', text: 'text-gray-600' };
   return (
@@ -191,19 +232,104 @@ function StatusBadge({ status, order }) {
 
 function UpdateStatusDropdown({ order, onUpdated }) {
   const [loading, setLoading] = useState(false);
-  const nexts = NEXT_STATUSES[order.status] || [];
+  const isExpress =
+    order.deliveryMethod === 'express' ||
+    order.shippingMethod === 'express' ||
+    Boolean(order.shippingAddress && String(order.shippingAddress).trim().length > 5);
 
-  if (nexts.length === 0) return null;
+  const isPostRental = ['returned', 'waiting_refund'].includes(order.status);
+  const isFinished = ['completed', 'complete', 'cancelled', 'disputed'].includes(order.status);
 
-  const handleChange = async (newStatus) => {
+  if (isFinished) return null;
+
+  const currentHandover = order.handoverStatus || getStoredHandoverStatus(order);
+
+  const handleHandoverDelivered = async () => {
     setLoading(true);
     try {
-      await updateOrderStatus(order._id, newStatus);
-      if (newStatus === 'completed' || newStatus === 'complete') {
-        recordCompletedOrderMaintenance(order);
-      }
-      message.success(`Đã cập nhật trạng thái thành "${STATUS_CONFIG[newStatus]?.label ?? newStatus}"`);
-      onUpdated?.(order._id, newStatus);
+      await updateOrderStatus(order._id, 'delivered', { handoverStatus: 'delivered' });
+      setStoredHandoverStatus(order._id, order.orderCode, 'delivered');
+      window.dispatchEvent(
+        new CustomEvent(HANDOVER_UPDATED_EVENT, {
+          detail: {
+            orderId: order._id,
+            orderCode: order.orderCode,
+            handoverStatus: 'delivered',
+            status: 'delivered',
+          },
+        })
+      );
+      const successMsg = isExpress
+        ? 'Đã xác nhận: Nhân viên đã giao. Lịch tổng quan chuyển sang MÀU XANH!'
+        : 'Đã xác nhận: Khách đã đến lấy. Lịch tổng quan chuyển sang MÀU XANH!';
+      message.success(successMsg);
+      onUpdated?.(order._id, 'delivered', 'delivered');
+    } catch {
+      message.error('Cập nhật trạng thái thất bại. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleHandoverNotDelivered = async () => {
+    setLoading(true);
+    try {
+      const targetStatus = order.status || 'deposit_paid';
+      await updateOrderStatus(order._id, targetStatus, { handoverStatus: 'not_delivered' });
+      setStoredHandoverStatus(order._id, order.orderCode, 'not_delivered');
+      window.dispatchEvent(
+        new CustomEvent(HANDOVER_UPDATED_EVENT, {
+          detail: {
+            orderId: order._id,
+            orderCode: order.orderCode,
+            handoverStatus: 'not_delivered',
+            status: targetStatus,
+          },
+        })
+      );
+      const warnMsg = isExpress
+        ? 'Đã ghi nhận: Nhân viên chưa giao. Lịch tổng quan chuyển sang MÀU ĐỎ!'
+        : 'Đã ghi nhận: Khách chưa đến lấy. Lịch tổng quan chuyển sang MÀU ĐỎ!';
+      message.warning(warnMsg);
+      onUpdated?.(order._id, targetStatus, 'not_delivered');
+    } catch {
+      message.error('Cập nhật trạng thái thất bại. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    setLoading(true);
+    try {
+      await updateOrderStatus(order._id, 'cancelled');
+      setStoredHandoverStatus(order._id, order.orderCode, 'pending');
+      window.dispatchEvent(
+        new CustomEvent(HANDOVER_UPDATED_EVENT, {
+          detail: {
+            orderId: order._id,
+            orderCode: order.orderCode,
+            handoverStatus: 'pending',
+            status: 'cancelled',
+          },
+        })
+      );
+      message.success('Đã chuyển đơn hàng sang trạng thái: Đã Hủy');
+      onUpdated?.(order._id, 'cancelled', 'pending');
+    } catch {
+      message.error('Cập nhật trạng thái thất bại. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCompleteOrder = async () => {
+    setLoading(true);
+    try {
+      await updateOrderStatus(order._id, 'completed');
+      recordCompletedOrderMaintenance(order);
+      message.success('Đã cập nhật trạng thái thành "Hoàn Tất"');
+      onUpdated?.(order._id, 'completed');
     } catch {
       message.error('Cập nhật trạng thái thất bại. Vui lòng thử lại.');
     } finally {
@@ -217,28 +343,100 @@ function UpdateStatusDropdown({ order, onUpdated }) {
       type: 'group',
       label: (
         <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C7A7B] block py-0.5">
-          Chuyển bước tiếp theo
+          CHUYỂN BƯỚC TIẾP THEO
         </span>
       ),
-      children: nexts.map((s) => {
-        const cfg = STATUS_CONFIG[s] || { label: s };
-        const isCancel = s === 'cancelled';
-        return {
-          key: s,
-          label: (
-            <div className="flex items-center justify-between py-1 min-w-[175px]">
-              <span className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full shrink-0 ${isCancel ? 'bg-red-500' : 'bg-[#733F49]'}`} />
-                <span className={`text-[12.5px] font-medium ${isCancel ? 'text-red-600' : 'text-[#4A3E3F]'}`}>
-                  {cfg.label}
-                </span>
-              </span>
-              <ChevronRight size={13} className="text-[#8C7A7B] opacity-50" />
-            </div>
-          ),
-          onClick: () => handleChange(s),
-        };
-      }),
+      children: isPostRental
+        ? [
+            {
+              key: 'complete_step',
+              label: (
+                <div className="flex items-center justify-between py-1 min-w-[185px]">
+                  <span className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full shrink-0 bg-emerald-600" />
+                    <span className="text-[12.5px] font-medium text-emerald-800">
+                      Hoàn Tất
+                    </span>
+                  </span>
+                  <ChevronRight size={13} className="text-[#8C7A7B] opacity-50" />
+                </div>
+              ),
+              onClick: handleCompleteOrder,
+            },
+            {
+              key: 'cancel_step',
+              label: (
+                <div className="flex items-center justify-between py-1 min-w-[185px]">
+                  <span className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full shrink-0 bg-red-500" />
+                    <span className="text-[12.5px] font-medium text-red-600">
+                      Đã Hủy
+                    </span>
+                  </span>
+                  <ChevronRight size={13} className="text-[#8C7A7B] opacity-50" />
+                </div>
+              ),
+              onClick: handleCancelOrder,
+            },
+          ]
+        : [
+            {
+              key: 'delivered_step',
+              label: (
+                <div className="flex items-center justify-between py-1 min-w-[185px]">
+                  <span className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full shrink-0 bg-emerald-500" />
+                    <span
+                      className={`text-[12.5px] font-medium ${
+                        currentHandover === 'delivered' ? 'text-emerald-700 font-bold' : 'text-[#4A3E3F]'
+                      }`}
+                    >
+                      {isExpress ? 'Nhân viên đã giao' : 'Khách đã đến lấy'}
+                    </span>
+                  </span>
+                  <ChevronRight size={13} className="text-[#8C7A7B] opacity-50" />
+                </div>
+              ),
+              onClick: handleHandoverDelivered,
+            },
+            {
+              key: 'not_delivered_step',
+              label: (
+                <div className="flex items-center justify-between py-1 min-w-[185px]">
+                  <span className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full shrink-0 bg-rose-500" />
+                    <span
+                      className={`text-[12.5px] font-medium ${
+                        currentHandover === 'not_delivered' ? 'text-rose-700 font-bold' : 'text-[#4A3E3F]'
+                      }`}
+                    >
+                      {isExpress ? 'Nhân viên chưa giao' : 'Khách chưa đến lấy'}
+                    </span>
+                  </span>
+                  <ChevronRight size={13} className="text-[#8C7A7B] opacity-50" />
+                </div>
+              ),
+              onClick: handleHandoverNotDelivered,
+            },
+            {
+              type: 'divider',
+            },
+            {
+              key: 'cancel_step',
+              label: (
+                <div className="flex items-center justify-between py-1 min-w-[185px]">
+                  <span className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full shrink-0 bg-red-500" />
+                    <span className="text-[12.5px] font-medium text-red-600">
+                      Đã Hủy
+                    </span>
+                  </span>
+                  <ChevronRight size={13} className="text-[#8C7A7B] opacity-50" />
+                </div>
+              ),
+              onClick: handleCancelOrder,
+            },
+          ],
     },
   ];
 
@@ -2071,11 +2269,20 @@ export default function OrderRentalManagement() {
     }
   }, [activePage, statusFilter, searchTerm, viewMode]);
 
-  const handleOrderUpdated = (orderId, newStatus) => {
+  const handleOrderUpdated = (orderId, newStatus, handoverStatus) => {
     setStatusMenuId(null);
-    if (orderId && newStatus) {
+    if (orderId && (newStatus || handoverStatus)) {
       setOrders((prev) => {
-        const next = prev.map((o) => (o._id === orderId ? { ...o, status: newStatus } : o));
+        const next = prev.map((o) => {
+          if (o._id === orderId || o.id === orderId || o.orderCode === orderId) {
+            return {
+              ...o,
+              ...(newStatus ? { status: newStatus } : {}),
+              ...(handoverStatus ? { handoverStatus } : {}),
+            };
+          }
+          return o;
+        });
         try {
           localStorage.setItem('unibridal_orders_local', JSON.stringify(next));
         } catch { }
@@ -2084,6 +2291,30 @@ export default function OrderRentalManagement() {
     }
     loadOrders();
   };
+
+  useEffect(() => {
+    const handleHandoverEvt = (e) => {
+      const { orderId, orderCode, handoverStatus, status: newStatus } = e.detail || {};
+      if (orderId || orderCode) {
+        setOrders((prev) =>
+          prev.map((o) => {
+            const matchId = o._id === orderId || o.id === orderId;
+            const matchCode = o.orderCode === orderCode;
+            if (matchId || matchCode) {
+              return {
+                ...o,
+                ...(newStatus ? { status: newStatus } : {}),
+                ...(handoverStatus ? { handoverStatus } : {}),
+              };
+            }
+            return o;
+          })
+        );
+      }
+    };
+    window.addEventListener(HANDOVER_UPDATED_EVENT, handleHandoverEvt);
+    return () => window.removeEventListener(HANDOVER_UPDATED_EVENT, handleHandoverEvt);
+  }, []);
 
   useEffect(() => {
     loadOrders(Boolean(initialCached));

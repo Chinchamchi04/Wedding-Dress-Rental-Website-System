@@ -8,6 +8,34 @@ import { dressImage } from './dressApiService';
 const adminOrdersCache = new Map();
 const ADMIN_ORDERS_CACHE_TTL = 15000; // 15s cache
 
+export const HANDOVER_UPDATED_EVENT = 'unibridal_order_handover_updated';
+
+export const getStoredHandoverStatus = (orderOrItem) => {
+  if (!orderOrItem) return null;
+  const direct = orderOrItem.handoverStatus;
+  if (direct && direct !== 'pending') return direct;
+  try {
+    const raw = localStorage.getItem('unibridal_handover_overrides');
+    if (!raw) return direct || null;
+    const map = JSON.parse(raw);
+    const id = orderOrItem._id || orderOrItem.id;
+    const code = orderOrItem.orderCode || orderOrItem.code;
+    return (id && map[id]) || (code && map[code]) || direct || null;
+  } catch {
+    return direct || null;
+  }
+};
+
+export const setStoredHandoverStatus = (orderId, orderCode, handoverStatus) => {
+  try {
+    const raw = localStorage.getItem('unibridal_handover_overrides');
+    const map = raw ? JSON.parse(raw) : {};
+    if (orderId) map[orderId] = handoverStatus;
+    if (orderCode) map[orderCode] = handoverStatus;
+    localStorage.setItem('unibridal_handover_overrides', JSON.stringify(map));
+  } catch {}
+};
+
 export function clearAdminOrdersCache() {
   adminOrdersCache.clear();
 }
@@ -73,6 +101,8 @@ export function mapOrder(order) {
     rentalDates: order.rentalDates || `${fmtDate(order.rentalStartDate)} – ${fmtDate(order.rentalEndDate)}`,
     fitting: order.fitting || 'Liên hệ showroom để xác nhận',
     shippingAddress: order.shippingAddress,
+    deliveryMethod: order.deliveryMethod || 'showroom',
+    handoverStatus: order.handoverStatus || getStoredHandoverStatus(order) || 'pending',
     items: (order.items || []).map((it) => ({
       ...it,
       color: it.color || it.fabric || order.color || 'Trắng Sữa',
@@ -151,10 +181,10 @@ export async function createOrder(orderData) {
  * @param {string} orderId
  * @param {string} status - 'confirmed' | 'preparing' | 'handover' | 'renting' | 'returned' | 'completed' | 'cancelled'
  */
-export async function updateOrderStatus(orderId, status) {
+export async function updateOrderStatus(orderId, status, extraData = {}) {
   clearAdminOrdersCache();
   try {
-    return await axiosClient.patch(`/orders/${orderId}/status`, { status });
+    return await axiosClient.patch(`/orders/${orderId}/status`, { status, ...extraData });
   } catch (error) {
     return { success: true, message: 'Cập nhật trạng thái đơn thành công (Offline Demo)' };
   }

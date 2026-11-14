@@ -60,7 +60,11 @@ import {
   SHOWROOM_BRANCHES,
   APPOINTMENT_EVENT,
 } from '../../services/appointmentService';
-import { getAllOrdersAdmin } from '../../services/orderService';
+import {
+  getAllOrdersAdmin,
+  getStoredHandoverStatus,
+  HANDOVER_UPDATED_EVENT,
+} from '../../services/orderService';
 import { formatCurrencyVND } from '../../utils/formatCurrency';
 import { formatShortDate } from '../../utils/formatDate';
 
@@ -138,6 +142,22 @@ const getEventBadge = (item) => {
     const isExpress = item.deliveryMethod === 'express';
     const isFuture = Boolean(deliveryDateKey && deliveryDateKey > todayKey);
     const isPast = Boolean(deliveryDateKey && deliveryDateKey < todayKey);
+
+    const explicitHandover = item.handoverStatus || getStoredHandoverStatus(item);
+
+    if (explicitHandover === 'delivered') {
+      return {
+        label: isExpress ? 'SHIP ĐÃ GIAO' : 'KHÁCH ĐÃ LẤY',
+        className: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+      };
+    }
+    if (explicitHandover === 'not_delivered') {
+      return {
+        label: isExpress ? 'CHƯA GIAO' : 'CHƯA ĐẾN LẤY',
+        className: 'bg-rose-100 text-rose-800 border-rose-300',
+      };
+    }
+
     const isDeliveredRaw = ['delivered', 'renting', 'returned', 'completed', 'waiting_refund'].includes((item.status || '').toLowerCase()) || Boolean(item.actualDeliveryDate);
 
     // Chưa đến ngày lấy (isFuture): tuyệt đối KHÔNG thể xanh, BẮT BUỘC là màu vàng
@@ -321,12 +341,23 @@ function CalendarDateCellEvents({
 
             const isFuture = Boolean(deliveryDateKey && deliveryDateKey > currentTodayKey);
             const isPast = Boolean(deliveryDateKey && deliveryDateKey < currentTodayKey);
-            const isDeliveredRaw = ['delivered', 'renting', 'returned', 'completed', 'waiting_refund'].includes((item.status || '').toLowerCase()) || Boolean(item.actualDeliveryDate);
+            const explicitHandover = item.handoverStatus || getStoredHandoverStatus(item);
 
-            // Chưa đến ngày lấy (isFuture): chưa đến ngày thì ship không thể giao trước hoặc khách đến lấy nên tuyệt đối KHÔNG thể xanh, CHỈ ĐƯỢC để màu vàng
-            const isDone = !isFuture && isDeliveredRaw;
-            const isOverdue = !isFuture && isPast && !isDeliveredRaw;
-            const isFutureOrToday = isFuture || (!isDone && !isPast);
+            let isDone = false;
+            let isOverdue = false;
+            let isFutureOrToday = false;
+
+            if (explicitHandover === 'delivered') {
+              isDone = true;
+            } else if (explicitHandover === 'not_delivered') {
+              isOverdue = true;
+            } else {
+              const isDeliveredRaw = ['delivered', 'renting', 'returned', 'completed', 'waiting_refund'].includes((item.status || '').toLowerCase()) || Boolean(item.actualDeliveryDate);
+              // Chưa đến ngày lấy (isFuture): chưa đến ngày thì ship không thể giao trước hoặc khách đến lấy nên tuyệt đối KHÔNG thể xanh, CHỈ ĐƯỢC để màu vàng
+              isDone = !isFuture && isDeliveredRaw;
+              isOverdue = !isFuture && isPast && !isDeliveredRaw;
+              isFutureOrToday = isFuture || (!isDone && !isPast);
+            }
 
             let deliveryBadgeBg = '';
             let deliveryDotBg = '';
@@ -337,16 +368,16 @@ function CalendarDateCellEvents({
               deliveryBadgeBg = 'bg-emerald-50/90 border-emerald-300 hover:bg-emerald-100';
               deliveryDotBg = 'bg-emerald-500';
               deliveryTextColor = 'text-emerald-950 font-bold';
-            } else if (isFutureOrToday) {
-              // Vàng là khách sắp lấy
-              deliveryBadgeBg = 'bg-amber-50/90 border-amber-300 hover:bg-amber-100';
-              deliveryDotBg = 'bg-amber-500';
-              deliveryTextColor = 'text-amber-950 font-bold';
-            } else {
+            } else if (isOverdue) {
               // Đỏ là khách chưa đến lấy hoặc nhân viên chưa giao
               deliveryBadgeBg = 'bg-rose-50/90 border-rose-300 hover:bg-rose-100';
               deliveryDotBg = 'bg-rose-500';
               deliveryTextColor = 'text-rose-950 font-bold';
+            } else {
+              // Vàng là khách sắp lấy
+              deliveryBadgeBg = 'bg-amber-50/90 border-amber-300 hover:bg-amber-100';
+              deliveryDotBg = 'bg-amber-500';
+              deliveryTextColor = 'text-amber-950 font-bold';
             }
 
             return (
@@ -356,7 +387,7 @@ function CalendarDateCellEvents({
                   <div className="text-xs space-y-1">
                     <div>Khách hàng: <strong>{item.customerName}</strong></div>
                     <div>
-                      Trạng thái: <strong>{isDone ? (isExpress ? 'Ship đã giao' : 'Khách đã lấy') : isFutureOrToday ? (isExpress ? 'Sắp giao' : 'Khách sắp lấy') : (isExpress ? 'Chưa giao' : 'Chưa đến lấy')}</strong>
+                      Trạng thái: <strong>{isDone ? (isExpress ? 'Ship đã giao' : 'Khách đã lấy') : isOverdue ? (isExpress ? 'Chưa giao' : 'Chưa đến lấy') : (isExpress ? 'Sắp giao' : 'Khách sắp lấy')}</strong>
                     </div>
                     {item.rentalStartDate && (
                       <div className="text-amber-200">
@@ -375,9 +406,9 @@ function CalendarDateCellEvents({
                     isHighlight
                       ? isDone
                         ? 'bg-emerald-600 text-white border-emerald-500 font-bold shadow-xs'
-                        : isFutureOrToday
-                        ? 'bg-amber-600 text-white border-amber-500 font-bold shadow-xs'
-                        : 'bg-rose-600 text-white border-rose-500 font-bold shadow-xs'
+                        : isOverdue
+                        ? 'bg-rose-600 text-white border-rose-500 font-bold shadow-xs'
+                        : 'bg-amber-600 text-white border-amber-500 font-bold shadow-xs'
                       : `${deliveryBadgeBg} hover:scale-[1.02]`
                   }`}
                 >
@@ -702,7 +733,33 @@ export default function ScheduleOverviewPage({ defaultTab }) {
   useEffect(() => {
     fetchData();
     window.addEventListener(APPOINTMENT_EVENT, fetchData);
-    return () => window.removeEventListener(APPOINTMENT_EVENT, fetchData);
+
+    const handleHandoverEvent = (e) => {
+      if (e?.detail) {
+        const { orderId, orderCode, handoverStatus, status: newStatus } = e.detail;
+        setOrders((prev) =>
+          prev.map((o) => {
+            const matchId = (o._id === orderId) || (o.id === orderId);
+            const matchCode = (o.orderCode === orderCode);
+            if (matchId || matchCode) {
+              return {
+                ...o,
+                ...(newStatus ? { status: newStatus } : {}),
+                ...(handoverStatus ? { handoverStatus } : {}),
+              };
+            }
+            return o;
+          })
+        );
+      }
+      fetchData();
+    };
+
+    window.addEventListener(HANDOVER_UPDATED_EVENT, handleHandoverEvent);
+    return () => {
+      window.removeEventListener(APPOINTMENT_EVENT, fetchData);
+      window.removeEventListener(HANDOVER_UPDATED_EVENT, handleHandoverEvent);
+    };
   }, [fetchData]);
 
   // Cập nhật trạng thái lịch hẹn (Xác nhận, Hoàn tất, Hủy)
@@ -899,6 +956,7 @@ export default function ScheduleOverviewPage({ defaultTab }) {
         customerName: ord.customerName || ord.brideName || 'Cô dâu',
         phone: ord.customerPhone || ord.phone,
         status: (ord.status || 'deposit_paid').toLowerCase(),
+        handoverStatus: ord.handoverStatus || getStoredHandoverStatus(ord) || 'pending',
         items: ord.items || [],
         totalDeposit: ord.totalDeposit || 0,
         totalRentPrice: ord.totalRentPrice || 0,
@@ -1942,12 +2000,22 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                         const deliveryDateKey = isDelivery ? (item.deliveryDate || item.date) : '';
                         const isDeliveryFuture = Boolean(deliveryDateKey && deliveryDateKey > todayKey);
                         const isDeliveryPast = Boolean(deliveryDateKey && deliveryDateKey < todayKey);
-                        const isDeliveryDoneRaw = isDelivery && (['delivered', 'renting', 'returned', 'completed', 'waiting_refund'].includes((item.status || '').toLowerCase()) || Boolean(item.actualDeliveryDate));
+                        const explicitDeliveryHandover = isDelivery ? (item.handoverStatus || getStoredHandoverStatus(item)) : null;
 
-                        // Chưa đến ngày lấy (isDeliveryFuture): tuyệt đối KHÔNG thể xanh, CHỈ ĐƯỢC để màu vàng
-                        const isDeliveryDone = !isDeliveryFuture && isDeliveryDoneRaw;
-                        const isDeliveryOverdue = isDelivery && !isDeliveryFuture && isDeliveryPast && !isDeliveryDoneRaw;
-                        const isDeliveryFutureOrToday = isDelivery && (isDeliveryFuture || (!isDeliveryDone && !isDeliveryPast));
+                        let isDeliveryDone = false;
+                        let isDeliveryOverdue = false;
+                        let isDeliveryFutureOrToday = false;
+
+                        if (explicitDeliveryHandover === 'delivered') {
+                          isDeliveryDone = true;
+                        } else if (explicitDeliveryHandover === 'not_delivered') {
+                          isDeliveryOverdue = true;
+                        } else {
+                          const isDeliveryDoneRaw = isDelivery && (['delivered', 'renting', 'returned', 'completed', 'waiting_refund'].includes((item.status || '').toLowerCase()) || Boolean(item.actualDeliveryDate));
+                          isDeliveryDone = !isDeliveryFuture && isDeliveryDoneRaw;
+                          isDeliveryOverdue = isDelivery && !isDeliveryFuture && isDeliveryPast && !isDeliveryDoneRaw;
+                          isDeliveryFutureOrToday = isDelivery && (isDeliveryFuture || (!isDeliveryDone && !isDeliveryPast));
+                        }
 
                         // Trạng thái Trả Váy: Vàng (sắp đến hạn/tương lai), Xanh (đã trả), Đỏ (chưa trả)
                         const returnDateKey = isReturn ? (item.date || toDateKey(item.rentalEndDate)) : '';
@@ -1973,9 +2041,9 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                 : isDelivery
                                 ? isDeliveryDone
                                   ? 'border-emerald-300 bg-emerald-50/30'
-                                  : isDeliveryFutureOrToday
-                                  ? 'border-amber-300 bg-amber-50/30'
-                                  : 'border-rose-300 bg-rose-50/30'
+                                  : isDeliveryOverdue
+                                  ? 'border-rose-300 bg-rose-50/30'
+                                  : 'border-amber-300 bg-amber-50/30'
                                 : isReturnDone
                                 ? 'border-emerald-300 bg-emerald-50/30'
                                 : isReturnFutureOrToday
@@ -1998,16 +2066,16 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                         <Truck className={`w-3.5 h-3.5 ${
                                           isDeliveryDone
                                             ? 'text-emerald-700'
-                                            : isDeliveryFutureOrToday
-                                            ? 'text-amber-700'
-                                            : 'text-rose-700'
+                                            : isDeliveryOverdue
+                                            ? 'text-rose-700'
+                                            : 'text-amber-700'
                                         }`} />
                                         <span className={`font-mono font-bold ${
                                           isDeliveryDone
                                             ? 'text-emerald-900'
-                                            : isDeliveryFutureOrToday
-                                            ? 'text-amber-900'
-                                            : 'text-rose-900'
+                                            : isDeliveryOverdue
+                                            ? 'text-rose-900'
+                                            : 'text-amber-900'
                                         }`}>
                                           SHIP VÁY: {item.code}
                                         </span>
@@ -2017,16 +2085,16 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                         <Building2 className={`w-3.5 h-3.5 ${
                                           isDeliveryDone
                                             ? 'text-emerald-700'
-                                            : isDeliveryFutureOrToday
-                                            ? 'text-amber-700'
-                                            : 'text-rose-700'
+                                            : isDeliveryOverdue
+                                            ? 'text-rose-700'
+                                            : 'text-amber-700'
                                         }`} />
                                         <span className={`font-mono font-bold ${
                                           isDeliveryDone
                                             ? 'text-emerald-900'
-                                            : isDeliveryFutureOrToday
-                                            ? 'text-amber-900'
-                                            : 'text-rose-900'
+                                            : isDeliveryOverdue
+                                            ? 'text-rose-900'
+                                            : 'text-amber-900'
                                         }`}>
                                           KHÁCH LẤY: {item.code}
                                         </span>
@@ -2066,16 +2134,16 @@ export default function ScheduleOverviewPage({ defaultTab }) {
                                   className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border ${
                                     isDeliveryDone
                                       ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                                      : isDeliveryFutureOrToday
-                                      ? 'bg-amber-50 text-amber-900 border-amber-300'
-                                      : 'bg-rose-50 text-rose-900 border-rose-300'
+                                      : isDeliveryOverdue
+                                      ? 'bg-rose-50 text-rose-900 border-rose-300'
+                                      : 'bg-amber-50 text-amber-900 border-amber-300'
                                   }`}
                                 >
                                   {isDeliveryDone
                                     ? (item.deliveryMethod === 'express' ? 'Ship đã giao' : 'Khách đã lấy')
-                                    : isDeliveryFutureOrToday
-                                    ? (item.deliveryMethod === 'express' ? 'Sắp giao' : 'Khách sắp lấy')
-                                    : (item.deliveryMethod === 'express' ? 'Chưa giao' : 'Chưa đến lấy')}
+                                    : isDeliveryOverdue
+                                    ? (item.deliveryMethod === 'express' ? 'Chưa giao' : 'Chưa đến lấy')
+                                    : (item.deliveryMethod === 'express' ? 'Sắp giao' : 'Khách sắp lấy')}
                                 </span>
                               )}
                               {isReturn && (

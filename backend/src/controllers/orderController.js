@@ -69,8 +69,8 @@ export const getOrderById = async (req, res, next) => {
 
 export const updateOrderStatus = async (req, res, next) => {
   try {
-    const { status } = req.body;
-    const order = await orderService.updateOrderStatus(req.params.id, status);
+    const { status, handoverStatus } = req.body;
+    const order = await orderService.updateOrderStatus(req.params.id, status, { handoverStatus });
     res.status(200).json({
       success: true,
       message: `Cập nhật trạng thái đơn thuê sang "${status}" thành công!`,
